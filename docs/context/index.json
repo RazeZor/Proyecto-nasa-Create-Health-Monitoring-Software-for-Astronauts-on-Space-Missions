@@ -69,6 +69,38 @@
           ]
         },
         {
+          "ruta": "apps/api/almacen/lecturas.py",
+          "lineas": 47,
+          "descripcion": "Lecturas de indicadores y síntomas de un tripulante.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "registrar_lectura",
+              "tipo": "función",
+              "firma": "registrar_lectura(conn, tripulante_id, indicador, valor, t_real, origen='manual', metodo=None, naturaleza='Simulado')",
+              "doc": "Guarda una lectura. Reenviar la misma (tripulante, indicador, t_real, origen) devuelve el mismo id."
+            },
+            {
+              "nombre": "leer_lecturas",
+              "tipo": "función",
+              "firma": "leer_lecturas(conn, tripulante_id, indicador=None, desde=None, hasta=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "registrar_sintoma",
+              "tipo": "función",
+              "firma": "registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real)",
+              "doc": ""
+            },
+            {
+              "nombre": "leer_sintomas",
+              "tipo": "función",
+              "firma": "leer_sintomas(conn, tripulante_id, desde=None, hasta=None)",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/almacen/tripulacion.py",
           "lineas": 76,
           "descripcion": "Misión, tripulantes y consentimiento; conversión de t_real a hora de misión.",
@@ -184,6 +216,20 @@
               "nombre": "Esquema",
               "tipo": "clase",
               "firma": "Esquema(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_lecturas.py",
+          "lineas": 63,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Lecturas",
+              "tipo": "clase",
+              "firma": "Lecturas(unittest.TestCase)",
               "doc": ""
             }
           ]

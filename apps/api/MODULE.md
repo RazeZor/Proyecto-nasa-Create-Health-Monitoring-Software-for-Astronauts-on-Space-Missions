@@ -36,9 +36,11 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/__init__.py](almacen/__init__.py) | 1 | — |
 | [almacen/__main__.py](almacen/__main__.py) | 13 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
 | [almacen/db.py](almacen/db.py) | 36 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
+| [almacen/lecturas.py](almacen/lecturas.py) | 47 | Lecturas de indicadores y síntomas de un tripulante. |
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 76 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [main.py](main.py) | 127 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [test_almacen_db.py](test_almacen_db.py) | 38 | — |
+| [test_almacen_lecturas.py](test_almacen_lecturas.py) | 63 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 54 | — |
 | [test_api.py](test_api.py) | 89 | — |
 
@@ -49,6 +51,13 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `ruta_por_defecto()`: `VIGIA_DB` o apps/api/data/vigia.db (fuera de git).
 - función `conectar(ruta=None)`
 - función `migrar(conn)`: Aplica en orden las migraciones NNN_*.sql pendientes y devuelve la versión resultante.
+
+**almacen/lecturas.py**
+
+- función `registrar_lectura(conn, tripulante_id, indicador, valor, t_real, origen='manual', metodo=None, naturaleza='Simulado')`: Guarda una lectura. Reenviar la misma (tripulante, indicador, t_real, origen) devuelve el mismo id.
+- función `leer_lecturas(conn, tripulante_id, indicador=None, desde=None, hasta=None)`
+- función `registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real)`
+- función `leer_sintomas(conn, tripulante_id, desde=None, hasta=None)`
 
 **almacen/tripulacion.py**
 
@@ -84,11 +93,12 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - Internas: `main`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: `almacen`, `fastapi`
-- Biblioteca estándar: `datetime`, `hashlib`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `typing`, `unittest`
+- Biblioteca estándar: `datetime`, `hashlib`, `json`, `math`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `typing`, `unittest`
 
 ### Tests
 
 - `apps/api/test_almacen_db.py`: 4 pruebas en Esquema (4)
+- `apps/api/test_almacen_lecturas.py`: 7 pruebas en Lecturas (7)
 - `apps/api/test_almacen_tripulacion.py`: 7 pruebas en Tripulacion (7)
 - `apps/api/test_api.py`: 9 pruebas en Api (9)
 <!-- CONTEXT:AUTO:END -->

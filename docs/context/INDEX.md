@@ -6,7 +6,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
-| [apps/api](../../apps/api/MODULE.md) | API FastAPI de solo lectura que expone la zona gold del ETL (`pipelines/reanclaje`): escenarios reanclados y paneles de entorno, para que la app los consuma por HTTP. | api, fastapi, gold, etl, panel, solo-lectura | 8 |
+| [apps/api](../../apps/api/MODULE.md) | API FastAPI de solo lectura que expone la zona gold del ETL (`pipelines/reanclaje`): escenarios reanclados y paneles de entorno, para que la app los consuma por HTTP. | api, fastapi, gold, etl, panel, solo-lectura | 10 |
 | [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario, figura humana con el estado por sistema y vista del médico de vuelo. Todavía no está implementada (`app.tsx` está vacío). | frontend, interfaz, react, pwa, offline, motor-híbrido, figura-humana, pendiente | 1 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos entre `pipelines/` y `apps/`. Hoy contiene el esquema de las fichas de indicador y la prueba que valida las fichas publicadas en `apps/web/public/fichas/`. | schemas, contratos, fichas, indicadores, json-schema, peligros, hrp | 1 |
@@ -31,6 +31,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Generador` | clase | [tools/contextgen/test_contextgen.py](../../tools/contextgen/test_contextgen.py) |
 | `IDIOMAS` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `Idioma` | tipo | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
+| `Lecturas` | clase | [apps/api/test_almacen_lecturas.py](../../apps/api/test_almacen_lecturas.py) |
 | `Limpieza` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
 | `PRINCIPAL` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `Panel` | clase | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
@@ -73,10 +74,12 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `leer` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `leer_diario` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_escenario` | función | [apps/api/main.py](../../apps/api/main.py) |
+| `leer_lecturas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `leer_manual` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `leer_panel` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_seccion` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_serie` | función | [apps/api/main.py](../../apps/api/main.py) |
+| `leer_sintomas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `lint` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `listar_escenarios` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `listar_paneles` | función | [apps/api/main.py](../../apps/api/main.py) |
@@ -94,6 +97,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `publicar` | función | [pipelines/reanclaje/panel.py](../../pipelines/reanclaje/panel.py) |
 | `radlab` | función | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
 | `read` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
+| `registrar_lectura` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
+| `registrar_sintoma` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `rejilla` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `render_auto` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `render_indice` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
