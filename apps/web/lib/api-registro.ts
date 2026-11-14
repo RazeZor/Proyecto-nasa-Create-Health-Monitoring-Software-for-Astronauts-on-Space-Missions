@@ -7,7 +7,8 @@ import vocabulario from "./vocabulario.json" with { type: "json" }
 import type { ReporteServidor } from "./cola"
 import type { CheckInEntry, IndicatorId, Layer, ProfileId, Status } from "./types"
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_VIGIA_API_URL ?? "http://localhost:8000"
+// Por defecto, el proxy del mismo origen (next.config.mjs); NEXT_PUBLIC_VIGIA_API_URL lo salta con una URL directa.
+export const API_BASE_URL = process.env.NEXT_PUBLIC_VIGIA_API_URL || "/vigia-api"
 
 type Lectura = { indicador: string; valor: number; t_real: string; origen: "manual" | "sensor"; metodo: string | null }
 type Sintoma = { codigo: string; gravedad: number; t_real: string }

@@ -10,7 +10,7 @@ Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva p
 - Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + Recharts + componentes UI accesibles (`components/ui/*`).
 - Funciona **sin conexión**: el almacenamiento local (`lib/storage.ts`) usa IndexedDB (`vigia-db`) con respaldo en memoria y todas las vistas operan sin depender de red externa.
 - Motor híbrido: `packages/engine` (TypeScript puro, port 1:1 del simulador de Python, con test de paridad) evalúa las capas A, B y C y la regla de contexto. `lib/engine.ts` (`analizar(checkIns)`) lo aplica al escenario de partida (caso de referencia, trip-1) más los registros del usuario; `AppProvider` lo recalcula en `analisis` cada vez que se guarda un check-in, y cuerpo, tendencias, alertas e informes lo leen de ahí. Modo adaptación (días 1 a 14) y modo tormenta (del entorno del escenario). Tres niveles (`ok`, `watch`, `act`); solo `act` escala al oficial médico (§4.2, §5.1). Importa `packages/engine` por ruta relativa (`experimental.externalDir` en `next.config.mjs`). El pulso de `/device` sigue simulado a propósito: el reloj inteligente lo integra otro equipo, no este módulo.
-- Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`), al catálogo oficial de perfiles (`packages/schemas/perfiles.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `NEXT_PUBLIC_VIGIA_API_URL`): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles`, `/paneles/{nombre}`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` desde `apps/api` sin generar series sintéticas (`Math.sin`) si la API está apagada.
+- Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`), al catálogo oficial de perfiles (`packages/schemas/perfiles.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `lib/api-registro.ts`, que llaman a `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA`, leída al compilar, por defecto `http://127.0.0.1:8000`. Así, en la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles`, `/paneles/{nombre}`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` desde `apps/api` sin generar series sintéticas (`Math.sin`) si la API está apagada.
 - `lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).
 - El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden y se detiene en el primer fallo; reenviar es seguro. La identidad es un atajo: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (id de la API; `cd apps/api && python3 -m almacen sembrar` crea astronauta=1). Sin esa variable, o sin red, la app funciona solo con el almacén local. Los informes de `/reports` usan la cola real: al encolar se envía `POST /reportes` (en la demo el retardo se acorta a 1 min como en la vista local), se consulta `GET /reportes` cada 3 s y el estado y la cuenta atrás salen del servidor (`lib/cola.ts`); si llega una respuesta se muestra. Sin red o sin identidad, el informe usa el cálculo local; un informe encolado sin red no se reenvía después (la API no tiene idempotencia para reportes). El contenido del informe sigue solo en el almacén local: la cola guarda hora, retardo, estado y respuesta. `t_real` es la hora real del envío, no el día de misión elegido en la interfaz: la API lo ve como día 1 de la misión demo.
 - Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.
@@ -67,12 +67,12 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/ui/sheet.tsx](components/ui/sheet.tsx) | 138 | — |
 | [components/ui/slider.tsx](components/ui/slider.tsx) | 51 | — |
 | [lib/api-registro.test.ts](lib/api-registro.test.ts) | 39 | — |
-| [lib/api-registro.ts](lib/api-registro.ts) | 94 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
+| [lib/api-registro.ts](lib/api-registro.ts) | 95 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
 | [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
 | [lib/cola.ts](lib/cola.ts) | 28 | Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local. |
 | [lib/engine.test.ts](lib/engine.test.ts) | 68 | — |
 | [lib/engine.ts](lib/engine.ts) | 156 | Análisis de la app: el escenario de partida (caso de referencia, trip-1) más los registros |
-| [lib/etl-client.ts](lib/etl-client.ts) | 160 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
+| [lib/etl-client.ts](lib/etl-client.ts) | 161 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
 | [lib/mock/alerts.ts](lib/mock/alerts.ts) | 27 | — |
 | [lib/mock/crew.ts](lib/mock/crew.ts) | 11 | — |
 | [lib/mock/environment.ts](lib/mock/environment.ts) | 43 | — |
@@ -84,7 +84,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/strings.ts](lib/strings.ts) | 303 | — |
 | [lib/types.ts](lib/types.ts) | 163 | — |
 | [lib/utils.ts](lib/utils.ts) | 6 | — |
-| [next.config.mjs](next.config.mjs) | 14 | @type {import('next').NextConfig} |
+| [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |
 | [postcss.config.mjs](postcss.config.mjs) | 8 | @type {import('postcss-load-config').Config} |
 
 ### API pública
@@ -339,7 +339,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `NEXT_PUBLIC_VIGIA_API_URL`, `NEXT_PUBLIC_VIGIA_TRIPULANTE`
+- Variables de entorno: `NEXT_PUBLIC_VIGIA_API_URL`, `NEXT_PUBLIC_VIGIA_TRIPULANTE`, `VIGIA_API_INTERNA`
 
 ### Dependencias
 
