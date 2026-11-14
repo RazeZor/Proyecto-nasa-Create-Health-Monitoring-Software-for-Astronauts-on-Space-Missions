@@ -147,6 +147,8 @@ export interface Report {
   baseline: string
   environment: string
   actionTaken: string
+  /** id en la cola de la API; ausente si se encoló sin red o sin identidad */
+  serverId?: number
 }
 
 export interface ThreadMessage {

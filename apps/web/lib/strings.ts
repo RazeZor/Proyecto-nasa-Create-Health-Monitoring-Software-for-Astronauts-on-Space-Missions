@@ -210,6 +210,7 @@ export const S = {
     title: "Informes",
     subtitle: "Cola de salida al Cirujano de Vuelo. La entrega tarda el retardo de ida.",
     queue: "Cola de salida",
+    reply: "Respuesta de Tierra",
     thread: "Conversación con el Cirujano de Vuelo",
     send: "Encolar informe de hoy",
     queued: "En cola",
