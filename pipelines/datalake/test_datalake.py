@@ -63,6 +63,41 @@ class Almacen(unittest.TestCase):
             dl.ingest("goes")
         self.assertEqual(list(dl.ROOT.rglob("*.*")), [])
 
+    def test_radlab_consulta_cruda(self):
+        urls = []
+        dl._get = lambda url: urls.append(url) or (
+            b'timestamp,instrument_id,absorbed_dose_rate,dose_equivalent_rate\n'
+            b'"2024-05-10T00:00:42","DosTel1",4.3,,\n')
+        (e,) = dl.ingest("radlab", "spacecraft=ISS&timestamp>=2024-05-10T00:00&absorbed_dose_rate")
+        self.assertEqual(urls[0], dl.RADLAB_URL + "?spacecraft=ISS&timestamp>=2024-05-10T00:00&absorbed_dose_rate")
+        self.assertEqual(dl.read("radlab")[0]["t_real"], "2024-05-10T00:00:42Z")
+
+    def test_radlab_filtros_determinados_conservan_columnas_por_defecto(self):
+        urls = []
+        dl._get = lambda url: urls.append(url) or (
+            b"timestamp,instrument_id,absorbed_dose_rate,dose_equivalent_rate\n"
+            b"2024-05-10T00:00:42,DosTel1,4.3,\n")
+        dl.ingest("radlab", {"spacecraft": "ISS"})
+        self.assertEqual(
+            urls[0],
+            dl.RADLAB_URL + "?instrument_id=&absorbed_dose_rate=&dose_equivalent_rate=&spacecraft=ISS",
+        )
+
+    def test_radlab_acepta_respuesta_sin_dosis_equivalente(self):
+        raw = (b"timestamp,instrument_id,absorbed_dose_rate\n"
+               b"2024-05-10T00:00:42,DosTel1,4.3\n")
+        (fila,) = dl.clean_radlab(raw)
+        self.assertIsNone(fila["dose_equivalent_rate"])
+
+    def test_eda_telemetria_con_mision(self):
+        urls = []
+        dl._get = lambda url: urls.append(url) or json.dumps([
+            {"time": "2014-09-21T00:04:00Z", "temperature_iss": 23.4, "co2_iss": 2886.0, "milestones": None}]).encode()
+        dl.ingest("eda", {"mision": "RR-3", "start": "2014-09-21T00:00:00Z"})
+        self.assertEqual(urls[0], dl.EDA_URL.format(mision="RR-3") + "?start=2014-09-21T00%3A00%3A00Z")
+        self.assertEqual(dl.read("eda"), [{"t_real": "2014-09-21T00:04:00Z", "temperature_iss": 23.4,
+                                           "co2_iss": 2886.0, "mision": "RR-3"}])
+
     def test_read_sin_duplicados_y_con_rango(self):
         dl.ingest("goes")
         dl.ingest("goes")  # misma ventana dos veces
