@@ -43,6 +43,44 @@
           "simbolos": []
         },
         {
+          "ruta": "apps/api/almacen/alertas.py",
+          "lineas": 85,
+          "descripcion": "Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "anotar",
+              "tipo": "función",
+              "firma": "anotar(conn, actor_id, accion, entidad, entidad_id, detalle=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "escalar",
+              "tipo": "función",
+              "firma": "escalar(conn, alerta_id)",
+              "doc": ""
+            },
+            {
+              "nombre": "registrar_alerta",
+              "tipo": "función",
+              "firma": "registrar_alerta(conn, tripulante_id, indicador, capa, nivel, valor, t_real, explicacion, regla_version, tramo=None)",
+              "doc": "Guarda la alerta; una roja de la capa A escala en la misma transacción."
+            },
+            {
+              "nombre": "agregar_contexto",
+              "tipo": "función",
+              "firma": "agregar_contexto(conn, escalamiento_id, texto)",
+              "doc": "El astronauta añade contexto una sola vez; el trigger rechaza cambiarlo o editar lo demás."
+            },
+            {
+              "nombre": "alertas_visibles",
+              "tipo": "función",
+              "firma": "alertas_visibles(conn, actor_id, tripulante_id)",
+              "doc": "El dueño ve todas sus alertas; otro tripulante, solo las rojas escaladas a él. El acceso ajeno se audita."
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/almacen/base.py",
           "lineas": 18,
           "descripcion": "Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo).",
@@ -223,6 +261,20 @@
               "tipo": "función",
               "firma": "leer_seccion(nombre: str, seccion: Literal['dosis', 'protones', 'cabina', 'eventos'])",
               "doc": "Solo `dosis` (objeto o null), `protones`, `cabina` o `eventos` (listas). Otra sección da 422."
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_alertas.py",
+          "lineas": 108,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Alertas",
+              "tipo": "clase",
+              "firma": "Alertas(unittest.TestCase)",
+              "doc": ""
             }
           ]
         },

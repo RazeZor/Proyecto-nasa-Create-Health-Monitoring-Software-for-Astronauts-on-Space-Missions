@@ -35,11 +35,13 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | --- | --- | --- |
 | [almacen/__init__.py](almacen/__init__.py) | 1 | — |
 | [almacen/__main__.py](almacen/__main__.py) | 13 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
+| [almacen/alertas.py](almacen/alertas.py) | 85 | Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4). |
 | [almacen/base.py](almacen/base.py) | 18 | Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo). |
 | [almacen/db.py](almacen/db.py) | 36 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
 | [almacen/lecturas.py](almacen/lecturas.py) | 47 | Lecturas de indicadores y síntomas de un tripulante. |
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 76 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [main.py](main.py) | 127 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [test_almacen_alertas.py](test_almacen_alertas.py) | 108 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
 | [test_almacen_db.py](test_almacen_db.py) | 38 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 63 | — |
@@ -47,6 +49,14 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_api.py](test_api.py) | 89 | — |
 
 ### API pública
+
+**almacen/alertas.py**
+
+- función `anotar(conn, actor_id, accion, entidad, entidad_id, detalle=None)`
+- función `escalar(conn, alerta_id)`
+- función `registrar_alerta(conn, tripulante_id, indicador, capa, nivel, valor, t_real, explicacion, regla_version, tramo=None)`: Guarda la alerta; una roja de la capa A escala en la misma transacción.
+- función `agregar_contexto(conn, escalamiento_id, texto)`: El astronauta añade contexto una sola vez; el trigger rechaza cambiarlo o editar lo demás.
+- función `alertas_visibles(conn, actor_id, tripulante_id)`: El dueño ve todas sus alertas; otro tripulante, solo las rojas escaladas a él. El acceso ajeno se audita.
 
 **almacen/base.py**
 
@@ -104,6 +114,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 ### Tests
 
+- `apps/api/test_almacen_alertas.py`: 10 pruebas en Alertas (10)
 - `apps/api/test_almacen_base.py`: 4 pruebas en LineaBase (4)
 - `apps/api/test_almacen_db.py`: 4 pruebas en Esquema (4)
 - `apps/api/test_almacen_lecturas.py`: 7 pruebas en Lecturas (7)
