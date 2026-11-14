@@ -49,8 +49,8 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [rutas_registro.py](rutas_registro.py) | 213 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
-| [test_almacen_cola.py](test_almacen_cola.py) | 50 | — |
-| [test_almacen_db.py](test_almacen_db.py) | 83 | — |
+| [test_almacen_cola.py](test_almacen_cola.py) | 49 | — |
+| [test_almacen_db.py](test_almacen_db.py) | 82 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 63 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
 | [test_api.py](test_api.py) | 89 | — |

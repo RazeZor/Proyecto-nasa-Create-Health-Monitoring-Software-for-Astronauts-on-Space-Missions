@@ -204,7 +204,7 @@ def _uso_cli(texto):
         doc = ast.get_docstring(ast.parse(texto)) or ""
     except SyntaxError:
         return ""
-    lineas = [l for l in doc.splitlines() if l.strip().startswith(("python", "node", "npm", "npx"))]
+    lineas = [ln for ln in doc.splitlines() if ln.strip().startswith(("python", "node", "npm", "npx"))]
     return textwrap.dedent("\n".join(lineas)).strip("\n")
 
 
@@ -297,15 +297,15 @@ def leer_manual(texto):
     manual = bloque(texto, MANUAL_INI, MANUAL_FIN) or ""
     seccion, proposito, puntos, tags = None, "", [], []
     for linea in manual.splitlines():
-        l = linea.strip()
-        if l.startswith("## "):
-            seccion = l[3:].lower()
-        elif l.lower().startswith("tags:"):
-            tags = [t.strip() for t in l[5:].split(",") if t.strip()]
-        elif l and seccion == "propósito" and not proposito:
-            proposito = l
-        elif l.startswith("- ") and seccion == "puntos clave":
-            puntos.append(l[2:])
+        texto = linea.strip()
+        if texto.startswith("## "):
+            seccion = texto[3:].lower()
+        elif texto.lower().startswith("tags:"):
+            tags = [t.strip() for t in texto[5:].split(",") if t.strip()]
+        elif texto and seccion == "propósito" and not proposito:
+            proposito = texto
+        elif texto.startswith("- ") and seccion == "puntos clave":
+            puntos.append(texto[2:])
     return proposito, puntos, tags
 
 
