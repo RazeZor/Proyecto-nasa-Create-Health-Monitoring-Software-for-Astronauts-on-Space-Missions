@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "caso-referencia.schema.json",
+  "title": "Caso de referencia y resultado del simulador de VIGÍA",
+  "description": "Contrato de caso_referencia.json generado por pipelines/reanclaje para verificar paridad 1:1 en packages/engine (§5.5).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["semilla", "dias_prevuelo", "dias_vuelo", "naturaleza", "supuestos", "entorno_diario", "tripulantes", "alertas_esperadas"],
+  "properties": {
+    "semilla": { "type": "integer" },
+    "dias_prevuelo": { "type": "integer", "minimum": 7 },
+    "dias_vuelo": { "type": "integer", "minimum": 15 },
+    "naturaleza": { "const": "Simulado" },
+    "supuestos": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fc_desplazamiento_lpm", "sueno_desplazamiento_h", "pas_desplazamiento_mmHg", "tau_adaptacion_dias", "mad_min"],
+      "properties": {
+        "fc_desplazamiento_lpm": { "type": "number" },
+        "sueno_desplazamiento_h": { "type": "number" },
+        "pas_desplazamiento_mmHg": { "type": "number" },
+        "tau_adaptacion_dias": { "type": "number", "minimum": 1 },
+        "mad_min": {
+          "type": "object",
+          "required": ["fc", "pas", "glucosa", "sueno", "animo"],
+          "properties": {
+            "fc": { "type": "number" },
+            "pas": { "type": "number" },
+            "glucosa": { "type": "number" },
+            "sueno": { "type": "number" },
+            "animo": { "type": "number" }
+          }
+        }
+      }
+    },
+    "entorno_diario": {
+      "type": "array",
+      "minItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dia_mision", "co2_mmhg_max_horario", "flujo_protones_10mev_pfu", "modo_tormenta"],
+        "properties": {
+          "dia_mision": { "type": "integer", "minimum": 1 },
+          "co2_mmhg_max_horario": { "type": "number", "minimum": 0 },
+          "flujo_protones_10mev_pfu": { "type": "number", "minimum": 0 },
+          "modo_tormenta": { "type": "boolean" }
+        }
+      }
+    },
+    "tripulantes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "nombre", "rol", "lecturas"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "nombre": { "type": "string", "minLength": 1 },
+          "rol": { "enum": ["astronauta", "cmo", "comandante"] },
+          "lecturas": {
+            "type": "array",
+            "minItems": 30,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["dia_mision", "fc_reposo_lpm", "pas_mmHg", "pad_mmHg", "spo2_pct", "temp_central_c", "sueno_h", "animo_1_10", "sintomas", "durante_tormenta"],
+              "properties": {
+                "dia_mision": { "type": "integer" },
+                "fc_reposo_lpm": { "type": "number" },
+                "pas_mmHg": { "type": "number" },
+                "pad_mmHg": { "type": "number" },
+                "spo2_pct": { "type": "number" },
+                "temp_central_c": { "type": "number" },
+                "sueno_h": { "type": "number" },
+                "animo_1_10": { "type": "integer", "minimum": 1, "maximum": 10 },
+                "glucosa_mg_dl": { "type": ["number", "null"] },
+                "masa_kg": { "type": ["number", "null"] },
+                "sintomas": { "type": "array", "items": { "type": "string" } },
+                "durante_tormenta": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "alertas_esperadas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dia_mision", "tripulante_id", "capa", "nivel", "indicador", "valor", "escalada_auto"],
+        "properties": {
+          "dia_mision": { "type": "integer" },
+          "tripulante_id": { "type": "string" },
+          "capa": { "enum": ["A", "B", "C", "contexto"] },
+          "nivel": { "enum": ["ambar", "rojo"] },
+          "indicador": { "type": "string" },
+          "valor": { "type": ["number", "null"] },
+          "escalada_auto": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

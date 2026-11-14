@@ -1,0 +1,29 @@
+{
+  "nombre": "tormenta-mayo-2024",
+  "ventanas": [
+    {
+      "fuente": "radlab",
+      "desde": "2024-05-10T00:00:00Z",
+      "hasta": "2024-05-15T00:00:00Z",
+      "dia_mision": 20
+    },
+    {
+      "fuente": "donki",
+      "desde": "2024-05-09T00:00:00Z",
+      "hasta": "2024-05-15T00:00:00Z",
+      "dia_mision": 19
+    },
+    {
+      "fuente": "eda",
+      "desde": "2014-09-21T00:00:00Z",
+      "hasta": "2014-09-26T00:00:00Z",
+      "dia_mision": 20
+    },
+    {
+      "fuente": "goes",
+      "desde": "2026-11-13T12:00:00Z",
+      "hasta": "2026-11-14T17:00:00Z",
+      "dia_mision": 21
+    }
+  ]
+}

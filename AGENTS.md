@@ -72,7 +72,8 @@ cd pipelines/datalake && python index.py ingest goes     # ingesta (goes | donki
 cd pipelines/datalake && python index.py read goes       # filas limpias
 ```
 
-## Antes de abrir un PR
+## Antes de abrir un PR o hacer merge
 
+- **Sincronizar con `main`/`master` antes del push o merge (obligatorio):** aunque hayas partido de `main` al crear la rama, otro PR pudo haberse mergeado mientras trabajabas. Antes de abrir/actualizar el PR o hacer merge, corre siempre `git fetch origin && git merge origin/main` (o `origin/master` si ese es el nombre de la rama principal del remoto). Si hay conflictos en bloques `CONTEXT:AUTO` o `docs/context/`, quédate con cualquier versión y vuelve a correr `python tools/contextgen/contextgen.py` en lugar de editarlos a mano.
 - Tests en verde y `contextgen.py --check` sin cambios pendientes (CI lo exige).
 - Los puntos clave del `MODULE.md` que tocaste siguen siendo ciertos.

@@ -89,22 +89,31 @@ def _manifiesto():
     return json.loads(ruta.read_text()) if ruta.exists() else {}
 
 
+_PERFILES = Path(__file__).resolve().parents[2] / "packages" / "schemas" / "perfiles.json"
+
+
 def _nombres(es_panel):
-    # el manifiesto distingue por su resumen: un escenario cuenta `serie5min`; un panel, `dosis`
-    return sorted(c.removeprefix("panel-") if es_panel else c
-                  for c, e in _manifiesto().items() if ("serie5min" not in e) == es_panel)
+    # el manifiesto distingue por su resumen: un escenario cuenta `serie5min`; un panel, `dosis`; la simulación lleva `tipo`
+    if es_panel:
+        return sorted(c.removeprefix("panel-") for c, e in _manifiesto().items() if "dosis" in e)
+    return sorted(c for c, e in _manifiesto().items() if "serie5min" in e)
+
+
+def _leer_gold_verificado(clave, predicado, nombre_error=None):
+    entrada = _manifiesto().get(clave)  # la clave sale del manifiesto: no hay rutas arbitrarias
+    archivo = _gold() / f"{clave}.json"
+    if entrada is None or not predicado(entrada) or not archivo.exists():
+        raise HTTPException(404, t("api.error.gold_no_existe", nombre=nombre_error or clave))
+    contenido = archivo.read_bytes()
+    if hashlib.sha256(contenido).hexdigest() != entrada["sha256"]:
+        raise HTTPException(500, t("api.error.gold_alterado", nombre=nombre_error or clave))
+    return json.loads(contenido)
 
 
 def _cargar(nombre, es_panel):
     clave = f"panel-{nombre}" if es_panel else nombre  # el prefijo es del ETL, no de la API
-    entrada = _manifiesto().get(clave)  # la clave sale del manifiesto: no hay rutas arbitrarias
-    archivo = _gold() / f"{clave}.json"
-    if entrada is None or ("serie5min" not in entrada) != es_panel or not archivo.exists():
-        raise HTTPException(404, t("api.error.gold_no_existe", nombre=nombre))
-    contenido = archivo.read_bytes()
-    if hashlib.sha256(contenido).hexdigest() != entrada["sha256"]:
-        raise HTTPException(500, t("api.error.gold_alterado", nombre=nombre))
-    return json.loads(contenido)
+    campo = "dosis" if es_panel else "serie5min"
+    return _leer_gold_verificado(clave, lambda e: campo in e, nombre_error=nombre)
 
 
 def _filtrar(filas, fuente, variable, dia_mision):
@@ -172,3 +181,26 @@ def leer_panel(nombre: str):
 def leer_seccion(nombre: str, seccion: Literal["dosis", "protones", "cabina", "eventos"]):
     """Solo `dosis` (objeto o null), `protones`, `cabina` o `eventos` (listas). Otra sección da 422."""
     return _cargar(nombre, es_panel=True)[seccion]
+
+
+@app.get("/perfiles", tags=["referencia"], summary="Perfiles de misión y presiones de cabina")
+def leer_perfiles():
+    """Catálogo oficial de los 5 perfiles de misión (§3.3): presión de cabina en mmHg, latencia unidireccional y gravedad.
+    Compartido desde `packages/schemas/perfiles.json`."""
+    if not _PERFILES.exists():
+        raise HTTPException(404, t("api.error.gold_no_existe", nombre="perfiles"))
+    return json.loads(_PERFILES.read_text(encoding="utf-8"))
+
+
+@app.get("/simulacion/caso-referencia", tags=["simulacion"], responses=ERRORES, summary="Caso de referencia del simulador")
+def leer_caso_referencia():
+    """Caso determinista (semilla 2026) con 14 días pre-vuelo, 30 de vuelo, 4 tripulantes (A1, A2, A3 y control) y
+    alertas esperadas para verificar paridad 1:1 del motor híbrido (§5.5). Verificado con SHA-256."""
+    return _leer_gold_verificado("caso_referencia", lambda e: e.get("tipo") == "simulacion")
+
+
+@app.get("/simulacion/kpi", tags=["simulacion"], responses=ERRORES, summary="KPI del simulador reproducible")
+def leer_kpi_simulacion():
+    """Métricas agregadas del protocolo de 500 misiones con anomalía + 500 de control + semilla 2027 (§5.5).
+    Verificado con SHA-256 en el manifiesto Gold."""
+    return _leer_gold_verificado("kpi", lambda e: e.get("tipo") == "simulacion")

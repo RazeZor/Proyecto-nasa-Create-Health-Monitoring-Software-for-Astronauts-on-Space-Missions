@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "perfiles.schema.json",
+  "title": "Catálogo de perfiles de misión de VIGÍA",
+  "description": "Parámetros físicos, atmosféricos, gravitacionales y de retardo por perfil nominal (§3.3).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "estacion",
+    "transito",
+    "transito_acoplado",
+    "superficie_lunar",
+    "superficie_marciana"
+  ],
+  "properties": {
+    "estacion": { "$ref": "#/$defs/perfil" },
+    "transito": { "$ref": "#/$defs/perfil" },
+    "transito_acoplado": { "$ref": "#/$defs/perfil" },
+    "superficie_lunar": { "$ref": "#/$defs/perfil" },
+    "superficie_marciana": { "$ref": "#/$defs/perfil" }
+  },
+  "$defs": {
+    "perfil": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "nombre",
+        "grupo_ficha",
+        "presion_cabina_mmHg",
+        "o2_pct",
+        "g_rel",
+        "gravedad_etiqueta",
+        "co2_unidad",
+        "co2_limite_mmHg",
+        "masa_metodo",
+        "bascula_calibrada_local",
+        "retardo_s",
+        "retardo_demo_min",
+        "detector_radlab"
+      ],
+      "properties": {
+        "id": { "enum": ["estacion", "transito", "transito_acoplado", "superficie_lunar", "superficie_marciana"] },
+        "nombre": { "type": "string", "minLength": 1 },
+        "grupo_ficha": { "enum": ["estacion", "transito", "superficie"] },
+        "presion_cabina_mmHg": { "enum": [760, 527, 424] },
+        "o2_pct": { "type": "number", "minimum": 15, "maximum": 100 },
+        "g_rel": { "type": "number", "minimum": 0, "maximum": 2 },
+        "gravedad_etiqueta": { "type": "string", "minLength": 1 },
+        "co2_unidad": { "enum": ["ppm", "mmHg"] },
+        "co2_limite_mmHg": { "type": "number", "minimum": 0.5, "maximum": 10 },
+        "masa_metodo": { "enum": ["inercial", "gravimetrica"] },
+        "bascula_calibrada_local": { "type": "boolean" },
+        "retardo_s": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "retardo_demo_min": { "type": "number", "minimum": 0 },
+        "detector_radlab": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

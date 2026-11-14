@@ -20,13 +20,15 @@ ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA),
 - `ALTEA-Survey` es el único instrumento de RadLab con `dose_equivalent_rate` (408 321 filas, cada minuto, de 2010-09 a 2012-06 en la ISS; revisado con una consulta a toda la base). `escenarios/dosis-equivalente.json` lo usa: un día completo (2011-11-16, cobertura 1,0) da 913 µSv, sin `orientativa`. Ese día está por encima de los 0,2 a 0,5 mSv/día que cita el informe; es un día y los datos son preliminares.
 - El panel repite `ventanas` (fuente y fechas reales) y un `aviso`: que series de fechas reales distintas caigan en el mismo día de misión es decisión del escenario, no un hecho observado (§3.4 regla 4).
 - GOES separa la serie por satélite (`G18 >=10 MeV`) para no mezclar satélites en el mismo paso.
-- Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`. Sus mensajes de error están en español sin pasar por `packages/i18n`.
+- Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...` y `index.py simular [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.
+- `simulacion.py` implementa el protocolo reproducible del informe §5.5 (14 días previos al vuelo + 30 días de misión, 4 tripulantes, semilla principal `2026` y validación `2027`, adaptación `w(d) = 1 - exp(-d / 4)`, anomalías `A1`, `A2` y `A3`, motor de referencia NEWS2 + MAD + CUSUM) y publica `gold/caso_referencia.json` y `gold/kpi.json` con `tipo: "simulacion"` en `gold/manifest.json`.
+- `escenarios/mision-vigia.json` y `escenarios/tormenta-mayo-2024.json` definen escenarios multi-día reales (5 días continuos de `ALTEA-Survey` / RadLab ISS mayo 2024, 5 días de `EDA RR-1`, 14 eventos `DONKI` SEP de mayo 2024 y serie `GOES-18`).
 
 ## Relación con el informe
 
-- §3.4 Sincronización temporal (reanclaje, doble marca, rejilla común, resúmenes diarios). §4.1 flujo de extremo a extremo y §4.2 capa de reanclaje.
+- §3.4 Sincronización temporal (reanclaje, doble marca, rejilla común, resúmenes diarios). §4.1 flujo de extremo a extremo, §4.2 capa de reanclaje y §5.5 protocolo de simulación reproducible.
 
-tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, flujo-protones
+tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, flujo-protones, simulacion, kpi
 <!-- CONTEXT:MANUAL:END -->
 
 <!-- CONTEXT:AUTO:START -->
@@ -38,11 +40,13 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [index.py](index.py) | 31 | CLI del ETL de reanclaje. |
+| [index.py](index.py) | 36 | CLI del ETL de reanclaje. |
 | [panel.py](panel.py) | 82 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
 | [reanclaje.py](reanclaje.py) | 147 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
+| [simulacion.py](simulacion.py) | 468 | Simulador reproducible y generación de caso de referencia para VIGÍA (§5.5). |
 | [test_panel.py](test_panel.py) | 71 | — |
 | [test_reanclaje.py](test_reanclaje.py) | 87 | — |
+| [test_simulacion.py](test_simulacion.py) | 54 | — |
 
 ### API pública
 
@@ -62,6 +66,14 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 - función `construir(escenario)`: Genera y guarda el gold del escenario. Si falta curated en una ventana no escribe nada.
 - función `guardar(clave, datos, destino=None, **resumen)`: Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en
 
+**simulacion.py**
+
+- función `evaluar_tripulante(tripulante, entorno_por_dia)`: Ejecuta el motor híbrido de referencia (Capas A, B, C y contexto) sobre un tripulante.
+- función `generar_mision(rng, asignaciones=None, con_tormenta=False)`: Genera una misión completa (4 tripulantes x 44 días) y calcula sus alertas.
+- función `generar_caso_referencia(semilla=SEMILLA_DEFECTO)`: Construye el caso de referencia único con trip-1=A1, trip-2=A2, trip-3=A3, trip-4=nominal.
+- función `ejecutar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)`: Ejecuta el protocolo completo: 500 anomalías (por tipo) + 500 control + media intensidad + semilla 2027.
+- función `publicar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)`: Genera y persiste `caso_referencia.json` y `kpi.json` en `gold/` con SHA-256.
+
 ### Puntos de entrada
 
 - `pipelines/reanclaje/index.py`
@@ -69,17 +81,19 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 ```
 python3 index.py build <escenario.json>   curated -> gold (ver escenarios/ejemplo.json)
 python3 index.py panel <escenario.json> [destino.json]   gold -> panel de entorno para la app
+python3 index.py simular [n_misiones]     genera caso_referencia.json y kpi.json en gold/
 python3 index.py manifest                 SHA-256 y tamaños de cada escenario generado
 ```
 
 ### Dependencias
 
-- Internas: `panel`, `reanclaje`
-- Externas: `datalake`
-- Biblioteca estándar: `collections`, `datetime`, `hashlib`, `json`, `pathlib`, `sys`, `tempfile`, `unittest`
+- Internas: `panel`, `reanclaje`, `simulacion`
+- Externas: `datalake`, `validador`
+- Biblioteca estándar: `collections`, `datetime`, `hashlib`, `json`, `math`, `pathlib`, `random`, `statistics`, `sys`, `tempfile`, `unittest`
 
 ### Tests
 
 - `pipelines/reanclaje/test_panel.py`: 6 pruebas en Panel (5), Publicar (1)
 - `pipelines/reanclaje/test_reanclaje.py`: 8 pruebas en Pasos (6), Construir (2)
+- `pipelines/reanclaje/test_simulacion.py`: 3 pruebas en Simulacion (3)
 <!-- CONTEXT:AUTO:END -->

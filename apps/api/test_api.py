@@ -85,5 +85,28 @@ class Api(unittest.TestCase):
         (self.gold / "manifest.json").unlink()
         self.assertEqual(self.cliente.get("/escenarios").json(), [])
 
+    def test_perfiles_y_simulacion_y_no_mezclan_con_paneles(self):
+        perfiles = self.cliente.get("/perfiles").json()
+        self.assertEqual(len(perfiles), 5)
+        self.assertEqual(perfiles["transito"]["presion_cabina_mmHg"], 760)
+        self.assertEqual(perfiles["transito_acoplado"]["presion_cabina_mmHg"], 527)
+        self.assertEqual(perfiles["superficie_marciana"]["presion_cabina_mmHg"], 424)
+        self.publicar_sim("caso_referencia", {"semilla": 2026, "alertas_esperadas": []})
+        self.publicar_sim("kpi", {"misiones": 500})
+        self.assertNotIn("caso_referencia", self.cliente.get("/paneles").json())
+        self.assertNotIn("kpi", self.cliente.get("/escenarios").json())
+        self.assertEqual(self.cliente.get("/simulacion/caso-referencia").json()["semilla"], 2026)
+        self.assertEqual(self.cliente.get("/simulacion/kpi").json()["misiones"], 500)
+        (self.gold / "kpi.json").write_text('{"misiones": 0}')
+        self.assertEqual(self.cliente.get("/simulacion/kpi").status_code, 500)
+
+    def publicar_sim(self, clave, datos):
+        contenido = json.dumps(datos).encode()
+        (self.gold / f"{clave}.json").write_bytes(contenido)
+        ruta = self.gold / "manifest.json"
+        manifiesto = json.loads(ruta.read_text()) if ruta.exists() else {}
+        manifiesto[clave] = {"sha256": hashlib.sha256(contenido).hexdigest(), "tipo": "simulacion"}
+        ruta.write_text(json.dumps(manifiesto))
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,50 +1,13 @@
-"""Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar).
-
-shortcut: valida solo los términos que usa el esquema (type, enum, required, pattern, minLength,
-minItems, uniqueItems, additionalProperties). Si el esquema crece, usar una biblioteca de JSON Schema.
-"""
+"""Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar)."""
 import json
-import re
 import unittest
 from pathlib import Path
+
+from validador import validar
 
 RAIZ = Path(__file__).resolve().parents[2]
 ESQUEMA = json.loads((Path(__file__).parent / "ficha.schema.json").read_text(encoding="utf-8"))
 FICHAS = RAIZ / "apps" / "web" / "public" / "fichas"
-TIPOS = {"string": str, "object": dict, "array": list, "null": type(None)}
-
-
-def validar(valor, esquema, ruta="ficha"):
-    """Lista de errores de `valor` frente a `esquema`; vacía si es válido."""
-    errores = []
-    if "enum" in esquema and valor not in esquema["enum"]:
-        return [f"{ruta}: {valor!r} no está en {esquema['enum']}"]
-    tipos = esquema.get("type")
-    if tipos:
-        tipos = [tipos] if isinstance(tipos, str) else tipos
-        if not any(isinstance(valor, TIPOS[t]) for t in tipos):
-            return [f"{ruta}: se esperaba {tipos}, llegó {type(valor).__name__}"]
-    if isinstance(valor, str):
-        if len(valor) < esquema.get("minLength", 0):
-            errores.append(f"{ruta}: vacío")
-        if "pattern" in esquema and not re.search(esquema["pattern"], valor):
-            errores.append(f"{ruta}: {valor!r} no cumple {esquema['pattern']}")
-    if isinstance(valor, list):
-        if len(valor) < esquema.get("minItems", 0):
-            errores.append(f"{ruta}: necesita al menos {esquema['minItems']} elemento(s)")
-        if esquema.get("uniqueItems") and len({json.dumps(v, sort_keys=True) for v in valor}) != len(valor):
-            errores.append(f"{ruta}: elementos repetidos")
-        for i, v in enumerate(valor):
-            errores += validar(v, esquema.get("items", {}), f"{ruta}[{i}]")
-    if isinstance(valor, dict):
-        props = esquema.get("properties", {})
-        errores += [f"{ruta}: falta `{k}`" for k in esquema.get("required", []) if k not in valor]
-        if esquema.get("additionalProperties") is False:
-            errores += [f"{ruta}: campo no permitido `{k}`" for k in valor if k not in props]
-        for k, v in valor.items():
-            if k in props:
-                errores += validar(v, props[k], f"{ruta}.{k}")
-    return errores
 
 
 class Fichas(unittest.TestCase):

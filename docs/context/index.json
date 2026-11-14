@@ -6,9 +6,9 @@
       "proposito": "API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`).",
       "puntos_clave": [
         "No importa el pipeline (regla 3 de la arquitectura): lee `<DATALAKE_DIR>/gold/*.json` y `gold/manifest.json`. No ejecuta el ETL ni escribe nada; para generar datos se corre `pipelines/reanclaje/index.py`.",
-        "Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`.",
+        "Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`; `GET /perfiles`; `GET /simulacion/caso-referencia` y `GET /simulacion/kpi`.",
         "Documentación para agentes: `AGENTES.md` (cómo leer los datos y sus trampas) y `GET /openapi.json` (contrato, con resumen y descripción en cada ruta). Un test exige que cada ruta tenga ambos y aparezca en la guía; al agregar una ruta, documéntala en las dos partes.",
-        "Escenario o panel se distingue por el resumen del manifiesto del ETL (`serie5min` = escenario, `dosis` = panel), no por el nombre: un escenario puede llamarse `panel-demo`. La API agrega `panel-` por dentro: el panel del escenario `x` es `/paneles/x` (archivo `panel-x.json`). Pedir un escenario como panel, o al revés, da 404.",
+        "Escenario, panel o simulación se distinguen por el resumen del manifiesto del ETL (`serie5min` = escenario, `dosis` = panel, `tipo == \"simulacion\"` = simulación), no por el nombre: un escenario puede llamarse `panel-demo` y los archivos de simulación no aparecen en `/paneles` ni `/escenarios`. La API agrega `panel-` por dentro: el panel del escenario `x` es `/paneles/x` (archivo `panel-x.json`). Pedir un tipo como otro da 404.",
         "La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).",
         "Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.",
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
@@ -263,7 +263,7 @@
         },
         {
           "ruta": "apps/api/main.py",
-          "lineas": 174,
+          "lineas": 206,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -326,6 +326,24 @@
               "tipo": "función",
               "firma": "leer_seccion(nombre: str, seccion: Literal['dosis', 'protones', 'cabina', 'eventos'])",
               "doc": "Solo `dosis` (objeto o null), `protones`, `cabina` o `eventos` (listas). Otra sección da 422."
+            },
+            {
+              "nombre": "leer_perfiles",
+              "tipo": "función",
+              "firma": "leer_perfiles()",
+              "doc": "Catálogo oficial de los 5 perfiles de misión (§3.3): presión de cabina en mmHg, latencia unidireccional y gravedad."
+            },
+            {
+              "nombre": "leer_caso_referencia",
+              "tipo": "función",
+              "firma": "leer_caso_referencia()",
+              "doc": "Caso determinista (semilla 2026) con 14 días pre-vuelo, 30 de vuelo, 4 tripulantes (A1, A2, A3 y control) y"
+            },
+            {
+              "nombre": "leer_kpi_simulacion",
+              "tipo": "función",
+              "firma": "leer_kpi_simulacion()",
+              "doc": "Métricas agregadas del protocolo de 500 misiones con anomalía + 500 de control + semilla 2027 (§5.5)."
             }
           ]
         },
@@ -579,7 +597,7 @@
         },
         {
           "ruta": "apps/api/test_api.py",
-          "lineas": 89,
+          "lineas": 112,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -614,10 +632,10 @@
         "Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + Recharts + componentes UI accesibles (`components/ui/*`).",
         "Funciona **sin conexión**: el almacenamiento local (`lib/storage.ts`) usa IndexedDB (`vigia-db`) con respaldo en memoria y todas las vistas operan sin depender de red externa.",
         "Motor híbrido (`lib/engine.ts`): evalúa las capas A (seguridad clínica), B (desviación de línea base personal) y C (deriva lenta), además del modo adaptación (días 1 a 14) y modo tormenta solar (≥10 pfu). Muestra 3 niveles (`ok`, `watch`, `act`); solo el nivel `act` (rojo) escala automáticamente al oficial médico (§4.2, §5.1).",
-        "Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `NEXT_PUBLIC_VIGIA_API_URL`): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles` y `/paneles/{nombre}` (`panel-demo`, `dosis-equivalente`) desde `apps/api` y cae automáticamente a `PANELES_RESPALDO` si la API está apagada o sin red.",
+        "Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`), al catálogo oficial de perfiles (`packages/schemas/perfiles.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `NEXT_PUBLIC_VIGIA_API_URL`): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles`, `/paneles/{nombre}`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` desde `apps/api` sin generar series sintéticas (`Math.sin`) si la API está apagada.",
         "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
         "El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden y se detiene en el primer fallo; reenviar es seguro. La identidad es un atajo: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (id de la API; `cd apps/api && python3 -m almacen sembrar` crea astronauta=1). Sin esa variable, o sin red, la app funciona solo con el almacén local. Los informes de `/reports` usan la cola real: al encolar se envía `POST /reportes` (en la demo el retardo se acorta a 1 min como en la vista local), se consulta `GET /reportes` cada 3 s y el estado y la cuenta atrás salen del servidor (`lib/cola.ts`); si llega una respuesta se muestra. Sin red o sin identidad, el informe usa el cálculo local; un informe encolado sin red no se reenvía después (la API no tiene idempotencia para reportes). El contenido del informe sigue solo en el almacén local: la cola guarda hora, retardo, estado y respuesta. `t_real` es la hora real del envío, no el día de misión elegido en la interfaz: la API lo ve como día 1 de la misión demo.",
-        "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`, `transit`, `transit-docked`, `lunar`, `mars`) con conversión de CO2 de ppm a mmHg según la presión total de cabina (760, 527 y 424 mmHg).",
+        "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.",
         "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
       ],
       "tags": [
@@ -906,7 +924,7 @@
         },
         {
           "ruta": "apps/web/components/environment/environment-view.tsx",
-          "lineas": 224,
+          "lineas": 363,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -920,7 +938,7 @@
         },
         {
           "ruta": "apps/web/components/reports/reports-view.tsx",
-          "lineas": 126,
+          "lineas": 137,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1331,7 +1349,7 @@
         },
         {
           "ruta": "apps/web/lib/etl-client.ts",
-          "lineas": 178,
+          "lineas": 160,
           "descripcion": "Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -1384,9 +1402,15 @@
               "doc": ""
             },
             {
-              "nombre": "PANELES_RESPALDO",
-              "tipo": "constante",
-              "firma": "PANELES_RESPALDO",
+              "nombre": "ResumenDiarioEtl",
+              "tipo": "interfaz",
+              "firma": "ResumenDiarioEtl",
+              "doc": ""
+            },
+            {
+              "nombre": "KpiSimulacionEtl",
+              "tipo": "interfaz",
+              "firma": "KpiSimulacionEtl",
               "doc": ""
             },
             {
@@ -1405,6 +1429,18 @@
               "nombre": "cargarPanelGold",
               "tipo": "función",
               "firma": "cargarPanelGold",
+              "doc": ""
+            },
+            {
+              "nombre": "cargarEscenarioDiario",
+              "tipo": "función",
+              "firma": "cargarEscenarioDiario",
+              "doc": ""
+            },
+            {
+              "nombre": "cargarKpiSimulacion",
+              "tipo": "función",
+              "firma": "cargarKpiSimulacion",
               "doc": ""
             }
           ]
@@ -1487,7 +1523,7 @@
         },
         {
           "ruta": "apps/web/lib/mock/environment.ts",
-          "lineas": 70,
+          "lineas": 43,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1525,18 +1561,6 @@
               "nombre": "ENV_SOURCES",
               "tipo": "constante",
               "firma": "ENV_SOURCES",
-              "doc": ""
-            },
-            {
-              "nombre": "ENV",
-              "tipo": "constante",
-              "firma": "ENV",
-              "doc": ""
-            },
-            {
-              "nombre": "SOLAR_EVENTS",
-              "tipo": "constante",
-              "firma": "SOLAR_EVENTS",
               "doc": ""
             },
             {
@@ -1954,44 +1978,57 @@
     },
     {
       "modulo": "packages/schemas",
-      "proposito": "Contratos de datos entre `pipelines/` y `apps/`. Hoy contiene el esquema de las fichas de indicador y la prueba que valida las fichas publicadas en `apps/web/public/fichas/`.",
+      "proposito": "Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`).",
       "puntos_clave": [
+        "`validador.py` implementa validación JSON Schema con biblioteca estándar (soporte de `$ref` locales entre esquemas de `packages/schemas/`) para que ningún paquete ni pipeline añada dependencias externas.",
         "`ficha.schema.json` define los seis campos del reto (qué es, cómo se mide en vuelo, por qué hace falta, qué peligro lo altera, cuándo avisar, qué prevención) más `fuentes`. `como_se_mide_en_vuelo` se separa por perfil: `estacion`, `transito` y `superficie`.",
-        "`peligro` es una lista con los cinco peligros del HRP (`radiacion`, `aislamiento`, `distancia`, `gravedad_alterada`, `entorno_cerrado`). El informe §3.2 lo muestra como texto suelto; aquí es lista porque un indicador (síntomas) responde a más de uno.",
-        "Un `null` en `unidad`, `referencia_en_vuelo` o `prevencion` significa que el informe no lo respalda: la app no debe inventarlo. Hoy 8 de las 10 fichas tienen `prevencion` en `null`.",
-        "Cada ficha cita al menos una fuente. `url: null` es una cita al informe técnico sin enlace verificado (la ficha de glucosa solo tiene esa).",
-        "Los datos viven en `apps/web/public/fichas/<id>.json`, con `index.json` como lista de ids; el nombre del archivo es el `id`. Las fichas están solo en español.",
-        "`test_fichas.py` usa un validador mínimo con solo biblioteca estándar: cubre los términos que usa el esquema. Si el esquema crece, cambiar a una biblioteca de JSON Schema.",
-        "`vocabulario.json` es el contrato de vocabulario entre la interfaz (claves `ui` en inglés) y la API (claves de la base, en español): indicadores con su zona del cuerpo, niveles, capas, roles, perfiles, retardo por perfil y síntomas. Las claves de la API son las canónicas; la interfaz traduce en el borde. `test_vocabulario.py` lo compara con la migración SQL, las fichas y `apps/web/lib/types.ts`: si un lado cambia sin el contrato, falla. Sus apartados `sin_equivalente` y `pendiente_en_la_base` listan lo que aún no encaja (diastólica, retardo 0 min, códigos de síntoma libres).",
-        "Si cambia el esquema, se versiona: las apps leen estos archivos sin importar código de `packages/`."
+        "`perfiles.schema.json` y `perfiles.json` fijan los 5 perfiles de misión (§3.3 del informe): presión de cabina (`760`, `527`, `424 mmHg`), latencia unidireccional y gravedad (`microgravedad`, `lunar`, `marciana`). `apps/` y `pipelines/` consumen los mismos valores sin duplicarlos.",
+        "`lectura.schema.json` define el contrato diario de check-in del tripulante (`dia_mision`, signos vitales, sueño, síntomas e estado conductual, contexto CO₂/tormenta y doble marca temporal con `t_real` UTC).",
+        "`entorno-gold.schema.json` valida los JSON producidos por `pipelines/reanclaje` (escenarios `serie5min`/`diario` y paneles `panel-*` con dosis acumulada, protones, cabina y eventos DONKI).",
+        "`caso-referencia.schema.json` valida los casos de prueba reproducibles y KPI de la simulación (`pipelines/reanclaje/simulacion.py`) para verificar de forma idéntica el futuro motor híbrido (`packages/engine`).",
+        "`vocabulario.json` es el contrato de vocabulario entre la interfaz (claves `ui` en inglés) y la API (claves de la base, en español): indicadores con su zona del cuerpo, niveles, capas, roles, perfiles, retardo por perfil y síntomas. Las claves de la API son las canónicas; la interfaz traduce en el borde. `test_vocabulario.py` lo compara con la migración SQL, las fichas y `apps/web/lib/types.ts`: si un lado cambia sin el contrato, falla. Sus apartados `sin_equivalente` y `notas` documentan lo que aún no encaja (diastólica).",
+        "`peligro` es una lista con los cinco peligros del HRP (`radiacion`, `aislamiento`, `distancia`, `gravedad_alterada`, `entorno_cerrado`). Un `null` en `unidad`, `referencia_en_vuelo` o `prevencion` significa que el informe no lo respalda.",
+        "Los datos de fichas viven en `apps/web/public/fichas/<id>.json` con `index.json`. Si cambia cualquier esquema, se versiona aquí antes de tocar los consumidores."
       ],
       "tags": [
         "schemas",
         "contratos",
         "fichas",
-        "indicadores",
+        "perfiles",
+        "lectura",
+        "entorno",
+        "gold",
+        "simulacion",
+        "vocabulario",
         "json-schema",
-        "peligros",
         "hrp"
       ],
       "env": [],
       "archivos": [
         {
           "ruta": "packages/schemas/test_fichas.py",
-          "lineas": 79,
+          "lineas": 42,
           "descripcion": "Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar).",
           "test": true,
           "simbolos": [
             {
-              "nombre": "validar",
-              "tipo": "función",
-              "firma": "validar(valor, esquema, ruta='ficha')",
-              "doc": "Lista de errores de `valor` frente a `esquema`; vacía si es válido."
-            },
-            {
               "nombre": "Fichas",
               "tipo": "clase",
               "firma": "Fichas(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "packages/schemas/test_schemas.py",
+          "lineas": 122,
+          "descripcion": "Pruebas de contrato para perfiles, lecturas, entorno Gold y caso de referencia.",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Contratos",
+              "tipo": "clase",
+              "firma": "Contratos(unittest.TestCase)",
               "doc": ""
             }
           ]
@@ -2019,6 +2056,20 @@
               "tipo": "clase",
               "firma": "Vocabulario(unittest.TestCase)",
               "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "packages/schemas/validador.py",
+          "lineas": 82,
+          "descripcion": "Validador mínimo de JSON Schema (Draft 2020-12) con solo biblioteca estándar.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "validar",
+              "tipo": "función",
+              "firma": "validar(valor, esquema, ruta='dato', _raiz=None)",
+              "doc": "Lista de errores de `valor` frente a `esquema`; vacía si es válido."
             }
           ]
         }
@@ -2159,7 +2210,9 @@
         "`ALTEA-Survey` es el único instrumento de RadLab con `dose_equivalent_rate` (408 321 filas, cada minuto, de 2010-09 a 2012-06 en la ISS; revisado con una consulta a toda la base). `escenarios/dosis-equivalente.json` lo usa: un día completo (2011-11-16, cobertura 1,0) da 913 µSv, sin `orientativa`. Ese día está por encima de los 0,2 a 0,5 mSv/día que cita el informe; es un día y los datos son preliminares.",
         "El panel repite `ventanas` (fuente y fechas reales) y un `aviso`: que series de fechas reales distintas caigan en el mismo día de misión es decisión del escenario, no un hecho observado (§3.4 regla 4).",
         "GOES separa la serie por satélite (`G18 >=10 MeV`) para no mezclar satélites en el mismo paso.",
-        "Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`. Sus mensajes de error están en español sin pasar por `packages/i18n`."
+        "Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...` y `index.py simular [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.",
+        "`simulacion.py` implementa el protocolo reproducible del informe §5.5 (14 días previos al vuelo + 30 días de misión, 4 tripulantes, semilla principal `2026` y validación `2027`, adaptación `w(d) = 1 - exp(-d / 4)`, anomalías `A1`, `A2` y `A3`, motor de referencia NEWS2 + MAD + CUSUM) y publica `gold/caso_referencia.json` y `gold/kpi.json` con `tipo: \"simulacion\"` en `gold/manifest.json`.",
+        "`escenarios/mision-vigia.json` y `escenarios/tormenta-mayo-2024.json` definen escenarios multi-día reales (5 días continuos de `ALTEA-Survey` / RadLab ISS mayo 2024, 5 días de `EDA RR-1`, 14 eventos `DONKI` SEP de mayo 2024 y serie `GOES-18`)."
       ],
       "tags": [
         "etl",
@@ -2171,13 +2224,15 @@
         "t_real",
         "dosis",
         "co2",
-        "flujo-protones"
+        "flujo-protones",
+        "simulacion",
+        "kpi"
       ],
       "env": [],
       "archivos": [
         {
           "ruta": "pipelines/reanclaje/index.py",
-          "lineas": 31,
+          "lineas": 36,
           "descripcion": "CLI del ETL de reanclaje.",
           "test": false,
           "simbolos": []
@@ -2259,6 +2314,44 @@
           ]
         },
         {
+          "ruta": "pipelines/reanclaje/simulacion.py",
+          "lineas": 468,
+          "descripcion": "Simulador reproducible y generación de caso de referencia para VIGÍA (§5.5).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "evaluar_tripulante",
+              "tipo": "función",
+              "firma": "evaluar_tripulante(tripulante, entorno_por_dia)",
+              "doc": "Ejecuta el motor híbrido de referencia (Capas A, B, C y contexto) sobre un tripulante."
+            },
+            {
+              "nombre": "generar_mision",
+              "tipo": "función",
+              "firma": "generar_mision(rng, asignaciones=None, con_tormenta=False)",
+              "doc": "Genera una misión completa (4 tripulantes x 44 días) y calcula sus alertas."
+            },
+            {
+              "nombre": "generar_caso_referencia",
+              "tipo": "función",
+              "firma": "generar_caso_referencia(semilla=SEMILLA_DEFECTO)",
+              "doc": "Construye el caso de referencia único con trip-1=A1, trip-2=A2, trip-3=A3, trip-4=nominal."
+            },
+            {
+              "nombre": "ejecutar_simulacion",
+              "tipo": "función",
+              "firma": "ejecutar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)",
+              "doc": "Ejecuta el protocolo completo: 500 anomalías (por tipo) + 500 control + media intensidad + semilla 2027."
+            },
+            {
+              "nombre": "publicar_simulacion",
+              "tipo": "función",
+              "firma": "publicar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)",
+              "doc": "Genera y persiste `caso_referencia.json` y `kpi.json` en `gold/` con SHA-256."
+            }
+          ]
+        },
+        {
           "ruta": "pipelines/reanclaje/test_panel.py",
           "lineas": 71,
           "descripcion": "",
@@ -2306,6 +2399,20 @@
               "nombre": "Construir",
               "tipo": "clase",
               "firma": "Construir(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "pipelines/reanclaje/test_simulacion.py",
+          "lineas": 54,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Simulacion",
+              "tipo": "clase",
+              "firma": "Simulacion(unittest.TestCase)",
               "doc": ""
             }
           ]

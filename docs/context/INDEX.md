@@ -9,9 +9,9 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 19 |
 | [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 53 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
-| [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos entre `pipelines/` y `apps/`. Hoy contiene el esquema de las fichas de indicador y la prueba que valida las fichas publicadas en `apps/web/public/fichas/`. | schemas, contratos, fichas, indicadores, json-schema, peligros, hrp | 2 |
+| [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
 | [pipelines/datalake](../../pipelines/datalake/MODULE.md) | Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLab y EDA, con un CLI para ingerir y leer. | ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli | 3 |
-| [pipelines/reanclaje](../../pipelines/reanclaje/MODULE.md) | ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA), reancla cada ventana real a la línea de tiempo de misión y publica la zona gold y el JSON del panel de entorno que consume la app. | etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, flujo-protones | 5 |
+| [pipelines/reanclaje](../../pipelines/reanclaje/MODULE.md) | ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA), reancla cada ventana real a la línea de tiempo de misión y publica la zona gold y el JSON del panel de entorno que consume la app. | etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, flujo-protones, simulacion, kpi | 7 |
 | [tools/contextgen](../../tools/contextgen/MODULE.md) | Genera el contexto del repositorio para cualquier asistente de IA: los `MODULE.md`, `docs/context/` y los adaptadores por herramienta. | herramientas, documentación, contexto, ia, agents.md, ci, pre-commit | 2 |
 | [tools/validar-referencias](../../tools/validar-referencias/MODULE.md) | Comprueba que las referencias científicas del informe existen y dicen lo que citamos. Consulta Crossref y Europe PMC para cada DOI de `referencias.json`. El resultado legible está en [documentacion/referencias-validadas.md](../../documentacion/referencias-validadas.md). | herramientas, referencias, papers, doi, crossref, europe-pmc, validación, informe | 2 |
 
@@ -50,6 +50,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Cola` | clase | [apps/api/test_almacen_cola.py](../../apps/api/test_almacen_cola.py) |
 | `Construir` | clase | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
 | `ContextoIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `Contratos` | clase | [packages/schemas/test_schemas.py](../../packages/schemas/test_schemas.py) |
 | `DailyVitals` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `DelayCountdown` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
 | `Dependencias` | interfaz | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
@@ -57,7 +58,6 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `DeviceView` | función | [apps/web/components/device/device-view.tsx](../../apps/web/components/device/device-view.tsx) |
 | `DosisDiaEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `DosisPanelEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
-| `ENV` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `ENV_SOURCES` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `EmptyState` | función | [apps/web/components/shared/states.tsx](../../apps/web/components/shared/states.tsx) |
 | `EnvDay` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
@@ -76,6 +76,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `IndicatorCard` | función | [apps/web/components/shared/indicator-card.tsx](../../apps/web/components/shared/indicator-card.tsx) |
 | `IndicatorId` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `IndicatorInfo` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
+| `KpiSimulacionEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `Layer` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `LayerChip` | función | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `LecturaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
@@ -87,7 +88,6 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `LoadingState` | función | [apps/web/components/shared/states.tsx](../../apps/web/components/shared/states.tsx) |
 | `MISSION_DAYS` | constante | [apps/web/lib/mock/crew.ts](../../apps/web/lib/mock/crew.ts) |
 | `MissionProfile` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
-| `PANELES_RESPALDO` | constante | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `PFU_THRESHOLD` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `PRINCIPAL` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `PRIOR_CAREER_MSV` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
@@ -118,13 +118,14 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ReporteServidor` | interfaz | [apps/web/lib/cola.ts](../../apps/web/lib/cola.ts) |
 | `ReportsView` | función | [apps/web/components/reports/reports-view.tsx](../../apps/web/components/reports/reports-view.tsx) |
 | `RespuestaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `ResumenDiarioEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `Role` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `RootLayout` | función | [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx) |
 | `S` | constante | [apps/web/lib/strings.ts](../../apps/web/lib/strings.ts) |
 | `SEED_REPORTS` | constante | [apps/web/lib/mock/alerts.ts](../../apps/web/lib/mock/alerts.ts) |
-| `SOLAR_EVENTS` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `STATUS_ICON` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `Sex` | tipo | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
+| `Simulacion` | clase | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
 | `SintomaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `SolarEvent` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `Status` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
@@ -156,6 +157,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `avanzar_cola` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `bloque` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `capaApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `cargarEscenarioDiario` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
+| `cargarKpiSimulacion` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarPanelGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `catalogo` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `check_sql` | función | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
@@ -183,6 +186,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `detectarIdioma` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `dia_de_vuelo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `diario` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
+| `ejecutar_simulacion` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `encolarReporte` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `encolar_reporte` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `enviarCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
@@ -193,12 +197,15 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `estadoReporte` | función | [apps/web/lib/cola.ts](../../apps/web/lib/cola.ts) |
 | `europepmc` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `evaluar` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
+| `evaluar_tripulante` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `evaluateCheckIn` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `evaluateZones` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `eventos` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `faltantes` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `formatDelay` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
 | `generar` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `generar_caso_referencia` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
+| `generar_mision` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `getAlerts` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `getBaselines` | función | [apps/web/lib/mock/crew.ts](../../apps/web/lib/mock/crew.ts) |
 | `getVitals` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
@@ -214,12 +221,15 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `isStormDay` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `lecturasDeCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `leer` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `leer_caso_referencia` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_diario` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_escenario` | función | [apps/api/main.py](../../apps/api/main.py) |
+| `leer_kpi_simulacion` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_lecturas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `leer_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `leer_manual` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `leer_panel` | función | [apps/api/main.py](../../apps/api/main.py) |
+| `leer_perfiles` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_reportes` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `leer_seccion` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_serie` | función | [apps/api/main.py](../../apps/api/main.py) |
@@ -254,6 +264,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ppmToMmHg` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `propio` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `publicar` | función | [pipelines/reanclaje/panel.py](../../pipelines/reanclaje/panel.py) |
+| `publicar_simulacion` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `radlab` | función | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
 | `read` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `registrar_alerta` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
@@ -284,7 +295,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `union_ts` | función | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
 | `useApp` | función | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
 | `useReportState` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
-| `validar` | función | [packages/schemas/test_fichas.py](../../packages/schemas/test_fichas.py) |
+| `validar` | función | [packages/schemas/validador.py](../../packages/schemas/validador.py) |
 | `validar` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `validar` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `verificarSaludApi` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
