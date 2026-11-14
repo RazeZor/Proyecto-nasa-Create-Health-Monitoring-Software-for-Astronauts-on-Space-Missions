@@ -34,9 +34,12 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
 | [almacen/__init__.py](almacen/__init__.py) | 1 | — |
+| [almacen/__main__.py](almacen/__main__.py) | 13 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
 | [almacen/db.py](almacen/db.py) | 36 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
+| [almacen/tripulacion.py](almacen/tripulacion.py) | 76 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [main.py](main.py) | 127 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [test_almacen_db.py](test_almacen_db.py) | 38 | — |
+| [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 54 | — |
 | [test_api.py](test_api.py) | 89 | — |
 
 ### API pública
@@ -46,6 +49,16 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `ruta_por_defecto()`: `VIGIA_DB` o apps/api/data/vigia.db (fuera de git).
 - función `conectar(ruta=None)`
 - función `migrar(conn)`: Aplica en orden las migraciones NNN_*.sql pendientes y devuelve la versión resultante.
+
+**almacen/tripulacion.py**
+
+- función `crear_mision(conn, nombre, perfil, dia1_t_real)`
+- función `crear_tripulante(conn, alias, mision_id, rol)`
+- función `consentir(conn, tripulante_id, regla, t_real)`
+- función `tiene_consentimiento(conn, tripulante_id, regla)`
+- función `dia_de_vuelo(conn, tripulante_id, t_real)`: Día de vuelo (1 = día 1 de la misión) o None si t_real es anterior al vuelo.
+- función `t_mision(conn, tripulante_id, t_real)`: `D022T00:05:00`; None antes del día 1 (línea base de tierra).
+- función `sembrar_demo(conn)`: Misión `demo` con astronauta, oficial médico y comandante, todos con consentimiento. Idempotente.
 
 **main.py**
 
@@ -58,6 +71,10 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `leer_panel(nombre: str)`: Objeto con `limites`, `perfiles_presion_mmhg`, `ventanas`, `aviso`, `dosis` (puede ser null), `protones`,
 - función `leer_seccion(nombre: str, seccion: Literal['dosis', 'protones', 'cabina', 'eventos'])`: Solo `dosis` (objeto o null), `protones`, `cabina` o `eventos` (listas). Otra sección da 422.
 
+### Puntos de entrada
+
+- `apps/api/almacen/__main__.py`
+
 ### Configuración y fuentes externas
 
 - Variables de entorno: `DATALAKE_DIR`, `VIGIA_DB`
@@ -67,10 +84,11 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - Internas: `main`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: `almacen`, `fastapi`
-- Biblioteca estándar: `hashlib`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `typing`, `unittest`
+- Biblioteca estándar: `datetime`, `hashlib`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `typing`, `unittest`
 
 ### Tests
 
 - `apps/api/test_almacen_db.py`: 4 pruebas en Esquema (4)
+- `apps/api/test_almacen_tripulacion.py`: 7 pruebas en Tripulacion (7)
 - `apps/api/test_api.py`: 9 pruebas en Api (9)
 <!-- CONTEXT:AUTO:END -->

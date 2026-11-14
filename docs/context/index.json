@@ -36,6 +36,13 @@
           "simbolos": []
         },
         {
+          "ruta": "apps/api/almacen/__main__.py",
+          "lineas": 13,
+          "descripcion": "CLI: python3 -m almacen migrar|sembrar (desde apps/api).",
+          "test": false,
+          "simbolos": []
+        },
+        {
           "ruta": "apps/api/almacen/db.py",
           "lineas": 36,
           "descripcion": "Conexión y migraciones del almacén SQLite (solo biblioteca estándar).",
@@ -58,6 +65,56 @@
               "tipo": "función",
               "firma": "migrar(conn)",
               "doc": "Aplica en orden las migraciones NNN_*.sql pendientes y devuelve la versión resultante."
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/almacen/tripulacion.py",
+          "lineas": 76,
+          "descripcion": "Misión, tripulantes y consentimiento; conversión de t_real a hora de misión.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "crear_mision",
+              "tipo": "función",
+              "firma": "crear_mision(conn, nombre, perfil, dia1_t_real)",
+              "doc": ""
+            },
+            {
+              "nombre": "crear_tripulante",
+              "tipo": "función",
+              "firma": "crear_tripulante(conn, alias, mision_id, rol)",
+              "doc": ""
+            },
+            {
+              "nombre": "consentir",
+              "tipo": "función",
+              "firma": "consentir(conn, tripulante_id, regla, t_real)",
+              "doc": ""
+            },
+            {
+              "nombre": "tiene_consentimiento",
+              "tipo": "función",
+              "firma": "tiene_consentimiento(conn, tripulante_id, regla)",
+              "doc": ""
+            },
+            {
+              "nombre": "dia_de_vuelo",
+              "tipo": "función",
+              "firma": "dia_de_vuelo(conn, tripulante_id, t_real)",
+              "doc": "Día de vuelo (1 = día 1 de la misión) o None si t_real es anterior al vuelo."
+            },
+            {
+              "nombre": "t_mision",
+              "tipo": "función",
+              "firma": "t_mision(conn, tripulante_id, t_real)",
+              "doc": "`D022T00:05:00`; None antes del día 1 (línea base de tierra)."
+            },
+            {
+              "nombre": "sembrar_demo",
+              "tipo": "función",
+              "firma": "sembrar_demo(conn)",
+              "doc": "Misión `demo` con astronauta, oficial médico y comandante, todos con consentimiento. Idempotente."
             }
           ]
         },
@@ -127,6 +184,20 @@
               "nombre": "Esquema",
               "tipo": "clase",
               "firma": "Esquema(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_tripulacion.py",
+          "lineas": 54,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Tripulacion",
+              "tipo": "clase",
+              "firma": "Tripulacion(unittest.TestCase)",
               "doc": ""
             }
           ]
