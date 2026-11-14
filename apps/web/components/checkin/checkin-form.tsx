@@ -10,6 +10,7 @@ import { Slider } from "@/components/ui/slider"
 import { evaluateCheckIn } from "@/lib/engine"
 import { howToForProfile, INDICATORS } from "@/lib/mock/indicators"
 import { S } from "@/lib/strings"
+import { sincronizarRegistros } from "@/lib/sincronizacion"
 import { store } from "@/lib/storage"
 import type { CheckInEntry, IndicatorId, Status, Symptom } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -106,6 +107,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
     setError(false)
     try {
       await store.saveCheckIn(entry)
+      void sincronizarRegistros() // sube a la API sin bloquear: sin red queda pendiente
       setResult({ status, sec })
       requestAnimationFrame(() => resultRef.current?.focus())
     } catch {

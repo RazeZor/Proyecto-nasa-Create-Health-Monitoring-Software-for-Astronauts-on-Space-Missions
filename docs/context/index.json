@@ -615,7 +615,8 @@
         "Funciona **sin conexión**: el almacenamiento local (`lib/storage.ts`) usa IndexedDB (`vigia-db`) con respaldo en memoria y todas las vistas operan sin depender de red externa.",
         "Motor híbrido (`lib/engine.ts`): evalúa las capas A (seguridad clínica), B (desviación de línea base personal) y C (deriva lenta), además del modo adaptación (días 1 a 14) y modo tormenta solar (≥10 pfu). Muestra 3 niveles (`ok`, `watch`, `act`); solo el nivel `act` (rojo) escala automáticamente al oficial médico (§4.2, §5.1).",
         "Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `NEXT_PUBLIC_VIGIA_API_URL`): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles` y `/paneles/{nombre}` (`panel-demo`, `dosis-equivalente`) desde `apps/api` y cae automáticamente a `PANELES_RESPALDO` si la API está apagada o sin red.",
-        "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Aún no está conectado a la interfaz porque falta identidad (el id de tripulante). Prueba: `node --test apps/web/lib/api-registro.test.ts` (Node 22.18+).",
+        "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
+        "El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden y se detiene en el primer fallo; reenviar es seguro. La identidad es un atajo: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (id de la API; `cd apps/api && python3 -m almacen sembrar` crea astronauta=1). Sin esa variable, o sin red, la app funciona solo con el almacén local. `t_real` es la hora real del envío, no el día de misión elegido en la interfaz: la API lo ve como día 1 de la misión demo.",
         "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`, `transit`, `transit-docked`, `lunar`, `mars`) con conversión de CO2 de ppm a mmHg según la presión total de cabina (760, 527 y 424 mmHg).",
         "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
       ],
@@ -631,7 +632,8 @@
         "fichas"
       ],
       "env": [
-        "NEXT_PUBLIC_VIGIA_API_URL"
+        "NEXT_PUBLIC_VIGIA_API_URL",
+        "NEXT_PUBLIC_VIGIA_TRIPULANTE"
       ],
       "archivos": [
         {
@@ -802,7 +804,7 @@
         },
         {
           "ruta": "apps/web/components/app-context.tsx",
-          "lineas": 73,
+          "lineas": 78,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -862,7 +864,7 @@
         },
         {
           "ruta": "apps/web/components/checkin/checkin-form.tsx",
-          "lineas": 271,
+          "lineas": 273,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1539,8 +1541,55 @@
           ]
         },
         {
+          "ruta": "apps/web/lib/sincronizacion.ts",
+          "lineas": 30,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "TRIPULANTE",
+              "tipo": "constante",
+              "firma": "TRIPULANTE",
+              "doc": ""
+            },
+            {
+              "nombre": "sincronizarRegistros",
+              "tipo": "función",
+              "firma": "sincronizarRegistros",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/sincronizar.test.ts",
+          "lineas": 31,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/sincronizar.ts",
+          "lineas": 22,
+          "descripcion": "Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Dependencias",
+              "tipo": "interfaz",
+              "firma": "Dependencias",
+              "doc": ""
+            },
+            {
+              "nombre": "sincronizar",
+              "tipo": "función",
+              "firma": "sincronizar",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/storage.ts",
-          "lineas": 42,
+          "lineas": 46,
           "descripcion": "",
           "test": false,
           "simbolos": [
