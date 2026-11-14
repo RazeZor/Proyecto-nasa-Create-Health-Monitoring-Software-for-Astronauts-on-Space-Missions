@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { CURRENT_DAY, MISSION_DAYS, PROFILES } from "@/lib/mock/crew"
+import { sincronizarRegistros } from "@/lib/sincronizacion"
 import type { DeviceState, MissionProfile, ProfileId, Role } from "@/lib/types"
 
 interface AppState {
@@ -41,6 +42,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const setDay = useCallback((d: number) => setDayRaw(Math.min(MISSION_DAYS, Math.max(1, d))), [])
   const toggleTheme = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), [])
+
+  useEffect(() => {
+    void sincronizarRegistros() // reintenta lo que quedó pendiente sin red
+  }, [])
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark")

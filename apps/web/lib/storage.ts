@@ -10,6 +10,8 @@ export interface HealthStore {
   shareAlert(id: string): Promise<void>
   listAcknowledgedAlertIds(): Promise<string[]>
   acknowledgeAlert(id: string): Promise<void>
+  listSyncedCheckInIds(): Promise<string[]>
+  markCheckInSynced(id: string): Promise<void>
 }
 
 const PREFIX = "vigia:"
@@ -37,6 +39,8 @@ export const localStore: HealthStore = {
   shareAlert: (id) => append("shared", id),
   listAcknowledgedAlertIds: async () => read<string[]>("acked", []),
   acknowledgeAlert: (id) => append("acked", id),
+  listSyncedCheckInIds: async () => read<string[]>("synced", []),
+  markCheckInSynced: (id) => append("synced", id),
 }
 
 export const store: HealthStore = localStore

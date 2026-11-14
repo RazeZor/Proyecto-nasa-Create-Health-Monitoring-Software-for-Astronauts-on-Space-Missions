@@ -7,7 +7,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 19 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 48 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 51 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos entre `pipelines/` y `apps/`. Hoy contiene el esquema de las fichas de indicador y la prueba que valida las fichas publicadas en `apps/web/public/fichas/`. | schemas, contratos, fichas, indicadores, json-schema, peligros, hrp | 2 |
 | [pipelines/datalake](../../pipelines/datalake/MODULE.md) | Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLab y EDA, con un CLI para ingerir y leer. | ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli | 3 |
@@ -52,6 +52,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ContextoIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `DailyVitals` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `DelayCountdown` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
+| `Dependencias` | interfaz | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
 | `DeviceState` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `DeviceView` | función | [apps/web/components/device/device-view.tsx](../../apps/web/components/device/device-view.tsx) |
 | `DosisDiaEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
@@ -130,6 +131,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Switch` | función | [apps/web/components/device/switch.tsx](../../apps/web/components/device/switch.tsx) |
 | `Symptom` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `THREAD` | constante | [apps/web/lib/mock/alerts.ts](../../apps/web/lib/mock/alerts.ts) |
+| `TRIPULANTE` | constante | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `ThreadMessage` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `Traduccion` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
 | `TrendsView` | función | [apps/web/components/trends/trends-view.tsx](../../apps/web/components/trends/trends-view.tsx) |
@@ -264,6 +266,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ruta_por_defecto` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
 | `salud` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `sembrar_demo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
+| `sincronizar` | función | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
+| `sincronizarRegistros` | función | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `sintomasDeCheckIn` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `statusSurface` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `statusText` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
