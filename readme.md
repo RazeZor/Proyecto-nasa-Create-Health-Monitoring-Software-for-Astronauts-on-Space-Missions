@@ -1,1 +1,1 @@
-inicio del sistema
+init
