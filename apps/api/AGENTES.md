@@ -87,3 +87,48 @@ GET /paneles/nada                -> 404 {"detail": "no existe el gold «nada»; 
 GET /paneles/panel-demo/nada     -> 422 (detail[0].msg: "Input should be 'dosis', 'protones', 'cabina' or 'eventos'")
 ```
 El mensaje 404 sale en el idioma de `VIGIA_LANG` (español por defecto).
+
+## Registro de la tripulación (almacén SQLite)
+
+Además del gold (solo lectura), la API guarda el registro de la tripulación en SQLite (`VIGIA_DB`, por defecto `apps/api/data/vigia.db`). Antes de usarla: `cd apps/api && python3 -m almacen migrar && python3 -m almacen sembrar` (la semilla crea la misión `demo` con astronauta = 1, oficial médico = 2 y comandante = 3).
+
+**Quién eres:** todas estas rutas llevan la cabecera `X-Tripulante: <id>`. Sin ella, o con un id que no existe: 401. No hay autenticación real (prototipo local).
+
+**Privacidad:** lecturas, síntomas, línea base y reportes solo los ve y escribe su dueño (otro tripulante: 403). Las alertas completas solo las ve su dueño. Si pides las de otro, recibes únicamente el dato mínimo de las que se escalaron a ti (`indicador`, `valor`, `t_real`, `tramo`, más los ids), sin explicación ni capa; verde y ámbar nunca. Cada vez que pides las alertas de otro queda una fila `lectura_ajena` en `auditoria`.
+
+| Endpoint | Qué hace |
+| --- | --- |
+| `POST /tripulantes/{id}/lecturas` | Guarda `{indicador, valor, t_real, origen?, metodo?, naturaleza?}` → 201 `{id}`. Reenviar la misma da el mismo `id` |
+| `GET /tripulantes/{id}/lecturas` | Lecturas propias; filtros `indicador`, `desde`, `hasta` |
+| `POST /tripulantes/{id}/sintomas` y `GET` | Síntomas `{codigo, gravedad 1 a 3, t_real}` |
+| `PUT /tripulantes/{id}/linea-base/{indicador}/{origen}` y `GET` | Mediana y MAD de `tierra` o `vuelo` (404 si no hay) |
+| `POST /tripulantes/{id}/alertas` | Registra una alerta del motor → `{id, escalamiento_id}` |
+| `GET /tripulantes/{id}/alertas` | Con tu id: tus alertas completas. Con el de otro: solo el dato mínimo de las que te escalaron |
+| `GET /escalamientos` | Tu bandeja: avisos rojos escalados a ti, con `contenido` y `contexto_astronauta` (no deja `lectura_ajena`) |
+| `GET /tripulantes/{id}/escalamientos` | Transparencia: qué se envió sobre ti, a quién y con qué contenido |
+| `POST /escalamientos/{escalamiento_id}/contexto` | `{texto}`: el afectado añade contexto una sola vez (otro: 403; segunda vez: 422) |
+| `POST /tripulantes/{id}/reportes` y `GET` | Reportes a tierra con `retardo_min` de 3 a 22 |
+| `POST /reportes/avanzar` | `{ahora}` → entrega los reportes que ya llegaron; `{entregados: n}` |
+| `POST /reportes/{reporte_id}/respuesta` | `{respuesta, t_real}` sobre un reporte entregado |
+
+Indicadores válidos: `presion_arterial_sistolica`, `spo2`, `temperatura_central`, `frecuencia_cardiaca_reposo`, `sueno`, `estado_animo`, `glucosa`, `masa_corporal`. `t_real` siempre en UTC con el formato exacto `YYYY-MM-DDTHH:MM:SSZ` (con ceros: `10:00:00Z`, no `10:0:0Z`); los números van como JSON numérico, no como texto (`97`, no `"97"`); `t_mision` lo calcula el servidor (null antes del día 1 de la misión). Las alertas, los escalamientos y la auditoría son de solo adición.
+
+**Escalamiento:** una alerta con `capa: "A"` y `nivel: "rojo"` escala al oficial médico de la misión (al comandante si el afectado es el oficial). Solo viaja `{indicador, valor, t_real, tramo}`. Sin consentimiento previo (`escalamiento_rojo`) o sin destinatario, `escalamiento_id` es `null` y se anota `escalamiento_omitido` en la auditoría: una alerta roja sin escalar no significa que no haya riesgo.
+
+Ejemplos reales (misión `demo`, tripulante 1):
+
+```text
+POST /tripulantes/1/lecturas  (X-Tripulante: 1)  {"indicador":"spo2","valor":95,"t_real":"2026-11-14T08:00:00Z"}
+-> 201 {"id": 1}
+GET  /tripulantes/1/lecturas  (X-Tripulante: 1)
+-> [{"id":1,"tripulante_id":1,"indicador":"spo2","valor":95.0,"t_real":"2026-11-14T08:00:00Z","t_mision":"D001T08:00:00","origen":"manual","metodo":null,"naturaleza":"Simulado"}]
+
+POST /tripulantes/1/alertas  (X-Tripulante: 1)  {"indicador":"spo2","capa":"A","nivel":"rojo","valor":90,"t_real":"2026-11-14T09:00:00Z","explicacion":"SpO2 en tramo extremo","regla_version":"1","tramo":"3 puntos"}
+-> 201 {"id": 1, "escalamiento_id": 1}        # a la ámbar de capa B: {"id": 2, "escalamiento_id": null}
+GET  /tripulantes/1/alertas  (X-Tripulante: 2)   # oficial médico: solo el dato mínimo
+-> [{"escalamiento_id":1,"alerta_id":1,"tripulante_id":1,"indicador":"spo2","valor":90.0,"t_real":"2026-11-14T09:00:00Z","tramo":"3 puntos"}]
+GET  /tripulantes/1/alertas  (X-Tripulante: 3)   # comandante: no es destinatario
+-> []
+GET  /tripulantes/1/lecturas  (X-Tripulante: 2)
+-> 403 {"detail": "no puedes ver ni modificar datos de otro tripulante"}
+```

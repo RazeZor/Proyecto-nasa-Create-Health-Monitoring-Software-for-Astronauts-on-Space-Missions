@@ -3,7 +3,7 @@
   "modulos": [
     {
       "modulo": "apps/api",
-      "proposito": "API FastAPI de solo lectura que expone la zona gold del ETL (`pipelines/reanclaje`): escenarios reanclados y paneles de entorno, para que la app los consuma por HTTP.",
+      "proposito": "API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`).",
       "puntos_clave": [
         "No importa el pipeline (regla 3 de la arquitectura): lee `<DATALAKE_DIR>/gold/*.json` y `gold/manifest.json`. No ejecuta el ETL ni escribe nada; para generar datos se corre `pipelines/reanclaje/index.py`.",
         "Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`.",
@@ -12,6 +12,10 @@
         "La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).",
         "Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.",
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
+        "Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.",
+        "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez.",
+        "La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).",
+        "El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.",
         "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Sin CORS ni autenticación: es para uso local o de tierra.",
         "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
       ],
@@ -24,15 +28,240 @@
         "solo-lectura"
       ],
       "env": [
-        "DATALAKE_DIR"
+        "DATALAKE_DIR",
+        "VIGIA_DB"
       ],
       "archivos": [
         {
+          "ruta": "apps/api/almacen/__init__.py",
+          "lineas": 1,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/api/almacen/__main__.py",
+          "lineas": 13,
+          "descripcion": "CLI: python3 -m almacen migrar|sembrar (desde apps/api).",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/api/almacen/alertas.py",
+          "lineas": 99,
+          "descripcion": "Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "anotar",
+              "tipo": "función",
+              "firma": "anotar(conn, actor_id, accion, entidad, entidad_id, detalle=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "escalar",
+              "tipo": "función",
+              "firma": "escalar(conn, alerta_id)",
+              "doc": ""
+            },
+            {
+              "nombre": "registrar_alerta",
+              "tipo": "función",
+              "firma": "registrar_alerta(conn, tripulante_id, indicador, capa, nivel, valor, t_real, explicacion, regla_version, tramo=None)",
+              "doc": "Guarda la alerta; una roja de la capa A escala en la misma transacción."
+            },
+            {
+              "nombre": "agregar_contexto",
+              "tipo": "función",
+              "firma": "agregar_contexto(conn, escalamiento_id, texto)",
+              "doc": "El astronauta añade contexto una sola vez; el trigger rechaza cambiarlo o editar lo demás."
+            },
+            {
+              "nombre": "listar_escalamientos",
+              "tipo": "función",
+              "firma": "listar_escalamientos(conn, destinatario_id=None, tripulante_id=None)",
+              "doc": "Escalamientos recibidos por `destinatario_id` o enviados por el afectado `tripulante_id`."
+            },
+            {
+              "nombre": "alertas_visibles",
+              "tipo": "función",
+              "firma": "alertas_visibles(conn, actor_id, tripulante_id)",
+              "doc": "El dueño ve todas sus alertas. Otro tripulante recibe solo el dato mínimo de las escaladas a él"
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/almacen/base.py",
+          "lineas": 18,
+          "descripcion": "Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "guardar_linea_base",
+              "tipo": "función",
+              "firma": "guardar_linea_base(conn, tripulante_id, indicador, origen, mediana, mad, n, desde, hasta)",
+              "doc": "Reemplaza la fila de la misma clave. El peso w(d) de §5.2 se calcula al leer, no se guarda."
+            },
+            {
+              "nombre": "obtener_linea_base",
+              "tipo": "función",
+              "firma": "obtener_linea_base(conn, tripulante_id, indicador, origen)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/almacen/cola.py",
+          "lineas": 35,
+          "descripcion": "Cola de reportes hacia tierra con el retardo del día de misión (3 a 22 min, informe §4.2).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "encolar_reporte",
+              "tipo": "función",
+              "firma": "encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min)",
+              "doc": ""
+            },
+            {
+              "nombre": "avanzar_cola",
+              "tipo": "función",
+              "firma": "avanzar_cola(conn, ahora)",
+              "doc": "Pasa a `entregado` los reportes que ya llegaron a tierra; devuelve cuántos."
+            },
+            {
+              "nombre": "responder_reporte",
+              "tipo": "función",
+              "firma": "responder_reporte(conn, reporte_id, respuesta, t_real)",
+              "doc": "Solo un reporte `entregado` puede responderse, y no antes de su llegada a tierra."
+            },
+            {
+              "nombre": "leer_reportes",
+              "tipo": "función",
+              "firma": "leer_reportes(conn, tripulante_id)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/almacen/db.py",
+          "lineas": 44,
+          "descripcion": "Conexión y migraciones del almacén SQLite (solo biblioteca estándar).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ruta_por_defecto",
+              "tipo": "función",
+              "firma": "ruta_por_defecto()",
+              "doc": "`VIGIA_DB` o apps/api/data/vigia.db (fuera de git)."
+            },
+            {
+              "nombre": "conectar",
+              "tipo": "función",
+              "firma": "conectar(ruta=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "migrar",
+              "tipo": "función",
+              "firma": "migrar(conn)",
+              "doc": "Aplica en orden las migraciones NNN_*.sql pendientes y devuelve la versión resultante."
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/almacen/lecturas.py",
+          "lineas": 47,
+          "descripcion": "Lecturas de indicadores y síntomas de un tripulante.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "registrar_lectura",
+              "tipo": "función",
+              "firma": "registrar_lectura(conn, tripulante_id, indicador, valor, t_real, origen='manual', metodo=None, naturaleza='Simulado')",
+              "doc": "Guarda una lectura. Reenviar la misma (tripulante, indicador, t_real, origen) devuelve el mismo id."
+            },
+            {
+              "nombre": "leer_lecturas",
+              "tipo": "función",
+              "firma": "leer_lecturas(conn, tripulante_id, indicador=None, desde=None, hasta=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "registrar_sintoma",
+              "tipo": "función",
+              "firma": "registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real)",
+              "doc": ""
+            },
+            {
+              "nombre": "leer_sintomas",
+              "tipo": "función",
+              "firma": "leer_sintomas(conn, tripulante_id, desde=None, hasta=None)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/almacen/tripulacion.py",
+          "lineas": 79,
+          "descripcion": "Misión, tripulantes y consentimiento; conversión de t_real a hora de misión.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "crear_mision",
+              "tipo": "función",
+              "firma": "crear_mision(conn, nombre, perfil, dia1_t_real)",
+              "doc": ""
+            },
+            {
+              "nombre": "crear_tripulante",
+              "tipo": "función",
+              "firma": "crear_tripulante(conn, alias, mision_id, rol)",
+              "doc": ""
+            },
+            {
+              "nombre": "consentir",
+              "tipo": "función",
+              "firma": "consentir(conn, tripulante_id, regla, t_real)",
+              "doc": ""
+            },
+            {
+              "nombre": "tiene_consentimiento",
+              "tipo": "función",
+              "firma": "tiene_consentimiento(conn, tripulante_id, regla)",
+              "doc": ""
+            },
+            {
+              "nombre": "dia_de_vuelo",
+              "tipo": "función",
+              "firma": "dia_de_vuelo(conn, tripulante_id, t_real)",
+              "doc": "Día de vuelo (1 = día 1 de la misión) o None si t_real es anterior al vuelo."
+            },
+            {
+              "nombre": "t_mision",
+              "tipo": "función",
+              "firma": "t_mision(conn, tripulante_id, t_real)",
+              "doc": "`D022T00:05:00`; None antes del día 1 (línea base de tierra)."
+            },
+            {
+              "nombre": "sembrar_demo",
+              "tipo": "función",
+              "firma": "sembrar_demo(conn)",
+              "doc": "Misión `demo` con astronauta, oficial médico y comandante, todos con consentimiento. Idempotente."
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/main.py",
-          "lineas": 127,
+          "lineas": 137,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "dato_invalido",
+              "tipo": "función",
+              "firma": "dato_invalido(_, e)",
+              "doc": ""
+            },
             {
               "nombre": "salud",
               "tipo": "función",
@@ -84,6 +313,254 @@
           ]
         },
         {
+          "ruta": "apps/api/rutas_registro.py",
+          "lineas": 213,
+          "descripcion": "Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "conexion",
+              "tipo": "función",
+              "firma": "conexion()",
+              "doc": ""
+            },
+            {
+              "nombre": "actor",
+              "tipo": "función",
+              "firma": "actor(x_tripulante: str | None=Header(None), conn=Depends(conexion))",
+              "doc": ""
+            },
+            {
+              "nombre": "propio",
+              "tipo": "función",
+              "firma": "propio(id: int, quien: int=Depends(actor))",
+              "doc": ""
+            },
+            {
+              "nombre": "LecturaIn",
+              "tipo": "clase",
+              "firma": "LecturaIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "SintomaIn",
+              "tipo": "clase",
+              "firma": "SintomaIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "LineaBaseIn",
+              "tipo": "clase",
+              "firma": "LineaBaseIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "AlertaIn",
+              "tipo": "clase",
+              "firma": "AlertaIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "ReporteIn",
+              "tipo": "clase",
+              "firma": "ReporteIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "ContextoIn",
+              "tipo": "clase",
+              "firma": "ContextoIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "RespuestaIn",
+              "tipo": "clase",
+              "firma": "RespuestaIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "AvanceIn",
+              "tipo": "clase",
+              "firma": "AvanceIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "crear_lectura",
+              "tipo": "función",
+              "firma": "crear_lectura(cuerpo: LecturaIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Guarda una lectura de un indicador (`spo2`, `sueno`, …). Reenviar la misma (indicador, t_real, origen) devuelve"
+            },
+            {
+              "nombre": "listar_lecturas",
+              "tipo": "función",
+              "firma": "listar_lecturas(indicador: str | None=None, desde: str | None=None, hasta: str | None=None, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Lecturas del tripulante por `t_real`; filtros opcionales `indicador`, `desde` y `hasta` (UTC)."
+            },
+            {
+              "nombre": "crear_sintoma",
+              "tipo": "función",
+              "firma": "crear_sintoma(cuerpo: SintomaIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Guarda un síntoma con `codigo` y `gravedad` de 1 a 3."
+            },
+            {
+              "nombre": "listar_sintomas",
+              "tipo": "función",
+              "firma": "listar_sintomas(desde: str | None=None, hasta: str | None=None, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Síntomas del tripulante por `t_real`; filtros opcionales `desde` y `hasta`."
+            },
+            {
+              "nombre": "guardar_linea_base",
+              "tipo": "función",
+              "firma": "guardar_linea_base(indicador: str, origen: str, cuerpo: LineaBaseIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Reemplaza la mediana y el MAD de un indicador para `origen` = tierra o vuelo."
+            },
+            {
+              "nombre": "leer_linea_base",
+              "tipo": "función",
+              "firma": "leer_linea_base(indicador: str, origen: str, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Devuelve `mediana`, `mad`, `n`, `desde` y `hasta`; 404 si no existe."
+            },
+            {
+              "nombre": "crear_alerta",
+              "tipo": "función",
+              "firma": "crear_alerta(cuerpo: AlertaIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Guarda la alerta (solo adición). Una roja de la capa A escala al oficial médico (o al comandante si el afectado"
+            },
+            {
+              "nombre": "listar_alertas",
+              "tipo": "función",
+              "firma": "listar_alertas(id: int, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Con tu propio id: todas tus alertas. Con el de otro: solo sus alertas rojas escaladas a ti; ese acceso queda"
+            },
+            {
+              "nombre": "crear_reporte",
+              "tipo": "función",
+              "firma": "crear_reporte(cuerpo: ReporteIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Encola un reporte con `retardo_min` de 3 a 22; `llega_t_real` = `creado_t_real` + retardo."
+            },
+            {
+              "nombre": "listar_reportes",
+              "tipo": "función",
+              "firma": "listar_reportes(id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Reportes del tripulante con `estado` en_cola, entregado o respondido."
+            },
+            {
+              "nombre": "avanzar",
+              "tipo": "función",
+              "firma": "avanzar(cuerpo: AvanceIn, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Pasa a `entregado` los reportes con `llega_t_real` <= `ahora`; devuelve `{\"entregados\": n}`."
+            },
+            {
+              "nombre": "responder",
+              "tipo": "función",
+              "firma": "responder(reporte_id: int, cuerpo: RespuestaIn, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422."
+            },
+            {
+              "nombre": "escalamientos_recibidos",
+              "tipo": "función",
+              "firma": "escalamientos_recibidos(quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Avisos rojos escalados a ti: `{id, alerta_id, tripulante_id, contenido: {indicador, valor, t_real, tramo},"
+            },
+            {
+              "nombre": "escalamientos_propios",
+              "tipo": "función",
+              "firma": "escalamientos_propios(id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Transparencia (§5.4): qué avisos salieron sobre ti, a quién y con qué contenido."
+            },
+            {
+              "nombre": "agregar_contexto",
+              "tipo": "función",
+              "firma": "agregar_contexto(escalamiento_id: int, cuerpo: ContextoIn, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Solo el afectado puede añadir contexto, una sola vez (no puede cancelar el aviso); otro tripulante recibe 403"
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_alertas.py",
+          "lineas": 134,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Alertas",
+              "tipo": "clase",
+              "firma": "Alertas(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_base.py",
+          "lineas": 40,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "LineaBase",
+              "tipo": "clase",
+              "firma": "LineaBase(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_cola.py",
+          "lineas": 50,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Cola",
+              "tipo": "clase",
+              "firma": "Cola(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_db.py",
+          "lineas": 83,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Esquema",
+              "tipo": "clase",
+              "firma": "Esquema(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_lecturas.py",
+          "lineas": 63,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Lecturas",
+              "tipo": "clase",
+              "firma": "Lecturas(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_tripulacion.py",
+          "lineas": 59,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Tripulacion",
+              "tipo": "clase",
+              "firma": "Tripulacion(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/test_api.py",
           "lineas": 89,
           "descripcion": "",
@@ -93,6 +570,20 @@
               "nombre": "Api",
               "tipo": "clase",
               "firma": "Api(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_api_registro.py",
+          "lineas": 151,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Registro",
+              "tipo": "clase",
+              "firma": "Registro(unittest.TestCase)",
               "doc": ""
             }
           ]

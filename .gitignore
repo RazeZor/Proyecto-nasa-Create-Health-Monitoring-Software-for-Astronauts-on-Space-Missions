@@ -1,5 +1,6 @@
 # Datos: nunca van al repositorio (ver docs/ARQUITECTURA.md, "Datos")
 pipelines/*/data/
+apps/api/data/
 *.parquet
 *.avro
 # Python
@@ -11,3 +12,4 @@ node_modules/
 dist/
 # Secretos
 .env
+.superpowers/
