@@ -84,7 +84,7 @@ DATALAKE_DEFECTO = Path(__file__).resolve().parents[2] / "pipelines" / "datalake
 
 
 def _gold():
-    return Path(os.environ.get("DATALAKE_DIR", DATALAKE_DEFECTO)) / "gold"
+    return Path(os.environ.get("DATALAKE_DIR") or DATALAKE_DEFECTO) / "gold"  # vacía = por defecto
 
 
 def _manifiesto():
