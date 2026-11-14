@@ -142,7 +142,8 @@ def _fuentes(fuente, params):
     if fuente == "goes":
         return [(GOES_URL, _get(GOES_URL), "json")]
     if fuente == "radlab":
-        url = RADLAB_URL + ("?" + urllib.parse.urlencode(params) if params else "")
+        q = {"instrument_id": "", "absorbed_dose_rate": "", "dose_equivalent_rate": "", **(params or {})}
+        url = f"{RADLAB_URL}?{urllib.parse.urlencode(q)}"
         return [(url, _get(url), "csv")]
     if fuente == "donki":
         hoy = datetime.now(timezone.utc).date()
