@@ -63,6 +63,15 @@ class Almacen(unittest.TestCase):
             dl.ingest("goes")
         self.assertEqual(list(dl.ROOT.rglob("*.*")), [])
 
+    def test_radlab_consulta_cruda(self):
+        urls = []
+        dl._get = lambda url: urls.append(url) or (
+            b'timestamp,instrument_id,absorbed_dose_rate,dose_equivalent_rate\n'
+            b'"2024-05-10T00:00:42","DosTel1",4.3,,\n')
+        (e,) = dl.ingest("radlab", "spacecraft=ISS&timestamp>=2024-05-10T00:00&absorbed_dose_rate")
+        self.assertEqual(urls[0], dl.RADLAB_URL + "?spacecraft=ISS&timestamp>=2024-05-10T00:00&absorbed_dose_rate")
+        self.assertEqual(dl.read("radlab")[0]["t_real"], "2024-05-10T00:00:42Z")
+
     def test_read_sin_duplicados_y_con_rango(self):
         dl.ingest("goes")
         dl.ingest("goes")  # misma ventana dos veces

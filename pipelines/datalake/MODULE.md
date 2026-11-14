@@ -12,6 +12,7 @@ Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLa
 - Toda hora se normaliza a UTC en `t_real` (`YYYY-MM-DDTHH:MM:SSZ`). `read(fuente, desde, hasta)` filtra comparando esas cadenas.
 - GOES conserva solo `>=10`, `>=50` y `>=100 MeV`, descarta flujos negativos (relleno) y deduplica por (hora, satélite, energía).
 - DONKI prueba tres direcciones en orden (nueva, anterior y espejo `api.nasa.gov`). `NASA_API_KEY` viaja solo al espejo, para que no quede en el manifiesto de las otras. Una respuesta vacía significa "sin eventos".
+- RadLab recibe la consulta cruda (claves sueltas y operadores, p. ej. `spacecraft=ISS "timestamp>=2024-05-10T00:00" absorbed_dose_rate`), no pares clave=valor. Los DosTel no traen `dose_equivalent_rate` (llega vacío).
 - EDA no tiene API: lee los CSV exportados a mano en `pipelines/datalake/eda_manual/` y conserva sus columnas tal cual.
 - `DATALAKE_DIR` cambia la carpeta del datalake (por defecto `pipelines/datalake/data/`, ignorada por git).
 - Implementa las zonas bronce (`raw`) y plata (`curated`) del patrón de datos (docs/ARQUITECTURA.md). Otros pipelines leen `curated` con `read()`, no los archivos directamente.
@@ -35,9 +36,9 @@ tags: ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [datalake.py](datalake.py) | 215 | Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2). |
-| [index.py](index.py) | 30 | CLI del datalake. Mensajes en español por defecto; VIGIA_LANG=en para inglés. |
-| [test_datalake.py](test_datalake.py) | 74 | — |
+| [datalake.py](datalake.py) | 217 | Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2). |
+| [index.py](index.py) | 34 | CLI del datalake. Mensajes en español por defecto; VIGIA_LANG=en para inglés. |
+| [test_datalake.py](test_datalake.py) | 83 | — |
 
 ### API pública
 
@@ -80,5 +81,5 @@ python3 index.py manifest
 
 ### Tests
 
-- `pipelines/datalake/test_datalake.py`: 7 pruebas en Limpieza (4), Almacen (3)
+- `pipelines/datalake/test_datalake.py`: 8 pruebas en Limpieza (4), Almacen (4)
 <!-- CONTEXT:AUTO:END -->

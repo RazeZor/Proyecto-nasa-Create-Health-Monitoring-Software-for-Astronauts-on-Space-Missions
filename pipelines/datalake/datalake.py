@@ -142,7 +142,9 @@ def _fuentes(fuente, params):
     if fuente == "goes":
         return [(GOES_URL, _get(GOES_URL), "json")]
     if fuente == "radlab":
-        url = RADLAB_URL + ("?" + urllib.parse.urlencode(params) if params else "")
+        # RadLab usa claves sueltas y operadores (timestamp>=..., &flux): se pasa la consulta tal cual.
+        # shortcut: sin validar; espacios deben ir como %20. Mejorar si se consulta desde la app.
+        url = RADLAB_URL + ("?" + (params if isinstance(params, str) else urllib.parse.urlencode(params)) if params else "")
         return [(url, _get(url), "csv")]
     if fuente == "donki":
         hoy = datetime.now(timezone.utc).date()
