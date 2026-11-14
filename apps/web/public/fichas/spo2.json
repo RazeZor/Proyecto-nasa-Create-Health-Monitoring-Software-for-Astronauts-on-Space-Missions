@@ -16,7 +16,7 @@
   ],
   "referencia_en_vuelo": "En esa atmósfera la presión inspirada de O2 es de 128 mmHg, equivalente a unos 1 220 m de altitud. La evidencia terrestre indica que la frente se afecta menos que el dedo por la vasoconstricción periférica.",
   "cuando_avisar": "Tramo extremo de la capa A (91 % o menos). De 92 a 95 % suma puntos solo si además se aparta de la línea base del perfil.",
-  "prevencion": null,
+  "prevencion": "Control de la atmósfera de cabina para mantener la presión parcial de oxígeno dentro de los límites de NASA-STD-3001, con monitoreo continuo.",
   "capa_motor": "A",
   "fuentes": [
     {

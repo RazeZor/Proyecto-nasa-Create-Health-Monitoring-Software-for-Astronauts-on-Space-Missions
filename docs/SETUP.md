@@ -41,7 +41,7 @@ Completa `.env`:
 
 - `NASA_API_KEY`: pídela gratis en https://api.nasa.gov. Sin ella se usa `DEMO_KEY`, que tiene límite de consultas.
 - `DATALAKE_DIR`: opcional. Por defecto es `pipelines/datalake/data/`.
-
+- `VIGIA_DB`: opcional. Archivo SQLite de la API (registro de la tripulación). Por defecto `apps/api/data/vigia.db`. Se crea con `cd apps/api && python3 -m almacen migrar` y se llena de demostración con `python3 -m almacen sembrar`.
 `.env` está en `.gitignore`: **nunca lo subas**. Los scripts leen variables del entorno y **no** cargan `.env` solos. Cárgalo en tu terminal antes de ingerir:
 
 ```sh
@@ -73,10 +73,11 @@ pip install -r pipelines/<modulo>/requirements.txt
 python tools/contextgen/contextgen.py --check       # sin salida y código 0: contexto al día
 python -m unittest discover -s tools/contextgen     # tests del generador
 python -m unittest discover -s pipelines/datalake   # tests del datalake
+ruff check .                                        # lint (instalar: uv tool install ruff o pip install ruff)
 cd pipelines/datalake && python index.py ingest goes && cd ../..   # requiere internet
 ```
 
-Si las cuatro funcionan, tu entorno está listo.
+Si funcionan, tu entorno está listo. Ruff se configura en `ruff.toml` (E, F, W e imports ordenados; no exige largo de línea) y el CI lo corre en cada PR.
 
 ## 6. Tu asistente de IA
 

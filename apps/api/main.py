@@ -16,7 +16,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "i18n"
 
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import JSONResponse  # noqa: E402
+
 from i18n import t  # noqa: E402
+from rutas_registro import router as rutas_registro  # noqa: E402
 
 DESCRIPCION = (
     "Datos reanclados a la línea de tiempo de misión (informe §3.4), solo lectura. Guía para agentes: AGENTES.md. "
@@ -29,8 +32,15 @@ ERRORES = {404: {"description": "El nombre no existe como este tipo (escenario o
 app = FastAPI(title="VIGÍA: API del ETL", description=DESCRIPCION, openapi_tags=[
     {"name": "escenarios", "description": "Gold completo de un escenario: serie de 5 min, resumen diario y eventos."},
     {"name": "paneles", "description": "Panel de entorno ya resumido para la pantalla: dosis, protones, cabina y eventos."},
+    {"name": "registro", "description": "Registro de la tripulación en el almacén SQLite: lecturas, alertas y cola."},
     {"name": "sistema", "description": "Estado del servicio."}])
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
+app.include_router(rutas_registro)
+
+
+@app.exception_handler(ValueError)
+def dato_invalido(_, e):
+    return JSONResponse({"detail": t("api.error.dato_invalido", detalle=str(e))}, status_code=422)
 # shortcut: ruta por defecto al data/ del datalake local; en despliegue fijar DATALAKE_DIR
 DATALAKE_DEFECTO = Path(__file__).resolve().parents[2] / "pipelines" / "datalake" / "data"
 
