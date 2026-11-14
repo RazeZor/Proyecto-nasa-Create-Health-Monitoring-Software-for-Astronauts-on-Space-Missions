@@ -3,7 +3,7 @@
 <!-- CONTEXT:MANUAL:START -->
 ## Propósito
 
-ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA), reancla cada ventana real a la línea de tiempo de misión y publica la zona gold que consume el panel de entorno de la app.
+ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA), reancla cada ventana real a la línea de tiempo de misión y publica la zona gold y el JSON del panel de entorno que consume la app.
 
 ## Puntos clave
 
@@ -15,6 +15,10 @@ ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA),
 - Los eventos de DONKI van aparte (`eventos`), reanclados con el mismo corrimiento. Toda fila lleva `naturaleza: "Real"`; el calendario de misión es escenario y no se genera aquí.
 - Falla cerrado: escenario inválido o ventana sin datos curated lanzan `ValueError` y no escriben nada. Es idempotente y determinista: mismo escenario y mismo curated dan el mismo archivo y SHA-256.
 - Salida: `<DATALAKE_DIR>/gold/<escenario>.json` y `gold/manifest.json` (SHA-256, tamaños y hora por escenario).
+- `panel.py` convierte el gold en el panel de entorno (`index.py panel <escenario.json> [destino]`, por defecto `gold/panel-<nombre>.json`): dosis acumulada por día y su porcentaje del límite de carrera de 600 mSv, flujo de protones con `modo_tormenta` (≥10 pfu en ≥10 MeV), y cabina con CO2 en mmHg por perfil (ppm x presión total del perfil: 760, 760 y 424 mmHg), temperatura y humedad. Una sección sin datos queda en `null` o vacía.
+- La dosis usa dosis equivalente si el escenario la trae; con dosis absorbida (DosTel, Lidal) va con `orientativa: true` y supone 1 µGy = 1 µSv, que es una cota inferior. `cobertura` es la fracción del día con datos (con 1 h de datos, 0,042): la dosis del día es parcial y no debe leerse como total.
+- `ALTEA-Survey` es el único instrumento de RadLab con `dose_equivalent_rate` (408 321 filas, cada minuto, de 2010-09 a 2012-06 en la ISS; revisado con una consulta a toda la base). `escenarios/dosis-equivalente.json` lo usa: un día completo (2011-11-16, cobertura 1,0) da 913 µSv, sin `orientativa`. Ese día está por encima de los 0,2 a 0,5 mSv/día que cita el informe; es un día y los datos son preliminares.
+- El panel repite `ventanas` (fuente y fechas reales) y un `aviso`: que series de fechas reales distintas caigan en el mismo día de misión es decisión del escenario, no un hecho observado (§3.4 regla 4).
 - GOES separa la serie por satélite (`G18 >=10 MeV`) para no mezclar satélites en el mismo paso.
 - Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`. Sus mensajes de error están en español sin pasar por `packages/i18n`.
 
@@ -34,11 +38,18 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [index.py](index.py) | 25 | CLI del ETL de reanclaje. |
-| [reanclaje.py](reanclaje.py) | 138 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
+| [index.py](index.py) | 30 | CLI del ETL de reanclaje. |
+| [panel.py](panel.py) | 82 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
+| [reanclaje.py](reanclaje.py) | 147 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
+| [test_panel.py](test_panel.py) | 70 | — |
 | [test_reanclaje.py](test_reanclaje.py) | 87 | — |
 
 ### API pública
+
+**panel.py**
+
+- función `construir_panel(gold)`: Panel de un escenario ya reanclado. Una sección sin datos queda en null o lista vacía.
+- función `publicar(escenario, destino=None)`: Reancla el escenario, arma el panel y lo guarda (por defecto en gold/panel-<nombre>.json).
 
 **reanclaje.py**
 
@@ -49,6 +60,7 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 - función `eventos(filas, corrimiento)`
 - función `validar(escenario)`
 - función `construir(escenario)`: Genera y guarda el gold del escenario. Si falta curated en una ventana no escribe nada.
+- función `guardar(clave, datos, destino=None, **resumen)`: Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en
 
 ### Puntos de entrada
 
@@ -56,16 +68,18 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 
 ```
 python3 index.py build <escenario.json>   curated -> gold (ver escenarios/ejemplo.json)
+python3 index.py panel <escenario.json> [destino.json]   gold -> panel de entorno para la app
 python3 index.py manifest                 SHA-256 y tamaños de cada escenario generado
 ```
 
 ### Dependencias
 
-- Internas: `reanclaje`
+- Internas: `panel`, `reanclaje`
 - Externas: `datalake`
 - Biblioteca estándar: `collections`, `datetime`, `hashlib`, `json`, `pathlib`, `sys`, `tempfile`, `unittest`
 
 ### Tests
 
+- `pipelines/reanclaje/test_panel.py`: 6 pruebas en Panel (5), Publicar (1)
 - `pipelines/reanclaje/test_reanclaje.py`: 8 pruebas en Pasos (6), Construir (2)
 <!-- CONTEXT:AUTO:END -->

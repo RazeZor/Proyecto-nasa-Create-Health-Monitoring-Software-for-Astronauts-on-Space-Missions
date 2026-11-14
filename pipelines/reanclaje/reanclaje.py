@@ -124,15 +124,24 @@ def construir(escenario):
         else:
             gold["serie5min"] += rejilla(v["fuente"], filas, desp)
     gold["diario"] = diario(gold["serie5min"])
-    contenido = json.dumps(gold, indent=1, ensure_ascii=False).encode()
-    destino = datalake.ROOT / "gold"
-    destino.mkdir(parents=True, exist_ok=True)
-    (destino / f"{escenario['nombre']}.json").write_bytes(contenido)
-    entrada = {"sha256": hashlib.sha256(contenido).hexdigest(), "serie5min": len(gold["serie5min"]),
-               "diario": len(gold["diario"]), "eventos": len(gold["eventos"]),
+    entrada = guardar(escenario["nombre"], gold, serie5min=len(gold["serie5min"]),
+                      diario=len(gold["diario"]), eventos=len(gold["eventos"]))
+    return entrada
+
+
+def guardar(clave, datos, destino=None, **resumen):
+    """Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en
+    gold/manifest.json. Idempotente: una entrada por clave."""
+    contenido = json.dumps(datos, indent=1, ensure_ascii=False).encode()
+    carpeta = datalake.ROOT / "gold"
+    carpeta.mkdir(parents=True, exist_ok=True)
+    archivo = Path(destino) if destino else carpeta / f"{clave}.json"
+    archivo.parent.mkdir(parents=True, exist_ok=True)
+    archivo.write_bytes(contenido)
+    entrada = {"sha256": hashlib.sha256(contenido).hexdigest(), **resumen,
                "generado": datetime.now(timezone.utc).strftime(FORMATO)}
-    ruta = destino / "manifest.json"
+    ruta = carpeta / "manifest.json"
     manifiesto = json.loads(ruta.read_text()) if ruta.exists() else {}
-    manifiesto[escenario["nombre"]] = entrada  # idempotente: una entrada por escenario
+    manifiesto[clave] = entrada
     ruta.write_text(json.dumps(manifiesto, indent=2, ensure_ascii=False))
     return entrada
