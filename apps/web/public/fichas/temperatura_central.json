@@ -16,7 +16,7 @@
   ],
   "referencia_en_vuelo": "La temperatura central en reposo sube cerca de 1 °C tras 2,5 meses en la ISS y puede superar 40 °C en ejercicio.",
   "cuando_avisar": "Tramo extremo de la capa A (35,0 °C o menos). 39,1 °C o más suma 2 puntos; 35,1 a 36,0 y 38,1 a 39,0 suman 1 punto solo si además se aparta de la línea base del perfil.",
-  "prevencion": null,
+  "prevencion": "Control térmico de cabina (cerca de 20-25 °C y 30-60 % de humedad), con más flujo de aire en la zona de ejercicio para evitar bolsas de calor.",
   "capa_motor": "A, con referencia en vuelo",
   "fuentes": [
     {

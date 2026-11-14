@@ -16,7 +16,7 @@
   ],
   "referencia_en_vuelo": "En la ISS la dosis efectiva se acumula a unos 0,2 a 0,5 mSv por día, entre 40 y 90 mSv en una misión típica de seis meses. Los neutrones aportan cerca del 30 % y los detectores usados no separan esa componente.",
   "cuando_avisar": "Límite de carrera de 600 mSv y de 250 mSv por evento de partículas solares. Un flujo de protones de 10 o más en ≥10 MeV activa el modo tormenta.",
-  "prevencion": null,
+  "prevencion": "Mantener la dosis tan baja como sea razonable (ALARA): refugio de tormenta durante eventos de protones, blindaje pasivo en los cuarteles y planificación de las salidas extravehiculares según el clima espacial.",
   "capa_motor": "Contexto",
   "fuentes": [
     {

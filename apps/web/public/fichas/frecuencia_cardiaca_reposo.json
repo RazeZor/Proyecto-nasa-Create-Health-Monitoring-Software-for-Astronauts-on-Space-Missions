@@ -16,7 +16,7 @@
   ],
   "referencia_en_vuelo": null,
   "cuando_avisar": "Tramo extremo de la capa A (40 lpm o menos; 131 o más). Desviación persistente de la línea base (capa B, dos días seguidos) o deriva al alza (capa C).",
-  "prevencion": null,
+  "prevencion": "Ejercicio aeróbico y de resistencia según el plan de vuelo; mitiga la pérdida de condición cardiovascular, sin evitarla por completo.",
   "capa_motor": "A, B y C",
   "fuentes": [
     {
