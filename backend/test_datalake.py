@@ -1,0 +1,74 @@
+import hashlib
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+import datalake as dl
+
+GOES = json.dumps([
+    {"time_tag": "2026-11-14T10:00:00Z", "satellite": 18, "flux": 2.5, "energy": ">=10 MeV"},
+    {"time_tag": "2026-11-14T10:00:00Z", "satellite": 18, "flux": 2.5, "energy": ">=10 MeV"},  # duplicado
+    {"time_tag": "2026-11-14T10:05:00Z", "satellite": 18, "flux": -100000, "energy": ">=10 MeV"},  # relleno
+    {"time_tag": "2026-11-14T10:05:00Z", "satellite": 18, "flux": 1.0, "energy": ">=1 MeV"},  # energía ajena
+    {"time_tag": "2026-11-14T10:05:00Z", "satellite": 18, "flux": 0.4, "energy": ">=50 MeV"},
+]).encode()
+
+
+class Limpieza(unittest.TestCase):
+    def test_goes(self):
+        filas = dl.clean_goes(GOES)
+        self.assertEqual([(f["t_real"], f["energy"]) for f in filas],
+                         [("2026-11-14T10:00:00Z", ">=10 MeV"), ("2026-11-14T10:05:00Z", ">=50 MeV")])
+
+    def test_estructura_inesperada(self):
+        for malo in (b'{"a": 1}', b'[{"time_tag": "x"}]', b"no es json"):
+            with self.assertRaisesRegex(ValueError, "ESTRUCTURA_INESPERADA"):
+                dl.clean_goes(malo)
+
+    def test_donki(self):
+        self.assertEqual(dl.clean_donki(b""), [])
+        raw = json.dumps([{"sepID": "A", "eventTime": "2024-05-10T14:13Z",
+                           "instruments": [{"displayName": "GOES"}],
+                           "linkedEvents": [{"activityID": "F1"}], "link": "u"}]).encode()
+        self.assertEqual(dl.clean_donki(raw)[0]["t_real"], "2024-05-10T14:13:00Z")
+
+    def test_radlab_descarta_filas_sin_dosis(self):
+        raw = (b"timestamp,instrument_id,absorbed_dose_rate,dose_equivalent_rate\n"
+               b"2024-05-10T00:00:00,DosTel1,1.5,3.0\n2024-05-10T00:05:00,DosTel1,,\n")
+        self.assertEqual(len(dl.clean_radlab(raw)), 1)
+        with self.assertRaisesRegex(ValueError, "ESTRUCTURA_INESPERADA"):
+            dl.clean_radlab(b"a,b\n1,2\n")
+
+
+class Almacen(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        dl.ROOT = Path(self.tmp.name)
+        dl._get = lambda url: GOES
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_ingest_guarda_raw_curated_y_huella(self):
+        (e,) = dl.ingest("goes")
+        self.assertEqual(e["sha256"], hashlib.sha256(GOES).hexdigest())
+        self.assertEqual((dl.ROOT / e["raw"]).read_bytes(), GOES)
+        self.assertEqual(len(json.loads((dl.ROOT / e["curated"]).read_text())), 2)
+        self.assertEqual(dl.manifest()[0]["filas"], 2)
+
+    def test_ingest_con_error_no_escribe(self):
+        dl._get = lambda url: b"[1]"
+        with self.assertRaises(ValueError):
+            dl.ingest("goes")
+        self.assertEqual(list(dl.ROOT.rglob("*.*")), [])
+
+    def test_read_sin_duplicados_y_con_rango(self):
+        dl.ingest("goes")
+        dl.ingest("goes")  # misma ventana dos veces
+        self.assertEqual(len(dl.read("goes")), 2)
+        self.assertEqual(len(dl.read("goes", desde="2026-11-14T10:01:00Z")), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

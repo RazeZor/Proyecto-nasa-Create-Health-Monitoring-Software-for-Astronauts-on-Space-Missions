@@ -1,2 +1,4 @@
 
 /documentacion
+backend/data/
+__pycache__/
