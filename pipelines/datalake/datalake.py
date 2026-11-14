@@ -16,8 +16,8 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-HERE = Path(__file__).parent
-ROOT = Path(os.environ.get("DATALAKE_DIR", HERE / "data"))
+HERE = Path(__file__).resolve().parent
+ROOT = Path(os.environ.get("DATALAKE_DIR") or HERE / "data")  # vacía (como en .env.example) = por defecto
 EDA_URL = "https://visualization.osdr.nasa.gov/eda/api/missions/{mision}/telemetry_data/"
 EDA_MISION = "RR-1"  # misión por defecto; params: mision, start, end (ISO 8601)
 

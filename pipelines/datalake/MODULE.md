@@ -38,7 +38,7 @@ tags: ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli
 | --- | --- | --- |
 | [datalake.py](datalake.py) | 225 | Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2). |
 | [index.py](index.py) | 35 | CLI del datalake. Mensajes en español por defecto; VIGIA_LANG=en para inglés. |
-| [test_datalake.py](test_datalake.py) | 92 | — |
+| [test_datalake.py](test_datalake.py) | 109 | — |
 
 ### API pública
 
@@ -78,9 +78,9 @@ python3 index.py manifest
 - Internas: `datalake`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: ninguna
-- Biblioteca estándar: `csv`, `datetime`, `hashlib`, `io`, `json`, `os`, `pathlib`, `sys`, `tempfile`, `unittest`, `urllib`
+- Biblioteca estándar: `csv`, `datetime`, `hashlib`, `importlib`, `io`, `json`, `os`, `pathlib`, `sys`, `tempfile`, `unittest`, `urllib`
 
 ### Tests
 
-- `pipelines/datalake/test_datalake.py`: 9 pruebas en Limpieza (4), Almacen (5)
+- `pipelines/datalake/test_datalake.py`: 10 pruebas en Raiz (1), Limpieza (4), Almacen (5)
 <!-- CONTEXT:AUTO:END -->

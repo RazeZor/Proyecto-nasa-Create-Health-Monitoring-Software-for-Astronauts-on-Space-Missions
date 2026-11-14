@@ -61,7 +61,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_db.py](test_almacen_db.py) | 92 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
-| [test_api.py](test_api.py) | 112 | — |
+| [test_api.py](test_api.py) | 116 | — |
 | [test_api_dashboard.py](test_api_dashboard.py) | 97 | — |
 | [test_api_registro.py](test_api_registro.py) | 201 | — |
 | [test_puente_reloj.py](test_puente_reloj.py) | 215 | — |
@@ -211,7 +211,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_almacen_db.py`: 8 pruebas en Esquema (8)
 - `apps/api/test_almacen_lecturas.py`: 9 pruebas en Lecturas (9)
 - `apps/api/test_almacen_tripulacion.py`: 8 pruebas en Tripulacion (8)
-- `apps/api/test_api.py`: 10 pruebas en Api (10)
+- `apps/api/test_api.py`: 11 pruebas en Api (11)
 - `apps/api/test_api_dashboard.py`: 9 pruebas en Dashboard (9)
 - `apps/api/test_api_registro.py`: 18 pruebas en Registro (18)
 - `apps/api/test_puente_reloj.py`: 13 pruebas en Estado (5), Persistencia (3), Rutas (4), ExtremoAExtremo (1)

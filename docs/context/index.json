@@ -767,7 +767,7 @@
         },
         {
           "ruta": "apps/api/test_api.py",
-          "lineas": 112,
+          "lineas": 116,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -2728,10 +2728,16 @@
         },
         {
           "ruta": "pipelines/datalake/test_datalake.py",
-          "lineas": 92,
+          "lineas": 109,
           "descripcion": "",
           "test": true,
           "simbolos": [
+            {
+              "nombre": "Raiz",
+              "tipo": "clase",
+              "firma": "Raiz(unittest.TestCase)",
+              "doc": ""
+            },
             {
               "nombre": "Limpieza",
               "tipo": "clase",

@@ -142,6 +142,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ProvenanceTag` | función | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `Publicar` | clase | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
 | `Puente` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
+| `Raiz` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
 | `ReferenciaEntorno` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `Registro` | clase | [apps/api/test_api_registro.py](../../apps/api/test_api_registro.py) |
 | `Report` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |

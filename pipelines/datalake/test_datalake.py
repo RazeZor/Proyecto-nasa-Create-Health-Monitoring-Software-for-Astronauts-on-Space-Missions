@@ -15,6 +15,23 @@ GOES = json.dumps([
 ]).encode()
 
 
+class Raiz(unittest.TestCase):
+    def test_variable_vacia_usa_la_carpeta_data(self):
+        # .env.example trae `DATALAKE_DIR=` vacío: no debe escribir en la carpeta desde donde se corre
+        import importlib
+        import os
+        previa = os.environ.get("DATALAKE_DIR")
+        os.environ["DATALAKE_DIR"] = ""
+        try:
+            self.assertEqual(importlib.reload(dl).ROOT, Path(dl.__file__).resolve().parent / "data")
+        finally:
+            if previa is None:
+                del os.environ["DATALAKE_DIR"]
+            else:
+                os.environ["DATALAKE_DIR"] = previa
+            importlib.reload(dl)
+
+
 class Limpieza(unittest.TestCase):
     def test_goes(self):
         filas = dl.clean_goes(GOES)
