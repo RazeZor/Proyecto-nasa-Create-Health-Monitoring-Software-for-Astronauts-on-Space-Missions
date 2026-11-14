@@ -1,0 +1,27 @@
+{
+  "id": "glucosa",
+  "nombre": "Glucosa en sangre",
+  "que_es": "Concentración de glucosa en la sangre.",
+  "unidad": "mg/dL",
+  "frecuencia": "semanal",
+  "metodo": "puncion_capilar_con_tira",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Con guantes; punción con lanceta; la gota queda adherida al dedo y se acerca a la tira para que cargue por capilaridad. Gasa y bolsa de residuos biológicos a mano. Anotar la enzima de la tira.",
+    "transito": "Con guantes; punción con lanceta; la gota queda adherida al dedo y se acerca a la tira para que cargue por capilaridad. Gasa y bolsa de residuos biológicos a mano. Anotar la enzima de la tira.",
+    "superficie": "Con guantes; punción con lanceta; la gota queda adherida al dedo y se acerca a la tira para que cargue por capilaridad. Gasa y bolsa de residuos biológicos a mano. Anotar la enzima de la tira."
+  },
+  "por_que": "Se mide cada semana. En 0 g el riesgo es el material biológico flotante: los procedimientos de la ISS exigen contención.",
+  "peligro": [
+    "gravedad_alterada"
+  ],
+  "referencia_en_vuelo": "Las tiras de glucosa oxidasa dependen del oxígeno de la muestra; las de glucosa deshidrogenasa no. Fuera de 14,7 psia se prefiere deshidrogenasa como precaución, no como requisito demostrado.",
+  "cuando_avisar": "Desviación personal (capa B, 3,5 o más dos días seguidos).",
+  "prevencion": null,
+  "capa_motor": "B",
+  "fuentes": [
+    {
+      "titulo": "Informe técnico VIGÍA, §2.4",
+      "url": null
+    }
+  ]
+}

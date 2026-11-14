@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ficha.schema.json",
+  "title": "Ficha de indicador de VIGÍA",
+  "description": "Los seis campos del reto (qué es, cómo se mide en vuelo, por qué hace falta, qué peligro lo altera, cuándo avisar, qué prevención existe) más su fuente. Un valor null significa que el informe no lo respalda todavía.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "nombre", "que_es", "unidad", "frecuencia", "metodo", "como_se_mide_en_vuelo",
+               "por_que", "peligro", "referencia_en_vuelo", "cuando_avisar", "prevencion", "capa_motor", "fuentes"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+    "nombre": {"type": "string", "minLength": 1},
+    "que_es": {"type": "string", "minLength": 1},
+    "unidad": {"type": ["string", "null"]},
+    "frecuencia": {"enum": ["diaria", "semanal", "continua"]},
+    "metodo": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+    "como_se_mide_en_vuelo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["estacion", "transito", "superficie"],
+      "properties": {
+        "estacion": {"type": "string", "minLength": 1},
+        "transito": {"type": "string", "minLength": 1},
+        "superficie": {"type": "string", "minLength": 1}
+      }
+    },
+    "por_que": {"type": "string", "minLength": 1},
+    "peligro": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["radiacion", "aislamiento", "distancia", "gravedad_alterada", "entorno_cerrado"]}
+    },
+    "referencia_en_vuelo": {"type": ["string", "null"]},
+    "cuando_avisar": {"type": "string", "minLength": 1},
+    "prevencion": {"type": ["string", "null"]},
+    "capa_motor": {"type": "string", "minLength": 1},
+    "fuentes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["titulo", "url"],
+        "properties": {
+          "titulo": {"type": "string", "minLength": 1},
+          "url": {"type": ["string", "null"], "pattern": "^https://"}
+        }
+      }
+    }
+  }
+}
