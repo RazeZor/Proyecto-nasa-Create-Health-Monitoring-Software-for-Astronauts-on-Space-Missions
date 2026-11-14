@@ -2,6 +2,72 @@
   "generador": "tools/contextgen/contextgen.py",
   "modulos": [
     {
+      "modulo": "apps/api",
+      "proposito": "API FastAPI de solo lectura que expone la zona gold del ETL (`pipelines/reanclaje`): escenarios reanclados y paneles de entorno, para que la app los consuma por HTTP.",
+      "puntos_clave": [
+        "No importa el pipeline (regla 3 de la arquitectura): lee `<DATALAKE_DIR>/gold/*.json` y `gold/manifest.json`. No ejecuta el ETL ni escribe nada; para generar datos se corre `pipelines/reanclaje/index.py`.",
+        "Endpoints: `GET /salud`, `GET /gold` (manifiesto) y `GET /gold/{clave}` (escenario o panel; filtros `fuente`, `variable`, `dia_mision` sobre `serie5min` y `diario`).",
+        "La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).",
+        "Los paneles se publican con la clave `panel-<nombre del escenario>` (`panel-dosis-equivalente`). Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.",
+        "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
+        "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Sin CORS ni autenticación: es para uso local o de tierra.",
+        "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
+      ],
+      "tags": [
+        "api",
+        "fastapi",
+        "gold",
+        "etl",
+        "panel",
+        "solo-lectura"
+      ],
+      "env": [
+        "DATALAKE_DIR"
+      ],
+      "archivos": [
+        {
+          "ruta": "apps/api/main.py",
+          "lineas": 66,
+          "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "salud",
+              "tipo": "función",
+              "firma": "salud()",
+              "doc": ""
+            },
+            {
+              "nombre": "listar",
+              "tipo": "función",
+              "firma": "listar()",
+              "doc": "Manifiesto del gold: una entrada por escenario o panel, con su SHA-256."
+            },
+            {
+              "nombre": "leer",
+              "tipo": "función",
+              "firma": "leer(clave: str, fuente: str | None=None, variable: str | None=None, dia_mision: int | None=None)",
+              "doc": "JSON de un escenario (`ejemplo`) o de un panel (`panel-demo`). Los filtros recortan"
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_api.py",
+          "lineas": 62,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Api",
+              "tipo": "clase",
+              "firma": "Api(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
       "modulo": "apps/web",
       "proposito": "Interfaz a bordo de VIGÍA: registro diario, figura humana con el estado por sistema y vista del médico de vuelo. Todavía no está implementada (`app.tsx` está vacío).",
       "puntos_clave": [

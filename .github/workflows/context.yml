@@ -25,6 +25,7 @@ jobs:
             [ -d "$d" ] || continue
             if ls "$d"test_*.py >/dev/null 2>&1; then
               echo "== $d"
+              [ -f "$d"requirements.txt ] && pip install -q -r "$d"requirements.txt
               python -m unittest discover -s "$d" || exit 1
             fi
           done
