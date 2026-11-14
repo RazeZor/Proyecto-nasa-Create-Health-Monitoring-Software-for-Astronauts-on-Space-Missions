@@ -1,0 +1,35 @@
+{
+  "id": "dosis_radiacion",
+  "nombre": "Dosis de radiación",
+  "que_es": "Radiación acumulada que recibe la tripulación, medida por el dosímetro de área del perfil de misión.",
+  "unidad": "mSv",
+  "frecuencia": "continua",
+  "metodo": "dosimetro_de_area",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Dosímetro de área del perfil.",
+    "transito": "Dosímetro de área del perfil.",
+    "superficie": "Dosímetro de área del perfil."
+  },
+  "por_que": "Riesgo HRP: cánceres inducidos por radiación. Alimenta el contador de dosis acumulada de cada perfil.",
+  "peligro": [
+    "radiacion"
+  ],
+  "referencia_en_vuelo": "En la ISS la dosis efectiva se acumula a unos 0,2 a 0,5 mSv por día, entre 40 y 90 mSv en una misión típica de seis meses. Los neutrones aportan cerca del 30 % y los detectores usados no separan esa componente.",
+  "cuando_avisar": "Límite de carrera de 600 mSv y de 250 mSv por evento de partículas solares. Un flujo de protones de 10 o más en ≥10 MeV activa el modo tormenta.",
+  "prevencion": null,
+  "capa_motor": "Contexto",
+  "fuentes": [
+    {
+      "titulo": "NASA OCHMO: resumen técnico de protección radiológica",
+      "url": "https://www.nasa.gov/wp-content/uploads/2023/03/radiation-protection-technical-brief-ochmo.pdf"
+    },
+    {
+      "titulo": "RadLab: Data API",
+      "url": "https://visualization.osdr.nasa.gov/radlab/gui/data-api"
+    },
+    {
+      "titulo": "NOAA SWPC: flujo de protones GOES",
+      "url": "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json"
+    }
+  ]
+}

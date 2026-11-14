@@ -1,0 +1,31 @@
+{
+  "id": "masa_corporal",
+  "nombre": "Masa corporal",
+  "que_es": "Cantidad de materia del cuerpo; en 0 g no se pesa, se mide su inercia.",
+  "unidad": "kg",
+  "frecuencia": "semanal",
+  "metodo": "dispositivo_inercial_o_bascula",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Dispositivo inercial (SLAMMD o BMMD), cuerpo rígido y sujeto al brazo guía. Anotar cuál.",
+    "transito": "Igual que en estación.",
+    "superficie": "Báscula con corrección por la gravedad local."
+  },
+  "por_que": "Riesgo HRP: alimentación y nutrición inadecuadas.",
+  "peligro": [
+    "gravedad_alterada"
+  ],
+  "referencia_en_vuelo": "En 25 tripulantes la pérdida media fue de 4,4 % según BMMD y de 2,8 % según SLAMMD; SLAMMD tiene una exactitud de 0,2 kg. No se comparan masas de instrumentos distintos sin anotarlo.",
+  "cuando_avisar": "Deriva sostenida de la línea base (capa C).",
+  "prevencion": null,
+  "capa_motor": "C",
+  "fuentes": [
+    {
+      "titulo": "NASA HRP: Risks of Human Spaceflight",
+      "url": "https://www.nasa.gov/hrp/risks/"
+    },
+    {
+      "titulo": "Informe técnico VIGÍA, §2.4",
+      "url": null
+    }
+  ]
+}

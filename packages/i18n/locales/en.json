@@ -14,5 +14,11 @@
       "uso": "Usage:\n  python index.py ingest goes|donki|radlab|eda [key=value ...]\n  python index.py read <source> [from] [to]\n  python index.py manifest\nLanguage: VIGIA_LANG=es|en (default es)",
       "error": "error: {detalle}"
     }
+  },
+  "api": {
+    "error": {
+      "gold_no_existe": "gold «{nombre}» does not exist; run the pipelines/reanclaje ETL",
+      "gold_alterado": "gold «{nombre}» does not match its SHA-256 in the manifest"
+    }
   }
 }

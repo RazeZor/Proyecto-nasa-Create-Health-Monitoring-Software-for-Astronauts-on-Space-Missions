@@ -1,0 +1,35 @@
+{
+  "id": "spo2",
+  "nombre": "Saturación de oxígeno (SpO2)",
+  "que_es": "Porcentaje de la hemoglobina de la sangre que lleva oxígeno.",
+  "unidad": "%",
+  "frecuencia": "diaria",
+  "metodo": "oximetro_dedo_o_frente",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Sensor siempre en el mismo sitio (dedo o frente) y anotado. Mano tibia y 30 segundos sin moverse.",
+    "transito": "Igual que en estación.",
+    "superficie": "Igual que en estación. En atmósfera de exploración, comparar con la línea base del perfil."
+  },
+  "por_que": "Detecta hipoxia: la atmósfera de exploración (8,2 psia, 34 % de O2) es levemente hipóxica.",
+  "peligro": [
+    "entorno_cerrado"
+  ],
+  "referencia_en_vuelo": "En esa atmósfera la presión inspirada de O2 es de 128 mmHg, equivalente a unos 1 220 m de altitud. La evidencia terrestre indica que la frente se afecta menos que el dedo por la vasoconstricción periférica.",
+  "cuando_avisar": "Tramo extremo de la capa A (91 % o menos). De 92 a 95 % suma puntos solo si además se aparta de la línea base del perfil.",
+  "prevencion": null,
+  "capa_motor": "A",
+  "fuentes": [
+    {
+      "titulo": "Royal College of Physicians: NEWS2, tabla de puntuación",
+      "url": "https://www.rcp.ac.uk/improving-care/resources/national-early-warning-score-news-2/"
+    },
+    {
+      "titulo": "NASA HRP: Risks of Human Spaceflight",
+      "url": "https://www.nasa.gov/hrp/risks/"
+    },
+    {
+      "titulo": "Informe técnico VIGÍA, §2.4",
+      "url": null
+    }
+  ]
+}

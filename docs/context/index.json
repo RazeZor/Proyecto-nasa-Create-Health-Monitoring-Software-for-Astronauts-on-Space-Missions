@@ -2,6 +2,104 @@
   "generador": "tools/contextgen/contextgen.py",
   "modulos": [
     {
+      "modulo": "apps/api",
+      "proposito": "API FastAPI de solo lectura que expone la zona gold del ETL (`pipelines/reanclaje`): escenarios reanclados y paneles de entorno, para que la app los consuma por HTTP.",
+      "puntos_clave": [
+        "No importa el pipeline (regla 3 de la arquitectura): lee `<DATALAKE_DIR>/gold/*.json` y `gold/manifest.json`. No ejecuta el ETL ni escribe nada; para generar datos se corre `pipelines/reanclaje/index.py`.",
+        "Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`.",
+        "Documentación para agentes: `AGENTES.md` (cómo leer los datos y sus trampas) y `GET /openapi.json` (contrato, con resumen y descripción en cada ruta). Un test exige que cada ruta tenga ambos y aparezca en la guía; al agregar una ruta, documéntala en las dos partes.",
+        "Escenario o panel se distingue por el resumen del manifiesto del ETL (`serie5min` = escenario, `dosis` = panel), no por el nombre: un escenario puede llamarse `panel-demo`. La API agrega `panel-` por dentro: el panel del escenario `x` es `/paneles/x` (archivo `panel-x.json`). Pedir un escenario como panel, o al revés, da 404.",
+        "La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).",
+        "Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.",
+        "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
+        "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Sin CORS ni autenticación: es para uso local o de tierra.",
+        "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
+      ],
+      "tags": [
+        "api",
+        "fastapi",
+        "gold",
+        "etl",
+        "panel",
+        "solo-lectura"
+      ],
+      "env": [
+        "DATALAKE_DIR"
+      ],
+      "archivos": [
+        {
+          "ruta": "apps/api/main.py",
+          "lineas": 127,
+          "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "salud",
+              "tipo": "función",
+              "firma": "salud()",
+              "doc": "Devuelve {\"estado\": \"ok\"} si el servicio responde. No toca el gold."
+            },
+            {
+              "nombre": "listar_escenarios",
+              "tipo": "función",
+              "firma": "listar_escenarios()",
+              "doc": "Lista de `nombre` válidos para `/escenarios/{nombre}`. Vacía si el ETL no ha publicado nada."
+            },
+            {
+              "nombre": "leer_escenario",
+              "tipo": "función",
+              "firma": "leer_escenario(nombre: str, fuente: str | None=None, variable: str | None=None, dia_mision: int | None=None)",
+              "doc": "Objeto con `escenario`, `ventanas` (fuente y fechas reales de cada serie), `serie5min`, `diario` y `eventos`"
+            },
+            {
+              "nombre": "leer_serie",
+              "tipo": "función",
+              "firma": "leer_serie(nombre: str, fuente: str | None=None, variable: str | None=None, dia_mision: int | None=None)",
+              "doc": "Lista de puntos `{t_mision, t_real, fuente, serie, variable, valor, n, naturaleza}`. `n` = lecturas dentro"
+            },
+            {
+              "nombre": "leer_diario",
+              "tipo": "función",
+              "firma": "leer_diario(nombre: str, fuente: str | None=None, variable: str | None=None, dia_mision: int | None=None)",
+              "doc": "Lista de `{dia_mision, fuente, serie, variable, max, bins}` más `dosis` (en las tasas de dosis, µGy o µSv"
+            },
+            {
+              "nombre": "listar_paneles",
+              "tipo": "función",
+              "firma": "listar_paneles()",
+              "doc": "Lista de `nombre` válidos para `/paneles/{nombre}`; coincide con el escenario del que sale cada panel."
+            },
+            {
+              "nombre": "leer_panel",
+              "tipo": "función",
+              "firma": "leer_panel(nombre: str)",
+              "doc": "Objeto con `limites`, `perfiles_presion_mmhg`, `ventanas`, `aviso`, `dosis` (puede ser null), `protones`,"
+            },
+            {
+              "nombre": "leer_seccion",
+              "tipo": "función",
+              "firma": "leer_seccion(nombre: str, seccion: Literal['dosis', 'protones', 'cabina', 'eventos'])",
+              "doc": "Solo `dosis` (objeto o null), `protones`, `cabina` o `eventos` (listas). Otra sección da 422."
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_api.py",
+          "lineas": 89,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Api",
+              "tipo": "clase",
+              "firma": "Api(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
       "modulo": "apps/web",
       "proposito": "Interfaz a bordo de VIGÍA: registro diario, figura humana con el estado por sistema y vista del médico de vuelo. Todavía no está implementada (`app.tsx` está vacío).",
       "puntos_clave": [
@@ -162,6 +260,51 @@
       ]
     },
     {
+      "modulo": "packages/schemas",
+      "proposito": "Contratos de datos entre `pipelines/` y `apps/`. Hoy contiene el esquema de las fichas de indicador y la prueba que valida las fichas publicadas en `apps/web/public/fichas/`.",
+      "puntos_clave": [
+        "`ficha.schema.json` define los seis campos del reto (qué es, cómo se mide en vuelo, por qué hace falta, qué peligro lo altera, cuándo avisar, qué prevención) más `fuentes`. `como_se_mide_en_vuelo` se separa por perfil: `estacion`, `transito` y `superficie`.",
+        "`peligro` es una lista con los cinco peligros del HRP (`radiacion`, `aislamiento`, `distancia`, `gravedad_alterada`, `entorno_cerrado`). El informe §3.2 lo muestra como texto suelto; aquí es lista porque un indicador (síntomas) responde a más de uno.",
+        "Un `null` en `unidad`, `referencia_en_vuelo` o `prevencion` significa que el informe no lo respalda: la app no debe inventarlo. Hoy 8 de las 10 fichas tienen `prevencion` en `null`.",
+        "Cada ficha cita al menos una fuente. `url: null` es una cita al informe técnico sin enlace verificado (la ficha de glucosa solo tiene esa).",
+        "Los datos viven en `apps/web/public/fichas/<id>.json`, con `index.json` como lista de ids; el nombre del archivo es el `id`. Las fichas están solo en español.",
+        "`test_fichas.py` usa un validador mínimo con solo biblioteca estándar: cubre los términos que usa el esquema. Si el esquema crece, cambiar a una biblioteca de JSON Schema.",
+        "Si cambia el esquema, se versiona: las apps leen estos archivos sin importar código de `packages/`."
+      ],
+      "tags": [
+        "schemas",
+        "contratos",
+        "fichas",
+        "indicadores",
+        "json-schema",
+        "peligros",
+        "hrp"
+      ],
+      "env": [],
+      "archivos": [
+        {
+          "ruta": "packages/schemas/test_fichas.py",
+          "lineas": 79,
+          "descripcion": "Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar).",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "validar",
+              "tipo": "función",
+              "firma": "validar(valor, esquema, ruta='ficha')",
+              "doc": "Lista de errores de `valor` frente a `esquema`; vacía si es válido."
+            },
+            {
+              "nombre": "Fichas",
+              "tipo": "clase",
+              "firma": "Fichas(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
       "modulo": "pipelines/datalake",
       "proposito": "Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLab y EDA, con un CLI para ingerir y leer.",
       "puntos_clave": [
@@ -170,7 +313,8 @@
         "Toda hora se normaliza a UTC en `t_real` (`YYYY-MM-DDTHH:MM:SSZ`). `read(fuente, desde, hasta)` filtra comparando esas cadenas.",
         "GOES conserva solo `>=10`, `>=50` y `>=100 MeV`, descarta flujos negativos (relleno) y deduplica por (hora, satélite, energía).",
         "DONKI prueba tres direcciones en orden (nueva, anterior y espejo `api.nasa.gov`). `NASA_API_KEY` viaja solo al espejo, para que no quede en el manifiesto de las otras. Una respuesta vacía significa \"sin eventos\".",
-        "EDA no tiene API: lee los CSV exportados a mano en `pipelines/datalake/eda_manual/` y conserva sus columnas tal cual.",
+        "RadLab recibe una consulta cruda (claves sueltas y operadores, p. ej. `spacecraft=ISS \"timestamp>=2024-05-10T00:00\" absorbed_dose_rate`) o un diccionario en el que `ingest(\"radlab\", params)` solicita por defecto `instrument_id`, `absorbed_dose_rate` y `dose_equivalent_rate`. Los DosTel no traen `dose_equivalent_rate` (llega vacío).",
+        "EDA tiene API (`/eda/api/missions/{mision}/telemetry_data/`, aunque el informe §3.3 dice que no): `ingest eda mision=RR-1 start=... end=...` trae temperatura, humedad y CO2 de ISS y tierra cada 5 min, y cada fila lleva su `mision`. La telemetría de otras misiones y `radiation_data` no se han probado (esta última devolvió 500 en una ventana de prueba).",
         "`DATALAKE_DIR` cambia la carpeta del datalake (por defecto `pipelines/datalake/data/`, ignorada por git).",
         "Implementa las zonas bronce (`raw`) y plata (`curated`) del patrón de datos (docs/ARQUITECTURA.md). Otros pipelines leen `curated` con `read()`, no los archivos directamente.",
         "Los mensajes del CLI (`index.py`) salen de `packages/i18n` (claves `cli.datalake.*`): español por defecto, inglés con `VIGIA_LANG=en`. El detalle de los errores internos sigue en español.",
@@ -195,7 +339,7 @@
       "archivos": [
         {
           "ruta": "pipelines/datalake/datalake.py",
-          "lineas": 215,
+          "lineas": 225,
           "descripcion": "Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2).",
           "test": false,
           "simbolos": [
@@ -251,14 +395,14 @@
         },
         {
           "ruta": "pipelines/datalake/index.py",
-          "lineas": 30,
+          "lineas": 35,
           "descripcion": "CLI del datalake. Mensajes en español por defecto; VIGIA_LANG=en para inglés.",
           "test": false,
           "simbolos": []
         },
         {
           "ruta": "pipelines/datalake/test_datalake.py",
-          "lineas": 74,
+          "lineas": 92,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -272,6 +416,176 @@
               "nombre": "Almacen",
               "tipo": "clase",
               "firma": "Almacen(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modulo": "pipelines/reanclaje",
+      "proposito": "ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA), reancla cada ventana real a la línea de tiempo de misión y publica la zona gold y el JSON del panel de entorno que consume la app.",
+      "puntos_clave": [
+        "Entrada: un escenario JSON (`escenarios/ejemplo.json`) con ventanas `{fuente, desde, hasta, dia_mision}`. Lee solo con `datalake.read()`, nunca los archivos.",
+        "Un corrimiento único por ventana: `desde` cae en 00:00 del `dia_mision`. Se ancla en `desde` y no en la primera marca (el informe dice la primera marca) para que las fuentes con el mismo `desde` y día mantengan su relación real (§3.4 regla 5). Los valores no se escalan ni se suavizan.",
+        "Doble marca en cada punto: `t_real` (UTC) y `t_mision` (`D022T00:05:00` = día de misión 22, 00:05). El origen de la línea de misión es sintético.",
+        "Rejilla de 5 min: máximo en flujo de protones y CO2, promedio en el resto. `n` indica cuántas lecturas entran en cada paso.",
+        "Resumen diario: `max`; `dosis` (tasa de dosis x horas) en las tasas de dosis; `max_prom_horario` en CO2. `bins` cuenta los pasos con datos: con huecos la dosis queda por debajo. DosTel no trae `dose_equivalent_rate`, así que su dosis es absorbida (µGy), orientativa frente al límite de 600 mSv.",
+        "Los eventos de DONKI van aparte (`eventos`), reanclados con el mismo corrimiento. Toda fila lleva `naturaleza: \"Real\"`; el calendario de misión es escenario y no se genera aquí.",
+        "Falla cerrado: escenario inválido o ventana sin datos curated lanzan `ValueError` y no escriben nada. Es idempotente y determinista: mismo escenario y mismo curated dan el mismo archivo y SHA-256.",
+        "Salida: `<DATALAKE_DIR>/gold/<escenario>.json` y `gold/manifest.json` (SHA-256, tamaños y hora por escenario).",
+        "`panel.py` convierte el gold en el panel de entorno (`index.py panel <escenario.json> [destino]`, por defecto `gold/panel-<nombre>.json`): dosis acumulada por día y su porcentaje del límite de carrera de 600 mSv, flujo de protones con `modo_tormenta` (≥10 pfu en ≥10 MeV), y cabina con CO2 en mmHg por perfil (ppm x presión total del perfil: 760, 760 y 424 mmHg), temperatura y humedad. Una sección sin datos queda en `null` o vacía.",
+        "La dosis usa dosis equivalente si el escenario la trae; con dosis absorbida (DosTel, Lidal) va con `orientativa: true` y supone 1 µGy = 1 µSv, que es una cota inferior. `cobertura` es la fracción del día con datos (con 1 h de datos, 0,042): la dosis del día es parcial y no debe leerse como total.",
+        "`ALTEA-Survey` es el único instrumento de RadLab con `dose_equivalent_rate` (408 321 filas, cada minuto, de 2010-09 a 2012-06 en la ISS; revisado con una consulta a toda la base). `escenarios/dosis-equivalente.json` lo usa: un día completo (2011-11-16, cobertura 1,0) da 913 µSv, sin `orientativa`. Ese día está por encima de los 0,2 a 0,5 mSv/día que cita el informe; es un día y los datos son preliminares.",
+        "El panel repite `ventanas` (fuente y fechas reales) y un `aviso`: que series de fechas reales distintas caigan en el mismo día de misión es decisión del escenario, no un hecho observado (§3.4 regla 4).",
+        "GOES separa la serie por satélite (`G18 >=10 MeV`) para no mezclar satélites en el mismo paso.",
+        "Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`. Sus mensajes de error están en español sin pasar por `packages/i18n`."
+      ],
+      "tags": [
+        "etl",
+        "reanclaje",
+        "gold",
+        "rejilla",
+        "misión",
+        "t_mision",
+        "t_real",
+        "dosis",
+        "co2",
+        "flujo-protones"
+      ],
+      "env": [],
+      "archivos": [
+        {
+          "ruta": "pipelines/reanclaje/index.py",
+          "lineas": 30,
+          "descripcion": "CLI del ETL de reanclaje.",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "pipelines/reanclaje/panel.py",
+          "lineas": 82,
+          "descripcion": "Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "construir_panel",
+              "tipo": "función",
+              "firma": "construir_panel(gold)",
+              "doc": "Panel de un escenario ya reanclado. Una sección sin datos queda en null o lista vacía."
+            },
+            {
+              "nombre": "publicar",
+              "tipo": "función",
+              "firma": "publicar(escenario, destino=None)",
+              "doc": "Reancla el escenario, arma el panel y lo guarda (por defecto en gold/panel-<nombre>.json)."
+            }
+          ]
+        },
+        {
+          "ruta": "pipelines/reanclaje/reanclaje.py",
+          "lineas": 147,
+          "descripcion": "ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "medidas",
+              "tipo": "función",
+              "firma": "medidas(fuente, fila)",
+              "doc": "(serie, variable, valor) de una fila curada de una fuente con series temporales."
+            },
+            {
+              "nombre": "corrimiento",
+              "tipo": "función",
+              "firma": "corrimiento(ventana)",
+              "doc": "Un único corrimiento por ventana: `desde` cae en 00:00 del día de misión. Así las fuentes"
+            },
+            {
+              "nombre": "rejilla",
+              "tipo": "función",
+              "firma": "rejilla(fuente, filas, corrimiento)",
+              "doc": "Series a 5 minutos sobre la hora de misión."
+            },
+            {
+              "nombre": "diario",
+              "tipo": "función",
+              "firma": "diario(puntos)",
+              "doc": "Resumen por día de misión: máximo, dosis del día (tasas de dosis) y máximo del promedio"
+            },
+            {
+              "nombre": "eventos",
+              "tipo": "función",
+              "firma": "eventos(filas, corrimiento)",
+              "doc": ""
+            },
+            {
+              "nombre": "validar",
+              "tipo": "función",
+              "firma": "validar(escenario)",
+              "doc": ""
+            },
+            {
+              "nombre": "construir",
+              "tipo": "función",
+              "firma": "construir(escenario)",
+              "doc": "Genera y guarda el gold del escenario. Si falta curated en una ventana no escribe nada."
+            },
+            {
+              "nombre": "guardar",
+              "tipo": "función",
+              "firma": "guardar(clave, datos, destino=None, **resumen)",
+              "doc": "Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en"
+            }
+          ]
+        },
+        {
+          "ruta": "pipelines/reanclaje/test_panel.py",
+          "lineas": 70,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "d",
+              "tipo": "función",
+              "firma": "d(fuente, serie, variable, dia=22, **kw)",
+              "doc": ""
+            },
+            {
+              "nombre": "Panel",
+              "tipo": "clase",
+              "firma": "Panel(unittest.TestCase)",
+              "doc": ""
+            },
+            {
+              "nombre": "Publicar",
+              "tipo": "clase",
+              "firma": "Publicar(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "pipelines/reanclaje/test_reanclaje.py",
+          "lineas": 87,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "radlab",
+              "tipo": "función",
+              "firma": "radlab(t, absorbida)",
+              "doc": ""
+            },
+            {
+              "nombre": "Pasos",
+              "tipo": "clase",
+              "firma": "Pasos(unittest.TestCase)",
+              "doc": ""
+            },
+            {
+              "nombre": "Construir",
+              "tipo": "clase",
+              "firma": "Construir(unittest.TestCase)",
               "doc": ""
             }
           ]
@@ -422,6 +736,107 @@
               "nombre": "Generador",
               "tipo": "clase",
               "firma": "Generador(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modulo": "tools/validar-referencias",
+      "proposito": "Comprueba que las referencias científicas del informe existen y dicen lo que citamos. Consulta Crossref y Europe PMC para cada DOI de `referencias.json`. El resultado legible está en [documentacion/referencias-validadas.md](../../documentacion/referencias-validadas.md).",
+      "puntos_clave": [
+        "Tres comprobaciones por referencia: el DOI existe en Crossref; el título contiene `titulo_contiene` (detecta los DOI que apuntan a otro artículo); y el resumen, o el texto completo si se pide `texto_contiene`, contiene `resumen_contiene`.",
+        "Estados: `OK`, `DOI_NO_EXISTE`, `REVISAR_TITULO` y `REVISAR_TEXTO`. Solo los dos primeros fallos dan código de salida 1. `REVISAR_TEXTO` es un aviso, porque muchos textos completos no son de acceso abierto y la cifra puede estar en una tabla.",
+        "El texto completo solo existe para artículos de acceso abierto en Europe PMC. NCBI no se usa: en la red del equipo un proxy rompe su certificado TLS.",
+        "Usa solo la biblioteca estándar. Todo el IO pasa por `_get`; `evaluar()` es pura y los tests reemplazan `_get`, sin red.",
+        "No corre en CI, porque necesita red. Se ejecuta a mano cuando cambia el catálogo o el informe.",
+        "Las frases de `resumen_contiene` deben copiarse tal cual del artículo, con su guion (`8–10 mmHg` lleva un guion largo) y su espaciado (`2.5 mm Hg`)."
+      ],
+      "tags": [
+        "herramientas",
+        "referencias",
+        "papers",
+        "doi",
+        "crossref",
+        "europe-pmc",
+        "validación",
+        "informe"
+      ],
+      "env": [],
+      "archivos": [
+        {
+          "ruta": "tools/validar-referencias/test_validar_referencias.py",
+          "lineas": 72,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Evaluar",
+              "tipo": "clase",
+              "firma": "Evaluar(unittest.TestCase)",
+              "doc": ""
+            },
+            {
+              "nombre": "Validar",
+              "tipo": "clase",
+              "firma": "Validar(unittest.TestCase)",
+              "doc": "Reemplaza `_get` para no usar la red."
+            },
+            {
+              "nombre": "Catalogo",
+              "tipo": "clase",
+              "firma": "Catalogo(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/validar-referencias/validar_referencias.py",
+          "lineas": 137,
+          "descripcion": "Valida las referencias científicas del informe contra Crossref y Europe PMC.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "crossref",
+              "tipo": "función",
+              "firma": "crossref(doi)",
+              "doc": "Metadatos de Crossref: título, revista, año y primeros autores, o None."
+            },
+            {
+              "nombre": "europepmc",
+              "tipo": "función",
+              "firma": "europepmc(doi)",
+              "doc": "Resumen y PMCID del artículo en Europe PMC: (resumen, pmcid)."
+            },
+            {
+              "nombre": "texto_completo",
+              "tipo": "función",
+              "firma": "texto_completo(pmcid)",
+              "doc": "Texto plano del artículo completo (solo acceso abierto), o cadena vacía."
+            },
+            {
+              "nombre": "faltantes",
+              "tipo": "función",
+              "firma": "faltantes(frases, texto)",
+              "doc": "Frases que no aparecen en el texto, sin distinguir mayúsculas."
+            },
+            {
+              "nombre": "evaluar",
+              "tipo": "función",
+              "firma": "evaluar(ref, meta, resumen, texto='')",
+              "doc": "Calcula el estado de una referencia a partir de lo descargado. Sin IO."
+            },
+            {
+              "nombre": "validar",
+              "tipo": "función",
+              "firma": "validar(ref)",
+              "doc": "Descarga y evalúa una referencia."
+            },
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main(argv=None)",
               "doc": ""
             }
           ]

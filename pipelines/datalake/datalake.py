@@ -18,7 +18,8 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 ROOT = Path(os.environ.get("DATALAKE_DIR", HERE / "data"))
-EDA_DIR = HERE / "eda_manual"  # CSV exportados a mano desde Data Tables de EDA
+EDA_URL = "https://visualization.osdr.nasa.gov/eda/api/missions/{mision}/telemetry_data/"
+EDA_MISION = "RR-1"  # misión por defecto; params: mision, start, end (ISO 8601)
 
 GOES_URL = "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json"
 GOES_ENERGIAS = {">=10 MeV", ">=50 MeV", ">=100 MeV"}
@@ -120,10 +121,12 @@ def clean_radlab(raw):
 
 
 def clean_eda(raw):
-    columnas, filas = _csv(raw)
-    if not columnas:
-        raise EstructuraInesperada("CSV sin encabezado")
-    return filas  # sin API documentada: las columnas se conservan tal cual
+    # telemetría de cabina (temperatura, humedad, CO2; ISS y tierra): las columnas se conservan
+    filas = []
+    for x in _lista_json(raw, {"time"}):
+        fila = {"t_real": _utc(x["time"]), **{k: v for k, v in x.items() if k not in ("time", "milestones")}}
+        filas.append(fila)
+    return filas
 
 
 CLEAN = {"goes": clean_goes, "donki": clean_donki, "radlab": clean_radlab, "eda": clean_eda}
@@ -142,8 +145,12 @@ def _fuentes(fuente, params):
     if fuente == "goes":
         return [(GOES_URL, _get(GOES_URL), "json")]
     if fuente == "radlab":
-        q = {"instrument_id": "", "absorbed_dose_rate": "", "dose_equivalent_rate": "", **(params or {})}
-        url = f"{RADLAB_URL}?{urllib.parse.urlencode(q)}"
+        # RadLab usa claves sueltas y operadores (timestamp>=..., &flux): se pasa la consulta cruda o dict con columnas base.
+        if isinstance(params, str):
+            url = RADLAB_URL + ("?" + params if params else "")
+        else:
+            q = {"instrument_id": "", "absorbed_dose_rate": "", "dose_equivalent_rate": "", **(params or {})}
+            url = f"{RADLAB_URL}?{urllib.parse.urlencode(q)}"
         return [(url, _get(url), "csv")]
     if fuente == "donki":
         hoy = datetime.now(timezone.utc).date()
@@ -159,10 +166,10 @@ def _fuentes(fuente, params):
                 errores.append(f"{base}: {e}")
         raise ConnectionError("DONKI no responde en ninguna dirección: " + "; ".join(errores))
     if fuente == "eda":
-        archivos = sorted(EDA_DIR.glob("*.csv"))
-        if not archivos:
-            raise FileNotFoundError(f"no hay CSV en {EDA_DIR}")
-        return [(str(a), a.read_bytes(), "csv") for a in archivos]
+        q = dict(params or {})
+        url = EDA_URL.format(mision=urllib.parse.quote(q.pop("mision", EDA_MISION)))
+        url += "?" + urllib.parse.urlencode(q) if q else ""
+        return [(url, _get(url), "json")]
     raise ValueError(f"fuente desconocida: {fuente} (use {sorted(CLEAN)})")
 
 
@@ -182,6 +189,8 @@ def ingest(fuente, params=None):
     nuevas = []
     for url, raw, ext in _fuentes(fuente, params):
         filas = CLEAN[fuente](raw)  # puede lanzar EstructuraInesperada antes de escribir
+        if fuente == "eda":  # la respuesta no dice de qué misión es
+            filas = [{**f, "mision": (params or {}).get("mision", EDA_MISION)} for f in filas]
         ahora = datetime.now(timezone.utc)
         sha = hashlib.sha256(raw).hexdigest()
         rel = f"{fuente}/{ahora:%Y-%m-%d}/{ahora:%H%M%S}-{sha[:8]}"

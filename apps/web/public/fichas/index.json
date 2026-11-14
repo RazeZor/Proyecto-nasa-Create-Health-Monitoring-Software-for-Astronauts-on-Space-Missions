@@ -1,0 +1,12 @@
+[
+  "presion_arterial_sistolica",
+  "spo2",
+  "temperatura_central",
+  "frecuencia_cardiaca_reposo",
+  "sueno",
+  "estado_animo",
+  "glucosa",
+  "masa_corporal",
+  "sintomas",
+  "dosis_radiacion"
+]
