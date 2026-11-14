@@ -55,6 +55,7 @@ El **español es el idioma principal y el único obligatorio**. El **inglés es 
 - **Ramas:** `<tipo>/<tema-en-kebab-case>` desde `main` actualizado. Los tipos son `feat`, `fix`, `docs`, `refactor`, `test`, `data` (pipelines y fuentes) y `chore`. Ejemplo: `feat/figura-humana`.
 - **Commits:** en español, en infinitivo y con la primera línea de 72 caracteres como máximo: `Agregar ingesta de RadLab`, `Corregir zona horaria de DONKI`. El cuerpo explica el porqué cuando no es obvio.
 - **Nada directo a `main`.** Todo entra por PR, con **(CI)** en verde y al menos una revisión de otra persona del equipo.
+- **Sincronizar antes de PR o merge:** justo antes de abrir/actualizar un PR o hacer merge, ejecuta `git fetch origin` y `git merge origin/main` (o `origin/master` si aplica) para resolver cualquier conflicto nuevo antes de subir y regenerar `contextgen.py` tras el merge.
 - Un PR resuelve una cosa. Si mezcla cosas, se divide.
 - **Hook obligatorio:** `git config core.hooksPath .githooks`. Regenera el contexto en cada commit.
 
