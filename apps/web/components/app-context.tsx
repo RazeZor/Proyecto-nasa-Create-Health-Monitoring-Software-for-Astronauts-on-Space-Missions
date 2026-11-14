@@ -1,9 +1,11 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { CURRENT_DAY, MISSION_DAYS, PROFILES } from "@/lib/mock/crew"
+import { type Analisis, analizar, MISSION_DAYS } from "@/lib/engine"
+import { CURRENT_DAY, PROFILES } from "@/lib/mock/crew"
+import { store } from "@/lib/storage"
 import { sincronizarRegistros } from "@/lib/sincronizacion"
-import type { DeviceState, MissionProfile, ProfileId, Role } from "@/lib/types"
+import type { CheckInEntry, DeviceState, MissionProfile, ProfileId, Role } from "@/lib/types"
 
 interface AppState {
   day: number
@@ -23,6 +25,10 @@ interface AppState {
   setSex: (s: Sex) => void
   voice: boolean
   setVoice: (b: boolean) => void
+  /** registros del usuario y el análisis del motor sobre ellos */
+  checkIns: CheckInEntry[]
+  analisis: Analisis
+  recargarRegistros: () => Promise<void>
 }
 
 export type Sex = "female" | "male"
@@ -39,13 +45,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [liveHr, setLiveHr] = useState<number | null>(null)
   const [sex, setSex] = useState<Sex>("female")
   const [voice, setVoice] = useState(false)
+  const [checkIns, setCheckIns] = useState<CheckInEntry[]>([])
+  const recargarRegistros = useCallback(async () => setCheckIns(await store.listCheckIns()), [])
+  const analisis = useMemo(() => analizar(checkIns), [checkIns])
 
   const setDay = useCallback((d: number) => setDayRaw(Math.min(MISSION_DAYS, Math.max(1, d))), [])
   const toggleTheme = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), [])
 
   useEffect(() => {
     void sincronizarRegistros() // reintenta lo que quedó pendiente sin red
-  }, [])
+    void recargarRegistros()
+  }, [recargarRegistros])
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark")
@@ -65,8 +75,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const profile = PROFILES.find((p) => p.id === profileId) ?? PROFILES[1]
 
   const value = useMemo(
-    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr, sex, setSex, voice, setVoice }),
-    [day, setDay, profile, role, theme, toggleTheme, device, simulator, liveHr, sex, voice],
+    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros }),
+    [day, setDay, profile, role, theme, toggleTheme, device, simulator, liveHr, sex, voice, checkIns, analisis, recargarRegistros],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

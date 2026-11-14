@@ -69,7 +69,8 @@ app = FastAPI(lifespan=ciclo_de_vida, title="VIGÍA: API del ETL", description=D
     {"name": "registro", "description": "Registro de la tripulación en el almacén SQLite: lecturas, alertas y cola."},
     {"name": "sistema", "description": "Estado del servicio."}])
 # shortcut: cualquier origen, sin cookies ni autenticación real (X-Tripulante); acotar `allow_origins` al desplegar
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT"], allow_headers=["*"],
+                   allow_private_network=True)  # shortcut: sin lista de orígenes; acotar antes de producción
 app.include_router(rutas_registro)
 
 

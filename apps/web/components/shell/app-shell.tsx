@@ -11,8 +11,8 @@ import { formatDelay } from "@/components/shared/delay-countdown"
 import { STATUS_ICON, statusText } from "@/components/shared/status"
 import { AlertCenter } from "@/components/shell/alert-center"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { evaluateZones, isAdaptation, isStorm, worst } from "@/lib/engine"
-import { MISSION_DAYS, PROFILES } from "@/lib/mock/crew"
+import { isAdaptation, MISSION_DAYS } from "@/lib/engine"
+import { PROFILES } from "@/lib/mock/crew"
 import { S } from "@/lib/strings"
 import type { ProfileId, Role } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -82,8 +82,8 @@ function Brand() {
 }
 
 function SystemStatus() {
-  const { day } = useApp()
-  const overall = worst(evaluateZones(day).map((z) => z.status))
+  const { day, analisis } = useApp()
+  const overall = analisis.overall(day)
   const Icon = STATUS_ICON[overall]
   return (
     <div className="mx-4 rounded-sm border border-sidebar-border p-3">
@@ -226,10 +226,10 @@ function TopBar() {
 }
 
 function Banners() {
-  const { day } = useApp()
+  const { day, analisis } = useApp()
   return (
     <>
-      {isStorm(day) && (
+      {analisis.storm(day) && (
         <div role="alert" className="flex items-start gap-3 border-b border-status-act/40 bg-status-act/12 px-4 py-3 md:px-8">
           <ShieldAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-status-act" />
           <div>

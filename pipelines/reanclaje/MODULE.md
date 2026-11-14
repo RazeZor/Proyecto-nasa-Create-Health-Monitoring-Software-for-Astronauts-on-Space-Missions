@@ -46,7 +46,7 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 | [simulacion.py](simulacion.py) | 468 | Simulador reproducible y generación de caso de referencia para VIGÍA (§5.5). |
 | [test_panel.py](test_panel.py) | 71 | — |
 | [test_reanclaje.py](test_reanclaje.py) | 87 | — |
-| [test_simulacion.py](test_simulacion.py) | 54 | — |
+| [test_simulacion.py](test_simulacion.py) | 63 | — |
 
 ### API pública
 
@@ -95,5 +95,5 @@ python3 index.py manifest                 SHA-256 y tamaños de cada escenario g
 
 - `pipelines/reanclaje/test_panel.py`: 6 pruebas en Panel (5), Publicar (1)
 - `pipelines/reanclaje/test_reanclaje.py`: 8 pruebas en Pasos (6), Construir (2)
-- `pipelines/reanclaje/test_simulacion.py`: 3 pruebas en Simulacion (3)
+- `pipelines/reanclaje/test_simulacion.py`: 4 pruebas en Simulacion (3), FixtureDelMotor (1)
 <!-- CONTEXT:AUTO:END -->

@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { BellRing, Lock, OctagonAlert, Send, ShieldAlert, TriangleAlert, Users, X } from "lucide-react"
 import { useApp } from "@/components/app-context"
-import { getAlerts, isStorm } from "@/lib/engine"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import { cn } from "@/lib/utils"
@@ -105,7 +104,7 @@ function ToastItem({ t, onDone }: { t: Toast; onDone: (id: string) => void }) {
 }
 
 export function AlertCenter() {
-  const { day, voice } = useApp()
+  const { day, voice, analisis } = useApp()
   const seen = useRef(new Set<string>())
   const [toasts, setToasts] = useState<Toast[]>([])
 
@@ -124,14 +123,14 @@ export function AlertCenter() {
 
   useEffect(() => {
     const fresh: Toast[] = []
-    if (isStorm(day) && !seen.current.has(`storm-${day}`)) {
+    if (analisis.storm(day) && !seen.current.has(`storm-${day}`)) {
       seen.current.add(`storm-${day}`)
       fresh.push({
         id: `storm-${day}`, kind: "env", stamp: `${S.common.day} ${day}`,
         title: S.toast.stormTitle, body: S.banners.stormDetail, meta: S.toast.crew, href: "/environment", ttl: 20000,
       })
     }
-    for (const a of getAlerts(day).filter((x) => x.day === day)) {
+    for (const a of analisis.alerts(day).filter((x) => x.day === day)) {
       if (seen.current.has(a.id)) continue
       seen.current.add(a.id)
       const kind: Kind = a.layer === "context" ? "env" : a.status === "act" ? "act" : "watch"

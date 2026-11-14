@@ -147,6 +147,14 @@ class Registro(unittest.TestCase):
             self.assertIn(metodo, r.headers["access-control-allow-methods"])
             self.assertIn("x-tripulante", r.headers["access-control-allow-headers"].lower())
 
+    def test_cors_acepta_el_preflight_de_red_privada(self):
+        # Chrome lo manda al llamar a una IP de la red local desde otra página de la LAN
+        r = self.c.options("/paneles", headers={
+            "Origin": "http://192.168.1.5:3000", "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Private-Network": "true"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers["access-control-allow-private-network"], "true")
+
     def test_sintoma_desconocido_da_422(self):
         h = self.como(self.ana)
         r = self.c.post(f"/tripulantes/{self.ana}/sintomas", headers=h, json={"codigo": "headache", "gravedad": 1, "t_real": T})

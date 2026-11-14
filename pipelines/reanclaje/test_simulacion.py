@@ -50,5 +50,14 @@ class Simulacion(unittest.TestCase):
                 reanclaje.datalake.ROOT = anterior
 
 
+class FixtureDelMotor(unittest.TestCase):
+    def test_el_fixture_de_packages_engine_es_el_caso_de_referencia(self):
+        # el test de paridad del motor TS (packages/engine) usa este fixture: si el simulador
+        # cambia una regla, regénéralo: ver packages/engine/MODULE.md
+        ruta = Path(__file__).resolve().parents[2] / "packages" / "engine" / "fixtures" / "caso-referencia.json"
+        self.assertEqual(json.loads(ruta.read_text(encoding="utf-8")),
+                         json.loads(json.dumps(simulacion.generar_caso_referencia())))
+
+
 if __name__ == "__main__":
     unittest.main()

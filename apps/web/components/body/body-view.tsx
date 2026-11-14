@@ -8,7 +8,6 @@ import { BodyFigure, type BodySide } from "@/components/body/body-figure"
 import { PageHeader } from "@/components/shared/states"
 import { LayerChip, ProvenanceTag, StatusBadge, STATUS_ICON, statusSurface, statusText } from "@/components/shared/status"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { evaluateZones, worst } from "@/lib/engine"
 import { REMINDERS } from "@/lib/mock/alerts"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
@@ -70,10 +69,10 @@ function Segmented<T extends string>({
 }
 
 export function BodyView() {
-  const { day, sex, setSex } = useApp()
+  const { day, sex, setSex, analisis } = useApp()
   const [side, setSide] = useState<BodySide>("front")
-  const zones = evaluateZones(day)
-  const overall = worst(zones.map((z) => z.status))
+  const zones = analisis.zones(day)
+  const overall = analisis.overall(day)
   const [selected, setSelected] = useState<ZoneId | null>(null)
   const current = zones.find((z) => z.zone === selected)
   const since = useSinceLastCheckIn()
