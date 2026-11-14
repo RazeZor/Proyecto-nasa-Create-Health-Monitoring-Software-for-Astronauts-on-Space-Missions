@@ -7,7 +7,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 19 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 48 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 53 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
 | [pipelines/datalake](../../pipelines/datalake/MODULE.md) | Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLab y EDA, con un CLI para ingerir y leer. | ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli | 3 |
@@ -53,6 +53,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Contratos` | clase | [packages/schemas/test_schemas.py](../../packages/schemas/test_schemas.py) |
 | `DailyVitals` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `DelayCountdown` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
+| `Dependencias` | interfaz | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
 | `DeviceState` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `DeviceView` | función | [apps/web/components/device/device-view.tsx](../../apps/web/components/device/device-view.tsx) |
 | `DosisDiaEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
@@ -114,6 +115,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Report` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `ReportState` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `ReporteIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `ReporteServidor` | interfaz | [apps/web/lib/cola.ts](../../apps/web/lib/cola.ts) |
 | `ReportsView` | función | [apps/web/components/reports/reports-view.tsx](../../apps/web/components/reports/reports-view.tsx) |
 | `RespuestaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `ResumenDiarioEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
@@ -131,6 +133,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Switch` | función | [apps/web/components/device/switch.tsx](../../apps/web/components/device/switch.tsx) |
 | `Symptom` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `THREAD` | constante | [apps/web/lib/mock/alerts.ts](../../apps/web/lib/mock/alerts.ts) |
+| `TRIPULANTE` | constante | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `ThreadMessage` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `Traduccion` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
 | `TrendsView` | función | [apps/web/components/trends/trends-view.tsx](../../apps/web/components/trends/trends-view.tsx) |
@@ -184,13 +187,14 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `dia_de_vuelo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `diario` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `ejecutar_simulacion` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
-| `encolarReporte` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `encolarReporte` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `encolar_reporte` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `enviarCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `es_test` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `escalamientos_propios` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `escalamientos_recibidos` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `escalar` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
+| `estadoReporte` | función | [apps/web/lib/cola.ts](../../apps/web/lib/cola.ts) |
 | `europepmc` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `evaluar` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `evaluar_tripulante` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
@@ -232,6 +236,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `leer_sintomas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `lint` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `listarPanelesGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
+| `listarReportes` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `listar_alertas` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `listar_escalamientos` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `listar_escenarios` | función | [apps/api/main.py](../../apps/api/main.py) |
@@ -275,6 +280,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ruta_por_defecto` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
 | `salud` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `sembrar_demo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
+| `sincronizar` | función | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
+| `sincronizarRegistros` | función | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `sintomasDeCheckIn` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `statusSurface` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `statusText` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |

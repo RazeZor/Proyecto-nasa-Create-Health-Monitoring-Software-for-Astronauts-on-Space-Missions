@@ -11,7 +11,8 @@ Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva p
 - Funciona **sin conexión**: el almacenamiento local (`lib/storage.ts`) usa IndexedDB (`vigia-db`) con respaldo en memoria y todas las vistas operan sin depender de red externa.
 - Motor híbrido (`lib/engine.ts`): evalúa las capas A (seguridad clínica), B (desviación de línea base personal) y C (deriva lenta), además del modo adaptación (días 1 a 14) y modo tormenta solar (≥10 pfu). Muestra 3 niveles (`ok`, `watch`, `act`); solo el nivel `act` (rojo) escala automáticamente al oficial médico (§4.2, §5.1).
 - Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`), al catálogo oficial de perfiles (`packages/schemas/perfiles.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `NEXT_PUBLIC_VIGIA_API_URL`): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles`, `/paneles/{nombre}`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` desde `apps/api` sin generar series sintéticas (`Math.sin`) si la API está apagada.
-- `lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Aún no está conectado a la interfaz porque falta identidad (el id de tripulante). Prueba: `node --test apps/web/lib/api-registro.test.ts` (Node 22.18+).
+- `lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).
+- El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden y se detiene en el primer fallo; reenviar es seguro. La identidad es un atajo: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (id de la API; `cd apps/api && python3 -m almacen sembrar` crea astronauta=1). Sin esa variable, o sin red, la app funciona solo con el almacén local. Los informes de `/reports` usan la cola real: al encolar se envía `POST /reportes` (en la demo el retardo se acorta a 1 min como en la vista local), se consulta `GET /reportes` cada 3 s y el estado y la cuenta atrás salen del servidor (`lib/cola.ts`); si llega una respuesta se muestra. Sin red o sin identidad, el informe usa el cálculo local; un informe encolado sin red no se reenvía después (la API no tiene idempotencia para reportes). El contenido del informe sigue solo en el almacén local: la cola guarda hora, retardo, estado y respuesta. `t_real` es la hora real del envío, no el día de misión elegido en la interfaz: la API lo ve como día 1 de la misión demo.
 - Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.
 - Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`.
 
@@ -42,15 +43,15 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [app/trends/page.tsx](app/trends/page.tsx) | 5 | — |
 | [components/about/about-view.tsx](components/about/about-view.tsx) | 58 | — |
 | [components/alerts/alerts-view.tsx](components/alerts/alerts-view.tsx) | 101 | — |
-| [components/app-context.tsx](components/app-context.tsx) | 73 | — |
+| [components/app-context.tsx](components/app-context.tsx) | 78 | — |
 | [components/body/body-figure.tsx](components/body/body-figure.tsx) | 298 | — |
 | [components/body/body-view.tsx](components/body/body-view.tsx) | 220 | — |
-| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 271 | — |
+| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 273 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 71 | — |
 | [components/device/switch.tsx](components/device/switch.tsx) | 18 | — |
 | [components/environment/environment-view.tsx](components/environment/environment-view.tsx) | 363 | — |
-| [components/reports/reports-view.tsx](components/reports/reports-view.tsx) | 118 | — |
-| [components/shared/delay-countdown.tsx](components/shared/delay-countdown.tsx) | 35 | — |
+| [components/reports/reports-view.tsx](components/reports/reports-view.tsx) | 137 | — |
+| [components/shared/delay-countdown.tsx](components/shared/delay-countdown.tsx) | 34 | — |
 | [components/shared/indicator-card.tsx](components/shared/indicator-card.tsx) | 38 | — |
 | [components/shared/line-chart.tsx](components/shared/line-chart.tsx) | 80 | — |
 | [components/shared/states.tsx](components/shared/states.tsx) | 50 | — |
@@ -66,16 +67,21 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/ui/sheet.tsx](components/ui/sheet.tsx) | 138 | — |
 | [components/ui/slider.tsx](components/ui/slider.tsx) | 51 | — |
 | [lib/api-registro.test.ts](lib/api-registro.test.ts) | 39 | — |
-| [lib/api-registro.ts](lib/api-registro.ts) | 72 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
+| [lib/api-registro.ts](lib/api-registro.ts) | 94 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
+| [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
+| [lib/cola.ts](lib/cola.ts) | 28 | Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local. |
 | [lib/engine.ts](lib/engine.ts) | 73 | Analysis engine facade. Signatures are final; bodies return scripted mock results |
 | [lib/etl-client.ts](lib/etl-client.ts) | 160 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
 | [lib/mock/alerts.ts](lib/mock/alerts.ts) | 60 | — |
 | [lib/mock/crew.ts](lib/mock/crew.ts) | 62 | — |
 | [lib/mock/environment.ts](lib/mock/environment.ts) | 43 | — |
 | [lib/mock/indicators.ts](lib/mock/indicators.ts) | 134 | — |
-| [lib/storage.ts](lib/storage.ts) | 42 | — |
-| [lib/strings.ts](lib/strings.ts) | 263 | — |
-| [lib/types.ts](lib/types.ts) | 161 | — |
+| [lib/sincronizacion.ts](lib/sincronizacion.ts) | 30 | — |
+| [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
+| [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
+| [lib/storage.ts](lib/storage.ts) | 46 | — |
+| [lib/strings.ts](lib/strings.ts) | 264 | — |
+| [lib/types.ts](lib/types.ts) | 163 | — |
 | [lib/utils.ts](lib/utils.ts) | 6 | — |
 | [next.config.mjs](next.config.mjs) | 11 | @type {import('next').NextConfig} |
 | [postcss.config.mjs](postcss.config.mjs) | 8 | @type {import('postcss-load-config').Config} |
@@ -217,7 +223,13 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - función `lecturasDeCheckIn`
 - constante `sintomasDeCheckIn`
 - función `enviarCheckIn`
-- constante `encolarReporte`
+- función `encolarReporte`
+- función `listarReportes`
+
+**lib/cola.ts**
+
+- interfaz `ReporteServidor`
+- función `estadoReporte`
 
 **lib/engine.ts**
 
@@ -281,6 +293,16 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - constante `INDICATORS`
 - función `howToForProfile`
 
+**lib/sincronizacion.ts**
+
+- constante `TRIPULANTE`
+- función `sincronizarRegistros`
+
+**lib/sincronizar.ts**
+
+- interfaz `Dependencias`
+- función `sincronizar`
+
 **lib/storage.ts**
 
 - interfaz `HealthStore`
@@ -321,15 +343,17 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `NEXT_PUBLIC_VIGIA_API_URL`
+- Variables de entorno: `NEXT_PUBLIC_VIGIA_API_URL`, `NEXT_PUBLIC_VIGIA_TRIPULANTE`
 
 ### Dependencias
 
-- Internas: `../types`, `./api-registro.ts`, `./globals.css`, `./mock/alerts`, `./mock/crew`, `./mock/environment`, `./types`, `./types.ts`, `./vocabulario.json`
-- Externas: `@/components/about/about-view`, `@/components/alerts/alerts-view`, `@/components/app-context`, `@/components/body/body-figure`, `@/components/body/body-view`, `@/components/checkin/checkin-form`, `@/components/device/device-view`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/reports/reports-view`, `@/components/shared/delay-countdown`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/components/ui/sheet`, `@/components/ui/slider`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/mock/alerts`, `@/lib/mock/crew`, `@/lib/mock/environment`, `@/lib/mock/indicators`, `@/lib/storage`, `@/lib/strings`, `@/lib/types`, `@/lib/utils`, `@/public/fichas/dosis_radiacion.json`, `@/public/fichas/estado_animo.json`, `@/public/fichas/frecuencia_cardiaca_reposo.json`, `@/public/fichas/glucosa.json`, `@/public/fichas/masa_corporal.json`, `@/public/fichas/presion_arterial_sistolica.json`, `@/public/fichas/spo2.json`, `@/public/fichas/sueno.json`, `@/public/fichas/temperatura_central.json`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/merge-props`, `@base-ui/react/popover`, `@base-ui/react/slider`, `@base-ui/react/use-render`, `class-variance-authority`, `clsx`, `cn`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`
+- Internas: `../types`, `./api-registro`, `./api-registro.ts`, `./cola`, `./cola.ts`, `./globals.css`, `./mock/alerts`, `./mock/crew`, `./mock/environment`, `./sincronizar`, `./sincronizar.ts`, `./storage`, `./types`, `./types.ts`, `./vocabulario.json`
+- Externas: `@/components/about/about-view`, `@/components/alerts/alerts-view`, `@/components/app-context`, `@/components/body/body-figure`, `@/components/body/body-view`, `@/components/checkin/checkin-form`, `@/components/device/device-view`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/reports/reports-view`, `@/components/shared/delay-countdown`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/components/ui/sheet`, `@/components/ui/slider`, `@/lib/api-registro`, `@/lib/cola`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/mock/alerts`, `@/lib/mock/crew`, `@/lib/mock/environment`, `@/lib/mock/indicators`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/types`, `@/lib/utils`, `@/public/fichas/dosis_radiacion.json`, `@/public/fichas/estado_animo.json`, `@/public/fichas/frecuencia_cardiaca_reposo.json`, `@/public/fichas/glucosa.json`, `@/public/fichas/masa_corporal.json`, `@/public/fichas/presion_arterial_sistolica.json`, `@/public/fichas/spo2.json`, `@/public/fichas/sueno.json`, `@/public/fichas/temperatura_central.json`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/merge-props`, `@base-ui/react/popover`, `@base-ui/react/slider`, `@base-ui/react/use-render`, `class-variance-authority`, `clsx`, `cn`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`
 - Biblioteca estándar: `node:assert/strict`, `node:test`
 
 ### Tests
 
 - `apps/web/lib/api-registro.test.ts`: 0 pruebas
+- `apps/web/lib/cola.test.ts`: 0 pruebas
+- `apps/web/lib/sincronizar.test.ts`: 0 pruebas
 <!-- CONTEXT:AUTO:END -->

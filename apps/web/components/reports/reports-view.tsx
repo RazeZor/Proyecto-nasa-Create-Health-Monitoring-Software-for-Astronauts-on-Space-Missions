@@ -5,19 +5,22 @@ import { CheckCheck, Clock, Satellite } from "lucide-react"
 import { useApp } from "@/components/app-context"
 import { DelayCountdown, formatDelay, useReportState } from "@/components/shared/delay-countdown"
 import { EmptyState, PageHeader } from "@/components/shared/states"
+import { encolarReporte, listarReportes, retardoMin } from "@/lib/api-registro"
+import type { ReporteServidor } from "@/lib/cola"
 import { overallStatus } from "@/lib/engine"
 import { cargarPanelGold, type PanelEntornoEtl } from "@/lib/etl-client"
 import { SEED_REPORTS, THREAD } from "@/lib/mock/alerts"
 import { ppmToMmHg } from "@/lib/mock/environment"
 import { S } from "@/lib/strings"
+import { TRIPULANTE } from "@/lib/sincronizacion"
 import { store } from "@/lib/storage"
 import type { Report } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const STATE_ICON = { queued: Clock, sent: Satellite, arrived: CheckCheck }
 
-function ReportRow({ r, surgeon }: { r: Report; surgeon: boolean }) {
-  const { state, remainingMs, progress } = useReportState(r.createdAt, r.delayMinutes)
+function ReportRow({ r, surgeon, servidor }: { r: Report; surgeon: boolean; servidor?: ReporteServidor }) {
+  const { state, remainingMs, progress } = useReportState(r.createdAt, r.delayMinutes, servidor)
   const Icon = STATE_ICON[state]
   if (surgeon && state !== "arrived") return null
   return (
@@ -36,6 +39,9 @@ function ReportRow({ r, surgeon }: { r: Report; surgeon: boolean }) {
         </div>
       )}
       <p className="mt-3 text-sm">{r.summary}</p>
+      {servidor?.respuesta && (
+        <p className="mt-3 rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm"><span className="text-xs text-muted-foreground">{S.reports.reply}</span><br />{servidor.respuesta}</p>
+      )}
       <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
         {([["reading", r.reading], ["baseline", r.baseline], ["environment", r.environment], ["actionTaken", r.actionTaken]] as const).map(([k, v]) => (
           <div key={k}><dt className="text-xs text-muted-foreground">{S.reports[k]}</dt><dd>{v}</dd></div>
@@ -56,6 +62,15 @@ export function ReportsView() {
     })
     cargarPanelGold("mision-vigia").then(({ panel }) => setGold(panel))
   }, [])
+  const [cola, setCola] = useState<Map<number, ReporteServidor>>(new Map())
+  useEffect(() => {
+    if (!TRIPULANTE) return
+    const tripulante = TRIPULANTE
+    const leer = () => listarReportes(tripulante).then((l) => setCola(new Map(l.map((x) => [x.id, x]))))
+    leer()
+    const id = window.setInterval(leer, 3000)
+    return () => window.clearInterval(id)
+  }, [])
   const surgeon = role === "surgeon"
 
   async function queue() {
@@ -68,10 +83,14 @@ export function ReportsView() {
     const envResumen = gold
       ? `Gold (${gold.escenario}): protones >=10 MeV ${protTxt}, CO2 ${co2Txt} @ ${profile.cabinPressureMmHg} mmHg`
       : `Sin telemetría Gold conectada (apps/api fuera de línea) · perfil ${profile.cabinPressureMmHg} mmHg`
+    const creado = Date.now()
+    // demo: el retardo real del perfil se acorta a 1 min como en la vista local; sin red o sin identidad no hay serverId
+    const serverId = TRIPULANTE ? await encolarReporte(profile.id, new Date(creado).toISOString(), TRIPULANTE, Math.min(retardoMin(profile.id), 1)) : null
     const r: Report = {
+      serverId: serverId ?? undefined,
       id: crypto.randomUUID(),
       title: `Informe diario · Día ${day}`,
-      createdAt: Date.now(),
+      createdAt: creado,
       delayMinutes: Math.min(profile.delayMinutes, 1),
       summary: `Overall ${S.status[overallStatus(day)]}. Sent from ${profile.label} (one-way delay ${formatDelay(profile.delayMinutes)}, compressed to 1 min in demo).`,
       reading: "Ver el registro de hoy",
@@ -97,7 +116,7 @@ export function ReportsView() {
           <h2 id="q-h" className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{S.reports.queue}</h2>
           {reports === null ? null : reports.length === 0 ? <EmptyState message={S.reports.empty} /> : (
             <ul className="flex flex-col gap-3">
-              {[...reports].reverse().map((r) => <ReportRow key={r.id} r={r} surgeon={surgeon} />)}
+              {[...reports].reverse().map((r) => <ReportRow key={r.id} r={r} surgeon={surgeon} servidor={r.serverId ? cola.get(r.serverId) : undefined} />)}
             </ul>
           )}
         </section>

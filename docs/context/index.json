@@ -633,7 +633,8 @@
         "Funciona **sin conexión**: el almacenamiento local (`lib/storage.ts`) usa IndexedDB (`vigia-db`) con respaldo en memoria y todas las vistas operan sin depender de red externa.",
         "Motor híbrido (`lib/engine.ts`): evalúa las capas A (seguridad clínica), B (desviación de línea base personal) y C (deriva lenta), además del modo adaptación (días 1 a 14) y modo tormenta solar (≥10 pfu). Muestra 3 niveles (`ok`, `watch`, `act`); solo el nivel `act` (rojo) escala automáticamente al oficial médico (§4.2, §5.1).",
         "Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`), al catálogo oficial de perfiles (`packages/schemas/perfiles.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `NEXT_PUBLIC_VIGIA_API_URL`): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles`, `/paneles/{nombre}`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` desde `apps/api` sin generar series sintéticas (`Math.sin`) si la API está apagada.",
-        "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Aún no está conectado a la interfaz porque falta identidad (el id de tripulante). Prueba: `node --test apps/web/lib/api-registro.test.ts` (Node 22.18+).",
+        "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
+        "El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden y se detiene en el primer fallo; reenviar es seguro. La identidad es un atajo: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (id de la API; `cd apps/api && python3 -m almacen sembrar` crea astronauta=1). Sin esa variable, o sin red, la app funciona solo con el almacén local. Los informes de `/reports` usan la cola real: al encolar se envía `POST /reportes` (en la demo el retardo se acorta a 1 min como en la vista local), se consulta `GET /reportes` cada 3 s y el estado y la cuenta atrás salen del servidor (`lib/cola.ts`); si llega una respuesta se muestra. Sin red o sin identidad, el informe usa el cálculo local; un informe encolado sin red no se reenvía después (la API no tiene idempotencia para reportes). El contenido del informe sigue solo en el almacén local: la cola guarda hora, retardo, estado y respuesta. `t_real` es la hora real del envío, no el día de misión elegido en la interfaz: la API lo ve como día 1 de la misión demo.",
         "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.",
         "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
       ],
@@ -649,7 +650,8 @@
         "fichas"
       ],
       "env": [
-        "NEXT_PUBLIC_VIGIA_API_URL"
+        "NEXT_PUBLIC_VIGIA_API_URL",
+        "NEXT_PUBLIC_VIGIA_TRIPULANTE"
       ],
       "archivos": [
         {
@@ -820,7 +822,7 @@
         },
         {
           "ruta": "apps/web/components/app-context.tsx",
-          "lineas": 73,
+          "lineas": 78,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -880,7 +882,7 @@
         },
         {
           "ruta": "apps/web/components/checkin/checkin-form.tsx",
-          "lineas": 271,
+          "lineas": 273,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -936,7 +938,7 @@
         },
         {
           "ruta": "apps/web/components/reports/reports-view.tsx",
-          "lineas": 118,
+          "lineas": 137,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -950,7 +952,7 @@
         },
         {
           "ruta": "apps/web/components/shared/delay-countdown.tsx",
-          "lineas": 35,
+          "lineas": 34,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1178,7 +1180,7 @@
         },
         {
           "ruta": "apps/web/lib/api-registro.ts",
-          "lineas": 72,
+          "lineas": 94,
           "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
           "test": false,
           "simbolos": [
@@ -1244,8 +1246,41 @@
             },
             {
               "nombre": "encolarReporte",
-              "tipo": "constante",
+              "tipo": "función",
               "firma": "encolarReporte",
+              "doc": ""
+            },
+            {
+              "nombre": "listarReportes",
+              "tipo": "función",
+              "firma": "listarReportes",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/cola.test.ts",
+          "lineas": 35,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/cola.ts",
+          "lineas": 28,
+          "descripcion": "Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ReporteServidor",
+              "tipo": "interfaz",
+              "firma": "ReporteServidor",
+              "doc": ""
+            },
+            {
+              "nombre": "estadoReporte",
+              "tipo": "función",
+              "firma": "estadoReporte",
               "doc": ""
             }
           ]
@@ -1563,8 +1598,55 @@
           ]
         },
         {
+          "ruta": "apps/web/lib/sincronizacion.ts",
+          "lineas": 30,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "TRIPULANTE",
+              "tipo": "constante",
+              "firma": "TRIPULANTE",
+              "doc": ""
+            },
+            {
+              "nombre": "sincronizarRegistros",
+              "tipo": "función",
+              "firma": "sincronizarRegistros",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/sincronizar.test.ts",
+          "lineas": 31,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/sincronizar.ts",
+          "lineas": 22,
+          "descripcion": "Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Dependencias",
+              "tipo": "interfaz",
+              "firma": "Dependencias",
+              "doc": ""
+            },
+            {
+              "nombre": "sincronizar",
+              "tipo": "función",
+              "firma": "sincronizar",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/storage.ts",
-          "lineas": 42,
+          "lineas": 46,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1590,7 +1672,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 263,
+          "lineas": 264,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1604,7 +1686,7 @@
         },
         {
           "ruta": "apps/web/lib/types.ts",
-          "lineas": 161,
+          "lineas": 163,
           "descripcion": "",
           "test": false,
           "simbolos": [
