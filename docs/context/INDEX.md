@@ -156,6 +156,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `cargarPanelGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `catalogo` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `check_sql` | función | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
+| `ciclo_de_vida` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `clean_donki` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `clean_eda` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `clean_goes` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
