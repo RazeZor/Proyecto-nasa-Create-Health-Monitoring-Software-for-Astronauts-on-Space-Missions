@@ -542,6 +542,107 @@
           ]
         }
       ]
+    },
+    {
+      "modulo": "tools/validar-referencias",
+      "proposito": "Comprueba que las referencias científicas del informe existen y dicen lo que citamos. Consulta Crossref y Europe PMC para cada DOI de `referencias.json`. El resultado legible está en [documentacion/referencias-validadas.md](../../documentacion/referencias-validadas.md).",
+      "puntos_clave": [
+        "Tres comprobaciones por referencia: el DOI existe en Crossref; el título contiene `titulo_contiene` (detecta los DOI que apuntan a otro artículo); y el resumen, o el texto completo si se pide `texto_contiene`, contiene `resumen_contiene`.",
+        "Estados: `OK`, `DOI_NO_EXISTE`, `REVISAR_TITULO` y `REVISAR_TEXTO`. Solo los dos primeros fallos dan código de salida 1. `REVISAR_TEXTO` es un aviso, porque muchos textos completos no son de acceso abierto y la cifra puede estar en una tabla.",
+        "El texto completo solo existe para artículos de acceso abierto en Europe PMC. NCBI no se usa: en la red del equipo un proxy rompe su certificado TLS.",
+        "Usa solo la biblioteca estándar. Todo el IO pasa por `_get`; `evaluar()` es pura y los tests reemplazan `_get`, sin red.",
+        "No corre en CI, porque necesita red. Se ejecuta a mano cuando cambia el catálogo o el informe.",
+        "Las frases de `resumen_contiene` deben copiarse tal cual del artículo, con su guion (`8–10 mmHg` lleva un guion largo) y su espaciado (`2.5 mm Hg`)."
+      ],
+      "tags": [
+        "herramientas",
+        "referencias",
+        "papers",
+        "doi",
+        "crossref",
+        "europe-pmc",
+        "validación",
+        "informe"
+      ],
+      "env": [],
+      "archivos": [
+        {
+          "ruta": "tools/validar-referencias/test_validar_referencias.py",
+          "lineas": 72,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Evaluar",
+              "tipo": "clase",
+              "firma": "Evaluar(unittest.TestCase)",
+              "doc": ""
+            },
+            {
+              "nombre": "Validar",
+              "tipo": "clase",
+              "firma": "Validar(unittest.TestCase)",
+              "doc": "Reemplaza `_get` para no usar la red."
+            },
+            {
+              "nombre": "Catalogo",
+              "tipo": "clase",
+              "firma": "Catalogo(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/validar-referencias/validar_referencias.py",
+          "lineas": 137,
+          "descripcion": "Valida las referencias científicas del informe contra Crossref y Europe PMC.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "crossref",
+              "tipo": "función",
+              "firma": "crossref(doi)",
+              "doc": "Metadatos de Crossref: título, revista, año y primeros autores, o None."
+            },
+            {
+              "nombre": "europepmc",
+              "tipo": "función",
+              "firma": "europepmc(doi)",
+              "doc": "Resumen y PMCID del artículo en Europe PMC: (resumen, pmcid)."
+            },
+            {
+              "nombre": "texto_completo",
+              "tipo": "función",
+              "firma": "texto_completo(pmcid)",
+              "doc": "Texto plano del artículo completo (solo acceso abierto), o cadena vacía."
+            },
+            {
+              "nombre": "faltantes",
+              "tipo": "función",
+              "firma": "faltantes(frases, texto)",
+              "doc": "Frases que no aparecen en el texto, sin distinguir mayúsculas."
+            },
+            {
+              "nombre": "evaluar",
+              "tipo": "función",
+              "firma": "evaluar(ref, meta, resumen, texto='')",
+              "doc": "Calcula el estado de una referencia a partir de lo descargado. Sin IO."
+            },
+            {
+              "nombre": "validar",
+              "tipo": "función",
+              "firma": "validar(ref)",
+              "doc": "Descarga y evalúa una referencia."
+            },
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main(argv=None)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

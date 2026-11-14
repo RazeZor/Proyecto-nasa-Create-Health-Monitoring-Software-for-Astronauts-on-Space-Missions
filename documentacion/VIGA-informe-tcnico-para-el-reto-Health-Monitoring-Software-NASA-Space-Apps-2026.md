@@ -437,7 +437,7 @@ El umbral no es uniforme\. Para variables fisiológicas \(frecuencia cardíaca, 
 
 ### 5\.2 Línea base: de tierra a vuelo
 
-Los primeros días de vuelo no sirven como referencia\. El volumen plasmático cae cerca de 17 % en las primeras 24 horas y el mareo espacial suele ceder en 2 o 3 días; una línea base calculada con esos datos quedaría contaminada\. La lógica es:
+Los primeros días de vuelo no sirven como referencia\. El volumen plasmático cae cerca de 17 % en las primeras 24 horas y el mareo espacial suele ceder en 1 a 2 días, aunque en algunos tripulantes tarda más; una línea base calculada con esos datos quedaría contaminada\. La lógica es:
 
 *[Table view](https://miro.com/app/board/uXjVENjWII4=/?moveToWidget=3458764690457314626&cot=14)*
 
@@ -472,7 +472,7 @@ El registro diario y la prueba de vigilancia son dos actividades distintas, con 
 | --- | --- | --- | --- |
 | Registro diario | Menos de 90 segundos | Cada día | Frecuencia cardíaca, presión, SpO2, temperatura, sueño, ánimo y síntomas\. Con sensor, los cuatro primeros llegan solos |
 | Registro semanal | Unos 2 minutos | Una vez por semana | Glucosa y masa corporal |
-| Prueba de vigilancia PVT\-B | 3 minutos | Cada 3 días, o el mismo día si hay ámbar por sueño o CO2 sobre el límite | Tiempos de reacción; lapso a partir de 355 ms; salida en falso por debajo de 130 ms |
+| Prueba de vigilancia PVT\-B | 3 minutos | Cada 3 días, o el mismo día si hay ámbar por sueño o CO2 sobre el límite | Tiempos de reacción; lapso a partir de 355 ms; salida en falso por debajo de 100 ms (umbral por confirmar en Basner y colaboradores, 2011) |
 
 La PVT\-B es la versión de 3 minutos que la NASA usa en la ISS desde 2009 con el nombre Reaction Self\-Test\. En VIGÍA es un módulo posterior al núcleo del prototipo \(sección 7\.1\); el motor de referencia ya calcula cuándo debe ofrecerse\.
 
@@ -931,7 +931,7 @@ Un Galaxy Watch es electrónica de consumo, no equipo de vuelo\. En el informe y
 
 ## Fuentes
 
-Cada afirmación con cifra del informe sale de una de estas fuentes, consultadas el 14 de noviembre de 2026\.
+Cada afirmación con cifra del informe sale de una de estas fuentes, consultadas el 14 de noviembre de 2026. Los DOI y la verificación de cada artículo están en [referencias-validadas.md](referencias-validadas.md).
 
 *[Table view](https://miro.com/app/board/uXjVENjWII4=/?moveToWidget=3458764690457314802&cot=14)*
 
@@ -999,7 +999,7 @@ Cada afirmación con cifra del informe sale de una de estas fuentes, consultadas
 | --- | --- |
 | Royal College of Physicians: NEWS2, tabla de puntuación | Tramos clínicos de la capa A |
 | NASA OCHMO: resumen técnico de CO2 \(TB\-004\) y NASA\-STD\-3001, volumen 2, sección 6 | Límite de 3 mmHg en promedio de una hora; cefaleas entre 2,8 y 4,5 mmHg |
-| Williams y colaboradores, CMAJ: aclimatación al vuelo espacial | Caída de 17 % del volumen plasmático en 24 horas; mareo espacial de 2 a 3 días |
+| Williams y colaboradores, CMAJ: aclimatación al vuelo espacial | Caída de 17 % del volumen plasmático en 24 horas; mareo espacial de 1 a 2 días |
 | NASA Open APIs: DONKI | Parámetros startDate y endDate; valores por defecto |
 | Iglewicz y Hoaglin, How to Detect and Handle Outliers \(1993\) | Puntuación z modificada y umbral de 3,5 |
 | Page, "Continuous inspection schemes", Biometrika \(1954\) | CUSUM |
