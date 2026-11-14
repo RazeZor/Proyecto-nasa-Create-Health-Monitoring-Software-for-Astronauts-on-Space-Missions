@@ -87,63 +87,25 @@ export interface PanelEntornoEtl {
   eventos: EventoDonkiEtl[]
 }
 
-const AVISO_ESTANDAR =
-  "Cada serie es una medición real reanclada a la línea de tiempo de misión. Que series de fechas reales distintas coincidan en un día de misión es una decisión del escenario, no un hecho observado (informe §3.4)."
+export interface ResumenDiarioEtl {
+  dia_mision: number
+  fuente: "goes" | "radlab" | "eda"
+  serie: string
+  variable: string
+  max: number
+  bins: number
+  dosis?: number
+  max_prom_horario?: number
+}
 
-export const PANELES_RESPALDO: Record<string, PanelEntornoEtl> = {
-  "panel-demo": {
-    escenario: "panel-demo",
-    ventanas: [
-      { fuente: "radlab", desde: "2024-05-10T00:00:00Z", hasta: "2024-05-10T01:00:00Z", dia_mision: 22 },
-      { fuente: "goes", desde: "2026-11-13T15:00:00Z", hasta: "2026-11-14T16:00:00Z", dia_mision: 22 },
-      { fuente: "eda", desde: "2014-09-21T00:00:00Z", hasta: "2014-09-22T00:00:00Z", dia_mision: 22 },
-    ],
-    aviso: AVISO_ESTANDAR,
-    limites: { carrera_msv: 600, evento_msv: 250, co2_mmhg_promedio_1h: 3, protones_tormenta_pfu: 10 },
-    perfiles_presion_mmhg: { estacion: 760, transito: 760, superficie: 424 },
-    dosis: {
-      tipo: "absorbida",
-      unidad: "µGy",
-      orientativa: true,
-      series: ["DosTel1", "DosTel2"],
-      por_dia: [{ dia_mision: 22, dosis: 4.4774, acumulada: 4.4774, cobertura: 0.042 }],
-      porcentaje_limite_carrera: 0.0007,
-    },
-    protones: [{ dia_mision: 22, serie: "G18 >=10 MeV", max_pfu: 0.3453, modo_tormenta: false }],
-    cabina: [
-      {
-        dia_mision: 22,
-        mision: "RR-1",
-        co2_ppm_max: 2886.0,
-        co2_ppm_promedio_horario_max: 2879.9,
-        co2_mmhg_por_perfil: { estacion: 2.189, transito: 2.189, superficie: 1.221 },
-        co2_sobre_limite_por_perfil: { estacion: false, transito: false, superficie: false },
-        humidity_iss_max: 70.0,
-        temperature_iss_max: 26.8,
-      },
-    ],
-    eventos: [],
-  },
-  "dosis-equivalente": {
-    escenario: "dosis-equivalente",
-    ventanas: [
-      { fuente: "radlab", desde: "2011-11-16T00:00:00Z", hasta: "2011-11-17T00:00:00Z", dia_mision: 22 },
-    ],
-    aviso: AVISO_ESTANDAR,
-    limites: { carrera_msv: 600, evento_msv: 250, co2_mmhg_promedio_1h: 3, protones_tormenta_pfu: 10 },
-    perfiles_presion_mmhg: { estacion: 760, transito: 760, superficie: 424 },
-    dosis: {
-      tipo: "equivalente",
-      unidad: "µSv",
-      orientativa: false,
-      series: ["ALTEA-Survey"],
-      por_dia: [{ dia_mision: 22, dosis: 912.7941, acumulada: 912.7941, cobertura: 1.0 }],
-      porcentaje_limite_carrera: 0.1521,
-    },
-    protones: [],
-    cabina: [],
-    eventos: [],
-  },
+export interface KpiSimulacionEtl {
+  protocolo: string
+  semilla_principal: number
+  semilla_validacion: number
+  n_misiones_anomalia: number
+  n_misiones_control: number
+  generado: string
+  resultados: Record<string, unknown>
 }
 
 async function getJson<T>(ruta: string): Promise<T | null> {
@@ -166,7 +128,7 @@ export async function listarPanelesGold(): Promise<{ lista: string[]; enVivo: bo
   if (remotos && remotos.length > 0) {
     return { lista: remotos, enVivo: true }
   }
-  return { lista: Object.keys(PANELES_RESPALDO), enVivo: false }
+  return { lista: [], enVivo: false }
 }
 
 export async function cargarPanelGold(nombre: string): Promise<{ panel: PanelEntornoEtl | null; enVivo: boolean }> {
@@ -174,5 +136,25 @@ export async function cargarPanelGold(nombre: string): Promise<{ panel: PanelEnt
   if (remoto) {
     return { panel: remoto, enVivo: true }
   }
-  return { panel: PANELES_RESPALDO[nombre] ?? null, enVivo: false }
+  return { panel: null, enVivo: false }
+}
+
+export async function cargarEscenarioDiario(
+  nombre: string,
+  filtro?: { fuente?: string; variable?: string },
+): Promise<{ diario: ResumenDiarioEtl[]; enVivo: boolean }> {
+  const params = new URLSearchParams()
+  if (filtro?.fuente) params.set("fuente", filtro.fuente)
+  if (filtro?.variable) params.set("variable", filtro.variable)
+  const qs = params.toString()
+  const ruta = `/escenarios/${encodeURIComponent(nombre)}/diario${qs ? `?${qs}` : ""}`
+  const remoto = await getJson<ResumenDiarioEtl[]>(ruta)
+  if (remoto) {
+    return { diario: remoto, enVivo: true }
+  }
+  return { diario: [], enVivo: false }
+}
+
+export async function cargarKpiSimulacion(): Promise<KpiSimulacionEtl | null> {
+  return getJson<KpiSimulacionEtl>("/simulacion/kpi")
 }

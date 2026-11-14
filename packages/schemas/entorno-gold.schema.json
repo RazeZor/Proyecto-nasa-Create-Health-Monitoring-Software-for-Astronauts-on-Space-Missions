@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entorno-gold.schema.json",
+  "title": "Salida Gold de escenario reanclado de VIGÍA",
+  "description": "Contrato de salida de pipelines/reanclaje y respuesta de GET /escenarios/{nombre} en apps/api (§3.4).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["escenario", "ventanas", "serie5min", "diario", "eventos"],
+  "properties": {
+    "escenario": { "type": "string", "minLength": 1 },
+    "ventanas": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/ventana" }
+    },
+    "serie5min": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/punto5min" }
+    },
+    "diario": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resumenDiario" }
+    },
+    "eventos": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/eventoDonki" }
+    }
+  },
+  "$defs": {
+    "ventana": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fuente", "desde", "hasta", "dia_mision"],
+      "properties": {
+        "fuente": { "enum": ["goes", "donki", "radlab", "eda"] },
+        "desde": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" },
+        "hasta": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" },
+        "dia_mision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "punto5min": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t_mision", "t_real", "fuente", "serie", "variable", "valor", "n", "naturaleza"],
+      "properties": {
+        "t_mision": { "type": "string", "pattern": "^D\\d{3}T\\d{2}:\\d{2}:\\d{2}$" },
+        "t_real": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" },
+        "fuente": { "enum": ["goes", "radlab", "eda"] },
+        "serie": { "type": "string", "minLength": 1 },
+        "variable": { "type": "string", "minLength": 1 },
+        "valor": { "type": "number" },
+        "n": { "type": "integer", "minimum": 1 },
+        "naturaleza": { "const": "Real" }
+      }
+    },
+    "resumenDiario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dia_mision", "fuente", "serie", "variable", "max", "bins"],
+      "properties": {
+        "dia_mision": { "type": "integer", "minimum": 1 },
+        "fuente": { "enum": ["goes", "radlab", "eda"] },
+        "serie": { "type": "string", "minLength": 1 },
+        "variable": { "type": "string", "minLength": 1 },
+        "max": { "type": "number" },
+        "bins": { "type": "integer", "minimum": 1, "maximum": 288 },
+        "dosis": { "type": "number", "minimum": 0 },
+        "max_prom_horario": { "type": "number", "minimum": 0 }
+      }
+    },
+    "eventoDonki": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t_mision", "t_real", "fuente", "sepID", "instrumentos", "actividades", "link", "naturaleza"],
+      "properties": {
+        "t_mision": { "type": "string", "pattern": "^D\\d{3}T\\d{2}:\\d{2}:\\d{2}$" },
+        "t_real": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" },
+        "fuente": { "const": "donki" },
+        "sepID": { "type": "string", "minLength": 1 },
+        "instrumentos": { "type": "array", "items": { "type": "string" } },
+        "actividades": { "type": "array", "items": { "type": "string" } },
+        "link": { "type": ["string", "null"] },
+        "naturaleza": { "const": "Real" }
+      }
+    }
+  }
+}

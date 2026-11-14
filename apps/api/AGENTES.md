@@ -81,6 +81,10 @@ Ese 0.1521 es el porcentaje sobre 600 mSv. El día supera lo típico del informe
   "max": 7.384952333333334, "bins": 12, "dosis": 4.496398388888889}]
 ```
 
+`GET /perfiles`: catálogo oficial de los 5 perfiles de misión (`packages/schemas/perfiles.json`) con `presion_cabina_mmhg`, `latencia_min` y `gravedad`.
+
+`GET /simulacion/caso-referencia` y `GET /simulacion/kpi`: caso determinista (semilla 2026) y KPI agregados de 500+500 misiones (§5.5), verificados por SHA-256 sin mezclarse en `/escenarios` ni `/paneles`.
+
 Errores
 ```text
 GET /paneles/nada                -> 404 {"detail": "no existe el gold «nada»; corre el ETL de pipelines/reanclaje"}

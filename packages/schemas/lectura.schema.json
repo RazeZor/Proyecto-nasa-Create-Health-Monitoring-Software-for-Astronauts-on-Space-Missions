@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lectura.schema.json",
+  "title": "Lectura fisiológica diaria o semanal de VIGÍA",
+  "description": "Registro individual del tripulante con metadatos de instrumento, sitio de medición y naturaleza (§2.4, §3.2, §5.1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "tripulante_id",
+    "dia_mision",
+    "perfil_id",
+    "t_real",
+    "sintomas",
+    "naturaleza"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "tripulante_id": { "type": "string", "minLength": 1 },
+    "dia_mision": { "type": "integer", "minimum": -30, "maximum": 365 },
+    "perfil_id": { "enum": ["estacion", "transito", "transito_acoplado", "superficie_lunar", "superficie_marciana"] },
+    "t_real": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" },
+    "duracion_s": { "type": ["integer", "null"], "minimum": 0, "maximum": 3600 },
+    "fc_reposo_lpm": { "type": ["number", "null"], "minimum": 25, "maximum": 220 },
+    "fc_fuente": { "enum": ["manual", "simulador", "galaxy_watch4", null] },
+    "pas_mmHg": { "type": ["number", "null"], "minimum": 50, "maximum": 260 },
+    "pad_mmHg": { "type": ["number", "null"], "minimum": 25, "maximum": 160 },
+    "spo2_pct": { "type": ["number", "null"], "minimum": 50, "maximum": 100 },
+    "spo2_sitio": { "enum": ["dedo", "frente", "oreja", null] },
+    "temp_central_c": { "type": ["number", "null"], "minimum": 32.0, "maximum": 43.0 },
+    "temp_metodo": { "enum": ["oral", "temporal", "timpanica", "central", null] },
+    "sueno_h": { "type": ["number", "null"], "minimum": 0.0, "maximum": 24.0 },
+    "animo_1_10": { "type": ["integer", "null"], "minimum": 1, "maximum": 10 },
+    "sintomas": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["cefalea", "nausea", "mareo", "vision", "erupcion"] }
+    },
+    "glucosa_mg_dl": { "type": ["number", "null"], "minimum": 20, "maximum": 600 },
+    "glucosa_enzima": { "enum": ["deshidrogenasa", "oxidasa", null] },
+    "masa_kg": { "type": ["number", "null"], "minimum": 30, "maximum": 200 },
+    "masa_instrumento": { "enum": ["SLAMMD", "BMMD", "bascula", null] },
+    "durante_tormenta": { "type": "boolean" },
+    "naturaleza": { "enum": ["Medido", "Simulado"] }
+  }
+}

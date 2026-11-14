@@ -6,8 +6,9 @@ import { useApp } from "@/components/app-context"
 import { DelayCountdown, formatDelay, useReportState } from "@/components/shared/delay-countdown"
 import { EmptyState, PageHeader } from "@/components/shared/states"
 import { overallStatus } from "@/lib/engine"
+import { cargarPanelGold, type PanelEntornoEtl } from "@/lib/etl-client"
 import { SEED_REPORTS, THREAD } from "@/lib/mock/alerts"
-import { ENV, ppmToMmHg } from "@/lib/mock/environment"
+import { ppmToMmHg } from "@/lib/mock/environment"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import type { Report } from "@/lib/types"
@@ -47,16 +48,26 @@ function ReportRow({ r, surgeon }: { r: Report; surgeon: boolean }) {
 export function ReportsView() {
   const { day, profile, role } = useApp()
   const [reports, setReports] = useState<Report[] | null>(null)
+  const [gold, setGold] = useState<PanelEntornoEtl | null>(null)
   useEffect(() => {
     store.listReports().then((saved) => {
       const seeded = SEED_REPORTS.map((r) => ({ ...r, createdAt: Date.now() - 3600_000 }))
       setReports([...seeded, ...saved])
     })
+    cargarPanelGold("mision-vigia").then(({ panel }) => setGold(panel))
   }, [])
   const surgeon = role === "surgeon"
 
   async function queue() {
-    const env = ENV[day - 1]
+    const cab = gold?.cabina.find((c) => c.dia_mision === day) ?? gold?.cabina.at(-1)
+    const prot = gold?.protones.find((p) => p.dia_mision === day && p.serie.includes(">=10 MeV")) ?? gold?.protones.at(-1)
+    const co2Txt = cab?.co2_ppm_promedio_horario_max
+      ? `${ppmToMmHg(cab.co2_ppm_promedio_horario_max, profile.cabinPressureMmHg)} mmHg`
+      : "sin lectura"
+    const protTxt = prot ? `${prot.max_pfu} pfu` : "sin lectura"
+    const envResumen = gold
+      ? `Gold (${gold.escenario}): protones >=10 MeV ${protTxt}, CO2 ${co2Txt} @ ${profile.cabinPressureMmHg} mmHg`
+      : `Sin telemetría Gold conectada (apps/api fuera de línea) · perfil ${profile.cabinPressureMmHg} mmHg`
     const r: Report = {
       id: crypto.randomUUID(),
       title: `Informe diario · Día ${day}`,
@@ -65,7 +76,7 @@ export function ReportsView() {
       summary: `Overall ${S.status[overallStatus(day)]}. Sent from ${profile.label} (one-way delay ${formatDelay(profile.delayMinutes)}, compressed to 1 min in demo).`,
       reading: "Ver el registro de hoy",
       baseline: "In-flight baseline active",
-      environment: `Proton flux ${env.protonPfu} pfu, CO2 ${ppmToMmHg(env.co2Ppm, profile.cabinPressureMmHg)} mmHg`,
+      environment: envResumen,
       actionTaken: "Siguiendo el protocolo a bordo",
     }
     await store.saveReport(r)
