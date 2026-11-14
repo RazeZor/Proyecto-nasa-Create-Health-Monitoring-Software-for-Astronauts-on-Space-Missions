@@ -1,14 +1,14 @@
 /**
- * Análisis de la app: el escenario de partida (caso de referencia, trip-1) más los registros
+ * Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial) más los registros
  * del usuario, evaluados con el motor híbrido de packages/engine. Puro: lo llama AppProvider
  * cada vez que cambian los registros. Sin datos inventados aquí: las bandas salen de la
  * mediana y el MAD del prevuelo.
  */
-import caso from "../../../packages/engine/fixtures/caso-referencia.json" with { type: "json" }
 import {
   type Alerta, type Lectura, factorAdaptacion, madBruto, SUPUESTOS, Z_UMBRAL_CONDUCTUAL, Z_UMBRAL_FISIOLOGICO,
   evaluarTripulante,
 } from "../../../packages/engine/engine.ts"
+import type { Historial } from "./catalogo.ts"
 import { MOTOR } from "./strings.ts"
 import vocabulario from "./vocabulario.json" with { type: "json" }
 import type {
@@ -17,15 +17,12 @@ import type {
 
 export const ADAPTATION_END_DAY = 14
 export const BASELINE_SWITCH_DAY = ADAPTATION_END_DAY
-export const MISSION_DAYS = caso.dias_vuelo
 export const isAdaptation = (day: number) => day <= ADAPTATION_END_DAY
 
 const rank: Record<Status, number> = { ok: 0, watch: 1, act: 2 }
 export const worst = (list: Status[]): Status =>
   list.reduce<Status>((a, b) => (rank[b] > rank[a] ? b : a), "ok")
 
-const TRIPULANTE = caso.tripulantes[0]
-const ENTORNO = Object.fromEntries(caso.entorno_diario.map((e) => [e.dia_mision, e]))
 const ZONA: Record<string, ZoneId> = { fc: "heart", pas: "heart", news2: "heart", sueno: "mind", animo: "mind", conductual: "mind", co2: "head" }
 const ZONAS: ZoneId[] = ["head", "heart", "bone", "blood", "mind"]
 const SINTOMA = vocabulario.sintomas as Record<Symptom, string>
@@ -68,11 +65,14 @@ function bandaMad(valores: number[], minimo: number, z: number, desplazamiento: 
   return [med + desplazamiento - ancho, med + desplazamiento + ancho]
 }
 
-export function analizar(checkIns: CheckInEntry[]) {
+export function analizar(checkIns: CheckInEntry[], historial: Historial) {
+  const TRIPULANTE = historial
+  const MISSION_DAYS = historial.dias_vuelo
+  const ENTORNO = Object.fromEntries(historial.entorno_diario.map((e) => [e.dia_mision, e]))
   const porDia = new Map<number, Lectura>(TRIPULANTE.lecturas.map((l) => [l.dia_mision, l as Lectura]))
   for (const e of checkIns) porDia.set(e.day, enLectura(e, porDia.get(e.day))) // el último registro del día manda
   const lecturas = [...porDia.values()].sort((a, b) => a.dia_mision - b.dia_mision)
-  const alertasMotor = evaluarTripulante({ id: TRIPULANTE.id, lecturas }, ENTORNO)
+  const alertasMotor = evaluarTripulante({ id: "yo", lecturas }, ENTORNO)
   const todas = alertasMotor.map(textoAlerta)
 
   const alerts = (day: number) =>
@@ -143,14 +143,14 @@ export function analizar(checkIns: CheckInEntry[]) {
 
   const overall = (day: number): Status => worst(zones(day).map((z) => z.status))
   const storm = (day: number) => Boolean(ENTORNO[day]?.modo_tormenta)
-  return { alerts, vitals, zones, overall, baselines, storm }
+  return { alerts, vitals, zones, overall, baselines, storm, missionDays: MISSION_DAYS }
 }
 
 export type Analisis = ReturnType<typeof analizar>
 
 /** Estado de un registro recién llenado: lo peor que el motor encuentra ese día, o ámbar si hay síntomas. */
-export function evaluateCheckIn(e: Omit<CheckInEntry, "status" | "id" | "createdAt">, previos: CheckInEntry[]): Status {
+export function evaluateCheckIn(e: Omit<CheckInEntry, "status" | "id" | "createdAt">, previos: CheckInEntry[], historial: Historial): Status {
   const nuevo: CheckInEntry = { ...e, status: "ok", id: "nuevo", createdAt: "" }
-  const estado = analizar([...previos, nuevo]).alerts(e.day).filter((a) => a.day === e.day).map((a) => a.status)
+  const estado = analizar([...previos, nuevo], historial).alerts(e.day).filter((a) => a.day === e.day).map((a) => a.status)
   return worst([...estado, ...(e.symptoms.length > 0 ? (["watch"] as Status[]) : [])])
 }

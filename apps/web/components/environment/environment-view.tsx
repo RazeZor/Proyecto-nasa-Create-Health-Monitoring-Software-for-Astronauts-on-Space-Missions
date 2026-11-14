@@ -16,15 +16,7 @@ import {
   type PanelEntornoEtl,
   type ResumenDiarioEtl,
 } from "@/lib/etl-client"
-import { MISSION_DAYS } from "@/lib/engine"
-import {
-  CAREER_LIMIT_MSV,
-  CO2_LIMIT_MMHG,
-  ENV_SOURCES,
-  PFU_THRESHOLD,
-  ppmToMmHg,
-  RADIATION_INDICATOR,
-} from "@/lib/mock/environment"
+import { ppmToMmHg } from "@/lib/utils"
 import { S } from "@/lib/strings"
 
 const REAL = (source: string, date: string) => ({ kind: "real" as const, source, date })
@@ -46,7 +38,11 @@ function fechaVentana(gold: PanelEntornoEtl | null, fuente: "radlab" | "goes" | 
 }
 
 export function EnvironmentView() {
-  const { day, profile } = useApp()
+  const { day, profile, catalogo, analisis } = useApp()
+  const MISSION_DAYS = analisis.missionDays
+  const { limite_carrera_msv: CAREER_LIMIT_MSV, co2_limite_mmhg: CO2_LIMIT_MMHG, umbral_protones_pfu: PFU_THRESHOLD } = catalogo.entorno
+  const ENV_SOURCES = catalogo.fuentes
+  const RADIATION_INDICATOR = catalogo.radiacion
   const [paneles, setPaneles] = useState<string[]>([])
   const [panelActivo, setPanelActivo] = useState<string>("")
   const [gold, setGold] = useState<PanelEntornoEtl | null>(null)

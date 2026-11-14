@@ -1,10 +1,11 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { type Analisis, analizar, MISSION_DAYS } from "@/lib/engine"
-import { CURRENT_DAY, PROFILES } from "@/lib/mock/crew"
+import { cargarCatalogo, type Catalogo } from "@/lib/catalogo"
+import { type Analisis, analizar } from "@/lib/engine"
 import { store } from "@/lib/storage"
-import { sincronizarRegistros } from "@/lib/sincronizacion"
+import { sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
+import { S } from "@/lib/strings"
 import type { CheckInEntry, DeviceState, MissionProfile, ProfileId, Role } from "@/lib/types"
 
 interface AppState {
@@ -29,6 +30,8 @@ interface AppState {
   checkIns: CheckInEntry[]
   analisis: Analisis
   recargarRegistros: () => Promise<void>
+  /** lo que da la API: perfiles, fichas, historial, recordatorios, mensajes y referencia de entorno */
+  catalogo: Catalogo
 }
 
 export type Sex = "female" | "male"
@@ -36,7 +39,33 @@ export type Sex = "female" | "male"
 const Ctx = createContext<AppState | null>(null)
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [day, setDayRaw] = useState(CURRENT_DAY)
+  const [catalogo, setCatalogo] = useState<Catalogo | null | "error">(null)
+  const cargar = useCallback(() => {
+    setCatalogo(null)
+    cargarCatalogo(TRIPULANTE ?? 1).then((c) => setCatalogo(c ?? "error"))
+  }, [])
+  useEffect(cargar, [cargar])
+  if (catalogo === null) return <Estado mensaje={S.common.loading} />
+  if (catalogo === "error") return <Estado mensaje={S.common.apiOffline} detalle={S.common.apiOfflineDetail} reintentar={cargar} />
+  return <Sesion catalogo={catalogo}>{children}</Sesion>
+}
+
+function Estado({ mensaje, detalle, reintentar }: { mensaje: string; detalle?: string; reintentar?: () => void }) {
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center" role={reintentar ? "alert" : "status"}>
+      <p className="text-lg font-semibold">{mensaje}</p>
+      {detalle && <p className="max-w-md text-sm text-muted-foreground">{detalle}</p>}
+      {reintentar && (
+        <button type="button" onClick={reintentar} className="min-h-11 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground">
+          {S.common.retry}
+        </button>
+      )}
+    </main>
+  )
+}
+
+function Sesion({ catalogo, children }: { catalogo: Catalogo; children: React.ReactNode }) {
+  const [day, setDayRaw] = useState(catalogo.historial.dia_actual)
   const [profileId, setProfileId] = useState<ProfileId>("transit")
   const [role, setRole] = useState<Role>("astronaut")
   const [theme, setTheme] = useState<"dark" | "light">("dark")
@@ -47,9 +76,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [voice, setVoice] = useState(false)
   const [checkIns, setCheckIns] = useState<CheckInEntry[]>([])
   const recargarRegistros = useCallback(async () => setCheckIns(await store.listCheckIns()), [])
-  const analisis = useMemo(() => analizar(checkIns), [checkIns])
+  const analisis = useMemo(() => analizar(checkIns, catalogo.historial), [checkIns, catalogo])
 
-  const setDay = useCallback((d: number) => setDayRaw(Math.min(MISSION_DAYS, Math.max(1, d))), [])
+  const dias = catalogo.historial.dias_vuelo
+  const setDay = useCallback((d: number) => setDayRaw(Math.min(dias, Math.max(1, d))), [dias])
   const toggleTheme = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), [])
 
   useEffect(() => {
@@ -72,11 +102,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => window.clearInterval(id)
   }, [streaming])
 
-  const profile = PROFILES.find((p) => p.id === profileId) ?? PROFILES[1]
+  const profile = catalogo.perfiles.find((p) => p.id === profileId) ?? catalogo.perfiles[1]
 
   const value = useMemo(
-    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros }),
-    [day, setDay, profile, role, theme, toggleTheme, device, simulator, liveHr, sex, voice, checkIns, analisis, recargarRegistros],
+    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo }),
+    [day, setDay, profile, role, theme, toggleTheme, device, simulator, liveHr, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

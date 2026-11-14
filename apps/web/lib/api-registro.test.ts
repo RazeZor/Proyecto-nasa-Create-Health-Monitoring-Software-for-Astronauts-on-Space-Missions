@@ -1,7 +1,7 @@
 // Pruebas del cliente de registro: node --test apps/web/lib/api-registro.test.ts (Node 22.18+, sin dependencias)
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { capaApi, indicadorApi, lecturasDeCheckIn, nivelApi, perfilApi, retardoMin, sintomasDeCheckIn, tReal } from "./api-registro.ts"
+import { capaApi, indicadorApi, lecturasDeCheckIn, nivelApi, perfilApi, reporteDeServidor, retardoMin, sintomasDeCheckIn, tReal } from "./api-registro.ts"
 import type { CheckInEntry } from "./types.ts"
 
 const base = {
@@ -36,4 +36,14 @@ test("el registro se convierte en lecturas solo de lo medido", () => {
 
 test("los síntomas usan los códigos de la API con gravedad leve", () => {
   assert.deepEqual(sintomasDeCheckIn(base).map((s) => [s.codigo, s.gravedad]), [["cefalea", 1], ["vision", 1]])
+})
+
+test("reporteDeServidor: el contenido guardado en la API llega a la interfaz", () => {
+  const r = reporteDeServidor({
+    id: 7, creado_t_real: "2026-12-06T07:00:00Z", retardo_min: 12, llega_t_real: "2026-12-06T07:12:00Z",
+    estado: "respondido", respuesta: "ok",
+    contenido: { titulo: "Informe diario · Día 23", resumen: "Ámbar", lectura: "FC 68", linea_base: "56-64", entorno: "CO2 1.4", accion: "Refugio" },
+  })
+  assert.deepEqual([r.id, r.serverId, r.title, r.delayMinutes, r.createdAt], ["7", 7, "Informe diario · Día 23", 12, Date.parse("2026-12-06T07:00:00Z")])
+  assert.equal(reporteDeServidor({ id: 8, creado_t_real: "2026-12-06T07:00:00Z", retardo_min: 0, llega_t_real: "2026-12-06T07:00:00Z", estado: "en_cola", respuesta: null, contenido: null }).title, "#8")
 })

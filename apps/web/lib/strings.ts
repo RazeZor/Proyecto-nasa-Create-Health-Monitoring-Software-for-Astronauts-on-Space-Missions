@@ -211,6 +211,7 @@ export const S = {
     subtitle: "Cola de salida al Cirujano de Vuelo. La entrega tarda el retardo de ida.",
     queue: "Cola de salida",
     reply: "Respuesta de Tierra",
+    sendFailed: "No se pudo encolar el informe: la API no respondió. Inténtalo de nuevo.",
     thread: "Conversación con el Cirujano de Vuelo",
     send: "Encolar informe de hoy",
     queued: "En cola",
@@ -260,6 +261,8 @@ export const S = {
     retry: "Reintentar",
     day: "Día",
     close: "Cerrar",
+    apiOffline: "No se pudo conectar con la API de VIGÍA",
+    apiOfflineDetail: "La app no guarda datos de ejemplo: perfiles, fichas e historial vienen de apps/api. Revisa que el servidor esté encendido y vuelve a intentarlo.",
   },
 } as const
 

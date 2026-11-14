@@ -11,8 +11,7 @@ import { formatDelay } from "@/components/shared/delay-countdown"
 import { STATUS_ICON, statusText } from "@/components/shared/status"
 import { AlertCenter } from "@/components/shell/alert-center"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { isAdaptation, MISSION_DAYS } from "@/lib/engine"
-import { PROFILES } from "@/lib/mock/crew"
+import { isAdaptation } from "@/lib/engine"
 import { S } from "@/lib/strings"
 import type { ProfileId, Role } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -122,7 +121,8 @@ function Cell({ label, children, className }: { label: string; children: React.R
 }
 
 function TopBar() {
-  const { day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, voice, setVoice } = useApp()
+  const { day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, voice, setVoice, catalogo, analisis } = useApp()
+  const MISSION_DAYS = analisis.missionDays
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
       <div className="flex flex-wrap items-stretch">
@@ -141,7 +141,7 @@ function TopBar() {
 
         <Cell label={S.top.profile}>
           <select className={selectCls} value={profile.id} onChange={(e) => setProfileId(e.target.value as ProfileId)}>
-            {PROFILES.map((p) => (
+            {catalogo.perfiles.map((p) => (
               <option key={p.id} value={p.id}>{p.label}</option>
             ))}
           </select>

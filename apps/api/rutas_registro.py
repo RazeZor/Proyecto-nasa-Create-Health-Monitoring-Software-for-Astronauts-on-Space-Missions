@@ -79,6 +79,7 @@ class AlertaIn(BaseModel):
 class ReporteIn(BaseModel):
     creado_t_real: str
     retardo_min: StrictInt
+    contenido: dict | None = None  # título, resumen, lectura... lo que muestra la app
 
 
 class ContextoIn(BaseModel):
@@ -164,7 +165,7 @@ def crear_reporte(cuerpo: ReporteIn, id: int = Depends(propio), conn=Depends(con
 
 @router.get("/tripulantes/{id}/reportes", responses=ERRORES, summary="Lista los reportes propios")
 def listar_reportes(id: int = Depends(propio), conn=Depends(conexion)):
-    """Reportes del tripulante con `estado` en_cola, entregado o respondido."""
+    """Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null)."""
     return cola.leer_reportes(conn, id)
 
 

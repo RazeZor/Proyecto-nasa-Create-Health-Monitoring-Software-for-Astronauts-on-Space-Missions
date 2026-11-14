@@ -1,15 +1,17 @@
 """Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2)."""
+import json
 from datetime import timedelta
 
 from .tripulacion import FORMATO, _insertar, _utc
 
 
-def encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min):
+def encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min, contenido=None):
     if isinstance(retardo_min, bool) or not isinstance(retardo_min, int) or not 0 <= retardo_min <= 22:
         raise ValueError(f"retardo_min debe ser un entero de 0 a 22: {retardo_min!r}")
     llega = (_utc(creado_t_real) + timedelta(minutes=retardo_min)).strftime(FORMATO)
-    return _insertar(conn, "INSERT INTO reporte_cola (tripulante_id, creado_t_real, retardo_min, llega_t_real) "
-                           "VALUES (?, ?, ?, ?)", (tripulante_id, creado_t_real, retardo_min, llega))
+    return _insertar(conn, "INSERT INTO reporte_cola (tripulante_id, creado_t_real, retardo_min, llega_t_real, contenido) "
+                           "VALUES (?, ?, ?, ?, ?)", (tripulante_id, creado_t_real, retardo_min, llega,
+                                                      None if contenido is None else json.dumps(contenido, ensure_ascii=False)))
 
 
 def avanzar_cola(conn, ahora):
@@ -31,5 +33,8 @@ def responder_reporte(conn, reporte_id, respuesta, t_real):
 
 
 def leer_reportes(conn, tripulante_id):
-    return [dict(f) for f in conn.execute("SELECT * FROM reporte_cola WHERE tripulante_id = ? ORDER BY creado_t_real, id",
-                                          (tripulante_id,))]
+    filas = [dict(f) for f in conn.execute("SELECT * FROM reporte_cola WHERE tripulante_id = ? ORDER BY creado_t_real, id",
+                                           (tripulante_id,))]
+    for f in filas:
+        f["contenido"] = None if f["contenido"] is None else json.loads(f["contenido"])
+    return filas

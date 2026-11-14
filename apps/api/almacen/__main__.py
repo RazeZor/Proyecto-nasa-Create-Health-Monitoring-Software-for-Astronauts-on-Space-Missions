@@ -10,4 +10,9 @@ if __name__ == "__main__":
         sys.exit("uso: python3 -m almacen migrar|sembrar")
     conn = conectar()
     version = migrar(conn)
-    print(json.dumps({"version": version} if comando == "migrar" else tripulacion.sembrar_demo(conn)))
+    if comando == "migrar":
+        print(json.dumps({"version": version}))
+    else:
+        ids = tripulacion.sembrar_demo(conn)
+        tripulacion.sembrar_informes_demo(conn, ids)  # mockups del tablero: viven aquí, no en la app
+        print(json.dumps(ids))

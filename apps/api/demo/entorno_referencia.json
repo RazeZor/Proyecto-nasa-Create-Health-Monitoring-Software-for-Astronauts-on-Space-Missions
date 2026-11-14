@@ -1,0 +1,13 @@
+{
+  "dosis_previa_carrera_msv": 212,
+  "naturaleza_dosis_previa": "Simulado",
+  "limite_carrera_msv": 600,
+  "co2_limite_mmhg": 3,
+  "umbral_protones_pfu": 10,
+  "fuentes": [
+    {"id": "radlab", "nombre": "RadLab", "origen": "NASA OSDR", "detalle": "ALTEA / DosTel", "alimenta": "Tasa de dosis absorbida y equivalente"},
+    {"id": "eda", "nombre": "EDA", "origen": "NASA OSDR", "detalle": "RR-1 ISS", "alimenta": "CO2, temperatura y humedad de cabina"},
+    {"id": "donki", "nombre": "DONKI", "origen": "NASA CCMC", "detalle": "SEP en vivo", "alimenta": "Eventos de partículas solares"},
+    {"id": "goes", "nombre": "GOES", "origen": "NOAA SWPC", "detalle": "GOES-18 >=10 MeV", "alimenta": "Flujo integral de protones"}
+  ]
+}

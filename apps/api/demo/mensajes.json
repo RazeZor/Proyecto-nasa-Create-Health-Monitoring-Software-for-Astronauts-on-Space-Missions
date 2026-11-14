@@ -1,0 +1,5 @@
+[
+  {"id": "t1", "de": "astronaut", "autor": "Tú", "dia": 22, "hora": "15:10", "texto": "Refugiándome por el SPE. Me siento bien, dormí mal las dos últimas noches."},
+  {"id": "t2", "de": "surgeon", "autor": "Cirujano de Vuelo", "dia": 22, "hora": "15:41", "texto": "Recibido. Permanece en el refugio hasta que el flujo baje de 10 pfu. Añade una nota de sueño al informe de mañana."},
+  {"id": "t3", "de": "surgeon", "autor": "Cirujano de Vuelo", "dia": 23, "hora": "09:05", "texto": "Veo tu tendencia de FC. Sin acción desde tierra por ahora; sigue el protocolo de deriva en tu pantalla Cuerpo."}
+]

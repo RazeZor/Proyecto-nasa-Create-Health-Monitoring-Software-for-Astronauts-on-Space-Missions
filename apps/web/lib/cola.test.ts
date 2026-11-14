@@ -6,7 +6,7 @@ import { estadoReporte, type ReporteServidor } from "./cola.ts"
 const T0 = Date.parse("2026-11-14T08:00:00Z")
 const srv = (estado: ReporteServidor["estado"], retardo = 10): ReporteServidor => ({
   id: 1, creado_t_real: "2026-11-14T08:00:00Z", retardo_min: retardo,
-  llega_t_real: new Date(T0 + retardo * 60_000).toISOString().replace(".000Z", "Z"), estado, respuesta: null,
+  llega_t_real: new Date(T0 + retardo * 60_000).toISOString().replace(".000Z", "Z"), estado, respuesta: null, contenido: null,
 })
 
 test("sin servidor usa el cálculo local de la demo", () => {

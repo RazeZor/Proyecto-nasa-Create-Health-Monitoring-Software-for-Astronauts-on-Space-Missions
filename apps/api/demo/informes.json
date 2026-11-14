@@ -1,0 +1,15 @@
+[
+  {
+    "creado_t_real": "2026-12-06T07:00:00Z",
+    "retardo_min": 12,
+    "respuesta": "Recibido. Sigue con la ventana de sueño ampliada y vuelve a medir la FC mañana.",
+    "contenido": {
+      "titulo": "Informe diario · Día 23",
+      "resumen": "Estado general ámbar. Continúa la deriva de FC, sueño corto.",
+      "lectura": "FC en reposo 68 lpm, sueño 5.8 h, SpO2 97 %",
+      "linea_base": "Banda de FC en vuelo 56-64 lpm",
+      "entorno": "Flujo de protones 64 pfu (en descenso), CO2 1.4 mmHg",
+      "accion": "Refugio de 6 h el día 22. Ventana de sueño ampliada planificada."
+    }
+  }
+]

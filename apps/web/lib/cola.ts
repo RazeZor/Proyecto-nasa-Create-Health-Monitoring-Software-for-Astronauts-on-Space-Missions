@@ -8,6 +8,17 @@ export interface ReporteServidor {
   llega_t_real: string
   estado: "en_cola" | "entregado" | "respondido"
   respuesta: string | null
+  contenido: ContenidoReporte | null
+}
+
+/** Lo que la app escribe en un informe; vive en el servidor (columna `contenido`). */
+export interface ContenidoReporte {
+  titulo: string
+  resumen: string
+  lectura: string
+  linea_base: string
+  entorno: string
+  accion: string
 }
 
 const ESPERA_ENVIO_MS = 3000 // el reporte sale tras 3 s en la demo local

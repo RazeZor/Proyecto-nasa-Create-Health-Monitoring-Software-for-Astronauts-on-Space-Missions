@@ -1,6 +1,8 @@
 """Misión, tripulantes y consentimiento; conversión de t_real a hora de misión."""
+import json
 import sqlite3
 from datetime import datetime, timezone
+from pathlib import Path
 
 FORMATO = "%Y-%m-%dT%H:%M:%SZ"
 DEMO_DIA1 = "2026-11-14T00:00:00Z"
@@ -65,6 +67,21 @@ def t_mision(conn, tripulante_id, t_real):
     """`D022T00:05:00`; None antes del día 1 (línea base de tierra)."""
     dia = dia_de_vuelo(conn, tripulante_id, t_real)
     return None if dia is None else f"D{dia:03d}T{_utc(t_real):%H:%M:%S}"
+
+
+def sembrar_informes_demo(conn, ids):
+    """Informes de ejemplo ya respondidos por tierra (apps/api/demo/informes.json). Idempotente por título."""
+    from . import cola  # cola importa de este módulo
+    ruta = Path(__file__).resolve().parents[1] / "demo" / "informes.json"
+    titulos = {(r["contenido"] or {}).get("titulo") for r in cola.leer_reportes(conn, ids["astronauta"])}
+    for informe in json.loads(ruta.read_text(encoding="utf-8")):
+        if informe["contenido"]["titulo"] in titulos:
+            continue
+        rid = cola.encolar_reporte(conn, ids["astronauta"], informe["creado_t_real"], informe["retardo_min"], informe["contenido"])
+        llega = conn.execute("SELECT llega_t_real FROM reporte_cola WHERE id = ?", (rid,)).fetchone()[0]
+        conn.execute("UPDATE reporte_cola SET estado = 'entregado' WHERE id = ?", (rid,))
+        conn.commit()
+        cola.responder_reporte(conn, rid, informe["respuesta"], llega)
 
 
 def sembrar_demo(conn):

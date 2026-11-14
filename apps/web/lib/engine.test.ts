@@ -1,8 +1,15 @@
 // Pruebas del análisis de la app: node --test apps/web/lib/engine.test.ts (Node 22.18+, sin dependencias)
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { analizar, evaluateCheckIn } from "./engine.ts"
+import caso from "../../../packages/engine/fixtures/caso-referencia.json" with { type: "json" }
+import type { Historial } from "./catalogo.ts"
+import { analizar as analizarCon, evaluateCheckIn as evaluar } from "./engine.ts"
 import type { CheckInEntry } from "./types.ts"
+
+// Lo que devuelve GET /tripulantes/1/historial: el tripulante 1 del caso de referencia.
+const HISTORIAL = { ...caso, dia_actual: 24, lecturas: caso.tripulantes[0].lecturas } as unknown as Historial
+const analizar = (c: CheckInEntry[]) => analizarCon(c, HISTORIAL)
+const evaluateCheckIn = (e: CheckInEntry, p: CheckInEntry[]) => evaluar(e, p, HISTORIAL)
 
 const entrada = (day: number, o: Partial<CheckInEntry> = {}): CheckInEntry => ({
   id: `c${day}`, day, createdAt: "2026-11-14T08:00:00Z", durationSec: 60, restingHr: 60, hrFromWatch: false,

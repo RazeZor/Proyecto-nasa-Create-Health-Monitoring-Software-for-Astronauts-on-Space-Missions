@@ -6,16 +6,16 @@ import { IndicatorCard } from "@/components/shared/indicator-card"
 import { LineChart } from "@/components/shared/line-chart"
 import { EmptyState, PageHeader } from "@/components/shared/states"
 import { LayerChip, ProvenanceTag } from "@/components/shared/status"
-import { BASELINE_SWITCH_DAY, MISSION_DAYS } from "@/lib/engine"
-import { INDICATORS } from "@/lib/mock/indicators"
+import { BASELINE_SWITCH_DAY } from "@/lib/engine"
 import { S } from "@/lib/strings"
 import type { IndicatorId } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-const IDS = Object.keys(INDICATORS) as IndicatorId[]
 
 export function TrendsView() {
-  const { day, analisis } = useApp()
+  const { day, analisis, catalogo } = useApp()
+  const INDICATORS = catalogo.indicadores
+  const IDS = Object.keys(INDICATORS) as IndicatorId[]
   const [id, setId] = useState<IndicatorId>("restingHr")
   const info = INDICATORS[id]
   const points = analisis.vitals(day)
@@ -52,7 +52,7 @@ export function TrendsView() {
         {points.length === 0 ? (
           <EmptyState message={S.trends.noData} />
         ) : (
-          <LineChart label={info.label} unit={info.unit} points={points} days={MISSION_DAYS} currentDay={day}
+          <LineChart label={info.label} unit={info.unit} points={points} days={analisis.missionDays} currentDay={day}
             bands={analisis.baselines(id)} switchDay={BASELINE_SWITCH_DAY} markers={alerts.map((a) => a.day)}
             threshold={info.safetyHigh ? { value: info.safetyHigh, label: `Safety limit ${info.safetyHigh}` } : info.safetyLow ? { value: info.safetyLow, label: `Safety limit ${info.safetyLow}` } : undefined} />
         )}
