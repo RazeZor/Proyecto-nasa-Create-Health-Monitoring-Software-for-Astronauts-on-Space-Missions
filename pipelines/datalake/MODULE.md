@@ -13,7 +13,7 @@ Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLa
 - GOES conserva solo `>=10`, `>=50` y `>=100 MeV`, descarta flujos negativos (relleno) y deduplica por (hora, satélite, energía).
 - DONKI prueba tres direcciones en orden (nueva, anterior y espejo `api.nasa.gov`). `NASA_API_KEY` viaja solo al espejo, para que no quede en el manifiesto de las otras. Una respuesta vacía significa "sin eventos".
 - RadLab recibe la consulta cruda (claves sueltas y operadores, p. ej. `spacecraft=ISS "timestamp>=2024-05-10T00:00" absorbed_dose_rate`), no pares clave=valor. Los DosTel no traen `dose_equivalent_rate` (llega vacío).
-- EDA no tiene API: lee los CSV exportados a mano en `pipelines/datalake/eda_manual/` y conserva sus columnas tal cual.
+- EDA tiene API (`/eda/api/missions/{mision}/telemetry_data/`, aunque el informe §3.3 dice que no): `ingest eda mision=RR-1 start=... end=...` trae temperatura, humedad y CO2 de ISS y tierra cada 5 min, y cada fila lleva su `mision`. La telemetría de otras misiones y `radiation_data` no se han probado (esta última devolvió 500 en una ventana de prueba).
 - `DATALAKE_DIR` cambia la carpeta del datalake (por defecto `pipelines/datalake/data/`, ignorada por git).
 - Implementa las zonas bronce (`raw`) y plata (`curated`) del patrón de datos (docs/ARQUITECTURA.md). Otros pipelines leen `curated` con `read()`, no los archivos directamente.
 - Los mensajes del CLI (`index.py`) salen de `packages/i18n` (claves `cli.datalake.*`): español por defecto, inglés con `VIGIA_LANG=en`. El detalle de los errores internos sigue en español.
@@ -36,9 +36,9 @@ tags: ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [datalake.py](datalake.py) | 217 | Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2). |
-| [index.py](index.py) | 34 | CLI del datalake. Mensajes en español por defecto; VIGIA_LANG=en para inglés. |
-| [test_datalake.py](test_datalake.py) | 83 | — |
+| [datalake.py](datalake.py) | 222 | Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2). |
+| [index.py](index.py) | 35 | CLI del datalake. Mensajes en español por defecto; VIGIA_LANG=en para inglés. |
+| [test_datalake.py](test_datalake.py) | 92 | — |
 
 ### API pública
 
@@ -66,6 +66,7 @@ python3 index.py manifest
 ### Configuración y fuentes externas
 
 - Variables de entorno: `DATALAKE_DIR`, `NASA_API_KEY`
+- `EDA_URL`: https://visualization.osdr.nasa.gov/eda/api/missions/{mision}/telemetry_data/
 - `GOES_URL`: https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json
 - `DONKI_URLS`: https://ccmc.gsfc.nasa.gov/DONKI/WS/get/SEP
 - `DONKI_URLS`: https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/SEP
@@ -81,5 +82,5 @@ python3 index.py manifest
 
 ### Tests
 
-- `pipelines/datalake/test_datalake.py`: 8 pruebas en Limpieza (4), Almacen (4)
+- `pipelines/datalake/test_datalake.py`: 9 pruebas en Limpieza (4), Almacen (5)
 <!-- CONTEXT:AUTO:END -->

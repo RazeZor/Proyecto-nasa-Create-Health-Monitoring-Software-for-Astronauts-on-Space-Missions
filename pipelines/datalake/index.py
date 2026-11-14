@@ -1,6 +1,7 @@
 """CLI del datalake. Mensajes en español por defecto; VIGIA_LANG=en para inglés.
 
   python3 index.py ingest goes|donki|radlab|eda [clave=valor ...]
+      eda: mision=RR-1 start=2014-09-21T00:00:00Z end=2014-09-22T00:00:00Z
       radlab: consulta cruda, ej. spacecraft=ISS "timestamp>=2024-05-10T00:00" absorbed_dose_rate
   python3 index.py read <fuente> [desde] [hasta]
   python3 index.py manifest
