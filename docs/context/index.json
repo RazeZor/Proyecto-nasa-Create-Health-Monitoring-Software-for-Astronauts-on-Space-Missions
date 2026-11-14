@@ -14,6 +14,7 @@
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
         "Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.",
         "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez.",
+        "CORS abierto a `GET`, `POST` y `PUT` desde cualquier origen (atajo, sin autenticación real; acotar `allow_origins` al desplegar).",
         "Vocabulario: los códigos de síntoma salen de `packages/schemas/vocabulario.json` (`almacen/vocabulario.py` lo lee); el retardo de reporte es 0 a 22 min (migración 002) y existe el indicador `presion_arterial_diastolica` (sin reglas ni ficha).",
         "La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).",
         "El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.",
@@ -260,7 +261,7 @@
         },
         {
           "ruta": "apps/api/main.py",
-          "lineas": 139,
+          "lineas": 140,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -584,7 +585,7 @@
         },
         {
           "ruta": "apps/api/test_api_registro.py",
-          "lineas": 156,
+          "lineas": 165,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -606,6 +607,7 @@
         "Funciona **sin conexión**: el almacenamiento local (`lib/storage.ts`) usa IndexedDB (`vigia-db`) con respaldo en memoria y todas las vistas operan sin depender de red externa.",
         "Motor híbrido (`lib/engine.ts`): evalúa las capas A (seguridad clínica), B (desviación de línea base personal) y C (deriva lenta), además del modo adaptación (días 1 a 14) y modo tormenta solar (≥10 pfu). Muestra 3 niveles (`ok`, `watch`, `act`); solo el nivel `act` (rojo) escala automáticamente al oficial médico (§4.2, §5.1).",
         "Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `NEXT_PUBLIC_VIGIA_API_URL`): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles` y `/paneles/{nombre}` (`panel-demo`, `dosis-equivalente`) desde `apps/api` y cae automáticamente a `PANELES_RESPALDO` si la API está apagada o sin red.",
+        "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Aún no está conectado a la interfaz porque falta identidad (el id de tripulante). Prueba: `node --test apps/web/lib/api-registro.test.ts` (Node 22.18+).",
         "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`, `transit`, `transit-docked`, `lunar`, `mars`) con conversión de CO2 de ppm a mmHg según la presión total de cabina (760, 527 y 424 mmHg).",
         "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
       ],
@@ -1140,6 +1142,87 @@
           "descripcion": "",
           "test": false,
           "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/api-registro.test.ts",
+          "lineas": 39,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/api-registro.ts",
+          "lineas": 72,
+          "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "API_BASE_URL",
+              "tipo": "constante",
+              "firma": "API_BASE_URL",
+              "doc": ""
+            },
+            {
+              "nombre": "indicadorApi",
+              "tipo": "constante",
+              "firma": "indicadorApi",
+              "doc": ""
+            },
+            {
+              "nombre": "nivelApi",
+              "tipo": "constante",
+              "firma": "nivelApi",
+              "doc": ""
+            },
+            {
+              "nombre": "capaApi",
+              "tipo": "constante",
+              "firma": "capaApi",
+              "doc": ""
+            },
+            {
+              "nombre": "perfilApi",
+              "tipo": "constante",
+              "firma": "perfilApi",
+              "doc": ""
+            },
+            {
+              "nombre": "retardoMin",
+              "tipo": "constante",
+              "firma": "retardoMin",
+              "doc": ""
+            },
+            {
+              "nombre": "tReal",
+              "tipo": "constante",
+              "firma": "tReal",
+              "doc": ""
+            },
+            {
+              "nombre": "lecturasDeCheckIn",
+              "tipo": "función",
+              "firma": "lecturasDeCheckIn",
+              "doc": ""
+            },
+            {
+              "nombre": "sintomasDeCheckIn",
+              "tipo": "constante",
+              "firma": "sintomasDeCheckIn",
+              "doc": ""
+            },
+            {
+              "nombre": "enviarCheckIn",
+              "tipo": "función",
+              "firma": "enviarCheckIn",
+              "doc": ""
+            },
+            {
+              "nombre": "encolarReporte",
+              "tipo": "constante",
+              "firma": "encolarReporte",
+              "doc": ""
+            }
+          ]
         },
         {
           "ruta": "apps/web/lib/engine.ts",
@@ -1825,7 +1908,7 @@
         },
         {
           "ruta": "packages/schemas/test_vocabulario.py",
-          "lineas": 60,
+          "lineas": 65,
           "descripcion": "El contrato vocabulario.json no puede desviarse de lo que de verdad usan la base de datos, las fichas y la interfaz.",
           "test": true,
           "simbolos": [

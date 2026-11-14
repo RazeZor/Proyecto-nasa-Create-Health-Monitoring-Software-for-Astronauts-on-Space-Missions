@@ -110,6 +110,15 @@ class Registro(unittest.TestCase):
         self.assertNotIn("explicacion", v)
         self.assertEqual(v["tramo"], "3 puntos")
 
+    def test_cors_permite_escribir_desde_la_interfaz(self):
+        for metodo in ("POST", "PUT"):
+            r = self.c.options("/tripulantes/1/lecturas", headers={
+                "Origin": "http://localhost:3000", "Access-Control-Request-Method": metodo,
+                "Access-Control-Request-Headers": "x-tripulante,content-type"})
+            self.assertEqual(r.status_code, 200, metodo)
+            self.assertIn(metodo, r.headers["access-control-allow-methods"])
+            self.assertIn("x-tripulante", r.headers["access-control-allow-headers"].lower())
+
     def test_sintoma_desconocido_da_422(self):
         h = self.como(self.ana)
         r = self.c.post(f"/tripulantes/{self.ana}/sintomas", headers=h, json={"codigo": "headache", "gravedad": 1, "t_real": T})

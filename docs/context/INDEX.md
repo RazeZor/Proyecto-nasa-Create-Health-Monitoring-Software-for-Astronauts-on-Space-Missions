@@ -7,7 +7,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 19 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 46 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 48 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos entre `pipelines/` y `apps/`. Hoy contiene el esquema de las fichas de indicador y la prueba que valida las fichas publicadas en `apps/web/public/fichas/`. | schemas, contratos, fichas, indicadores, json-schema, peligros, hrp | 2 |
 | [pipelines/datalake](../../pipelines/datalake/MODULE.md) | Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLab y EDA, con un CLI para ingerir y leer. | ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli | 3 |
@@ -21,6 +21,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | --- | --- | --- |
 | `ADAPTATION_END_DAY` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `ALERTS` | constante | [apps/web/lib/mock/alerts.ts](../../apps/web/lib/mock/alerts.ts) |
+| `API_BASE_URL` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `API_BASE_URL` | constante | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `AboutView` | función | [apps/web/components/about/about-view.tsx](../../apps/web/components/about/about-view.tsx) |
 | `Alert` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
@@ -151,6 +152,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `avanzar` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `avanzar_cola` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `bloque` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `capaApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `cargarPanelGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `catalogo` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `check_sql` | función | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
@@ -177,7 +179,9 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `detectarIdioma` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `dia_de_vuelo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `diario` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
+| `encolarReporte` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `encolar_reporte` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
+| `enviarCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `es_test` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `escalamientos_propios` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `escalamientos_recibidos` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
@@ -198,10 +202,12 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `guardar_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `howToForProfile` | función | [apps/web/lib/mock/indicators.ts](../../apps/web/lib/mock/indicators.ts) |
 | `idioma_actual` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
+| `indicadorApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `ingest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `isAdaptation` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `isStorm` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `isStormDay` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
+| `lecturasDeCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `leer` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `leer_diario` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_escenario` | función | [apps/api/main.py](../../apps/api/main.py) |
@@ -231,12 +237,14 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `migrar` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
 | `modulo_de` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `modulos` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `nivelApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `normalizar` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `normalizar` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `obtener_linea_base` | función | [apps/api/almacen/base.py](../../apps/api/almacen/base.py) |
 | `overallStatus` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `pendientes` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `pendientes` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `perfilApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `ppmToMmHg` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `propio` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `publicar` | función | [pipelines/reanclaje/panel.py](../../pipelines/reanclaje/panel.py) |
@@ -251,14 +259,17 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `render_modulo` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `responder` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `responder_reporte` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
+| `retardoMin` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `ruta_por_defecto` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
 | `salud` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `sembrar_demo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
+| `sintomasDeCheckIn` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `statusSurface` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `statusText` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `store` | constante | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
 | `t` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `t` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
+| `tReal` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `t_mision` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `texto_completo` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `tiene_consentimiento` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
