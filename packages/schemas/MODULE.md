@@ -34,7 +34,7 @@ tags: schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
 | [test_fichas.py](test_fichas.py) | 42 | Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar). |
-| [test_schemas.py](test_schemas.py) | 117 | Pruebas de contrato para perfiles, lecturas, entorno Gold y caso de referencia. |
+| [test_schemas.py](test_schemas.py) | 122 | Pruebas de contrato para perfiles, lecturas, entorno Gold y caso de referencia. |
 | [test_vocabulario.py](test_vocabulario.py) | 65 | El contrato vocabulario.json no puede desviarse de lo que de verdad usan la base de datos, las fichas y la interfaz. |
 | [validador.py](validador.py) | 82 | Validador mínimo de JSON Schema (Draft 2020-12) con solo biblioteca estándar. |
 

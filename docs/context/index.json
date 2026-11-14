@@ -2021,7 +2021,7 @@
         },
         {
           "ruta": "packages/schemas/test_schemas.py",
-          "lineas": 117,
+          "lineas": 122,
           "descripcion": "Pruebas de contrato para perfiles, lecturas, entorno Gold y caso de referencia.",
           "test": true,
           "simbolos": [

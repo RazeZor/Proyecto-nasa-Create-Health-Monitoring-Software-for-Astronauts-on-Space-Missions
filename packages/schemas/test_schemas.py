@@ -75,24 +75,29 @@ class Contratos(unittest.TestCase):
 
     def test_caso_referencia_valido(self):
         esquema = _cargar("caso-referencia.schema.json")
-        lectura = lambda d: {
-            "dia_mision": d,
-            "fc_reposo_lpm": 60,
-            "pas_mmHg": 115,
-            "pad_mmHg": 72,
-            "spo2_pct": 98,
-            "temp_central_c": 36.7,
-            "sueno_h": 7.2,
-            "animo_1_10": 8,
-            "sintomas": [],
-            "durante_tormenta": False,
-        }
-        entorno = lambda d: {
-            "dia_mision": d,
-            "co2_mmhg_max_horario": 2.1,
-            "flujo_protones_10mev_pfu": 0.4,
-            "modo_tormenta": False,
-        }
+
+        def lectura(d):
+            return {
+                "dia_mision": d,
+                "fc_reposo_lpm": 60,
+                "pas_mmHg": 115,
+                "pad_mmHg": 72,
+                "spo2_pct": 98,
+                "temp_central_c": 36.7,
+                "sueno_h": 7.2,
+                "animo_1_10": 8,
+                "sintomas": [],
+                "durante_tormenta": False,
+            }
+
+        def entorno(d):
+            return {
+                "dia_mision": d,
+                "co2_mmhg_max_horario": 2.1,
+                "flujo_protones_10mev_pfu": 0.4,
+                "modo_tormenta": False,
+            }
+
         caso = {
             "semilla": 2026,
             "dias_prevuelo": 14,

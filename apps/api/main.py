@@ -112,8 +112,8 @@ def _leer_gold_verificado(clave, predicado, nombre_error=None):
 
 def _cargar(nombre, es_panel):
     clave = f"panel-{nombre}" if es_panel else nombre  # el prefijo es del ETL, no de la API
-    pred = (lambda e: "dosis" in e) if es_panel else (lambda e: "serie5min" in e)
-    return _leer_gold_verificado(clave, pred, nombre_error=nombre)
+    campo = "dosis" if es_panel else "serie5min"
+    return _leer_gold_verificado(clave, lambda e: campo in e, nombre_error=nombre)
 
 
 def _filtrar(filas, fuente, variable, dia_mision):
