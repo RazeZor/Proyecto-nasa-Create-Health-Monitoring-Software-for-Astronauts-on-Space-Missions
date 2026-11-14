@@ -108,7 +108,7 @@ apps/api/test_almacen_*.py            una prueba por módulo
 - Produces: `registrar_lectura(conn, tripulante_id: int, indicador: str, valor: float, t_real: str, origen: str = "manual", metodo: str | None = None, naturaleza: str = "Simulado") -> int`; `leer_lecturas(conn, tripulante_id: int, indicador: str | None = None, desde: str | None = None, hasta: str | None = None) -> list[dict]` (orden por `t_real`; dicts con las columnas de `lectura`); `registrar_sintoma(conn, tripulante_id: int, codigo: str, gravedad: int, t_real: str) -> int`; `leer_sintomas(conn, tripulante_id: int, desde: str | None = None, hasta: str | None = None) -> list[dict]`.
 
 - [ ] **Step 1: Write the failing tests**
-  - `test_registrar_y_leer`: una lectura de `spo2` 95 devuelve un dict con `valor == 95.0`, `unidad`-independiente, `t_mision == "D001T08:00:00"` y `naturaleza == "Simulado"`.
+  - `test_registrar_y_leer`: una lectura de `spo2` 95 devuelve un dict con `valor == 95.0`, `t_mision == "D001T08:00:00"` y `naturaleza == "Simulado"`.
   - `test_reenviar_no_duplica`: dos llamadas idénticas devuelven el mismo id y `len(leer_lecturas(..)) == 1`.
   - `test_antes_del_vuelo`: `t_real` previo al día 1 se guarda con `t_mision is None`.
   - `test_valor_invalido`: `float("nan")`, `float("inf")` y `"abc"` lanzan `ValueError`.
