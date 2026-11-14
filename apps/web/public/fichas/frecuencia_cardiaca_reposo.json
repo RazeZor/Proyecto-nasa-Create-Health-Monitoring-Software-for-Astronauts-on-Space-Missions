@@ -1,0 +1,31 @@
+{
+  "id": "frecuencia_cardiaca_reposo",
+  "nombre": "Frecuencia cardíaca en reposo",
+  "que_es": "Latidos por minuto con el cuerpo en reposo.",
+  "unidad": "lpm",
+  "frecuencia": "diaria",
+  "metodo": "sensor_muneca_o_prenda",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Sensor de muñeca o prenda. Valor de reposo del día, nunca una lectura suelta.",
+    "transito": "Sensor de muñeca o prenda. Valor de reposo del día, nunca una lectura suelta.",
+    "superficie": "Sensor de muñeca o prenda. Valor de reposo del día, nunca una lectura suelta."
+  },
+  "por_que": "Vigila las adaptaciones cardiovasculares, uno de los riesgos del HRP.",
+  "peligro": [
+    "gravedad_alterada"
+  ],
+  "referencia_en_vuelo": null,
+  "cuando_avisar": "Tramo extremo de la capa A (40 lpm o menos; 131 o más). Desviación persistente de la línea base (capa B, dos días seguidos) o deriva al alza (capa C).",
+  "prevencion": null,
+  "capa_motor": "A, B y C",
+  "fuentes": [
+    {
+      "titulo": "Royal College of Physicians: NEWS2, tabla de puntuación",
+      "url": "https://www.rcp.ac.uk/improving-care/resources/national-early-warning-score-news-2/"
+    },
+    {
+      "titulo": "NASA HRP: Risks of Human Spaceflight",
+      "url": "https://www.nasa.gov/hrp/risks/"
+    }
+  ]
+}

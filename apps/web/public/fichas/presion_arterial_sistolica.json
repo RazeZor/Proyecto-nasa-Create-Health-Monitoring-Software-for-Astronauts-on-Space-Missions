@@ -1,0 +1,31 @@
+{
+  "id": "presion_arterial_sistolica",
+  "nombre": "Presión arterial sistólica",
+  "que_es": "Presión máxima de la sangre en las arterias en cada latido.",
+  "unidad": "mmHg",
+  "frecuencia": "diaria",
+  "metodo": "manguito_oscilometrico",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Pies en las restricciones. Brazo inmóvil y relajado. Dos lecturas; registrar la segunda.",
+    "transito": "Igual que en estación.",
+    "superficie": "Sentado, manguito a la altura del corazón. Dos lecturas; registrar la segunda."
+  },
+  "por_que": "Vigila la adaptación cardiovascular y la respuesta al ejercicio.",
+  "peligro": [
+    "gravedad_alterada"
+  ],
+  "referencia_en_vuelo": "La presión braquial de 24 h baja entre 8 y 10 mmHg tras 3 a 6 meses en la ISS, con una caída de 39 % en la resistencia vascular sistémica.",
+  "cuando_avisar": "Tramo extremo de la capa A (90 mmHg o menos; 220 o más), o desviación persistente de la línea base del perfil.",
+  "prevencion": "Ejercicio aeróbico y de resistencia según el plan de vuelo.",
+  "capa_motor": "A; B contra la línea base del perfil",
+  "fuentes": [
+    {
+      "titulo": "The Journal of Physiology, DOI 10.1113/jphysiol.2014.284869 (presión braquial de 24 h en vuelo)",
+      "url": "https://physoc.onlinelibrary.wiley.com/doi/10.1113/jphysiol.2014.284869"
+    },
+    {
+      "titulo": "Royal College of Physicians: NEWS2, tabla de puntuación",
+      "url": "https://www.rcp.ac.uk/improving-care/resources/national-early-warning-score-news-2/"
+    }
+  ]
+}
