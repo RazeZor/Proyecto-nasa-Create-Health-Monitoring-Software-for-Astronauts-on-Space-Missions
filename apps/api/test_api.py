@@ -74,6 +74,13 @@ class Api(unittest.TestCase):
         (self.gold / "panel-x.json").write_text('{"escenario": "otro"}')
         self.assertEqual(self.cliente.get("/paneles/x").status_code, 500)
 
+    def test_openapi_documentado_para_agentes(self):
+        guia = (Path(main.__file__).parent / "AGENTES.md").read_text()
+        for ruta, operaciones in self.cliente.get("/openapi.json").json()["paths"].items():
+            for op in operaciones.values():
+                self.assertTrue(op.get("summary") and op.get("description"), ruta)
+            self.assertIn(ruta.split("{seccion}")[0].rstrip("/"), guia, ruta)  # la guía cubre cada ruta
+
     def test_sin_gold_lista_vacia(self):
         (self.gold / "manifest.json").unlink()
         self.assertEqual(self.cliente.get("/escenarios").json(), [])
