@@ -5,10 +5,13 @@ arquitectura) y comprueba su SHA-256 contra gold/manifest.json antes de servirlo
 
   uvicorn main:app --port 8000      (desde apps/api)
 """
+import asyncio
 import hashlib
 import json
 import os
 import sys
+from contextlib import asynccontextmanager, suppress
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -18,6 +21,8 @@ from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
 
+from almacen import conectar, migrar  # noqa: E402
+from almacen.cola import avanzar_cola  # noqa: E402
 from i18n import t  # noqa: E402
 from rutas_registro import router as rutas_registro  # noqa: E402
 
@@ -29,7 +34,36 @@ DESCRIPCION = (
 ERRORES = {404: {"description": "El nombre no existe como este tipo (escenario o panel) en el manifiesto del gold."},
            500: {"description": "El archivo gold no coincide con el SHA-256 del manifiesto. No usar sus datos."}}
 
-app = FastAPI(title="VIGÍA: API del ETL", description=DESCRIPCION, openapi_tags=[
+def _tic():
+    """Entrega los reportes cuyo retardo ya pasó (hora real del servidor)."""
+    conn = conectar()
+    try:
+        migrar(conn)
+        avanzar_cola(conn, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+    finally:
+        conn.close()
+
+
+async def _reloj(segundos):
+    while True:
+        await asyncio.sleep(segundos)
+        with suppress(Exception):  # shortcut: un fallo suelto no mata el reloj; sin registro de errores todavía
+            await asyncio.to_thread(_tic)
+
+
+@asynccontextmanager
+async def ciclo_de_vida(_app):
+    """Reloj de la cola de reportes: cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 lo apaga)."""
+    segundos = float(os.environ.get("VIGIA_RELOJ_SEG", "5"))
+    tarea = asyncio.create_task(_reloj(segundos)) if segundos > 0 else None
+    yield
+    if tarea:
+        tarea.cancel()
+        with suppress(asyncio.CancelledError):
+            await tarea
+
+
+app = FastAPI(lifespan=ciclo_de_vida, title="VIGÍA: API del ETL", description=DESCRIPCION, openapi_tags=[
     {"name": "escenarios", "description": "Gold completo de un escenario: serie de 5 min, resumen diario y eventos."},
     {"name": "paneles", "description": "Panel de entorno ya resumido para la pantalla: dosis, protones, cabina y eventos."},
     {"name": "registro", "description": "Registro de la tripulación en el almacén SQLite: lecturas, alertas y cola."},
