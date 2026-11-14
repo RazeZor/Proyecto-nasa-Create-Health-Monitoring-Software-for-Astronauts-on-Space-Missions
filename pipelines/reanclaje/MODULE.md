@@ -35,8 +35,8 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
 | [index.py](index.py) | 25 | CLI del ETL de reanclaje. |
-| [reanclaje.py](reanclaje.py) | 137 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
-| [test_reanclaje.py](test_reanclaje.py) | 80 | — |
+| [reanclaje.py](reanclaje.py) | 138 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
+| [test_reanclaje.py](test_reanclaje.py) | 87 | — |
 
 ### API pública
 
@@ -67,5 +67,5 @@ python3 index.py manifest                 SHA-256 y tamaños de cada escenario g
 
 ### Tests
 
-- `pipelines/reanclaje/test_reanclaje.py`: 7 pruebas en Pasos (5), Construir (2)
+- `pipelines/reanclaje/test_reanclaje.py`: 8 pruebas en Pasos (6), Construir (2)
 <!-- CONTEXT:AUTO:END -->

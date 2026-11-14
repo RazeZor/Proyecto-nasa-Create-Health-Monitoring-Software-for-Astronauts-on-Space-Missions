@@ -44,6 +44,13 @@ class Pasos(unittest.TestCase):
         (c,) = rc.diario(co2)
         self.assertEqual((c["max"], c["max_prom_horario"]), (300, 200))
 
+    def test_diario_calcula_dosis_tambien_de_la_dosis_equivalente(self):
+        # bug visto con ALTEA-Survey: "dose_equivalent_rate" no termina en "_dose_rate"
+        pts = [{"t_mision": "D001T00:00:00", "fuente": "radlab", "serie": "ALTEA-Survey",
+                "variable": "dose_equivalent_rate", "valor": 12.0}]
+        (d,) = rc.diario(pts)
+        self.assertAlmostEqual(d["dosis"], 12.0 * 5 / 60)
+
     def test_validar(self):
         for malo in ({}, {"nombre": "x", "ventanas": [{**V, "fuente": "otra"}]},
                      {"nombre": "x", "ventanas": [{**V, "dia_mision": 0}]},

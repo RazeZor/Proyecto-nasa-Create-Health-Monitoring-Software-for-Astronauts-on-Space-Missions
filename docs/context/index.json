@@ -317,7 +317,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/reanclaje.py",
-          "lineas": 137,
+          "lineas": 138,
           "descripcion": "ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold.",
           "test": false,
           "simbolos": [
@@ -367,7 +367,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/test_reanclaje.py",
-          "lineas": 80,
+          "lineas": 87,
           "descripcion": "",
           "test": true,
           "simbolos": [

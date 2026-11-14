@@ -21,6 +21,7 @@ import datalake  # noqa: E402
 FUENTES = {"goes", "donki", "radlab", "eda"}
 BASE = datetime(2000, 1, 1, tzinfo=timezone.utc)  # origen sintético: 00:00 del día de misión 1
 PASO = timedelta(minutes=5)
+TASAS_DE_DOSIS = ("absorbed_dose_rate", "dose_equivalent_rate")  # µGy/h y µSv/h
 FORMATO = "%Y-%m-%dT%H:%M:%SZ"
 
 
@@ -37,7 +38,7 @@ def medidas(fuente, fila):
     if fuente == "goes":
         yield f"G{fila['satellite']} {fila['energy']}", "flux", fila["flux"]
     elif fuente == "radlab":
-        for v in ("absorbed_dose_rate", "dose_equivalent_rate"):
+        for v in TASAS_DE_DOSIS:
             if fila.get(v) is not None:
                 yield fila["instrument_id"], v, fila[v]
     elif fuente == "eda":
@@ -81,7 +82,7 @@ def diario(puntos):
     for (fuente, serie, variable, dia), ps in sorted(grupos.items()):
         fila = {"dia_mision": int(dia[1:]), "fuente": fuente, "serie": serie, "variable": variable,
                 "max": max(p["valor"] for p in ps), "bins": len(ps)}
-        if variable.endswith("_dose_rate"):
+        if variable in TASAS_DE_DOSIS:
             fila["dosis"] = sum(p["valor"] for p in ps) * PASO.total_seconds() / 3600  # tasa/h x horas
         if variable.startswith("co2"):
             horas = defaultdict(list)
