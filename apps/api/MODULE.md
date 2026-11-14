@@ -33,10 +33,19 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
+| [almacen/__init__.py](almacen/__init__.py) | 1 | — |
+| [almacen/db.py](almacen/db.py) | 36 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
 | [main.py](main.py) | 127 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [test_almacen_db.py](test_almacen_db.py) | 38 | — |
 | [test_api.py](test_api.py) | 89 | — |
 
 ### API pública
+
+**almacen/db.py**
+
+- función `ruta_por_defecto()`: `VIGIA_DB` o apps/api/data/vigia.db (fuera de git).
+- función `conectar(ruta=None)`
+- función `migrar(conn)`: Aplica en orden las migraciones NNN_*.sql pendientes y devuelve la versión resultante.
 
 **main.py**
 
@@ -51,16 +60,17 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `DATALAKE_DIR`
+- Variables de entorno: `DATALAKE_DIR`, `VIGIA_DB`
 
 ### Dependencias
 
 - Internas: `main`
 - Paquetes del monorepo: `packages/i18n`
-- Externas: `fastapi`
-- Biblioteca estándar: `hashlib`, `json`, `os`, `pathlib`, `sys`, `tempfile`, `typing`, `unittest`
+- Externas: `almacen`, `fastapi`
+- Biblioteca estándar: `hashlib`, `json`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `typing`, `unittest`
 
 ### Tests
 
+- `apps/api/test_almacen_db.py`: 4 pruebas en Esquema (4)
 - `apps/api/test_api.py`: 9 pruebas en Api (9)
 <!-- CONTEXT:AUTO:END -->

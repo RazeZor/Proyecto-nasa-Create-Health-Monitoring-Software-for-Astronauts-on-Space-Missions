@@ -24,9 +24,43 @@
         "solo-lectura"
       ],
       "env": [
-        "DATALAKE_DIR"
+        "DATALAKE_DIR",
+        "VIGIA_DB"
       ],
       "archivos": [
+        {
+          "ruta": "apps/api/almacen/__init__.py",
+          "lineas": 1,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/api/almacen/db.py",
+          "lineas": 36,
+          "descripcion": "Conexión y migraciones del almacén SQLite (solo biblioteca estándar).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ruta_por_defecto",
+              "tipo": "función",
+              "firma": "ruta_por_defecto()",
+              "doc": "`VIGIA_DB` o apps/api/data/vigia.db (fuera de git)."
+            },
+            {
+              "nombre": "conectar",
+              "tipo": "función",
+              "firma": "conectar(ruta=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "migrar",
+              "tipo": "función",
+              "firma": "migrar(conn)",
+              "doc": "Aplica en orden las migraciones NNN_*.sql pendientes y devuelve la versión resultante."
+            }
+          ]
+        },
         {
           "ruta": "apps/api/main.py",
           "lineas": 127,
@@ -80,6 +114,20 @@
               "tipo": "función",
               "firma": "leer_seccion(nombre: str, seccion: Literal['dosis', 'protones', 'cabina', 'eventos'])",
               "doc": "Solo `dosis` (objeto o null), `protones`, `cabina` o `eventos` (listas). Otra sección da 422."
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_db.py",
+          "lineas": 38,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Esquema",
+              "tipo": "clase",
+              "firma": "Esquema(unittest.TestCase)",
+              "doc": ""
             }
           ]
         },
