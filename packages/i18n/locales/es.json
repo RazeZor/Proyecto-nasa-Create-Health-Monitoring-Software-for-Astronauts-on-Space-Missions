@@ -18,7 +18,11 @@
   "api": {
     "error": {
       "gold_no_existe": "no existe el gold «{nombre}»; corre el ETL de pipelines/reanclaje",
-      "gold_alterado": "el gold «{nombre}» no coincide con su huella SHA-256 del manifiesto"
+      "gold_alterado": "el gold «{nombre}» no coincide con su huella SHA-256 del manifiesto",
+      "actor_desconocido": "indica un tripulante válido en la cabecera X-Tripulante",
+      "sin_permiso": "no puedes ver ni modificar datos de otro tripulante",
+      "dato_invalido": "dato inválido: {detalle}",
+      "linea_base_no_existe": "no hay línea base para ese indicador y origen"
     }
   }
 }

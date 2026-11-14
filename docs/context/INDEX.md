@@ -6,7 +6,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
-| [apps/api](../../apps/api/MODULE.md) | API FastAPI de solo lectura que expone la zona gold del ETL (`pipelines/reanclaje`): escenarios reanclados y paneles de entorno, para que la app los consuma por HTTP. | api, fastapi, gold, etl, panel, solo-lectura | 16 |
+| [apps/api](../../apps/api/MODULE.md) | API FastAPI de solo lectura que expone la zona gold del ETL (`pipelines/reanclaje`): escenarios reanclados y paneles de entorno, para que la app los consuma por HTTP. | api, fastapi, gold, etl, panel, solo-lectura | 18 |
 | [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario, figura humana con el estado por sistema y vista del médico de vuelo. Todavía no está implementada (`app.tsx` está vacío). | frontend, interfaz, react, pwa, offline, motor-híbrido, figura-humana, pendiente | 1 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos entre `pipelines/` y `apps/`. Hoy contiene el esquema de las fichas de indicador y la prueba que valida las fichas publicadas en `apps/web/public/fichas/`. | schemas, contratos, fichas, indicadores, json-schema, peligros, hrp | 1 |
@@ -19,9 +19,11 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 
 | Símbolo | Tipo | Archivo |
 | --- | --- | --- |
+| `AlertaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `Alertas` | clase | [apps/api/test_almacen_alertas.py](../../apps/api/test_almacen_alertas.py) |
 | `Almacen` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
 | `Api` | clase | [apps/api/test_api.py](../../apps/api/test_api.py) |
+| `AvanceIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `Catalogo` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
 | `Catalogos` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
 | `Cola` | clase | [apps/api/test_almacen_cola.py](../../apps/api/test_almacen_cola.py) |
@@ -33,16 +35,23 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Generador` | clase | [tools/contextgen/test_contextgen.py](../../tools/contextgen/test_contextgen.py) |
 | `IDIOMAS` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `Idioma` | tipo | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
+| `LecturaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `Lecturas` | clase | [apps/api/test_almacen_lecturas.py](../../apps/api/test_almacen_lecturas.py) |
 | `Limpieza` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
 | `LineaBase` | clase | [apps/api/test_almacen_base.py](../../apps/api/test_almacen_base.py) |
+| `LineaBaseIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `PRINCIPAL` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `Panel` | clase | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
 | `Pasos` | clase | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
 | `Publicar` | clase | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
+| `Registro` | clase | [apps/api/test_api_registro.py](../../apps/api/test_api_registro.py) |
+| `ReporteIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `RespuestaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `SintomaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `Traduccion` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
 | `Tripulacion` | clase | [apps/api/test_almacen_tripulacion.py](../../apps/api/test_almacen_tripulacion.py) |
 | `Validar` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
+| `actor` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `agregar_contexto` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `alertas_visibles` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `analizar` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
@@ -50,6 +59,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `analizar_py` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `anotar` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `archivos` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `avanzar` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `avanzar_cola` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `bloque` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `catalogo` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
@@ -58,14 +68,20 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `clean_goes` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `clean_radlab` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `conectar` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
+| `conexion` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `consentir` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `construir` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `construir_panel` | función | [pipelines/reanclaje/panel.py](../../pipelines/reanclaje/panel.py) |
 | `corrimiento` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
+| `crear_alerta` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `crear_lectura` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `crear_mision` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
+| `crear_reporte` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `crear_sintoma` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `crear_tripulante` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `crossref` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `d` | función | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
+| `dato_invalido` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `detectarIdioma` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `dia_de_vuelo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `diario` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
@@ -79,12 +95,14 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `generar` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `guardar` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `guardar_linea_base` | función | [apps/api/almacen/base.py](../../apps/api/almacen/base.py) |
+| `guardar_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `idioma_actual` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `ingest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `leer` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `leer_diario` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_escenario` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_lecturas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
+| `leer_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `leer_manual` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `leer_panel` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_reportes` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
@@ -92,8 +110,12 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `leer_serie` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_sintomas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `lint` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `listar_alertas` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `listar_escenarios` | función | [apps/api/main.py](../../apps/api/main.py) |
+| `listar_lecturas` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `listar_paneles` | función | [apps/api/main.py](../../apps/api/main.py) |
+| `listar_reportes` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `listar_sintomas` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `main` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `main` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `manifest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
@@ -106,6 +128,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `obtener_linea_base` | función | [apps/api/almacen/base.py](../../apps/api/almacen/base.py) |
 | `pendientes` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `pendientes` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `propio` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `publicar` | función | [pipelines/reanclaje/panel.py](../../pipelines/reanclaje/panel.py) |
 | `radlab` | función | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
 | `read` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
@@ -116,6 +139,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `render_auto` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `render_indice` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `render_modulo` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `responder` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `responder_reporte` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `ruta_por_defecto` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
 | `salud` | función | [apps/api/main.py](../../apps/api/main.py) |

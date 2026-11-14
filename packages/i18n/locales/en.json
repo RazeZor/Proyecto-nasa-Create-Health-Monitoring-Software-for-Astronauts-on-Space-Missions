@@ -18,7 +18,11 @@
   "api": {
     "error": {
       "gold_no_existe": "gold «{nombre}» does not exist; run the pipelines/reanclaje ETL",
-      "gold_alterado": "gold «{nombre}» does not match its SHA-256 in the manifest"
+      "gold_alterado": "gold «{nombre}» does not match its SHA-256 in the manifest",
+      "actor_desconocido": "provide a valid crew member in the X-Tripulante header",
+      "sin_permiso": "you cannot view or modify another crew member's data",
+      "dato_invalido": "invalid data: {detalle}",
+      "linea_base_no_existe": "there is no baseline for that indicator and origin"
     }
   }
 }

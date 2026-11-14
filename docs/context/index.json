@@ -242,10 +242,16 @@
         },
         {
           "ruta": "apps/api/main.py",
-          "lineas": 127,
+          "lineas": 137,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "dato_invalido",
+              "tipo": "función",
+              "firma": "dato_invalido(_, e)",
+              "doc": ""
+            },
             {
               "nombre": "salud",
               "tipo": "función",
@@ -293,6 +299,146 @@
               "tipo": "función",
               "firma": "leer_seccion(nombre: str, seccion: Literal['dosis', 'protones', 'cabina', 'eventos'])",
               "doc": "Solo `dosis` (objeto o null), `protones`, `cabina` o `eventos` (listas). Otra sección da 422."
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/rutas_registro.py",
+          "lineas": 177,
+          "descripcion": "Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "conexion",
+              "tipo": "función",
+              "firma": "conexion()",
+              "doc": ""
+            },
+            {
+              "nombre": "actor",
+              "tipo": "función",
+              "firma": "actor(x_tripulante: str | None=Header(None), conn=Depends(conexion))",
+              "doc": ""
+            },
+            {
+              "nombre": "propio",
+              "tipo": "función",
+              "firma": "propio(id: int, quien: int=Depends(actor))",
+              "doc": ""
+            },
+            {
+              "nombre": "LecturaIn",
+              "tipo": "clase",
+              "firma": "LecturaIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "SintomaIn",
+              "tipo": "clase",
+              "firma": "SintomaIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "LineaBaseIn",
+              "tipo": "clase",
+              "firma": "LineaBaseIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "AlertaIn",
+              "tipo": "clase",
+              "firma": "AlertaIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "ReporteIn",
+              "tipo": "clase",
+              "firma": "ReporteIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "RespuestaIn",
+              "tipo": "clase",
+              "firma": "RespuestaIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "AvanceIn",
+              "tipo": "clase",
+              "firma": "AvanceIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "crear_lectura",
+              "tipo": "función",
+              "firma": "crear_lectura(cuerpo: LecturaIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Guarda una lectura de un indicador (`spo2`, `sueno`, …). Reenviar la misma (indicador, t_real, origen) devuelve"
+            },
+            {
+              "nombre": "listar_lecturas",
+              "tipo": "función",
+              "firma": "listar_lecturas(indicador: str | None=None, desde: str | None=None, hasta: str | None=None, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Lecturas del tripulante por `t_real`; filtros opcionales `indicador`, `desde` y `hasta` (UTC)."
+            },
+            {
+              "nombre": "crear_sintoma",
+              "tipo": "función",
+              "firma": "crear_sintoma(cuerpo: SintomaIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Guarda un síntoma con `codigo` y `gravedad` de 1 a 3."
+            },
+            {
+              "nombre": "listar_sintomas",
+              "tipo": "función",
+              "firma": "listar_sintomas(desde: str | None=None, hasta: str | None=None, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Síntomas del tripulante por `t_real`; filtros opcionales `desde` y `hasta`."
+            },
+            {
+              "nombre": "guardar_linea_base",
+              "tipo": "función",
+              "firma": "guardar_linea_base(indicador: str, origen: str, cuerpo: LineaBaseIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Reemplaza la mediana y el MAD de un indicador para `origen` = tierra o vuelo."
+            },
+            {
+              "nombre": "leer_linea_base",
+              "tipo": "función",
+              "firma": "leer_linea_base(indicador: str, origen: str, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Devuelve `mediana`, `mad`, `n`, `desde` y `hasta`; 404 si no existe."
+            },
+            {
+              "nombre": "crear_alerta",
+              "tipo": "función",
+              "firma": "crear_alerta(cuerpo: AlertaIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Guarda la alerta (solo adición). Una roja de la capa A escala al oficial médico (o al comandante si el afectado"
+            },
+            {
+              "nombre": "listar_alertas",
+              "tipo": "función",
+              "firma": "listar_alertas(id: int, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Con tu propio id: todas tus alertas. Con el de otro: solo sus alertas rojas escaladas a ti; ese acceso queda"
+            },
+            {
+              "nombre": "crear_reporte",
+              "tipo": "función",
+              "firma": "crear_reporte(cuerpo: ReporteIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Encola un reporte con `retardo_min` de 3 a 22; `llega_t_real` = `creado_t_real` + retardo."
+            },
+            {
+              "nombre": "listar_reportes",
+              "tipo": "función",
+              "firma": "listar_reportes(id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Reportes del tripulante con `estado` en_cola, entregado o respondido."
+            },
+            {
+              "nombre": "avanzar",
+              "tipo": "función",
+              "firma": "avanzar(cuerpo: AvanceIn, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Pasa a `entregado` los reportes con `llega_t_real` <= `ahora`; devuelve `{\"entregados\": n}`."
+            },
+            {
+              "nombre": "responder",
+              "tipo": "función",
+              "firma": "responder(reporte_id: int, cuerpo: RespuestaIn, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422."
             }
           ]
         },
@@ -390,6 +536,20 @@
               "nombre": "Api",
               "tipo": "clase",
               "firma": "Api(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_api_registro.py",
+          "lineas": 106,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Registro",
+              "tipo": "clase",
+              "firma": "Registro(unittest.TestCase)",
               "doc": ""
             }
           ]

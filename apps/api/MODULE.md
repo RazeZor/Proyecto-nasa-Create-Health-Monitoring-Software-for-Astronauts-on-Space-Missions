@@ -41,7 +41,8 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/db.py](almacen/db.py) | 36 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
 | [almacen/lecturas.py](almacen/lecturas.py) | 47 | Lecturas de indicadores y síntomas de un tripulante. |
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 76 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
-| [main.py](main.py) | 127 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [main.py](main.py) | 137 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [rutas_registro.py](rutas_registro.py) | 177 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 108 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
 | [test_almacen_cola.py](test_almacen_cola.py) | 50 | — |
@@ -49,6 +50,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 63 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 54 | — |
 | [test_api.py](test_api.py) | 89 | — |
+| [test_api_registro.py](test_api_registro.py) | 106 | — |
 
 ### API pública
 
@@ -97,6 +99,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 **main.py**
 
+- función `dato_invalido(_, e)`
 - función `salud()`: Devuelve {"estado": "ok"} si el servicio responde. No toca el gold.
 - función `listar_escenarios()`: Lista de `nombre` válidos para `/escenarios/{nombre}`. Vacía si el ETL no ha publicado nada.
 - función `leer_escenario(nombre: str, fuente: str | None=None, variable: str | None=None, dia_mision: int | None=None)`: Objeto con `escenario`, `ventanas` (fuente y fechas reales de cada serie), `serie5min`, `diario` y `eventos`
@@ -105,6 +108,31 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `listar_paneles()`: Lista de `nombre` válidos para `/paneles/{nombre}`; coincide con el escenario del que sale cada panel.
 - función `leer_panel(nombre: str)`: Objeto con `limites`, `perfiles_presion_mmhg`, `ventanas`, `aviso`, `dosis` (puede ser null), `protones`,
 - función `leer_seccion(nombre: str, seccion: Literal['dosis', 'protones', 'cabina', 'eventos'])`: Solo `dosis` (objeto o null), `protones`, `cabina` o `eventos` (listas). Otra sección da 422.
+
+**rutas_registro.py**
+
+- función `conexion()`
+- función `actor(x_tripulante: str | None=Header(None), conn=Depends(conexion))`
+- función `propio(id: int, quien: int=Depends(actor))`
+- clase `LecturaIn(BaseModel)`
+- clase `SintomaIn(BaseModel)`
+- clase `LineaBaseIn(BaseModel)`
+- clase `AlertaIn(BaseModel)`
+- clase `ReporteIn(BaseModel)`
+- clase `RespuestaIn(BaseModel)`
+- clase `AvanceIn(BaseModel)`
+- función `crear_lectura(cuerpo: LecturaIn, id: int=Depends(propio), conn=Depends(conexion))`: Guarda una lectura de un indicador (`spo2`, `sueno`, …). Reenviar la misma (indicador, t_real, origen) devuelve
+- función `listar_lecturas(indicador: str | None=None, desde: str | None=None, hasta: str | None=None, id: int=Depends(propio), conn=Depends(conexion))`: Lecturas del tripulante por `t_real`; filtros opcionales `indicador`, `desde` y `hasta` (UTC).
+- función `crear_sintoma(cuerpo: SintomaIn, id: int=Depends(propio), conn=Depends(conexion))`: Guarda un síntoma con `codigo` y `gravedad` de 1 a 3.
+- función `listar_sintomas(desde: str | None=None, hasta: str | None=None, id: int=Depends(propio), conn=Depends(conexion))`: Síntomas del tripulante por `t_real`; filtros opcionales `desde` y `hasta`.
+- función `guardar_linea_base(indicador: str, origen: str, cuerpo: LineaBaseIn, id: int=Depends(propio), conn=Depends(conexion))`: Reemplaza la mediana y el MAD de un indicador para `origen` = tierra o vuelo.
+- función `leer_linea_base(indicador: str, origen: str, id: int=Depends(propio), conn=Depends(conexion))`: Devuelve `mediana`, `mad`, `n`, `desde` y `hasta`; 404 si no existe.
+- función `crear_alerta(cuerpo: AlertaIn, id: int=Depends(propio), conn=Depends(conexion))`: Guarda la alerta (solo adición). Una roja de la capa A escala al oficial médico (o al comandante si el afectado
+- función `listar_alertas(id: int, quien: int=Depends(actor), conn=Depends(conexion))`: Con tu propio id: todas tus alertas. Con el de otro: solo sus alertas rojas escaladas a ti; ese acceso queda
+- función `crear_reporte(cuerpo: ReporteIn, id: int=Depends(propio), conn=Depends(conexion))`: Encola un reporte con `retardo_min` de 3 a 22; `llega_t_real` = `creado_t_real` + retardo.
+- función `listar_reportes(id: int=Depends(propio), conn=Depends(conexion))`: Reportes del tripulante con `estado` en_cola, entregado o respondido.
+- función `avanzar(cuerpo: AvanceIn, quien: int=Depends(actor), conn=Depends(conexion))`: Pasa a `entregado` los reportes con `llega_t_real` <= `ahora`; devuelve `{"entregados": n}`.
+- función `responder(reporte_id: int, cuerpo: RespuestaIn, quien: int=Depends(actor), conn=Depends(conexion))`: Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422.
 
 ### Puntos de entrada
 
@@ -116,9 +144,9 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 ### Dependencias
 
-- Internas: `main`
+- Internas: `main`, `rutas_registro`
 - Paquetes del monorepo: `packages/i18n`
-- Externas: `almacen`, `fastapi`
+- Externas: `almacen`, `fastapi`, `pydantic`
 - Biblioteca estándar: `datetime`, `hashlib`, `json`, `math`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `typing`, `unittest`
 
 ### Tests
@@ -130,4 +158,5 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_almacen_lecturas.py`: 7 pruebas en Lecturas (7)
 - `apps/api/test_almacen_tripulacion.py`: 7 pruebas en Tripulacion (7)
 - `apps/api/test_api.py`: 9 pruebas en Api (9)
+- `apps/api/test_api_registro.py`: 8 pruebas en Registro (8)
 <!-- CONTEXT:AUTO:END -->
