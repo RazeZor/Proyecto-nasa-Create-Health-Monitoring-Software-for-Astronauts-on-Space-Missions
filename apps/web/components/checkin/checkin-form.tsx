@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Slider } from "@/components/ui/slider"
 import { evaluateCheckIn } from "@/lib/engine"
 import { comoMedirEnPerfil } from "@/lib/catalogo"
+import { fcReposoSugerida, suenoSugerido, ultimoCambioInstrumento } from "@/lib/reloj"
 import { S } from "@/lib/strings"
 import { sincronizarRegistros } from "@/lib/sincronizacion"
 import { store } from "@/lib/storage"
@@ -66,8 +67,15 @@ export function CheckInScreen() {
 }
 
 function CheckInForm({ onReset }: { onReset: () => void }) {
-  const { day, liveHr, device, simulator, checkIns, recargarRegistros, catalogo } = useApp()
-  const watchOn = (device === "connected" || simulator) && liveHr !== null
+  const { day, liveHr, device, simulator, reloj, checkIns, recargarRegistros, catalogo } = useApp()
+  // A.6: con el reloj real se precarga la FC en reposo del día (chequeo, sueño o día despierto), nunca el pulso
+  // instantáneo; el simulador sigue dando su valor de demostración.
+  const fcReloj = device === "connected" ? fcReposoSugerida(reloj) : null
+  const hrSugerida = fcReloj ? String(fcReloj.valor) : device !== "connected" && simulator && liveHr !== null ? String(liveHr) : null
+  const watchOn = hrSugerida !== null
+  const suenoReloj = device === "connected" ? suenoSugerido(reloj) : null
+  const cambioInstrumento = device === "connected" ? ultimoCambioInstrumento(reloj) : null
+  const [sleep, setSleep] = useState("")
   const [start] = useState(() => Date.now())
   const [elapsed, setElapsed] = useState(0)
   const [result, setResult] = useState<{ status: Status; sec: number } | null>(null)
@@ -84,7 +92,10 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
     return () => window.clearInterval(id)
   }, [start, result])
 
-  const hrValue = hr !== "" ? hr : watchOn ? String(liveHr) : ""
+  const instrumentoHr = hr !== "" ? "manual" : fcReloj ? `galaxy_watch4:${reloj?.reloj?.dispositivos[0] ?? "?"}` : watchOn ? "simulador" : "manual"
+  const instrumentoPrevio = checkIns.filter((c) => c.day >= 1 && c.day < day && c.restingHr != null).sort((a, b) => a.day - b.day).at(-1)?.hrInstrument ?? "manual"
+  const hrValue = hr !== "" ? hr : (hrSugerida ?? "")
+  const cambiaInstrumento = hrValue !== "" && instrumentoHr !== instrumentoPrevio
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -94,6 +105,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
     const base = {
       day, durationSec: sec,
       restingHr: num(hrValue), hrFromWatch: hr === "" && watchOn,
+      hrInstrument: instrumentoHr,
       systolic: num(g("sys")), diastolic: num(g("dia")),
       spo2: num(g("spo2")), spo2Site: g("spo2Site"),
       tempC: num(g("temp")), tempMethod: g("tempMethod"),
@@ -165,13 +177,15 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
       </PageHeader>
       <p id="ci-sub" className="sr-only">{S.checkin.subtitle}</p>
 
+      {cambiaInstrumento && !cambioInstrumento && <p role="status" className="mb-4 rounded-lg border border-status-watch/40 bg-status-watch/10 p-3 text-sm">{S.device.instrumentChange(`${instrumentoPrevio} → ${instrumentoHr}`)}</p>}
+      {cambioInstrumento && <p role="alert" className="mb-4 rounded-lg border border-status-watch/40 bg-status-watch/10 p-3 text-sm">{S.device.instrumentChange(cambioInstrumento.detalle ?? "")}</p>}
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{S.checkin.daily}</h2>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Field
           id="hr" label={S.checkin.hr} unit="bpm" info="restingHr"
           extra={watchOn && hr === "" ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">
-              <Watch aria-hidden className="size-3" /> {S.checkin.fromWatch}
+              <Watch aria-hidden className="size-3" /> {fcReloj ? S.checkin.fromWatchSource[fcReloj.fuente] ?? S.checkin.fromWatch : S.checkin.fromWatch}
             </span>
           ) : null}
         >
@@ -206,7 +220,14 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
         </Field>
 
         <Field id="sleep" label={S.checkin.sleep} unit="h" info="sleepH">
-          <input id="sleep" name="sleep" type="number" step="0.1" min={0} max={16} className={inputCls} placeholder="7.0" />
+          <input id="sleep" name="sleep" type="number" step="0.1" min={0} max={16} className={inputCls} placeholder="7.0"
+            value={sleep} onChange={(e) => setSleep(e.target.value)} />
+          {suenoReloj !== null && sleep === "" && (
+            <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <Watch aria-hidden className="size-3" /> {S.checkin.sleepFromWatch(suenoReloj)}
+              <button type="button" className="rounded border border-input px-2 py-0.5 hover:bg-accent" onClick={() => setSleep(String(suenoReloj))}>{S.checkin.useValue}</button>
+            </p>
+          )}
         </Field>
 
         <Field id="mood" label={`${S.checkin.mood}: ${mood}`} unit="1-10" info="mood">

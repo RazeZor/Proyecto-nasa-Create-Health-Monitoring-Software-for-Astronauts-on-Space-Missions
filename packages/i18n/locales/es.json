@@ -22,7 +22,9 @@
       "actor_desconocido": "indica un tripulante válido en la cabecera X-Tripulante",
       "sin_permiso": "no puedes ver ni modificar datos de otro tripulante",
       "dato_invalido": "dato inválido: {detalle}",
-      "linea_base_no_existe": "no hay línea base para ese indicador y origen"
+      "linea_base_no_existe": "no hay línea base para ese indicador y origen",
+      "reloj_sin_conexion": "el servidor del reloj no está conectado (revisa SMART_URL y que smart-monitor esté encendido)",
+      "reloj_sin_tripulante": "el servidor del reloj no conoce a este tripulante (revisa SMART_TRIPULANTES o el nombre en el reloj)"
     }
   }
 }

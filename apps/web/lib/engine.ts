@@ -7,6 +7,7 @@
 import {
   type Alerta, type Lectura, factorAdaptacion, madBruto, SUPUESTOS, Z_UMBRAL_CONDUCTUAL, Z_UMBRAL_FISIOLOGICO,
   evaluarTripulante,
+  type CambioInstrumento,
 } from "../../../packages/engine/engine.ts"
 import type { Historial } from "./catalogo.ts"
 import { MOTOR } from "./strings.ts"
@@ -72,7 +73,8 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial) {
   const porDia = new Map<number, Lectura>(TRIPULANTE.lecturas.map((l) => [l.dia_mision, l as Lectura]))
   for (const e of checkIns) porDia.set(e.day, enLectura(e, porDia.get(e.day))) // el último registro del día manda
   const lecturas = [...porDia.values()].sort((a, b) => a.dia_mision - b.dia_mision)
-  const alertasMotor = evaluarTripulante({ id: "yo", lecturas }, ENTORNO)
+  const cambiosInstrumento = cambiosDeInstrumento(checkIns)
+  const alertasMotor = evaluarTripulante({ id: "yo", lecturas }, ENTORNO, { cambiosInstrumento })
   const todas = alertasMotor.map(textoAlerta)
 
   const alerts = (day: number) =>
@@ -143,7 +145,23 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial) {
 
   const overall = (day: number): Status => worst(zones(day).map((z) => z.status))
   const storm = (day: number) => Boolean(ENTORNO[day]?.modo_tormenta)
-  return { alerts, vitals, zones, overall, baselines, storm, missionDays: MISSION_DAYS }
+  return { alerts, vitals, zones, overall, baselines, storm, missionDays: MISSION_DAYS, cambiosInstrumento }
+}
+
+/**
+ * Días de vuelo en que la FC en reposo cambia de instrumento respecto al día de vuelo anterior (A.6). El
+ * historial de la API cuenta como entrada manual. El último registro de cada día manda, igual que en `analizar`.
+ */
+export function cambiosDeInstrumento(checkIns: CheckInEntry[]): CambioInstrumento[] {
+  const porDia = new Map<number, string>()
+  for (const e of checkIns) if (e.day >= 1 && e.restingHr != null) porDia.set(e.day, e.hrInstrument ?? "manual")
+  const cambios: CambioInstrumento[] = []
+  let previo = "manual"
+  for (const [dia, instrumento] of [...porDia].sort((a, b) => a[0] - b[0])) {
+    if (instrumento !== previo) cambios.push({ dia_mision: dia, indicador: "fc" })
+    previo = instrumento
+  }
+  return cambios
 }
 
 export type Analisis = ReturnType<typeof analizar>

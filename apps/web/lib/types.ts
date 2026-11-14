@@ -100,6 +100,8 @@ export interface CheckInEntry {
   durationSec: number
   restingHr: number | null
   hrFromWatch: boolean
+  /** Instrumento de la FC en reposo: "manual", "simulador" o "galaxy_watch4:<dispositivo>" (A.6). Ausente = manual. */
+  hrInstrument?: string
   systolic: number | null
   diastolic: number | null
   spo2: number | null
