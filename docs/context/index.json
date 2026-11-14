@@ -173,6 +173,7 @@
         "EDA no tiene API: lee los CSV exportados a mano en `pipelines/datalake/eda_manual/` y conserva sus columnas tal cual.",
         "`DATALAKE_DIR` cambia la carpeta del datalake (por defecto `pipelines/datalake/data/`, ignorada por git).",
         "Implementa las zonas bronce (`raw`) y plata (`curated`) del patrón de datos (docs/ARQUITECTURA.md). Otros pipelines leen `curated` con `read()`, no los archivos directamente.",
+        "Los mensajes del CLI (`index.py`) salen de `packages/i18n` (claves `cli.datalake.*`): español por defecto, inglés con `VIGIA_LANG=en`. El detalle de los errores internos sigue en español.",
         "Solo biblioteca estándar. El manifiesto supone un único proceso escribiendo; con ingestas concurrentes hace falta un bloqueo.",
         "En los tests, `dl.ROOT` y `dl._get` se reemplazan para trabajar sin red y en una carpeta temporal."
       ],
@@ -283,6 +284,7 @@
       "puntos_clave": [
         "Un módulo es cada subcarpeta de `apps/`, `pipelines/`, `packages/` o `tools/` (`CONTENEDORES`, `modulo_de()`) con archivos de código versionados (`git ls-files --cached`). El código fuera de esos contenedores se documenta igual, pero `--lint` avisa. Los archivos sin `git add` no aparecen. Se omiten `data/`, `node_modules/`, `__pycache__/` y las carpetas ocultas.",
         "En cada `MODULE.md`, el bloque `CONTEXT:MANUAL` nunca se modifica; solo se reescribe `CONTEXT:AUTO`. Si falta, se crea con una plantilla de TODOs.",
+        "Las dependencias se clasifican en internas, paquetes del monorepo (un import cuyo nombre coincide con un módulo de `packages/`), externas y biblioteca estándar.",
         "Python se analiza con `ast` (sin ejecutar código). TS/JS se analiza con regex ligeras: solo `export` e `import`, sin firmas.",
         "La salida es determinista (orden estable, sin fechas, LF). Por eso `--check` coincide entre máquinas y CI. Al comparar, normaliza CRLF.",
         "`ADAPTADORES` define los archivos por herramienta (Claude, Gemini/Antigravity, Copilot, Cursor, Windsurf, Cline). Todos apuntan a `AGENTS.md`. Para sumar una herramienta, agrega una línea ahí.",

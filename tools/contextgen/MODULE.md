@@ -9,6 +9,7 @@ Genera el contexto del repositorio para cualquier asistente de IA: los `MODULE.m
 
 - Un módulo es cada subcarpeta de `apps/`, `pipelines/`, `packages/` o `tools/` (`CONTENEDORES`, `modulo_de()`) con archivos de código versionados (`git ls-files --cached`). El código fuera de esos contenedores se documenta igual, pero `--lint` avisa. Los archivos sin `git add` no aparecen. Se omiten `data/`, `node_modules/`, `__pycache__/` y las carpetas ocultas.
 - En cada `MODULE.md`, el bloque `CONTEXT:MANUAL` nunca se modifica; solo se reescribe `CONTEXT:AUTO`. Si falta, se crea con una plantilla de TODOs.
+- Las dependencias se clasifican en internas, paquetes del monorepo (un import cuyo nombre coincide con un módulo de `packages/`), externas y biblioteca estándar.
 - Python se analiza con `ast` (sin ejecutar código). TS/JS se analiza con regex ligeras: solo `export` e `import`, sin firmas.
 - La salida es determinista (orden estable, sin fechas, LF). Por eso `--check` coincide entre máquinas y CI. Al comparar, normaliza CRLF.
 - `ADAPTADORES` define los archivos por herramienta (Claude, Gemini/Antigravity, Copilot, Cursor, Windsurf, Cline). Todos apuntan a `AGENTS.md`. Para sumar una herramienta, agrega una línea ahí.

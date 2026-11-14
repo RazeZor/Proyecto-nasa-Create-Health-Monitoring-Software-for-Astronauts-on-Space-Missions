@@ -15,6 +15,7 @@ Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLa
 - EDA no tiene API: lee los CSV exportados a mano en `pipelines/datalake/eda_manual/` y conserva sus columnas tal cual.
 - `DATALAKE_DIR` cambia la carpeta del datalake (por defecto `pipelines/datalake/data/`, ignorada por git).
 - Implementa las zonas bronce (`raw`) y plata (`curated`) del patrón de datos (docs/ARQUITECTURA.md). Otros pipelines leen `curated` con `read()`, no los archivos directamente.
+- Los mensajes del CLI (`index.py`) salen de `packages/i18n` (claves `cli.datalake.*`): español por defecto, inglés con `VIGIA_LANG=en`. El detalle de los errores internos sigue en español.
 - Solo biblioteca estándar. El manifiesto supone un único proceso escribiendo; con ingestas concurrentes hace falta un bloqueo.
 - En los tests, `dl.ROOT` y `dl._get` se reemplazan para trabajar sin red y en una carpeta temporal.
 
