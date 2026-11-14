@@ -1,4 +1,13 @@
-
-/documentacion
-backend/data/
+# Datos: nunca van al repositorio (ver docs/ARQUITECTURA.md, "Datos")
+pipelines/*/data/
+*.parquet
+*.avro
+# Python
 __pycache__/
+.venv/
+venv/
+# Node
+node_modules/
+dist/
+# Secretos
+.env

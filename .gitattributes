@@ -1,0 +1,5 @@
+# El hook se ejecuta con sh: debe tener finales de línea LF también en Windows.
+.githooks/* text eol=lf
+# Archivos generados por tools/contextgen: siempre LF, para que --check coincida en todas las máquinas.
+**/MODULE.md text eol=lf
+docs/context/* text eol=lf

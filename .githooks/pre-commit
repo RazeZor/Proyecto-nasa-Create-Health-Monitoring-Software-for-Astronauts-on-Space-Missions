@@ -1,0 +1,22 @@
+#!/bin/sh
+# Regenera el contexto para IA (MODULE.md, docs/context, adaptadores) y lo suma al commit.
+# Se activa una vez por clon con: git config core.hooksPath .githooks
+PY=""
+for c in python3 python py; do
+  if "$c" -c "import sys; assert sys.version_info >= (3, 10)" >/dev/null 2>&1; then PY=$c; break; fi
+done
+if [ -z "$PY" ]; then
+  echo "pre-commit: no encontré Python 3.10+; el contexto no se regeneró (CI lo va a revisar)." >&2
+  exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+CAMBIOS=$("$PY" tools/contextgen/contextgen.py) || exit 1
+CAMBIOS=$(printf '%s' "$CAMBIOS" | tr -d '\r')
+if [ -n "$CAMBIOS" ]; then
+  echo "$CAMBIOS" | while IFS= read -r f; do git add -- "$f"; done
+  echo "pre-commit: contexto actualizado y agregado al commit:" >&2
+  echo "$CAMBIOS" | sed 's/^/  /' >&2
+fi
+"$PY" tools/contextgen/contextgen.py --lint
+exit 0

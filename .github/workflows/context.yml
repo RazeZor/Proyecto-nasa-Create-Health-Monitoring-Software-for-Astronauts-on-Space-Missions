@@ -1,0 +1,28 @@
+name: Contexto y tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  contexto:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Contexto para IA al día
+        run: python tools/contextgen/contextgen.py --check
+      - name: Avisos de puntos clave y del patrón de carpetas
+        run: python tools/contextgen/contextgen.py --lint
+      - name: Tests de Python (cada módulo con test_*.py)
+        run: |
+          for d in pipelines/*/ packages/*/ tools/*/ apps/*/; do
+            [ -d "$d" ] || continue
+            if ls "$d"test_*.py >/dev/null 2>&1; then
+              echo "== $d"
+              python -m unittest discover -s "$d" || exit 1
+            fi
+          done

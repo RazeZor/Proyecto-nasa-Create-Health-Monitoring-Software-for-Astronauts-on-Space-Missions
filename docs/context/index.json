@@ -1,0 +1,302 @@
+{
+  "generador": "tools/contextgen/contextgen.py",
+  "modulos": [
+    {
+      "modulo": "apps/web",
+      "proposito": "Interfaz a bordo de VIGÍA: registro diario, figura humana con el estado por sistema y vista del médico de vuelo. Todavía no está implementada (`app.tsx` está vacío).",
+      "puntos_clave": [
+        "Stack previsto: React + Vite como PWA con service worker, IndexedDB (Dexie), motor de análisis en TypeScript puro y gráficas con Recharts o uPlot. Si el equipo no usa React, se hace con HTML, CSS y JS sin framework, y el mismo motor (informe §4.3).",
+        "Debe funcionar **sin conexión**: la demo apaga el wifi. Nada de servidor; Streamlit está descartado.",
+        "Motor híbrido: capa A clínica, capa B de desviación personal y capa C de deriva. Muestra 3 niveles como máximo (verde, ámbar, rojo). Solo el rojo escala al oficial médico (§4.2, §5.1).",
+        "Las fichas de indicador salen de un JSON con la URL de su fuente: la interfaz nunca muestra una afirmación sin origen.",
+        "Consume las filas curadas que exporta `pipelines/datalake` (campo `t_real` en UTC) como JSON estático. No importa código de `pipelines/`: el contrato va en `packages/schemas` (docs/ARQUITECTURA.md).",
+        "Organización interna por funcionalidad (`src/features/<feature>/`). El motor híbrido irá a `packages/engine` para que lo compartan la app de a bordo y la vista de tierra."
+      ],
+      "tags": [
+        "frontend",
+        "interfaz",
+        "react",
+        "pwa",
+        "offline",
+        "motor-híbrido",
+        "figura-humana",
+        "pendiente"
+      ],
+      "env": [],
+      "archivos": [
+        {
+          "ruta": "apps/web/app.tsx",
+          "lineas": 0,
+          "descripcion": "vacío (pendiente)",
+          "test": false,
+          "simbolos": []
+        }
+      ]
+    },
+    {
+      "modulo": "pipelines/datalake",
+      "proposito": "Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLab y EDA, con un CLI para ingerir y leer.",
+      "puntos_clave": [
+        "Estructura: `data/raw/<fuente>/<fecha>/<hora>-<sha8>.<ext>` guarda la respuesta original y nunca se sobrescribe. `data/curated/...json` guarda las filas limpias. `data/manifest.json` registra fuente, URL, hora de consulta, SHA-256 y número de filas.",
+        "Si una fuente cambia de estructura, `clean_*` lanza `EstructuraInesperada` (mensaje `ESTRUCTURA_INESPERADA`) **antes** de escribir, así que una ingesta fallida no deja archivos.",
+        "Toda hora se normaliza a UTC en `t_real` (`YYYY-MM-DDTHH:MM:SSZ`). `read(fuente, desde, hasta)` filtra comparando esas cadenas.",
+        "GOES conserva solo `>=10`, `>=50` y `>=100 MeV`, descarta flujos negativos (relleno) y deduplica por (hora, satélite, energía).",
+        "DONKI prueba tres direcciones en orden (nueva, anterior y espejo `api.nasa.gov`). `NASA_API_KEY` viaja solo al espejo, para que no quede en el manifiesto de las otras. Una respuesta vacía significa \"sin eventos\".",
+        "EDA no tiene API: lee los CSV exportados a mano en `pipelines/datalake/eda_manual/` y conserva sus columnas tal cual.",
+        "`DATALAKE_DIR` cambia la carpeta del datalake (por defecto `pipelines/datalake/data/`, ignorada por git).",
+        "Implementa las zonas bronce (`raw`) y plata (`curated`) del patrón de datos (docs/ARQUITECTURA.md). Otros pipelines leen `curated` con `read()`, no los archivos directamente.",
+        "Solo biblioteca estándar. El manifiesto supone un único proceso escribiendo; con ingestas concurrentes hace falta un bloqueo.",
+        "En los tests, `dl.ROOT` y `dl._get` se reemplazan para trabajar sin red y en una carpeta temporal."
+      ],
+      "tags": [
+        "ingesta",
+        "datalake",
+        "goes",
+        "donki",
+        "radlab",
+        "eda",
+        "radiación",
+        "utc",
+        "cli"
+      ],
+      "env": [
+        "DATALAKE_DIR",
+        "NASA_API_KEY"
+      ],
+      "archivos": [
+        {
+          "ruta": "pipelines/datalake/datalake.py",
+          "lineas": 215,
+          "descripcion": "Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "EstructuraInesperada",
+              "tipo": "clase",
+              "firma": "EstructuraInesperada(ValueError)",
+              "doc": "La fuente devolvió otra estructura: no se guarda nada (informe 3.3)."
+            },
+            {
+              "nombre": "clean_goes",
+              "tipo": "función",
+              "firma": "clean_goes(raw)",
+              "doc": ""
+            },
+            {
+              "nombre": "clean_donki",
+              "tipo": "función",
+              "firma": "clean_donki(raw)",
+              "doc": ""
+            },
+            {
+              "nombre": "clean_radlab",
+              "tipo": "función",
+              "firma": "clean_radlab(raw)",
+              "doc": ""
+            },
+            {
+              "nombre": "clean_eda",
+              "tipo": "función",
+              "firma": "clean_eda(raw)",
+              "doc": ""
+            },
+            {
+              "nombre": "manifest",
+              "tipo": "función",
+              "firma": "manifest()",
+              "doc": ""
+            },
+            {
+              "nombre": "ingest",
+              "tipo": "función",
+              "firma": "ingest(fuente, params=None)",
+              "doc": "Descarga, limpia y guarda. Si la estructura no es la esperada no escribe nada."
+            },
+            {
+              "nombre": "read",
+              "tipo": "función",
+              "firma": "read(fuente, desde=None, hasta=None)",
+              "doc": "Filas limpias de la fuente, sin duplicados; desde/hasta son t_real ISO UTC."
+            }
+          ]
+        },
+        {
+          "ruta": "pipelines/datalake/index.py",
+          "lineas": 28,
+          "descripcion": "CLI del datalake.",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "pipelines/datalake/test_datalake.py",
+          "lineas": 74,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Limpieza",
+              "tipo": "clase",
+              "firma": "Limpieza(unittest.TestCase)",
+              "doc": ""
+            },
+            {
+              "nombre": "Almacen",
+              "tipo": "clase",
+              "firma": "Almacen(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modulo": "tools/contextgen",
+      "proposito": "Genera el contexto del repositorio para cualquier asistente de IA: los `MODULE.md`, `docs/context/` y los adaptadores por herramienta.",
+      "puntos_clave": [
+        "Un módulo es cada subcarpeta de `apps/`, `pipelines/`, `packages/` o `tools/` (`CONTENEDORES`, `modulo_de()`) con archivos de código versionados (`git ls-files --cached`). El código fuera de esos contenedores se documenta igual, pero `--lint` avisa. Los archivos sin `git add` no aparecen. Se omiten `data/`, `node_modules/`, `__pycache__/` y las carpetas ocultas.",
+        "En cada `MODULE.md`, el bloque `CONTEXT:MANUAL` nunca se modifica; solo se reescribe `CONTEXT:AUTO`. Si falta, se crea con una plantilla de TODOs.",
+        "Python se analiza con `ast` (sin ejecutar código). TS/JS se analiza con regex ligeras: solo `export` e `import`, sin firmas.",
+        "La salida es determinista (orden estable, sin fechas, LF). Por eso `--check` coincide entre máquinas y CI. Al comparar, normaliza CRLF.",
+        "`ADAPTADORES` define los archivos por herramienta (Claude, Gemini/Antigravity, Copilot, Cursor, Windsurf, Cline). Todos apuntan a `AGENTS.md`. Para sumar una herramienta, agrega una línea ahí.",
+        "`--lint` solo avisa (no falla): TODOs pendientes, o código del módulo en stage sin cambios en su bloque MANUAL.",
+        "El hook `.githooks/pre-commit` regenera y hace `git add` solo de los archivos que cambió."
+      ],
+      "tags": [
+        "herramientas",
+        "documentación",
+        "contexto",
+        "ia",
+        "agents.md",
+        "ci",
+        "pre-commit"
+      ],
+      "env": [],
+      "archivos": [
+        {
+          "ruta": "tools/contextgen/contextgen.py",
+          "lineas": 409,
+          "descripcion": "Genera el contexto del repositorio para cualquier asistente de IA (AGENTS.md).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "archivos",
+              "tipo": "función",
+              "firma": "archivos(root)",
+              "doc": "Archivos versionados (o en el índice) de root; sin git, recorre la carpeta."
+            },
+            {
+              "nombre": "modulo_de",
+              "tipo": "función",
+              "firma": "modulo_de(ruta)",
+              "doc": "Módulo al que pertenece una ruta: <contenedor>/<nombre> o, fuera del patrón, la carpeta de primer nivel."
+            },
+            {
+              "nombre": "modulos",
+              "tipo": "función",
+              "firma": "modulos(root)",
+              "doc": "{módulo: [rutas de código]}. Ver docs/ARQUITECTURA.md."
+            },
+            {
+              "nombre": "es_test",
+              "tipo": "función",
+              "firma": "es_test(ruta)",
+              "doc": ""
+            },
+            {
+              "nombre": "leer",
+              "tipo": "función",
+              "firma": "leer(path)",
+              "doc": ""
+            },
+            {
+              "nombre": "analizar_py",
+              "tipo": "función",
+              "firma": "analizar_py(texto)",
+              "doc": ""
+            },
+            {
+              "nombre": "analizar_js",
+              "tipo": "función",
+              "firma": "analizar_js(texto)",
+              "doc": ""
+            },
+            {
+              "nombre": "analizar",
+              "tipo": "función",
+              "firma": "analizar(root, ruta)",
+              "doc": ""
+            },
+            {
+              "nombre": "render_auto",
+              "tipo": "función",
+              "firma": "render_auto(nombre, infos)",
+              "doc": ""
+            },
+            {
+              "nombre": "bloque",
+              "tipo": "función",
+              "firma": "bloque(texto, ini, fin)",
+              "doc": ""
+            },
+            {
+              "nombre": "render_modulo",
+              "tipo": "función",
+              "firma": "render_modulo(nombre, infos, actual)",
+              "doc": ""
+            },
+            {
+              "nombre": "leer_manual",
+              "tipo": "función",
+              "firma": "leer_manual(texto)",
+              "doc": "(propósito, puntos clave, tags) del bloque MANUAL."
+            },
+            {
+              "nombre": "render_indice",
+              "tipo": "función",
+              "firma": "render_indice(datos)",
+              "doc": ""
+            },
+            {
+              "nombre": "generar",
+              "tipo": "función",
+              "firma": "generar(root)",
+              "doc": "{ruta relativa: contenido esperado} de todo lo que mantiene el generador."
+            },
+            {
+              "nombre": "pendientes",
+              "tipo": "función",
+              "firma": "pendientes(root, esperado)",
+              "doc": ""
+            },
+            {
+              "nombre": "lint",
+              "tipo": "función",
+              "firma": "lint(root)",
+              "doc": ""
+            },
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main(argv=None)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/contextgen/test_contextgen.py",
+          "lineas": 149,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Generador",
+              "tipo": "clase",
+              "firma": "Generador(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
