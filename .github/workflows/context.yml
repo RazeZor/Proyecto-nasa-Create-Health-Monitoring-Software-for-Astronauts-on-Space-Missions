@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Lint de Python (ruff)
+        run: pip install -q ruff && ruff check .
       - name: Contexto para IA al día
         run: python tools/contextgen/contextgen.py --check
       - name: Avisos de puntos clave y del patrón de carpetas

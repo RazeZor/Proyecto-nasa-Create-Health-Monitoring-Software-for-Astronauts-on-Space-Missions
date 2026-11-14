@@ -16,8 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "i18n"
 
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
-from i18n import t  # noqa: E402
 
+from i18n import t  # noqa: E402
 from rutas_registro import router as rutas_registro  # noqa: E402
 
 DESCRIPCION = (

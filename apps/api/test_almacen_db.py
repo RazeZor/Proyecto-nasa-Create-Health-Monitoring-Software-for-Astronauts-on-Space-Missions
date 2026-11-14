@@ -5,7 +5,6 @@ import unittest
 from pathlib import Path
 
 import almacen.db as bd
-
 from almacen import conectar, migrar
 
 TABLAS = {"mision", "tripulante", "indicador", "lectura", "sintoma", "linea_base", "alerta",
