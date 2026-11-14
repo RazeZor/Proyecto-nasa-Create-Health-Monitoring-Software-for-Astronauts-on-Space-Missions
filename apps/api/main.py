@@ -10,6 +10,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Literal
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "i18n"))  # monorepo sin instalar
 
@@ -35,32 +36,68 @@ def salud():
     return {"estado": "ok"}
 
 
-@app.get("/gold")
-def listar():
-    """Manifiesto del gold: una entrada por escenario o panel, con su SHA-256."""
-    return _manifiesto()
+def _nombres(es_panel):
+    # el manifiesto distingue por su resumen: un escenario cuenta `serie5min`; un panel, `dosis`
+    return sorted(c.removeprefix("panel-") if es_panel else c
+                  for c, e in _manifiesto().items() if ("serie5min" not in e) == es_panel)
 
 
-@app.get("/gold/{clave}")
-def leer(clave: str, fuente: str | None = None, variable: str | None = None, dia_mision: int | None = None):
-    """JSON de un escenario (`ejemplo`) o de un panel (`panel-demo`). Los filtros recortan
-    `serie5min` y `diario`; los paneles no los usan."""
+def _cargar(nombre, es_panel):
+    clave = f"panel-{nombre}" if es_panel else nombre  # el prefijo es del ETL, no de la API
     entrada = _manifiesto().get(clave)  # la clave sale del manifiesto: no hay rutas arbitrarias
     archivo = _gold() / f"{clave}.json"
-    if entrada is None or not archivo.exists():
-        raise HTTPException(404, t("api.error.gold_no_existe", nombre=clave))
+    if entrada is None or ("serie5min" not in entrada) != es_panel or not archivo.exists():
+        raise HTTPException(404, t("api.error.gold_no_existe", nombre=nombre))
     contenido = archivo.read_bytes()
     if hashlib.sha256(contenido).hexdigest() != entrada["sha256"]:
-        raise HTTPException(500, t("api.error.gold_alterado", nombre=clave))
-    datos = json.loads(contenido)
-    filtros = {"fuente": fuente, "serie": None, "variable": variable, "dia_mision": dia_mision}
-    for campo in ("serie5min", "diario"):
-        if campo in datos:
-            datos[campo] = [f for f in datos[campo] if all(v is None or _coincide(f, k, v) for k, v in filtros.items())]
-    return datos
+        raise HTTPException(500, t("api.error.gold_alterado", nombre=nombre))
+    return json.loads(contenido)
+
+
+def _filtrar(filas, fuente, variable, dia_mision):
+    return [f for f in filas if all(v is None or _coincide(f, k, v) for k, v in
+                                    (("fuente", fuente), ("variable", variable), ("dia_mision", dia_mision)))]
 
 
 def _coincide(fila, campo, valor):
-    # t_mision empieza por "D022": en serie5min el día de misión se deduce de ahí
-    actual = fila.get(campo, int(fila["t_mision"][1:4]) if campo == "dia_mision" else None)
-    return actual == valor
+    # en serie5min no hay dia_mision: se deduce de t_mision ("D022T...")
+    return fila.get(campo, int(fila["t_mision"][1:4]) if campo == "dia_mision" else None) == valor
+
+
+@app.get("/escenarios")
+def listar_escenarios():
+    return _nombres(es_panel=False)
+
+
+@app.get("/escenarios/{nombre}")
+def leer_escenario(nombre: str, fuente: str | None = None, variable: str | None = None, dia_mision: int | None = None):
+    """Gold completo; los filtros recortan `serie5min` y `diario`."""
+    datos = _cargar(nombre, es_panel=False)
+    for campo in ("serie5min", "diario"):
+        datos[campo] = _filtrar(datos[campo], fuente, variable, dia_mision)
+    return datos
+
+
+@app.get("/escenarios/{nombre}/serie")
+def leer_serie(nombre: str, fuente: str | None = None, variable: str | None = None, dia_mision: int | None = None):
+    return _filtrar(_cargar(nombre, False)["serie5min"], fuente, variable, dia_mision)
+
+
+@app.get("/escenarios/{nombre}/diario")
+def leer_diario(nombre: str, fuente: str | None = None, variable: str | None = None, dia_mision: int | None = None):
+    return _filtrar(_cargar(nombre, False)["diario"], fuente, variable, dia_mision)
+
+
+@app.get("/paneles")
+def listar_paneles():
+    return _nombres(es_panel=True)
+
+
+@app.get("/paneles/{nombre}")
+def leer_panel(nombre: str):
+    return _cargar(nombre, es_panel=True)
+
+
+@app.get("/paneles/{nombre}/{seccion}")
+def leer_seccion(nombre: str, seccion: Literal["dosis", "protones", "cabina", "eventos"]):
+    return _cargar(nombre, es_panel=True)[seccion]
