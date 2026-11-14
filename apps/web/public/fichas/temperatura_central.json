@@ -1,0 +1,31 @@
+{
+  "id": "temperatura_central",
+  "nombre": "Temperatura corporal central",
+  "que_es": "Temperatura del interior del cuerpo, no de la piel.",
+  "unidad": "°C",
+  "frecuencia": "diaria",
+  "metodo": "termometro_central",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Termómetro de temperatura central con método declarado, en reposo y al menos 30 minutos después del ejercicio. No usar temperatura de piel.",
+    "transito": "Termómetro de temperatura central con método declarado, en reposo y al menos 30 minutos después del ejercicio. No usar temperatura de piel.",
+    "superficie": "Termómetro de temperatura central con método declarado, en reposo y al menos 30 minutos después del ejercicio. No usar temperatura de piel."
+  },
+  "por_que": "Un umbral de fiebre terrestre da falsos positivos en vuelo: la gravedad reducida limita la convección y la evaporación.",
+  "peligro": [
+    "gravedad_alterada"
+  ],
+  "referencia_en_vuelo": "La temperatura central en reposo sube cerca de 1 °C tras 2,5 meses en la ISS y puede superar 40 °C en ejercicio.",
+  "cuando_avisar": "Tramo extremo de la capa A (35,0 °C o menos). 39,1 °C o más suma 2 puntos; 35,1 a 36,0 y 38,1 a 39,0 suman 1 punto solo si además se aparta de la línea base del perfil.",
+  "prevencion": null,
+  "capa_motor": "A, con referencia en vuelo",
+  "fuentes": [
+    {
+      "titulo": "Royal College of Physicians: NEWS2, tabla de puntuación",
+      "url": "https://www.rcp.ac.uk/improving-care/resources/national-early-warning-score-news-2/"
+    },
+    {
+      "titulo": "Informe técnico VIGÍA, §2.4",
+      "url": null
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "estado_animo",
+  "nombre": "Estado de ánimo",
+  "que_es": "Valoración propia del ánimo del día, en una escala de 1 a 10.",
+  "unidad": "puntos (1 a 10)",
+  "frecuencia": "diaria",
+  "metodo": "autorreporte_escala_1_10",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Escala de 1 a 10 a la misma hora cada día.",
+    "transito": "Escala de 1 a 10 a la misma hora cada día.",
+    "superficie": "Escala de 1 a 10 a la misma hora cada día."
+  },
+  "por_que": "Riesgo HRP: cambios conductuales y trastornos psiquiátricos. El aislamiento y el confinamiento alteran el ánimo, el sueño y la cohesión del equipo.",
+  "peligro": [
+    "aislamiento"
+  ],
+  "referencia_en_vuelo": null,
+  "cuando_avisar": "Desviación personal (capa B, 3,0 o más dos días seguidos) o deriva a la baja (capa C).",
+  "prevencion": "Actividades con sentido, no solo descanso; el HRP estudia si cultivar plantas alivia el aislamiento.",
+  "capa_motor": "B y C",
+  "fuentes": [
+    {
+      "titulo": "NASA HRP: Risks of Human Spaceflight",
+      "url": "https://www.nasa.gov/hrp/risks/"
+    },
+    {
+      "titulo": "Informe técnico VIGÍA, §2.1 y §3.2",
+      "url": null
+    }
+  ]
+}

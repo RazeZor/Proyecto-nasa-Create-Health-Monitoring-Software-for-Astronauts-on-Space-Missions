@@ -1,0 +1,32 @@
+{
+  "id": "sintomas",
+  "nombre": "Síntomas",
+  "que_es": "Lista cerrada de síntomas del día: cefalea, náusea, mareo, visión y erupción.",
+  "unidad": null,
+  "frecuencia": "diaria",
+  "metodo": "lista_cerrada",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Marcar los síntomas del día en la lista cerrada: cefalea, náusea, mareo, visión, erupción.",
+    "transito": "Marcar los síntomas del día en la lista cerrada: cefalea, náusea, mareo, visión, erupción.",
+    "superficie": "Marcar los síntomas del día en la lista cerrada: cefalea, náusea, mareo, visión, erupción."
+  },
+  "por_que": "Cubre de forma parcial tres riesgos del HRP: síndrome neuro-ocular (visión), función sensoriomotora y vestibular (náusea y mareo, relevantes los días 1 a 3) y respuesta inmune alterada (erupción).",
+  "peligro": [
+    "gravedad_alterada",
+    "entorno_cerrado"
+  ],
+  "referencia_en_vuelo": "El mareo espacial suele ceder en 2 o 3 días.",
+  "cuando_avisar": "Regla con contexto: cefalea con CO2 de cabina por encima de 3 mmHg (promedio de una hora) genera una alerta de entorno.",
+  "prevencion": null,
+  "capa_motor": "Reglas con contexto",
+  "fuentes": [
+    {
+      "titulo": "NASA HRP: Risks of Human Spaceflight",
+      "url": "https://www.nasa.gov/hrp/risks/"
+    },
+    {
+      "titulo": "NASA OCHMO: resumen técnico de CO2 (TB-004)",
+      "url": "https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf"
+    }
+  ]
+}
