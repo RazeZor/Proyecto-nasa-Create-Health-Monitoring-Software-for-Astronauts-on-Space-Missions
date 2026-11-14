@@ -79,6 +79,19 @@ cd pipelines/datalake && python index.py ingest goes && cd ../..   # requiere in
 
 Si funcionan, tu entorno está listo. Ruff se configura en `ruff.toml` (E, F, W e imports ordenados; no exige largo de línea) y el CI lo corre en cada PR.
 
+### Datos de la demo (gold)
+
+Los datos no van a git, así que en un clon nuevo la pantalla de entorno sale vacía. Al arrancar, la API imprime qué paneles y escenarios tiene cargados, o `gold: vacío` si no hay ninguno.
+
+No se pueden regenerar descargando: GOES solo publica las últimas 24 h, y la ventana de `mision-vigia` (13-14 nov. 2026) ya no está. Por eso se restaura desde el respaldo del equipo, `vigia-datalake-AAAA-MM-DD.tar.gz` (unos 250 KB; trae raw, curated, gold y manifiestos). Pídelo a quien lleve el frente de datos.
+
+```sh
+tar -xzf vigia-datalake-2026-11-14.tar.gz -C pipelines/datalake   # restaurar (Windows 10+ trae tar)
+cd pipelines/datalake && tar -czf ../../vigia-datalake-$(date +%F).tar.gz data   # respaldar tras una ingesta nueva
+```
+
+Restaura solo en un clon sin `pipelines/datalake/data/`: el datalake nunca sobrescribe `raw/`. Si un escenario pide una ventana que tu curated no tiene, `index.py panel` la omite, avisa por la terminal y la deja en el campo `faltan` del panel.
+
 ## 6. Tu asistente de IA
 
 Todas las herramientas leen la misma fuente: [AGENTS.md](../AGENTS.md). No hay que copiar instrucciones a mano.

@@ -11,6 +11,7 @@
         "Escenario, panel o simulación se distinguen por el resumen del manifiesto del ETL (`serie5min` = escenario, `dosis` = panel, `tipo == \"simulacion\"` = simulación), no por el nombre: un escenario puede llamarse `panel-demo` y los archivos de simulación no aparecen en `/paneles` ni `/escenarios`. La API agrega `panel-` por dentro: el panel del escenario `x` es `/paneles/x` (archivo `panel-x.json`). Pedir un tipo como otro da 404.",
         "La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).",
         "Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.",
+        "Al arrancar imprime por stderr qué paneles y escenarios hay en el gold, o `gold: vacío` con el puntero a `docs/SETUP.md` para restaurar el respaldo (#27). `/salud` no cambia.",
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
         "Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.",
         "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez.",
@@ -273,7 +274,7 @@
         },
         {
           "ruta": "apps/api/main.py",
-          "lineas": 217,
+          "lineas": 226,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -767,7 +768,7 @@
         },
         {
           "ruta": "apps/api/test_api.py",
-          "lineas": 116,
+          "lineas": 122,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -2764,7 +2765,7 @@
         "Rejilla de 5 min: máximo en flujo de protones y CO2, promedio en el resto. `n` indica cuántas lecturas entran en cada paso.",
         "Resumen diario: `max`; `dosis` (tasa de dosis x horas) en las tasas de dosis; `max_prom_horario` en CO2. `bins` cuenta los pasos con datos: con huecos la dosis queda por debajo. DosTel no trae `dose_equivalent_rate`, así que su dosis es absorbida (µGy), orientativa frente al límite de 600 mSv.",
         "Los eventos de DONKI van aparte (`eventos`), reanclados con el mismo corrimiento. Toda fila lleva `naturaleza: \"Real\"`; el calendario de misión es escenario y no se genera aquí.",
-        "Falla cerrado: escenario inválido o ventana sin datos curated lanzan `ValueError` y no escriben nada. Es idempotente y determinista: mismo escenario y mismo curated dan el mismo archivo y SHA-256.",
+        "Escenario inválido lanza `ValueError` y no escribe nada. Una ventana sin datos curated se omite, se avisa por stderr y queda en `faltan` del gold y del panel; solo si faltan todas falla sin escribir (#27: la ventana GOES de un escenario no se puede volver a descargar). Es idempotente y determinista: mismo escenario y mismo curated dan el mismo archivo y SHA-256.",
         "Salida: `<DATALAKE_DIR>/gold/<escenario>.json` y `gold/manifest.json` (SHA-256, tamaños y hora por escenario).",
         "`panel.py` convierte el gold en el panel de entorno (`index.py panel <escenario.json> [destino]`, por defecto `gold/panel-<nombre>.json`): dosis acumulada por día y su porcentaje del límite de carrera de 600 mSv, flujo de protones con `modo_tormenta` (≥10 pfu en ≥10 MeV), y cabina con CO2 en mmHg por perfil (ppm x presión total del perfil: 760, 760 y 424 mmHg), temperatura y humedad. Una sección sin datos queda en `null` o vacía.",
         "La dosis usa dosis equivalente si el escenario la trae; con dosis absorbida (DosTel, Lidal) va con `orientativa: true` y supone 1 µGy = 1 µSv, que es una cota inferior. `cobertura` es la fracción del día con datos (con 1 h de datos, 0,042): la dosis del día es parcial y no debe leerse como total.",
@@ -2800,7 +2801,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/panel.py",
-          "lineas": 82,
+          "lineas": 83,
           "descripcion": "Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app.",
           "test": false,
           "simbolos": [
@@ -2820,7 +2821,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/reanclaje.py",
-          "lineas": 147,
+          "lineas": 153,
           "descripcion": "ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold.",
           "test": false,
           "simbolos": [
@@ -2864,7 +2865,7 @@
               "nombre": "construir",
               "tipo": "función",
               "firma": "construir(escenario)",
-              "doc": "Genera y guarda el gold del escenario. Si falta curated en una ventana no escribe nada."
+              "doc": "Genera y guarda el gold del escenario. Una ventana sin curated (p. ej. GOES, que solo publica"
             },
             {
               "nombre": "guardar",
@@ -2914,7 +2915,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/test_panel.py",
-          "lineas": 71,
+          "lineas": 76,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -2940,7 +2941,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/test_reanclaje.py",
-          "lineas": 87,
+          "lineas": 96,
           "descripcion": "",
           "test": true,
           "simbolos": [

@@ -57,6 +57,7 @@ async def _reloj(segundos):
 async def ciclo_de_vida(_app):
     """Reloj de la cola de reportes: cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 lo apaga). Con `SMART_URL`, además,
     el puente con el servidor del Galaxy Watch (puente_reloj.py)."""
+    print(_resumen_gold(), file=sys.stderr)
     segundos = float(os.environ.get("VIGIA_RELOJ_SEG", "5"))
     tareas = [asyncio.create_task(_reloj(segundos))] if segundos > 0 else []
     puente_reloj.PUENTE = puente_reloj.crear_puente()
@@ -108,6 +109,14 @@ def _nombres(es_panel):
     if es_panel:
         return sorted(c.removeprefix("panel-") for c, e in _manifiesto().items() if "dosis" in e)
     return sorted(c for c, e in _manifiesto().items() if "serie5min" in e)
+
+
+def _resumen_gold():
+    """Lo que se imprime al arrancar: qué gold hay cargado o, si no hay, cómo restaurarlo."""
+    paneles, escenarios = _nombres(es_panel=True), _nombres(es_panel=False)
+    if not paneles and not escenarios:
+        return f"gold: vacío en {_gold()}; la pantalla de entorno saldrá sin datos (restaurar: docs/SETUP.md)"
+    return f"gold en {_gold()} | paneles: {', '.join(paneles) or '-'} | escenarios: {', '.join(escenarios) or '-'}"
 
 
 def _leer_gold_verificado(clave, predicado, nombre_error=None):

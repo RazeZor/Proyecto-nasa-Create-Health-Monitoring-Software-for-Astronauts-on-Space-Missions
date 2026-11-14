@@ -85,6 +85,12 @@ class Api(unittest.TestCase):
         os.environ["DATALAKE_DIR"] = ""  # así viene en .env.example; setUp/tearDown restauran la variable
         self.assertEqual(main._gold(), main.DATALAKE_DEFECTO / "gold")
 
+    def test_al_arrancar_dice_que_gold_hay_cargado(self):
+        self.assertIn("paneles: x", main._resumen_gold())
+        self.assertIn("escenarios: ejemplo", main._resumen_gold())
+        (self.gold / "manifest.json").unlink()
+        self.assertIn("SETUP", main._resumen_gold())  # sin gold: dice cómo restaurarlo
+
     def test_sin_gold_lista_vacia(self):
         (self.gold / "manifest.json").unlink()
         self.assertEqual(self.cliente.get("/escenarios").json(), [])

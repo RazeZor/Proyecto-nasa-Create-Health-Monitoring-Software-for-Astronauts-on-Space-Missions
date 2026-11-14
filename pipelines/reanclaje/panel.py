@@ -69,7 +69,8 @@ def construir_panel(gold):
     return {"escenario": gold["escenario"], "ventanas": gold["ventanas"],  # fuente y fechas reales de cada serie
             "aviso": AVISO, "limites": LIMITES, "perfiles_presion_mmhg": PERFILES,
             "dosis": _dosis(gold["diario"]), "protones": _protones(gold["diario"]),
-            "cabina": _cabina(gold["diario"]), "eventos": gold["eventos"]}
+            "cabina": _cabina(gold["diario"]), "eventos": gold["eventos"],
+            "faltan": gold.get("faltan", [])}  # ventanas sin curated: la pantalla no debe rotularlas «Real»
 
 
 def publicar(escenario, destino=None):

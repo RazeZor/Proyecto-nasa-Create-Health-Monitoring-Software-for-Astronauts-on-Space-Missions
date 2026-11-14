@@ -13,6 +13,7 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 - Escenario, panel o simulación se distinguen por el resumen del manifiesto del ETL (`serie5min` = escenario, `dosis` = panel, `tipo == "simulacion"` = simulación), no por el nombre: un escenario puede llamarse `panel-demo` y los archivos de simulación no aparecen en `/paneles` ni `/escenarios`. La API agrega `panel-` por dentro: el panel del escenario `x` es `/paneles/x` (archivo `panel-x.json`). Pedir un tipo como otro da 404.
 - La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).
 - Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.
+- Al arrancar imprime por stderr qué paneles y escenarios hay en el gold, o `gold: vacío` con el puntero a `docs/SETUP.md` para restaurar el respaldo (#27). `/salud` no cambia.
 - Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.
 - Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.
 - Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez.
@@ -51,7 +52,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/lecturas.py](almacen/lecturas.py) | 50 | Lecturas de indicadores y síntomas de un tripulante. |
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 96 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [almacen/vocabulario.py](almacen/vocabulario.py) | 7 | Vocabulario compartido con la interfaz: lee el contrato packages/schemas/vocabulario.json. |
-| [main.py](main.py) | 217 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [main.py](main.py) | 226 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 383 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
 | [rutas_dashboard.py](rutas_dashboard.py) | 79 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
 | [rutas_registro.py](rutas_registro.py) | 214 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
@@ -61,7 +62,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_db.py](test_almacen_db.py) | 92 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
-| [test_api.py](test_api.py) | 116 | — |
+| [test_api.py](test_api.py) | 122 | — |
 | [test_api_dashboard.py](test_api_dashboard.py) | 97 | — |
 | [test_api_registro.py](test_api_registro.py) | 201 | — |
 | [test_puente_reloj.py](test_puente_reloj.py) | 215 | — |
@@ -211,7 +212,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_almacen_db.py`: 8 pruebas en Esquema (8)
 - `apps/api/test_almacen_lecturas.py`: 9 pruebas en Lecturas (9)
 - `apps/api/test_almacen_tripulacion.py`: 8 pruebas en Tripulacion (8)
-- `apps/api/test_api.py`: 11 pruebas en Api (11)
+- `apps/api/test_api.py`: 12 pruebas en Api (12)
 - `apps/api/test_api_dashboard.py`: 9 pruebas en Dashboard (9)
 - `apps/api/test_api_registro.py`: 18 pruebas en Registro (18)
 - `apps/api/test_puente_reloj.py`: 13 pruebas en Estado (5), Persistencia (3), Rutas (4), ExtremoAExtremo (1)

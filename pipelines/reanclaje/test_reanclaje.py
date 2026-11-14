@@ -82,6 +82,15 @@ class Construir(unittest.TestCase):
             rc.construir({"nombre": "t", "ventanas": [{**V, "fuente": "goes"}]})
         self.assertFalse((rc.datalake.ROOT / "gold").exists())
 
+    def test_ventana_sin_datos_se_omite_y_se_avisa(self):
+        # la ventana GOES de un escenario no se puede volver a descargar: el resto del gold sigue saliendo
+        goes = {**V, "fuente": "goes"}
+        entrada = rc.construir({"nombre": "t", "ventanas": [V, goes]})
+        gold = json.loads((rc.datalake.ROOT / "gold" / "t.json").read_text())
+        self.assertEqual(gold["faltan"], [goes])
+        self.assertEqual(entrada["faltan"], 1)
+        self.assertEqual(len(gold["serie5min"]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

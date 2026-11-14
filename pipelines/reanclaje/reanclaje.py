@@ -110,22 +110,28 @@ def validar(escenario):
 
 
 def construir(escenario):
-    """Genera y guarda el gold del escenario. Si falta curated en una ventana no escribe nada."""
+    """Genera y guarda el gold del escenario. Una ventana sin curated (p. ej. GOES, que solo publica
+    las últimas 24 h) se omite y queda en `faltan`; si no hay datos de ninguna, no escribe nada."""
     validar(escenario)
     gold = {"escenario": escenario["nombre"], "ventanas": escenario["ventanas"],
-            "serie5min": [], "diario": [], "eventos": []}
+            "serie5min": [], "diario": [], "eventos": [], "faltan": []}
     for v in escenario["ventanas"]:
         filas = datalake.read(v["fuente"], v["desde"], v["hasta"])
         if not filas:
-            raise ValueError(f"no hay datos curated de {v['fuente']} en la ventana {v['desde']}..{v['hasta']}")
+            print(f"aviso: no hay datos curated de {v['fuente']} en {v['desde']}..{v['hasta']}; se omite",
+                  file=sys.stderr)
+            gold["faltan"].append(v)
+            continue
         desp = corrimiento(v)
         if v["fuente"] == "donki":
             gold["eventos"] += eventos(filas, desp)
         else:
             gold["serie5min"] += rejilla(v["fuente"], filas, desp)
+    if len(gold["faltan"]) == len(escenario["ventanas"]):
+        raise ValueError(f"no hay datos curated en ninguna ventana de {escenario['nombre']}")
     gold["diario"] = diario(gold["serie5min"])
     entrada = guardar(escenario["nombre"], gold, serie5min=len(gold["serie5min"]),
-                      diario=len(gold["diario"]), eventos=len(gold["eventos"]))
+                      diario=len(gold["diario"]), eventos=len(gold["eventos"]), faltan=len(gold["faltan"]))
     return entrada
 
 

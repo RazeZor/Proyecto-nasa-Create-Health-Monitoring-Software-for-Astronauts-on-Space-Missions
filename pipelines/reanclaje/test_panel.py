@@ -35,6 +35,11 @@ class Panel(unittest.TestCase):
         dosis = pn.construir_panel(gold)["dosis"]
         self.assertEqual((dosis["tipo"], dosis["orientativa"], dosis["series"]), ("equivalente", False, ["REM"]))
 
+    def test_ventanas_que_faltan_llegan_al_panel(self):
+        falta = {"fuente": "goes", "desde": "a", "hasta": "b", "dia_mision": 21}
+        self.assertEqual(pn.construir_panel({**GOLD, "faltan": [falta]})["faltan"], [falta])
+        self.assertEqual(pn.construir_panel(GOLD)["faltan"], [])  # gold anterior a este campo
+
     def test_modo_tormenta_solo_con_10_mev(self):
         flujos = {p["serie"]: p["modo_tormenta"] for p in pn.construir_panel(GOLD)["protones"]}
         self.assertEqual(flujos, {"G18 >=10 MeV": True, "G18 >=50 MeV": False})
