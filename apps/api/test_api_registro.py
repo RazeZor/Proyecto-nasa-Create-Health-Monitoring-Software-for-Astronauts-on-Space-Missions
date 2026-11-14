@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -109,6 +110,42 @@ class Registro(unittest.TestCase):
         (v,) = self.c.get(f"/tripulantes/{self.ana}/alertas", headers=self.como(self.med)).json()
         self.assertNotIn("explicacion", v)
         self.assertEqual(v["tramo"], "3 puntos")
+
+    def estado_del_reporte(self, c, esperado, segundos=3):
+        h = self.como(self.ana)
+        c.post(f"/tripulantes/{self.ana}/reportes", headers=h, json={"creado_t_real": "2000-01-01T00:00:00Z", "retardo_min": 5})
+        fin = time.time() + segundos
+        while time.time() < fin:
+            estado = c.get(f"/tripulantes/{self.ana}/reportes", headers=h).json()[0]["estado"]
+            if estado == esperado:
+                break
+            time.sleep(0.05)
+        return estado
+
+    def test_el_reloj_entrega_los_reportes_que_ya_llegaron(self):
+        os.environ["VIGIA_RELOJ_SEG"] = "0.05"
+        try:
+            with TestClient(main.app) as c:
+                self.assertEqual(self.estado_del_reporte(c, "entregado"), "entregado")
+        finally:
+            del os.environ["VIGIA_RELOJ_SEG"]
+
+    def test_el_reloj_se_apaga_con_cero(self):
+        os.environ["VIGIA_RELOJ_SEG"] = "0"
+        try:
+            with TestClient(main.app) as c:
+                self.assertEqual(self.estado_del_reporte(c, "entregado", segundos=0.5), "en_cola")
+        finally:
+            del os.environ["VIGIA_RELOJ_SEG"]
+
+    def test_cors_permite_escribir_desde_la_interfaz(self):
+        for metodo in ("POST", "PUT"):
+            r = self.c.options("/tripulantes/1/lecturas", headers={
+                "Origin": "http://localhost:3000", "Access-Control-Request-Method": metodo,
+                "Access-Control-Request-Headers": "x-tripulante,content-type"})
+            self.assertEqual(r.status_code, 200, metodo)
+            self.assertIn(metodo, r.headers["access-control-allow-methods"])
+            self.assertIn("x-tripulante", r.headers["access-control-allow-headers"].lower())
 
     def test_sintoma_desconocido_da_422(self):
         h = self.como(self.ana)

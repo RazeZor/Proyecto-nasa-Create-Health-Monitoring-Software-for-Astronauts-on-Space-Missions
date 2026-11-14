@@ -37,6 +37,11 @@ class Vocabulario(unittest.TestCase):
         self.assertEqual({i["zona"] for i in V["indicadores"]}, {"heart", "blood", "mind", "bone"})
         self.assertLessEqual({i["zona"] for i in V["indicadores"]}, union_ts("ZoneId"))
 
+    def test_la_copia_de_la_interfaz_es_identica(self):
+        copia = RAIZ / "apps/web/lib/vocabulario.json"
+        self.assertEqual(copia.read_bytes(), (Path(__file__).parent / "vocabulario.json").read_bytes(),
+                         "copia de la interfaz desfasada: cp packages/schemas/vocabulario.json apps/web/lib/")
+
     def test_niveles_capas_roles_perfiles_cubren_ambos_lados(self):
         for clave, columna, tipo_ts in (("niveles", "nivel", "Status"), ("capas", "capa", "Layer"),
                                         ("perfiles", "perfil", "ProfileId")):

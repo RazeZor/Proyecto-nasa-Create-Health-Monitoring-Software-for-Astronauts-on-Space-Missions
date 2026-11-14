@@ -112,7 +112,7 @@ Además del gold (solo lectura), la API guarda el registro de la tripulación en
 | `GET /tripulantes/{id}/escalamientos` | Transparencia: qué se envió sobre ti, a quién y con qué contenido |
 | `POST /escalamientos/{escalamiento_id}/contexto` | `{texto}`: el afectado añade contexto una sola vez (otro: 403; segunda vez: 422) |
 | `POST /tripulantes/{id}/reportes` y `GET` | Reportes a tierra con `retardo_min` de 0 a 22 |
-| `POST /reportes/avanzar` | `{ahora}` → entrega los reportes que ya llegaron; `{entregados: n}` |
+| `POST /reportes/avanzar` | `{ahora}` → entrega los reportes que ya llegaron; `{entregados: n}`. El servidor ya lo hace solo cada 5 s con su hora real (`VIGIA_RELOJ_SEG`); úsalo para forzar otra hora |
 | `POST /reportes/{reporte_id}/respuesta` | `{respuesta, t_real}` sobre un reporte entregado |
 
 Indicadores válidos: `presion_arterial_sistolica`, `spo2`, `temperatura_central`, `frecuencia_cardiaca_reposo`, `sueno`, `estado_animo`, `glucosa`, `masa_corporal`. `t_real` siempre en UTC con el formato exacto `YYYY-MM-DDTHH:MM:SSZ` (con ceros: `10:00:00Z`, no `10:0:0Z`); los números van como JSON numérico, no como texto (`97`, no `"97"`); `t_mision` lo calcula el servidor (null antes del día 1 de la misión). Las alertas, los escalamientos y la auditoría son de solo adición.
