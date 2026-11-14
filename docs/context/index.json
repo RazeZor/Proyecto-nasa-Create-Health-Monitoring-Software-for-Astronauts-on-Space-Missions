@@ -857,7 +857,7 @@
         "Llamadas a la API: `lib/catalogo.ts`, `lib/etl-client.ts` y `lib/api-registro.ts` usan `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA` (se lee al compilar; por defecto `http://127.0.0.1:8000`). En la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa. La vista de entorno consume `/paneles`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` sin generar series sintéticas.",
         "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
         "El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden y se detiene en el primer fallo; reenviar es seguro. Identidad provisional: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (por defecto 1, el astronauta de `python3 -m almacen sembrar`). Los informes viven en la API con su `contenido`: `/reports` los lee de `GET /tripulantes/{id}/reportes` cada 3 s y al encolar envía `POST` con el contenido; si la API no responde, avisa y no guarda nada local. `t_real` es la hora real del envío, no el día de misión elegido en la interfaz.",
-        "Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. El motor no reinicia la línea base ante un cambio de instrumento (no tiene ventana en vuelo y debe mantener paridad con el simulador): solo se avisa.",
+        "Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), la SpO2 del reloj de las últimas 12 h (`spo2Sugerida`, sitio «Muñeca (reloj)», sube como `sensor`/`galaxy_watch4`; contrato `spo2_sitio: muneca`), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. El motor no reinicia la línea base ante un cambio de instrumento (no tiene ventana en vuelo y debe mantener paridad con el simulador): solo se avisa.",
         "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.",
         "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
       ],
@@ -1106,7 +1106,7 @@
         },
         {
           "ruta": "apps/web/components/checkin/checkin-form.tsx",
-          "lineas": 295,
+          "lineas": 312,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1431,7 +1431,7 @@
         },
         {
           "ruta": "apps/web/lib/api-registro.test.ts",
-          "lineas": 49,
+          "lineas": 54,
           "descripcion": "",
           "test": true,
           "simbolos": []
@@ -1799,14 +1799,14 @@
         },
         {
           "ruta": "apps/web/lib/reloj.test.ts",
-          "lineas": 48,
+          "lineas": 56,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/reloj.ts",
-          "lineas": 195,
+          "lineas": 206,
           "descripcion": "Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con",
           "test": false,
           "simbolos": [
@@ -1904,6 +1904,18 @@
               "nombre": "fcReposoSugerida",
               "tipo": "función",
               "firma": "fcReposoSugerida",
+              "doc": ""
+            },
+            {
+              "nombre": "VIGENCIA_SPO2_MS",
+              "tipo": "constante",
+              "firma": "VIGENCIA_SPO2_MS",
+              "doc": ""
+            },
+            {
+              "nombre": "spo2Sugerida",
+              "tipo": "función",
+              "firma": "spo2Sugerida",
               "doc": ""
             },
             {
@@ -2031,7 +2043,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 356,
+          "lineas": 358,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2051,7 +2063,7 @@
         },
         {
           "ruta": "apps/web/lib/types.ts",
-          "lineas": 165,
+          "lineas": 167,
           "descripcion": "",
           "test": false,
           "simbolos": [

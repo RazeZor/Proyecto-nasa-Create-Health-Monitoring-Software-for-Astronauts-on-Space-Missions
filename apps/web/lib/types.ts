@@ -106,6 +106,8 @@ export interface CheckInEntry {
   diastolic: number | null
   spo2: number | null
   spo2Site: string
+  /** La SpO2 vino del reloj (muñeca, SDK de Samsung) y no de un oxímetro a mano. */
+  spo2FromWatch?: boolean
   tempC: number | null
   tempMethod: string
   sleepH: number | null

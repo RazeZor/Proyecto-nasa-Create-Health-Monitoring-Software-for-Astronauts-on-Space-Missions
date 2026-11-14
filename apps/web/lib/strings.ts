@@ -124,6 +124,8 @@ export const S = {
     fromWatchSource: { chequeo: "del chequeo del reloj", sueno: "del sueño (reloj)", continua: "del reloj, día despierto" } as Record<string, string>,
     sleepFromWatch: (h: number) => `El reloj estima ${h} h (experimental)`,
     useValue: "Usar",
+    wrist: "Muñeca (reloj)",
+    spo2WatchNote: "Medida en la muñeca: compárala solo con otras de la muñeca, no con las del dedo. Para escribir otra, borra el valor.",
     howTo: "Cómo medir en este perfil de misión",
     whyMatters: "Por qué importa",
     info: "Más información sobre",

@@ -175,6 +175,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Tripulacion` | clase | [apps/api/test_almacen_tripulacion.py](../../apps/api/test_almacen_tripulacion.py) |
 | `Tripulante` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `VIGENCIA_LECTURA_MS` | constante | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
+| `VIGENCIA_SPO2_MS` | constante | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `Validar` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
 | `VentanaEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `Vocabulario` | clase | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
@@ -361,6 +362,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `sincronizar` | función | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
 | `sincronizarRegistros` | función | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `sintomasDeCheckIn` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `spo2Sugerida` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `statusSurface` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `statusText` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `store` | constante | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |

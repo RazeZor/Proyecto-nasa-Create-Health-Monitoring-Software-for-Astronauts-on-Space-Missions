@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { ESPERA_CONEXION_MS, fcReposoSugerida, lecturaVigente, siguienteEstado, suenoSugerido, tramosSerie, ultimoCambioInstrumento, type RespuestaReloj } from "./reloj.ts"
+import { ESPERA_CONEXION_MS, VIGENCIA_SPO2_MS, fcReposoSugerida, spo2Sugerida, lecturaVigente, siguienteEstado, suenoSugerido, tramosSerie, ultimoCambioInstrumento, type RespuestaReloj } from "./reloj.ts"
 
 const T = Date.parse("2026-11-14T18:00:00Z")
 const respuesta = (segundosAtras: number, conectado = true): RespuestaReloj => ({
@@ -45,4 +45,12 @@ test("sugerencias del reloj para el registro", () => {
   assert.equal(ultimoCambioInstrumento(r), null)
   r.reloj!.notas = [{ t: "2026-11-14T10:00:00Z", tipo: "cambio_instrumento", detalle: "gw-a -> gw-b" }]
   assert.equal(ultimoCambioInstrumento(r)?.detalle, "gw-a -> gw-b")
+})
+
+test("la SpO2 del reloj se sugiere solo si es reciente", () => {
+  const r = respuesta(1)
+  assert.equal(spo2Sugerida(r, T), null)
+  r.reloj!.resumen = { spo2: { valor: 97.6, t: new Date(T - 3600_000).toISOString() } }
+  assert.equal(spo2Sugerida(r, T), 98)
+  assert.equal(spo2Sugerida(r, T + VIGENCIA_SPO2_MS), null)
 })

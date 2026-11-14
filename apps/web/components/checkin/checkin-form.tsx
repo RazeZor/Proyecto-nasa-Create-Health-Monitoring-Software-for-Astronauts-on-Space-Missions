@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Slider } from "@/components/ui/slider"
 import { evaluateCheckIn } from "@/lib/engine"
 import { comoMedirEnPerfil } from "@/lib/catalogo"
-import { fcReposoSugerida, suenoSugerido, ultimoCambioInstrumento } from "@/lib/reloj"
+import { fcReposoSugerida, spo2Sugerida, suenoSugerido, ultimoCambioInstrumento } from "@/lib/reloj"
 import { S } from "@/lib/strings"
 import { sincronizarRegistros } from "@/lib/sincronizacion"
 import { store } from "@/lib/storage"
@@ -59,6 +59,8 @@ function Field({
   )
 }
 
+/** Sitio de la SpO2 del reloj; se compara con la línea base del mismo sitio (§2.4). */
+const WRIST = "Muñeca"
 const num = (v: string) => (v.trim() === "" ? null : Number(v))
 
 export function CheckInScreen() {
@@ -76,6 +78,11 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
   const suenoReloj = device === "connected" ? suenoSugerido(reloj) : null
   const cambioInstrumento = device === "connected" ? ultimoCambioInstrumento(reloj) : null
   const [sleep, setSleep] = useState("")
+  const spo2Reloj = device === "connected" ? spo2Sugerida(reloj, Date.now()) : null
+  const [spo2, setSpo2] = useState("")
+  const [spo2Site, setSpo2Site] = useState("Dedo")
+  const spo2FromWatch = spo2 === "" && spo2Reloj !== null
+  const spo2Value = spo2FromWatch ? String(spo2Reloj) : spo2
   const [start] = useState(() => Date.now())
   const [elapsed, setElapsed] = useState(0)
   const [result, setResult] = useState<{ status: Status; sec: number } | null>(null)
@@ -107,7 +114,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
       restingHr: num(hrValue), hrFromWatch: hr === "" && watchOn,
       hrInstrument: instrumentoHr,
       systolic: num(g("sys")), diastolic: num(g("dia")),
-      spo2: num(g("spo2")), spo2Site: g("spo2Site"),
+      spo2: num(spo2Value), spo2Site: spo2FromWatch ? WRIST : spo2Site, spo2FromWatch,
       tempC: num(g("temp")), tempMethod: g("tempMethod"),
       sleepH: num(g("sleep")), mood, symptoms,
       glucose: num(g("glucose")), glucoseEnzyme: g("enzyme"),
@@ -201,13 +208,23 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
           </div>
         </Field>
 
-        <Field id="spo2" label={S.checkin.spo2} unit="%" info="spo2">
+        <Field
+          id="spo2" label={S.checkin.spo2} unit="%" info="spo2"
+          extra={spo2FromWatch ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">
+              <Watch aria-hidden className="size-3" /> {S.checkin.fromWatch}
+            </span>
+          ) : null}
+        >
           <div className="flex gap-2">
-            <input id="spo2" name="spo2" type="number" min={70} max={100} className={inputCls} placeholder="97" />
-            <select name="spo2Site" className={selCls} aria-label={S.checkin.site}>
-              <option>Dedo</option><option>Frente</option><option>Oreja</option>
+            <input id="spo2" name="spo2" type="number" min={70} max={100} className={inputCls} placeholder="97"
+              value={spo2Value} onChange={(e) => setSpo2(e.target.value)} />
+            <select name="spo2Site" className={selCls} aria-label={S.checkin.site} disabled={spo2FromWatch}
+              value={spo2FromWatch ? WRIST : spo2Site} onChange={(e) => setSpo2Site(e.target.value)}>
+              <option>Dedo</option><option>Frente</option><option>Oreja</option><option value={WRIST}>{S.checkin.wrist}</option>
             </select>
           </div>
+          {spo2FromWatch && <p className="mt-1 text-xs text-muted-foreground">{S.checkin.spo2WatchNote}</p>}
         </Field>
 
         <Field id="temp" label={S.checkin.temp} unit="°C" info="tempC">

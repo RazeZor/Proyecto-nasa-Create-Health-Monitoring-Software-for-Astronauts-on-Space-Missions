@@ -119,6 +119,17 @@ export function fcReposoSugerida(r: RespuestaReloj | null): { valor: number; fue
   return dia && Number.isFinite(dia.valor) ? { valor: Math.round(dia.valor), fuente: dia.fuente } : null
 }
 
+/** La SpO2 del reloj sirve para el registro mientras tenga menos de esto (la del chequeo de la mañana vale el día). */
+export const VIGENCIA_SPO2_MS = 12 * 3600_000
+
+/** Última SpO2 del reloj (chequeo o medición a demanda), si es reciente. Se mide en la muñeca. */
+export function spo2Sugerida(r: RespuestaReloj | null, ahoraMs: number): number | null {
+  const s = r?.reloj?.resumen?.spo2
+  if (!s || !Number.isFinite(s.valor)) return null
+  const edad = ahoraMs - Date.parse(s.t)
+  return edad >= 0 && edad <= VIGENCIA_SPO2_MS ? Math.round(s.valor) : null
+}
+
 /** Horas de sueño estimadas por el reloj (experimental), con un decimal. */
 export function suenoSugerido(r: RespuestaReloj | null): number | null {
   const m = r?.reloj?.resumen?.sueno?.minutos

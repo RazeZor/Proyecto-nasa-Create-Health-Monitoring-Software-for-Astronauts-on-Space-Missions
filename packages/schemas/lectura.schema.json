@@ -26,7 +26,7 @@
     "pas_mmHg": { "type": ["number", "null"], "minimum": 50, "maximum": 260 },
     "pad_mmHg": { "type": ["number", "null"], "minimum": 25, "maximum": 160 },
     "spo2_pct": { "type": ["number", "null"], "minimum": 50, "maximum": 100 },
-    "spo2_sitio": { "enum": ["dedo", "frente", "oreja", null] },
+    "spo2_sitio": { "enum": ["dedo", "frente", "oreja", "muneca", null] },
     "temp_central_c": { "type": ["number", "null"], "minimum": 32.0, "maximum": 43.0 },
     "temp_metodo": { "enum": ["oral", "temporal", "timpanica", "central", null] },
     "sueno_h": { "type": ["number", "null"], "minimum": 0.0, "maximum": 24.0 },

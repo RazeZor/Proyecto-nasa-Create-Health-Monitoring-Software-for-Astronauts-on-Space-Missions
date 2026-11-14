@@ -47,3 +47,8 @@ test("reporteDeServidor: el contenido guardado en la API llega a la interfaz", (
   assert.deepEqual([r.id, r.serverId, r.title, r.delayMinutes, r.createdAt], ["7", 7, "Informe diario · Día 23", 12, Date.parse("2026-12-06T07:00:00Z")])
   assert.equal(reporteDeServidor({ id: 8, creado_t_real: "2026-12-06T07:00:00Z", retardo_min: 0, llega_t_real: "2026-12-06T07:00:00Z", estado: "en_cola", respuesta: null, contenido: null }).title, "#8")
 })
+
+test("la SpO2 del reloj sube como sensor galaxy_watch4", () => {
+  const l = lecturasDeCheckIn({ ...base, spo2FromWatch: true, spo2Site: "Muñeca" }).find((x) => x.indicador === "spo2")
+  assert.deepEqual([l?.origen, l?.metodo], ["sensor", "galaxy_watch4"])
+})

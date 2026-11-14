@@ -13,7 +13,7 @@ Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva p
 - Llamadas a la API: `lib/catalogo.ts`, `lib/etl-client.ts` y `lib/api-registro.ts` usan `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA` (se lee al compilar; por defecto `http://127.0.0.1:8000`). En la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa. La vista de entorno consume `/paneles`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` sin generar series sintéticas.
 - `lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).
 - El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden y se detiene en el primer fallo; reenviar es seguro. Identidad provisional: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (por defecto 1, el astronauta de `python3 -m almacen sembrar`). Los informes viven en la API con su `contenido`: `/reports` los lee de `GET /tripulantes/{id}/reportes` cada 3 s y al encolar envía `POST` con el contenido; si la API no responde, avisa y no guarda nada local. `t_real` es la hora real del envío, no el día de misión elegido en la interfaz.
-- Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. El motor no reinicia la línea base ante un cambio de instrumento (no tiene ventana en vuelo y debe mantener paridad con el simulador): solo se avisa.
+- Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), la SpO2 del reloj de las últimas 12 h (`spo2Sugerida`, sitio «Muñeca (reloj)», sube como `sensor`/`galaxy_watch4`; contrato `spo2_sitio: muneca`), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. El motor no reinicia la línea base ante un cambio de instrumento (no tiene ventana en vuelo y debe mantener paridad con el simulador): solo se avisa.
 - Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.
 - Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`.
 
@@ -47,7 +47,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/app-context.tsx](components/app-context.tsx) | 157 | — |
 | [components/body/body-figure.tsx](components/body/body-figure.tsx) | 298 | — |
 | [components/body/body-view.tsx](components/body/body-view.tsx) | 218 | — |
-| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 295 | — |
+| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 312 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 160 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 46 | — |
 | [components/device/reloj-extras.tsx](components/device/reloj-extras.tsx) | 107 | — |
@@ -69,7 +69,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/ui/popover.tsx](components/ui/popover.tsx) | 89 | — |
 | [components/ui/sheet.tsx](components/ui/sheet.tsx) | 138 | — |
 | [components/ui/slider.tsx](components/ui/slider.tsx) | 51 | — |
-| [lib/api-registro.test.ts](lib/api-registro.test.ts) | 49 | — |
+| [lib/api-registro.test.ts](lib/api-registro.test.ts) | 54 | — |
 | [lib/api-registro.ts](lib/api-registro.ts) | 105 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
 | [lib/catalogo.test.ts](lib/catalogo.test.ts) | 35 | — |
 | [lib/catalogo.ts](lib/catalogo.ts) | 161 | Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de |
@@ -78,14 +78,14 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/engine.test.ts](lib/engine.test.ts) | 84 | — |
 | [lib/engine.ts](lib/engine.ts) | 174 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial) más los registros |
 | [lib/etl-client.ts](lib/etl-client.ts) | 161 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
-| [lib/reloj.test.ts](lib/reloj.test.ts) | 48 | — |
-| [lib/reloj.ts](lib/reloj.ts) | 195 | Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con |
+| [lib/reloj.test.ts](lib/reloj.test.ts) | 56 | — |
+| [lib/reloj.ts](lib/reloj.ts) | 206 | Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con |
 | [lib/sincronizacion.ts](lib/sincronizacion.ts) | 30 | — |
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 42 | — |
-| [lib/strings.ts](lib/strings.ts) | 356 | — |
-| [lib/types.ts](lib/types.ts) | 165 | — |
+| [lib/strings.ts](lib/strings.ts) | 358 | — |
+| [lib/types.ts](lib/types.ts) | 167 | — |
 | [lib/utils.ts](lib/utils.ts) | 10 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |
 | [postcss.config.mjs](postcss.config.mjs) | 8 | @type {import('postcss-load-config').Config} |
@@ -307,6 +307,8 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - constante `HUECO_MS`
 - función `tramosSerie`
 - función `fcReposoSugerida`
+- constante `VIGENCIA_SPO2_MS`
+- función `spo2Sugerida`
 - función `suenoSugerido`
 - función `ultimoCambioInstrumento`
 - función `leerReloj`
