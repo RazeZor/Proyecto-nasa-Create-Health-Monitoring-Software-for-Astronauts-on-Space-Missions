@@ -78,7 +78,7 @@ class Alertas(unittest.TestCase):
         self.roja(self.ana)
         al.registrar_alerta(self.conn, self.ana, "sueno", "B", "ambar", 4, T, "desviación", "1")
         self.assertEqual({a["nivel"] for a in al.alertas_visibles(self.conn, self.ana, self.ana)}, {"rojo", "ambar"})
-        self.assertEqual([a["nivel"] for a in al.alertas_visibles(self.conn, self.med, self.ana)], ["rojo"])
+        self.assertEqual([a["indicador"] for a in al.alertas_visibles(self.conn, self.med, self.ana)], ["spo2"])
         self.assertEqual(al.alertas_visibles(self.conn, self.bea, self.ana), [])
         # el comandante no es destinatario de la roja de ana
         self.assertEqual(al.alertas_visibles(self.conn, self.cmd, self.ana), [])
@@ -86,6 +86,32 @@ class Alertas(unittest.TestCase):
         self.assertIn((self.med, "lectura_ajena"), acciones)
         self.assertIn((self.bea, "lectura_ajena"), acciones)
         self.assertNotIn((self.ana, "lectura_ajena"), acciones)
+
+    def test_destinatario_solo_recibe_el_dato_minimo(self):
+        self.roja(self.ana)
+        (v,) = al.alertas_visibles(self.conn, self.med, self.ana)
+        self.assertEqual(set(v), {"escalamiento_id", "alerta_id", "tripulante_id", "indicador", "valor", "t_real", "tramo"})
+        self.assertIn("explicacion", al.alertas_visibles(self.conn, self.ana, self.ana)[0])
+
+    def test_escalamientos_recibidos_y_propios(self):
+        self.roja(self.ana)
+        (rec,) = al.listar_escalamientos(self.conn, destinatario_id=self.med)
+        self.assertEqual((rec["tripulante_id"], rec["contenido"]["indicador"], rec["contexto_astronauta"]), (self.ana, "spo2", None))
+        self.assertEqual(al.listar_escalamientos(self.conn, destinatario_id=self.cmd), [])
+        self.assertEqual(len(al.listar_escalamientos(self.conn, tripulante_id=self.ana)), 1)
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM auditoria WHERE accion = 'lectura_ajena'").fetchone()[0], 0)
+
+    def test_replace_no_elude_la_solo_adicion(self):
+        a = self.roja(self.ana)
+        al.anotar(self.conn, self.ana, "x", "alerta", a)
+        for sql in ("INSERT OR REPLACE INTO auditoria (id, t_real, accion, entidad) VALUES (1, 'x', 'y', 'z')",
+                    "INSERT OR REPLACE INTO alerta (id, tripulante_id, indicador, capa, nivel, valor, t_real, explicacion, "
+                    "regla_version) VALUES (1, 1, 'spo2', 'A', 'verde', 99, 'x', 'x', '1')",
+                    "INSERT OR REPLACE INTO escalamiento (id, alerta_id, destinatario_id, enviado_t_real, contenido) "
+                    "VALUES (1, 1, 1, 'x', '{}')",
+                    "UPDATE escalamiento SET id = id + 1000"):
+            with self.assertRaises(sqlite3.IntegrityError, msg=sql):
+                self.conn.execute(sql)
 
     def test_si_falla_el_escalamiento_no_queda_la_alerta(self):
         original, al._escalar = al._escalar, lambda *a: 1 / 0

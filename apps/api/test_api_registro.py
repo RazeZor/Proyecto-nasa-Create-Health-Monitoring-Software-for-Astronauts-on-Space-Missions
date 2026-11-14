@@ -65,6 +65,51 @@ class Registro(unittest.TestCase):
             r = self.c.post(f"/tripulantes/{self.ana}/lecturas", headers=self.como(self.ana), json=cuerpo)
             self.assertEqual(r.status_code, 422, cuerpo)
 
+    def test_tipos_estrictos(self):
+        h = self.como(self.ana)
+        for url, cuerpo in ((f"/tripulantes/{self.ana}/lecturas", {"indicador": "spo2", "valor": "97", "t_real": T}),
+                            (f"/tripulantes/{self.ana}/lecturas", {"indicador": "spo2", "valor": True, "t_real": T}),
+                            (f"/tripulantes/{self.ana}/reportes", {"creado_t_real": T, "retardo_min": "5"}),
+                            (f"/tripulantes/{self.ana}/sintomas", {"codigo": "x", "gravedad": "2", "t_real": T})):
+            self.assertEqual(self.c.post(url, headers=h, json=cuerpo).status_code, 422, cuerpo)
+        self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/lecturas", headers=h).json(), [])
+
+    def test_t_real_no_canonico_da_422_y_no_duplica(self):
+        h, url = self.como(self.ana), f"/tripulantes/{self.ana}/lecturas"
+        self.c.post(url, headers=h, json={"indicador": "spo2", "valor": 95, "t_real": "2026-11-14T10:00:00Z"})
+        r = self.c.post(url, headers=h, json={"indicador": "spo2", "valor": 95, "t_real": "2026-11-14T10:0:0Z"})
+        self.assertEqual(r.status_code, 422)
+        self.assertEqual(len(self.c.get(url, headers=h).json()), 1)
+
+    def test_peticiones_en_paralelo(self):
+        from concurrent.futures import ThreadPoolExecutor
+        h, url = self.como(self.ana), f"/tripulantes/{self.ana}/lecturas"
+        with ThreadPoolExecutor(8) as pool:
+            codigos = list(pool.map(lambda _: self.c.get(url, headers=h).status_code, range(40)))
+        self.assertEqual(set(codigos), {200})
+
+    def test_escalamientos_y_contexto(self):
+        self.alerta()
+        recibidos = self.c.get("/escalamientos", headers=self.como(self.med)).json()
+        self.assertEqual([(e["tripulante_id"], e["contenido"]["tramo"]) for e in recibidos], [(self.ana, "3 puntos")])
+        self.assertEqual(self.c.get("/escalamientos", headers=self.como(self.cmd)).json(), [])
+        eid = recibidos[0]["id"]
+        propios = self.c.get(f"/tripulantes/{self.ana}/escalamientos", headers=self.como(self.ana)).json()
+        self.assertEqual(propios[0]["destinatario_id"], self.med)
+        self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/escalamientos", headers=self.como(self.med)).status_code, 403)
+        ctx = {"texto": "estaba en ejercicio"}
+        self.assertEqual(self.c.post(f"/escalamientos/{eid}/contexto", headers=self.como(self.bea), json=ctx).status_code, 403)
+        self.assertEqual(self.c.post(f"/escalamientos/{eid}/contexto", headers=self.como(self.ana), json=ctx).status_code, 200)
+        self.assertEqual(self.c.post(f"/escalamientos/{eid}/contexto", headers=self.como(self.ana), json=ctx).status_code, 422)
+        self.assertEqual(self.c.get("/escalamientos", headers=self.como(self.med)).json()[0]["contexto_astronauta"],
+                         "estaba en ejercicio")
+
+    def test_destinatario_solo_ve_el_dato_minimo_por_http(self):
+        self.alerta()
+        (v,) = self.c.get(f"/tripulantes/{self.ana}/alertas", headers=self.como(self.med)).json()
+        self.assertNotIn("explicacion", v)
+        self.assertEqual(v["tramo"], "3 puntos")
+
     def test_sintomas_y_linea_base(self):
         h = self.como(self.ana)
         self.assertEqual(self.c.post(f"/tripulantes/{self.ana}/sintomas", headers=h,
@@ -82,7 +127,7 @@ class Registro(unittest.TestCase):
         self.assertEqual(r.status_code, 201)
         self.assertIsNotNone(r.json()["escalamiento_id"])
         vistas = self.c.get(f"/tripulantes/{self.ana}/alertas", headers=self.como(self.med)).json()
-        self.assertEqual([a["nivel"] for a in vistas], ["rojo"])
+        self.assertEqual([a["indicador"] for a in vistas], ["spo2"])
 
     def test_un_tercero_no_ve_la_ambar(self):
         self.assertIsNone(self.alerta("ambar", "B", "sueno").json()["escalamiento_id"])

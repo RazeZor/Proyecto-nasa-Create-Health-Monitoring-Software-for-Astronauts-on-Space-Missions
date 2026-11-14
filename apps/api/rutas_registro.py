@@ -4,12 +4,15 @@ shortcut: el tripulante se declara en la cabecera X-Tripulante sin autenticació
 sesión firmada antes de uso fuera de localhost. Los datos personales solo los lee su dueño; las alertas
 las ve el dueño y, si son rojas, su destinatario (privacidad §5.4).
 """
+import sqlite3
+
 from fastapi import APIRouter, Depends, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictFloat, StrictInt
 
 from almacen import alertas, base, cola, conectar, lecturas, migrar
 from i18n import t
 
+Numero = StrictInt | StrictFloat  # sin coerción: "97" y true no son números
 router = APIRouter(tags=["registro"])
 ERRORES = {401: {"description": "Falta la cabecera X-Tripulante o no es un tripulante conocido."},
            403: {"description": "El recurso pertenece a otro tripulante."},
@@ -41,7 +44,7 @@ def propio(id: int, quien: int = Depends(actor)) -> int:
 
 class LecturaIn(BaseModel):
     indicador: str
-    valor: float
+    valor: Numero
     t_real: str
     origen: str = "manual"
     metodo: str | None = None
@@ -50,14 +53,14 @@ class LecturaIn(BaseModel):
 
 class SintomaIn(BaseModel):
     codigo: str
-    gravedad: int
+    gravedad: StrictInt
     t_real: str
 
 
 class LineaBaseIn(BaseModel):
-    mediana: float
-    mad: float
-    n: int
+    mediana: Numero
+    mad: Numero
+    n: StrictInt
     desde: str
     hasta: str
 
@@ -66,7 +69,7 @@ class AlertaIn(BaseModel):
     indicador: str
     capa: str
     nivel: str
-    valor: float
+    valor: Numero
     t_real: str
     explicacion: str
     regla_version: str
@@ -75,7 +78,11 @@ class AlertaIn(BaseModel):
 
 class ReporteIn(BaseModel):
     creado_t_real: str
-    retardo_min: int
+    retardo_min: StrictInt
+
+
+class ContextoIn(BaseModel):
+    texto: str
 
 
 class RespuestaIn(BaseModel):
@@ -174,4 +181,33 @@ def responder(reporte_id: int, cuerpo: RespuestaIn, quien: int = Depends(actor),
     """Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422.
     shortcut: cualquier tripulante conocido puede responder (el médico de vuelo en tierra no está modelado)."""
     cola.responder_reporte(conn, reporte_id, cuerpo.respuesta, cuerpo.t_real)
+    return {"ok": True}
+
+
+@router.get("/escalamientos", responses={401: ERRORES[401]}, summary="Lista los escalamientos que recibiste")
+def escalamientos_recibidos(quien: int = Depends(actor), conn=Depends(conexion)):
+    """Avisos rojos escalados a ti: `{id, alerta_id, tripulante_id, contenido: {indicador, valor, t_real, tramo},
+    contexto_astronauta}`. Es tu bandeja: no deja registro `lectura_ajena`."""
+    return alertas.listar_escalamientos(conn, destinatario_id=quien)
+
+
+@router.get("/tripulantes/{id}/escalamientos", responses=ERRORES, summary="Lista lo que se envió sobre ti")
+def escalamientos_propios(id: int = Depends(propio), conn=Depends(conexion)):
+    """Transparencia (§5.4): qué avisos salieron sobre ti, a quién y con qué contenido."""
+    return alertas.listar_escalamientos(conn, tripulante_id=id)
+
+
+@router.post("/escalamientos/{escalamiento_id}/contexto", responses={**ERRORES, 404: {"description": "No existe."}},
+             summary="Añade contexto a un escalamiento propio")
+def agregar_contexto(escalamiento_id: int, cuerpo: ContextoIn, quien: int = Depends(actor), conn=Depends(conexion)):
+    """Solo el afectado puede añadir contexto, una sola vez (no puede cancelar el aviso); otro tripulante recibe 403
+    y un segundo intento, 422."""
+    dueno = [e for e in alertas.listar_escalamientos(conn, tripulante_id=quien) if e["id"] == escalamiento_id]
+    if not dueno:
+        existe = conn.execute("SELECT 1 FROM escalamiento WHERE id = ?", (escalamiento_id,)).fetchone()
+        raise HTTPException(403 if existe else 404, t("api.error.sin_permiso") if existe else t("api.error.dato_invalido", detalle=escalamiento_id))
+    try:
+        alertas.agregar_contexto(conn, escalamiento_id, cuerpo.texto)
+    except sqlite3.IntegrityError as e:  # el trigger de solo adición: ya tenía contexto
+        raise ValueError(str(e)) from None
     return {"ok": True}

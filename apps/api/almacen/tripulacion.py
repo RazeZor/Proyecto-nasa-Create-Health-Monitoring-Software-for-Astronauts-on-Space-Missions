@@ -9,7 +9,10 @@ DEMO_DIA1 = "2026-11-14T00:00:00Z"
 def _utc(t_real):
     """Único lugar que valida `YYYY-MM-DDTHH:MM:SSZ` y lo convierte a datetime UTC."""
     try:
-        return datetime.strptime(t_real, FORMATO).replace(tzinfo=timezone.utc)
+        t = datetime.strptime(t_real, FORMATO).replace(tzinfo=timezone.utc)
+        if t.strftime(FORMATO) != t_real:  # strptime acepta '10:0:0Z' o dígitos Unicode: dos textos para un mismo instante
+            raise ValueError
+        return t
     except (TypeError, ValueError):
         raise ValueError(f"t_real inválido (se espera YYYY-MM-DDTHH:MM:SSZ): {t_real!r}") from None
 

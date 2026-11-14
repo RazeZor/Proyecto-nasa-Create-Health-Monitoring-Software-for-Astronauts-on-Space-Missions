@@ -124,6 +124,6 @@ CREATE TRIGGER auditoria_sin_delete BEFORE DELETE ON auditoria BEGIN SELECT RAIS
 CREATE TRIGGER escalamiento_sin_delete BEFORE DELETE ON escalamiento BEGIN SELECT RAISE(ABORT, 'escalamiento es de solo adición'); END;
 -- En un escalamiento solo se puede añadir, una vez, el contexto del astronauta.
 CREATE TRIGGER escalamiento_solo_contexto BEFORE UPDATE ON escalamiento
-WHEN OLD.contexto_astronauta IS NOT NULL OR NEW.contenido IS NOT OLD.contenido OR NEW.alerta_id IS NOT OLD.alerta_id
+WHEN OLD.contexto_astronauta IS NOT NULL OR NEW.id IS NOT OLD.id OR NEW.contenido IS NOT OLD.contenido OR NEW.alerta_id IS NOT OLD.alerta_id
   OR NEW.destinatario_id IS NOT OLD.destinatario_id OR NEW.enviado_t_real IS NOT OLD.enviado_t_real
 BEGIN SELECT RAISE(ABORT, 'escalamiento es de solo adición'); END;

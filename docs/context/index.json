@@ -13,7 +13,8 @@
         "Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.",
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
         "Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.",
-        "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Cada acceso a alertas ajenas queda en `auditoria`.",
+        "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez.",
+        "La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).",
         "El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.",
         "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Sin CORS ni autenticación: es para uso local o de tierra.",
         "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
@@ -47,7 +48,7 @@
         },
         {
           "ruta": "apps/api/almacen/alertas.py",
-          "lineas": 85,
+          "lineas": 99,
           "descripcion": "Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4).",
           "test": false,
           "simbolos": [
@@ -76,10 +77,16 @@
               "doc": "El astronauta añade contexto una sola vez; el trigger rechaza cambiarlo o editar lo demás."
             },
             {
+              "nombre": "listar_escalamientos",
+              "tipo": "función",
+              "firma": "listar_escalamientos(conn, destinatario_id=None, tripulante_id=None)",
+              "doc": "Escalamientos recibidos por `destinatario_id` o enviados por el afectado `tripulante_id`."
+            },
+            {
               "nombre": "alertas_visibles",
               "tipo": "función",
               "firma": "alertas_visibles(conn, actor_id, tripulante_id)",
-              "doc": "El dueño ve todas sus alertas; otro tripulante, solo las rojas escaladas a él. El acceso ajeno se audita."
+              "doc": "El dueño ve todas sus alertas. Otro tripulante recibe solo el dato mínimo de las escaladas a él"
             }
           ]
         },
@@ -137,7 +144,7 @@
         },
         {
           "ruta": "apps/api/almacen/db.py",
-          "lineas": 36,
+          "lineas": 44,
           "descripcion": "Conexión y migraciones del almacén SQLite (solo biblioteca estándar).",
           "test": false,
           "simbolos": [
@@ -195,7 +202,7 @@
         },
         {
           "ruta": "apps/api/almacen/tripulacion.py",
-          "lineas": 76,
+          "lineas": 79,
           "descripcion": "Misión, tripulantes y consentimiento; conversión de t_real a hora de misión.",
           "test": false,
           "simbolos": [
@@ -307,7 +314,7 @@
         },
         {
           "ruta": "apps/api/rutas_registro.py",
-          "lineas": 177,
+          "lineas": 213,
           "descripcion": "Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md).",
           "test": false,
           "simbolos": [
@@ -357,6 +364,12 @@
               "nombre": "ReporteIn",
               "tipo": "clase",
               "firma": "ReporteIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "ContextoIn",
+              "tipo": "clase",
+              "firma": "ContextoIn(BaseModel)",
               "doc": ""
             },
             {
@@ -442,12 +455,30 @@
               "tipo": "función",
               "firma": "responder(reporte_id: int, cuerpo: RespuestaIn, quien: int=Depends(actor), conn=Depends(conexion))",
               "doc": "Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422."
+            },
+            {
+              "nombre": "escalamientos_recibidos",
+              "tipo": "función",
+              "firma": "escalamientos_recibidos(quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Avisos rojos escalados a ti: `{id, alerta_id, tripulante_id, contenido: {indicador, valor, t_real, tramo},"
+            },
+            {
+              "nombre": "escalamientos_propios",
+              "tipo": "función",
+              "firma": "escalamientos_propios(id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Transparencia (§5.4): qué avisos salieron sobre ti, a quién y con qué contenido."
+            },
+            {
+              "nombre": "agregar_contexto",
+              "tipo": "función",
+              "firma": "agregar_contexto(escalamiento_id: int, cuerpo: ContextoIn, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Solo el afectado puede añadir contexto, una sola vez (no puede cancelar el aviso); otro tripulante recibe 403"
             }
           ]
         },
         {
           "ruta": "apps/api/test_almacen_alertas.py",
-          "lineas": 108,
+          "lineas": 134,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -489,7 +520,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_db.py",
-          "lineas": 38,
+          "lineas": 83,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -517,7 +548,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_tripulacion.py",
-          "lineas": 54,
+          "lineas": 59,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -545,7 +576,7 @@
         },
         {
           "ruta": "apps/api/test_api_registro.py",
-          "lineas": 106,
+          "lineas": 151,
           "descripcion": "",
           "test": true,
           "simbolos": [

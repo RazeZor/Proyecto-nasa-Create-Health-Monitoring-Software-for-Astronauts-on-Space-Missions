@@ -28,6 +28,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Catalogos` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
 | `Cola` | clase | [apps/api/test_almacen_cola.py](../../apps/api/test_almacen_cola.py) |
 | `Construir` | clase | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
+| `ContextoIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `Esquema` | clase | [apps/api/test_almacen_db.py](../../apps/api/test_almacen_db.py) |
 | `EstructuraInesperada` | clase | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `Evaluar` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
@@ -53,6 +54,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Validar` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
 | `actor` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `agregar_contexto` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
+| `agregar_contexto` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `alertas_visibles` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `analizar` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `analizar_js` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
@@ -87,6 +89,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `diario` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `encolar_reporte` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `es_test` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `escalamientos_propios` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `escalamientos_recibidos` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `escalar` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `europepmc` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `evaluar` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
@@ -111,6 +115,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `leer_sintomas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `lint` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `listar_alertas` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `listar_escalamientos` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `listar_escenarios` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `listar_lecturas` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `listar_paneles` | función | [apps/api/main.py](../../apps/api/main.py) |

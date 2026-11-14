@@ -15,7 +15,8 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 - Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.
 - Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.
 - Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.
-- Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Cada acceso a alertas ajenas queda en `auditoria`.
+- Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez.
+- La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).
 - El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.
 - Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Sin CORS ni autenticación: es para uso local o de tierra.
 - Los mensajes de error salen de `packages/i18n` (`api.error.*`).
@@ -38,22 +39,22 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | --- | --- | --- |
 | [almacen/__init__.py](almacen/__init__.py) | 1 | — |
 | [almacen/__main__.py](almacen/__main__.py) | 13 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
-| [almacen/alertas.py](almacen/alertas.py) | 85 | Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4). |
+| [almacen/alertas.py](almacen/alertas.py) | 99 | Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4). |
 | [almacen/base.py](almacen/base.py) | 18 | Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo). |
 | [almacen/cola.py](almacen/cola.py) | 35 | Cola de reportes hacia tierra con el retardo del día de misión (3 a 22 min, informe §4.2). |
-| [almacen/db.py](almacen/db.py) | 36 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
+| [almacen/db.py](almacen/db.py) | 44 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
 | [almacen/lecturas.py](almacen/lecturas.py) | 47 | Lecturas de indicadores y síntomas de un tripulante. |
-| [almacen/tripulacion.py](almacen/tripulacion.py) | 76 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
+| [almacen/tripulacion.py](almacen/tripulacion.py) | 79 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [main.py](main.py) | 137 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
-| [rutas_registro.py](rutas_registro.py) | 177 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
-| [test_almacen_alertas.py](test_almacen_alertas.py) | 108 | — |
+| [rutas_registro.py](rutas_registro.py) | 213 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
+| [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
 | [test_almacen_cola.py](test_almacen_cola.py) | 50 | — |
-| [test_almacen_db.py](test_almacen_db.py) | 38 | — |
+| [test_almacen_db.py](test_almacen_db.py) | 83 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 63 | — |
-| [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 54 | — |
+| [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
 | [test_api.py](test_api.py) | 89 | — |
-| [test_api_registro.py](test_api_registro.py) | 106 | — |
+| [test_api_registro.py](test_api_registro.py) | 151 | — |
 
 ### API pública
 
@@ -63,7 +64,8 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `escalar(conn, alerta_id)`
 - función `registrar_alerta(conn, tripulante_id, indicador, capa, nivel, valor, t_real, explicacion, regla_version, tramo=None)`: Guarda la alerta; una roja de la capa A escala en la misma transacción.
 - función `agregar_contexto(conn, escalamiento_id, texto)`: El astronauta añade contexto una sola vez; el trigger rechaza cambiarlo o editar lo demás.
-- función `alertas_visibles(conn, actor_id, tripulante_id)`: El dueño ve todas sus alertas; otro tripulante, solo las rojas escaladas a él. El acceso ajeno se audita.
+- función `listar_escalamientos(conn, destinatario_id=None, tripulante_id=None)`: Escalamientos recibidos por `destinatario_id` o enviados por el afectado `tripulante_id`.
+- función `alertas_visibles(conn, actor_id, tripulante_id)`: El dueño ve todas sus alertas. Otro tripulante recibe solo el dato mínimo de las escaladas a él
 
 **almacen/base.py**
 
@@ -122,6 +124,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - clase `LineaBaseIn(BaseModel)`
 - clase `AlertaIn(BaseModel)`
 - clase `ReporteIn(BaseModel)`
+- clase `ContextoIn(BaseModel)`
 - clase `RespuestaIn(BaseModel)`
 - clase `AvanceIn(BaseModel)`
 - función `crear_lectura(cuerpo: LecturaIn, id: int=Depends(propio), conn=Depends(conexion))`: Guarda una lectura de un indicador (`spo2`, `sueno`, …). Reenviar la misma (indicador, t_real, origen) devuelve
@@ -136,6 +139,9 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `listar_reportes(id: int=Depends(propio), conn=Depends(conexion))`: Reportes del tripulante con `estado` en_cola, entregado o respondido.
 - función `avanzar(cuerpo: AvanceIn, quien: int=Depends(actor), conn=Depends(conexion))`: Pasa a `entregado` los reportes con `llega_t_real` <= `ahora`; devuelve `{"entregados": n}`.
 - función `responder(reporte_id: int, cuerpo: RespuestaIn, quien: int=Depends(actor), conn=Depends(conexion))`: Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422.
+- función `escalamientos_recibidos(quien: int=Depends(actor), conn=Depends(conexion))`: Avisos rojos escalados a ti: `{id, alerta_id, tripulante_id, contenido: {indicador, valor, t_real, tramo},
+- función `escalamientos_propios(id: int=Depends(propio), conn=Depends(conexion))`: Transparencia (§5.4): qué avisos salieron sobre ti, a quién y con qué contenido.
+- función `agregar_contexto(escalamiento_id: int, cuerpo: ContextoIn, quien: int=Depends(actor), conn=Depends(conexion))`: Solo el afectado puede añadir contexto, una sola vez (no puede cancelar el aviso); otro tripulante recibe 403
 
 ### Puntos de entrada
 
@@ -150,16 +156,16 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - Internas: `main`, `rutas_registro`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: `almacen`, `fastapi`, `pydantic`
-- Biblioteca estándar: `datetime`, `hashlib`, `json`, `math`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `typing`, `unittest`
+- Biblioteca estándar: `concurrent`, `datetime`, `hashlib`, `json`, `math`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `threading`, `typing`, `unittest`
 
 ### Tests
 
-- `apps/api/test_almacen_alertas.py`: 10 pruebas en Alertas (10)
+- `apps/api/test_almacen_alertas.py`: 13 pruebas en Alertas (13)
 - `apps/api/test_almacen_base.py`: 4 pruebas en LineaBase (4)
 - `apps/api/test_almacen_cola.py`: 4 pruebas en Cola (4)
-- `apps/api/test_almacen_db.py`: 4 pruebas en Esquema (4)
+- `apps/api/test_almacen_db.py`: 7 pruebas en Esquema (7)
 - `apps/api/test_almacen_lecturas.py`: 7 pruebas en Lecturas (7)
-- `apps/api/test_almacen_tripulacion.py`: 7 pruebas en Tripulacion (7)
+- `apps/api/test_almacen_tripulacion.py`: 8 pruebas en Tripulacion (8)
 - `apps/api/test_api.py`: 9 pruebas en Api (9)
-- `apps/api/test_api_registro.py`: 8 pruebas en Registro (8)
+- `apps/api/test_api_registro.py`: 13 pruebas en Registro (13)
 <!-- CONTEXT:AUTO:END -->

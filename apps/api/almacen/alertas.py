@@ -71,15 +71,29 @@ def agregar_contexto(conn, escalamiento_id, texto):
             raise ValueError(f"no existe el escalamiento {escalamiento_id}")
 
 
+def _escalamiento(fila):
+    d = dict(fila)
+    d["contenido"] = json.loads(d["contenido"])
+    return d
+
+
+def listar_escalamientos(conn, destinatario_id=None, tripulante_id=None):
+    """Escalamientos recibidos por `destinatario_id` o enviados por el afectado `tripulante_id`."""
+    sql, args = ("SELECT e.*, a.tripulante_id FROM escalamiento e JOIN alerta a ON a.id = e.alerta_id WHERE 1 = 1", [])
+    for campo, valor in (("e.destinatario_id", destinatario_id), ("a.tripulante_id", tripulante_id)):
+        if valor is not None:
+            sql += f" AND {campo} = ?"
+            args.append(valor)
+    return [_escalamiento(f) for f in conn.execute(sql + " ORDER BY e.id", args)]
+
+
 def alertas_visibles(conn, actor_id, tripulante_id):
-    """El dueño ve todas sus alertas; otro tripulante, solo las rojas escaladas a él. El acceso ajeno se audita."""
+    """El dueño ve todas sus alertas. Otro tripulante recibe solo el dato mínimo de las escaladas a él
+    (indicador, valor, hora y tramo: §5.4), nunca la explicación ni las demás alertas. El acceso ajeno se audita."""
     if actor_id == tripulante_id:
-        filas = conn.execute("SELECT * FROM alerta WHERE tripulante_id = ? ORDER BY t_real, id", (tripulante_id,))
-    else:
-        filas = conn.execute("SELECT a.* FROM alerta a JOIN escalamiento e ON e.alerta_id = a.id "
-                             "WHERE a.tripulante_id = ? AND a.nivel = 'rojo' AND e.destinatario_id = ? "
-                             "ORDER BY a.t_real, a.id", (tripulante_id, actor_id))
-    resultado = [dict(f) for f in filas]
-    if actor_id != tripulante_id:
-        anotar(conn, actor_id, "lectura_ajena", "alerta", tripulante_id, {"devueltas": len(resultado)})
+        return [dict(f) for f in conn.execute("SELECT * FROM alerta WHERE tripulante_id = ? ORDER BY t_real, id",
+                                              (tripulante_id,))]
+    resultado = [{"escalamiento_id": e["id"], "alerta_id": e["alerta_id"], "tripulante_id": e["tripulante_id"],
+                  **e["contenido"]} for e in listar_escalamientos(conn, destinatario_id=actor_id, tripulante_id=tripulante_id)]
+    anotar(conn, actor_id, "lectura_ajena", "alerta", tripulante_id, {"devueltas": len(resultado)})
     return resultado

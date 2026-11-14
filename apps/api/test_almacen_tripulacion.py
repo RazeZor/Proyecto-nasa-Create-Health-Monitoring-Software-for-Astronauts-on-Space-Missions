@@ -27,6 +27,11 @@ class Tripulacion(unittest.TestCase):
             with self.assertRaises(ValueError):
                 tr.t_mision(self.conn, self.t, malo)
 
+    def test_t_real_no_canonico_se_rechaza(self):
+        for malo in ("2026-11-14T10:0:0Z", "2026-11-14T10:00:00z", "２０２６-11-14T10:00:00Z", "2026-1-4T10:00:00Z"):
+            with self.assertRaises(ValueError, msg=malo):
+                tr.t_mision(self.conn, self.t, malo)
+
     def test_rol_y_perfil_invalidos(self):
         with self.assertRaises(ValueError):
             tr.crear_tripulante(self.conn, "x", self.mision, "piloto")
