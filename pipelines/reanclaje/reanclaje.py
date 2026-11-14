@@ -21,6 +21,7 @@ import datalake  # noqa: E402
 FUENTES = {"goes", "donki", "radlab", "eda"}
 BASE = datetime(2000, 1, 1, tzinfo=timezone.utc)  # origen sintético: 00:00 del día de misión 1
 PASO = timedelta(minutes=5)
+TASAS_DE_DOSIS = ("absorbed_dose_rate", "dose_equivalent_rate")  # µGy/h y µSv/h
 FORMATO = "%Y-%m-%dT%H:%M:%SZ"
 
 
@@ -37,7 +38,7 @@ def medidas(fuente, fila):
     if fuente == "goes":
         yield f"G{fila['satellite']} {fila['energy']}", "flux", fila["flux"]
     elif fuente == "radlab":
-        for v in ("absorbed_dose_rate", "dose_equivalent_rate"):
+        for v in TASAS_DE_DOSIS:
             if fila.get(v) is not None:
                 yield fila["instrument_id"], v, fila[v]
     elif fuente == "eda":
@@ -81,7 +82,7 @@ def diario(puntos):
     for (fuente, serie, variable, dia), ps in sorted(grupos.items()):
         fila = {"dia_mision": int(dia[1:]), "fuente": fuente, "serie": serie, "variable": variable,
                 "max": max(p["valor"] for p in ps), "bins": len(ps)}
-        if variable.endswith("_dose_rate"):
+        if variable in TASAS_DE_DOSIS:
             fila["dosis"] = sum(p["valor"] for p in ps) * PASO.total_seconds() / 3600  # tasa/h x horas
         if variable.startswith("co2"):
             horas = defaultdict(list)
@@ -123,15 +124,24 @@ def construir(escenario):
         else:
             gold["serie5min"] += rejilla(v["fuente"], filas, desp)
     gold["diario"] = diario(gold["serie5min"])
-    contenido = json.dumps(gold, indent=1, ensure_ascii=False).encode()
-    destino = datalake.ROOT / "gold"
-    destino.mkdir(parents=True, exist_ok=True)
-    (destino / f"{escenario['nombre']}.json").write_bytes(contenido)
-    entrada = {"sha256": hashlib.sha256(contenido).hexdigest(), "serie5min": len(gold["serie5min"]),
-               "diario": len(gold["diario"]), "eventos": len(gold["eventos"]),
+    entrada = guardar(escenario["nombre"], gold, serie5min=len(gold["serie5min"]),
+                      diario=len(gold["diario"]), eventos=len(gold["eventos"]))
+    return entrada
+
+
+def guardar(clave, datos, destino=None, **resumen):
+    """Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en
+    gold/manifest.json. Idempotente: una entrada por clave."""
+    contenido = json.dumps(datos, indent=1, ensure_ascii=False).encode()
+    carpeta = datalake.ROOT / "gold"
+    carpeta.mkdir(parents=True, exist_ok=True)
+    archivo = Path(destino) if destino else carpeta / f"{clave}.json"
+    archivo.parent.mkdir(parents=True, exist_ok=True)
+    archivo.write_bytes(contenido)
+    entrada = {"sha256": hashlib.sha256(contenido).hexdigest(), **resumen,
                "generado": datetime.now(timezone.utc).strftime(FORMATO)}
-    ruta = destino / "manifest.json"
+    ruta = carpeta / "manifest.json"
     manifiesto = json.loads(ruta.read_text()) if ruta.exists() else {}
-    manifiesto[escenario["nombre"]] = entrada  # idempotente: una entrada por escenario
+    manifiesto[clave] = entrada
     ruta.write_text(json.dumps(manifiesto, indent=2, ensure_ascii=False))
     return entrada

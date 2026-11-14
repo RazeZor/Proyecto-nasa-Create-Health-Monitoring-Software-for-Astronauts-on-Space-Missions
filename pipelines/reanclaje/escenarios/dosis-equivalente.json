@@ -1,0 +1,6 @@
+{
+  "nombre": "dosis-equivalente",
+  "ventanas": [
+    {"fuente": "radlab", "desde": "2011-11-16T00:00:00Z", "hasta": "2011-11-17T00:00:00Z", "dia_mision": 22}
+  ]
+}

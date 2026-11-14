@@ -1,11 +1,13 @@
 """CLI del ETL de reanclaje.
 
   python3 index.py build <escenario.json>   curated -> gold (ver escenarios/ejemplo.json)
+  python3 index.py panel <escenario.json> [destino.json]   gold -> panel de entorno para la app
   python3 index.py manifest                 SHA-256 y tamaños de cada escenario generado
 """
 import json
 import sys
 
+import panel
 import reanclaje
 from reanclaje import datalake
 
@@ -15,6 +17,9 @@ if __name__ == "__main__":
         if cmd == "build" and args:
             with open(args[0], encoding="utf-8") as f:
                 salida = reanclaje.construir(json.load(f))
+        elif cmd == "panel" and args:
+            with open(args[0], encoding="utf-8") as f:
+                salida = panel.publicar(json.load(f), *args[1:2])
         elif cmd == "manifest":
             ruta = datalake.ROOT / "gold" / "manifest.json"
             salida = json.loads(ruta.read_text()) if ruta.exists() else {}
