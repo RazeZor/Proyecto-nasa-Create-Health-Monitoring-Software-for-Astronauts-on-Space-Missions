@@ -41,7 +41,7 @@ Completa `.env`:
 
 - `NASA_API_KEY`: pídela gratis en https://api.nasa.gov. Sin ella se usa `DEMO_KEY`, que tiene límite de consultas.
 - `DATALAKE_DIR`: opcional. Por defecto es `pipelines/datalake/data/`.
-
+- `VIGIA_DB`: opcional. Archivo SQLite de la API (registro de la tripulación). Por defecto `apps/api/data/vigia.db`. Se crea con `cd apps/api && python3 -m almacen migrar` y se llena de demostración con `python3 -m almacen sembrar`.
 `.env` está en `.gitignore`: **nunca lo subas**. Los scripts leen variables del entorno y **no** cargan `.env` solos. Cárgalo en tu terminal antes de ingerir:
 
 ```sh
