@@ -101,6 +101,38 @@
           ]
         },
         {
+          "ruta": "apps/api/almacen/cola.py",
+          "lineas": 35,
+          "descripcion": "Cola de reportes hacia tierra con el retardo del día de misión (3 a 22 min, informe §4.2).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "encolar_reporte",
+              "tipo": "función",
+              "firma": "encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min)",
+              "doc": ""
+            },
+            {
+              "nombre": "avanzar_cola",
+              "tipo": "función",
+              "firma": "avanzar_cola(conn, ahora)",
+              "doc": "Pasa a `entregado` los reportes que ya llegaron a tierra; devuelve cuántos."
+            },
+            {
+              "nombre": "responder_reporte",
+              "tipo": "función",
+              "firma": "responder_reporte(conn, reporte_id, respuesta, t_real)",
+              "doc": "Solo un reporte `entregado` puede responderse, y no antes de su llegada a tierra."
+            },
+            {
+              "nombre": "leer_reportes",
+              "tipo": "función",
+              "firma": "leer_reportes(conn, tripulante_id)",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/almacen/db.py",
           "lineas": 36,
           "descripcion": "Conexión y migraciones del almacén SQLite (solo biblioteca estándar).",
@@ -288,6 +320,20 @@
               "nombre": "LineaBase",
               "tipo": "clase",
               "firma": "LineaBase(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_cola.py",
+          "lineas": 50,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Cola",
+              "tipo": "clase",
+              "firma": "Cola(unittest.TestCase)",
               "doc": ""
             }
           ]

@@ -37,12 +37,14 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/__main__.py](almacen/__main__.py) | 13 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
 | [almacen/alertas.py](almacen/alertas.py) | 85 | Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4). |
 | [almacen/base.py](almacen/base.py) | 18 | Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo). |
+| [almacen/cola.py](almacen/cola.py) | 35 | Cola de reportes hacia tierra con el retardo del día de misión (3 a 22 min, informe §4.2). |
 | [almacen/db.py](almacen/db.py) | 36 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
 | [almacen/lecturas.py](almacen/lecturas.py) | 47 | Lecturas de indicadores y síntomas de un tripulante. |
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 76 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [main.py](main.py) | 127 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 108 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
+| [test_almacen_cola.py](test_almacen_cola.py) | 50 | — |
 | [test_almacen_db.py](test_almacen_db.py) | 38 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 63 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 54 | — |
@@ -62,6 +64,13 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 - función `guardar_linea_base(conn, tripulante_id, indicador, origen, mediana, mad, n, desde, hasta)`: Reemplaza la fila de la misma clave. El peso w(d) de §5.2 se calcula al leer, no se guarda.
 - función `obtener_linea_base(conn, tripulante_id, indicador, origen)`
+
+**almacen/cola.py**
+
+- función `encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min)`
+- función `avanzar_cola(conn, ahora)`: Pasa a `entregado` los reportes que ya llegaron a tierra; devuelve cuántos.
+- función `responder_reporte(conn, reporte_id, respuesta, t_real)`: Solo un reporte `entregado` puede responderse, y no antes de su llegada a tierra.
+- función `leer_reportes(conn, tripulante_id)`
 
 **almacen/db.py**
 
@@ -116,6 +125,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 - `apps/api/test_almacen_alertas.py`: 10 pruebas en Alertas (10)
 - `apps/api/test_almacen_base.py`: 4 pruebas en LineaBase (4)
+- `apps/api/test_almacen_cola.py`: 4 pruebas en Cola (4)
 - `apps/api/test_almacen_db.py`: 4 pruebas en Esquema (4)
 - `apps/api/test_almacen_lecturas.py`: 7 pruebas en Lecturas (7)
 - `apps/api/test_almacen_tripulacion.py`: 7 pruebas en Tripulacion (7)
