@@ -39,9 +39,9 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 | --- | --- | --- |
 | [index.py](index.py) | 30 | CLI del ETL de reanclaje. |
 | [panel.py](panel.py) | 82 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
-| [reanclaje.py](reanclaje.py) | 146 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
+| [reanclaje.py](reanclaje.py) | 147 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
 | [test_panel.py](test_panel.py) | 70 | — |
-| [test_reanclaje.py](test_reanclaje.py) | 80 | — |
+| [test_reanclaje.py](test_reanclaje.py) | 87 | — |
 
 ### API pública
 
@@ -80,5 +80,5 @@ python3 index.py manifest                 SHA-256 y tamaños de cada escenario g
 ### Tests
 
 - `pipelines/reanclaje/test_panel.py`: 6 pruebas en Panel (5), Publicar (1)
-- `pipelines/reanclaje/test_reanclaje.py`: 7 pruebas en Pasos (5), Construir (2)
+- `pipelines/reanclaje/test_reanclaje.py`: 8 pruebas en Pasos (6), Construir (2)
 <!-- CONTEXT:AUTO:END -->
