@@ -20,7 +20,6 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Símbolo | Tipo | Archivo |
 | --- | --- | --- |
 | `ADAPTATION_END_DAY` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
-| `ALERTS` | constante | [apps/web/lib/mock/alerts.ts](../../apps/web/lib/mock/alerts.ts) |
 | `API_BASE_URL` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `API_BASE_URL` | constante | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `AboutView` | función | [apps/web/components/about/about-view.tsx](../../apps/web/components/about/about-view.tsx) |
@@ -30,11 +29,12 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Alertas` | clase | [apps/api/test_almacen_alertas.py](../../apps/api/test_almacen_alertas.py) |
 | `AlertsView` | función | [apps/web/components/alerts/alerts-view.tsx](../../apps/web/components/alerts/alerts-view.tsx) |
 | `Almacen` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
+| `Analisis` | tipo | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `Api` | clase | [apps/api/test_api.py](../../apps/api/test_api.py) |
 | `AppProvider` | función | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
 | `AppShell` | función | [apps/web/components/shell/app-shell.tsx](../../apps/web/components/shell/app-shell.tsx) |
 | `AvanceIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
-| `BASELINE_SWITCH_DAY` | constante | [apps/web/lib/mock/crew.ts](../../apps/web/lib/mock/crew.ts) |
+| `BASELINE_SWITCH_DAY` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `Baseline` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `BodyFigure` | función | [apps/web/components/body/body-figure.tsx](../../apps/web/components/body/body-figure.tsx) |
 | `BodySide` | tipo | [apps/web/components/body/body-figure.tsx](../../apps/web/components/body/body-figure.tsx) |
@@ -68,6 +68,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Evaluar` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
 | `EventoDonkiEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `Fichas` | clase | [packages/schemas/test_fichas.py](../../packages/schemas/test_fichas.py) |
+| `FixtureDelMotor` | clase | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
 | `Generador` | clase | [tools/contextgen/test_contextgen.py](../../tools/contextgen/test_contextgen.py) |
 | `HealthStore` | interfaz | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
 | `IDIOMAS` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
@@ -86,7 +87,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `LineaBase` | clase | [apps/api/test_almacen_base.py](../../apps/api/test_almacen_base.py) |
 | `LineaBaseIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `LoadingState` | función | [apps/web/components/shared/states.tsx](../../apps/web/components/shared/states.tsx) |
-| `MISSION_DAYS` | constante | [apps/web/lib/mock/crew.ts](../../apps/web/lib/mock/crew.ts) |
+| `MISSION_DAYS` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
+| `MOTOR` | constante | [apps/web/lib/strings.ts](../../apps/web/lib/strings.ts) |
 | `MissionProfile` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `PFU_THRESHOLD` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `PRINCIPAL` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
@@ -138,7 +140,6 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Traduccion` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
 | `TrendsView` | función | [apps/web/components/trends/trends-view.tsx](../../apps/web/components/trends/trends-view.tsx) |
 | `Tripulacion` | clase | [apps/api/test_almacen_tripulacion.py](../../apps/api/test_almacen_tripulacion.py) |
-| `VITALS` | constante | [apps/web/lib/mock/crew.ts](../../apps/web/lib/mock/crew.ts) |
 | `Validar` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
 | `VentanaEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `Vocabulario` | clase | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
@@ -148,6 +149,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `agregar_contexto` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `agregar_contexto` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `alertas_visibles` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
+| `analizar` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `analizar` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `analizar_js` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `analizar_py` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
@@ -199,16 +201,12 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `evaluar` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `evaluar_tripulante` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `evaluateCheckIn` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
-| `evaluateZones` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `eventos` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `faltantes` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `formatDelay` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
 | `generar` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `generar_caso_referencia` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `generar_mision` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
-| `getAlerts` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
-| `getBaselines` | función | [apps/web/lib/mock/crew.ts](../../apps/web/lib/mock/crew.ts) |
-| `getVitals` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `guardar` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `guardar_linea_base` | función | [apps/api/almacen/base.py](../../apps/api/almacen/base.py) |
 | `guardar_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
@@ -217,7 +215,6 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `indicadorApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `ingest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `isAdaptation` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
-| `isStorm` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `isStormDay` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `lecturasDeCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `leer` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
@@ -257,7 +254,6 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `normalizar` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `normalizar` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `obtener_linea_base` | función | [apps/api/almacen/base.py](../../apps/api/almacen/base.py) |
-| `overallStatus` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `pendientes` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `pendientes` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `perfilApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
