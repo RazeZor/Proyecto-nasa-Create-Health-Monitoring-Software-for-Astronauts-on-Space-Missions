@@ -19,11 +19,11 @@ class Esquema(unittest.TestCase):
     def test_migrar_crea_todas_las_tablas(self):
         nombres = {f[0] for f in self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         self.assertTrue(TABLAS <= nombres)
-        self.assertEqual(migrar(conectar(":memory:")), 1)
+        self.assertEqual(migrar(conectar(":memory:")), 2)
 
     def test_migrar_es_idempotente(self):
-        self.assertEqual(migrar(self.conn), 1)
-        self.assertEqual(migrar(self.conn), 1)
+        self.assertEqual(migrar(self.conn), 2)
+        self.assertEqual(migrar(self.conn), 2)
 
     def test_llaves_foraneas_activas(self):
         with self.assertRaises(sqlite3.IntegrityError):
@@ -33,9 +33,19 @@ class Esquema(unittest.TestCase):
         filas = {f["id"]: f for f in self.conn.execute("SELECT * FROM indicador")}
         self.assertEqual(set(filas), {"presion_arterial_sistolica", "spo2", "temperatura_central",
                                       "frecuencia_cardiaca_reposo", "sueno", "estado_animo", "glucosa",
-                                      "masa_corporal"})
+                                      "masa_corporal", "presion_arterial_diastolica"})
         self.assertEqual({k for k, f in filas.items() if f["frecuencia"] == "semanal"}, {"glucosa", "masa_corporal"})
         self.assertEqual({k for k, f in filas.items() if f["tipo"] == "conductual"}, {"sueno", "estado_animo"})
+
+    def test_retardo_acepta_0_a_22_tambien_en_la_base(self):
+        m = self.conn.execute("INSERT INTO mision (nombre, perfil, dia1_t_real) VALUES ('m', 'estacion', '2026-11-14T00:00:00Z')").lastrowid
+        t = self.conn.execute("INSERT INTO tripulante (alias, mision_id, rol) VALUES ('a', ?, 'astronauta')", (m,)).lastrowid
+        sql = "INSERT INTO reporte_cola (tripulante_id, creado_t_real, retardo_min, llega_t_real) VALUES (?, 'x', ?, 'y')"
+        for ok in (0, 22):
+            self.conn.execute(sql, (t, ok))
+        for malo in (-1, 23):
+            with self.assertRaises(sqlite3.IntegrityError):
+                self.conn.execute(sql, (t, malo))
 
     def test_conexion_usable_desde_otro_hilo(self):
         # FastAPI resuelve dependencias y endpoint en hilos distintos del threadpool
@@ -59,7 +69,7 @@ class Esquema(unittest.TestCase):
             [h.start() for h in hilos]
             [h.join() for h in hilos]
             self.assertEqual(errores, [])
-            self.assertEqual(migrar(conectar(ruta)), 1)
+            self.assertEqual(migrar(conectar(ruta)), 2)
 
     def test_migracion_fallida_no_deja_esquema_parcial(self):
         with tempfile.TemporaryDirectory() as d:

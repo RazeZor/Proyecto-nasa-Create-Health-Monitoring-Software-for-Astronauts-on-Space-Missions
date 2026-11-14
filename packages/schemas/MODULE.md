@@ -13,6 +13,7 @@ Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON 
 - `lectura.schema.json` define el contrato diario de check-in del tripulante (`dia_mision`, signos vitales, sueño, síntomas e estado conductual, contexto CO₂/tormenta y doble marca temporal con `t_real` UTC).
 - `entorno-gold.schema.json` valida los JSON producidos por `pipelines/reanclaje` (escenarios `serie5min`/`diario` y paneles `panel-*` con dosis acumulada, protones, cabina y eventos DONKI).
 - `caso-referencia.schema.json` valida los casos de prueba reproducibles y KPI de la simulación (`pipelines/reanclaje/simulacion.py`) para verificar de forma idéntica el futuro motor híbrido (`packages/engine`).
+- `vocabulario.json` es el contrato de vocabulario entre la interfaz (claves `ui` en inglés) y la API (claves de la base, en español): indicadores con su zona del cuerpo, niveles, capas, roles, perfiles, retardo por perfil y síntomas. Las claves de la API son las canónicas; la interfaz traduce en el borde. `test_vocabulario.py` lo compara con la migración SQL, las fichas y `apps/web/lib/types.ts`: si un lado cambia sin el contrato, falla. Sus apartados `sin_equivalente` y `notas` documentan lo que aún no encaja (diastólica).
 - `peligro` es una lista con los cinco peligros del HRP (`radiacion`, `aislamiento`, `distancia`, `gravedad_alterada`, `entorno_cerrado`). Un `null` en `unidad`, `referencia_en_vuelo` o `prevencion` significa que el informe no lo respalda.
 - Los datos de fichas viven en `apps/web/public/fichas/<id>.json` con `index.json`. Si cambia cualquier esquema, se versiona aquí antes de tocar los consumidores.
 
@@ -20,7 +21,7 @@ Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON 
 
 - §3.2 Fichas de indicador. §3.3 Perfiles de misión y presiones de cabina. §3.4 Reanclaje y doble marca temporal. §5.1 Motor híbrido y §5.5 Simulación reproducible.
 
-tags: schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, json-schema, hrp
+tags: schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp
 <!-- CONTEXT:MANUAL:END -->
 
 <!-- CONTEXT:AUTO:START -->
@@ -34,6 +35,7 @@ tags: schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, 
 | --- | --- | --- |
 | [test_fichas.py](test_fichas.py) | 42 | Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar). |
 | [test_schemas.py](test_schemas.py) | 117 | Pruebas de contrato para perfiles, lecturas, entorno Gold y caso de referencia. |
+| [test_vocabulario.py](test_vocabulario.py) | 60 | El contrato vocabulario.json no puede desviarse de lo que de verdad usan la base de datos, las fichas y la interfaz. |
 | [validador.py](validador.py) | 82 | Validador mínimo de JSON Schema (Draft 2020-12) con solo biblioteca estándar. |
 
 ### API pública
@@ -52,4 +54,5 @@ tags: schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, 
 
 - `packages/schemas/test_fichas.py`: 4 pruebas en Fichas (4)
 - `packages/schemas/test_schemas.py`: 4 pruebas en Contratos (4)
+- `packages/schemas/test_vocabulario.py`: 5 pruebas en Vocabulario (5)
 <!-- CONTEXT:AUTO:END -->

@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "descripcion": "Contrato de vocabulario entre apps/web (claves `ui`, en inglés) y apps/api (claves de la base, en español). Las claves de la API son las canónicas; la interfaz traduce en el borde.",
+  "indicadores": [
+    {
+      "id": "presion_arterial_sistolica",
+      "ui": "systolic",
+      "zona": "heart"
+    },
+    {
+      "id": "spo2",
+      "ui": "spo2",
+      "zona": "heart"
+    },
+    {
+      "id": "presion_arterial_diastolica",
+      "ui": null,
+      "zona": "heart",
+      "ficha": false
+    },
+    {
+      "id": "frecuencia_cardiaca_reposo",
+      "ui": "restingHr",
+      "zona": "heart"
+    },
+    {
+      "id": "temperatura_central",
+      "ui": "tempC",
+      "zona": "blood"
+    },
+    {
+      "id": "glucosa",
+      "ui": "glucose",
+      "zona": "blood"
+    },
+    {
+      "id": "sueno",
+      "ui": "sleepH",
+      "zona": "mind"
+    },
+    {
+      "id": "estado_animo",
+      "ui": "mood",
+      "zona": "mind"
+    },
+    {
+      "id": "masa_corporal",
+      "ui": "massKg",
+      "zona": "bone"
+    }
+  ],
+  "niveles": {
+    "ok": "verde",
+    "watch": "ambar",
+    "act": "rojo"
+  },
+  "capas": {
+    "A": "A",
+    "B": "B",
+    "C": "C",
+    "context": "contexto"
+  },
+  "roles": {
+    "astronaut": "astronauta",
+    "cmo": "oficial_medico",
+    "surgeon": null
+  },
+  "perfiles": {
+    "station": "estacion",
+    "transit": "transito",
+    "transit-docked": "transito",
+    "lunar": "superficie",
+    "mars": "superficie"
+  },
+  "retardo_min": {
+    "station": 0,
+    "transit": 12,
+    "transit-docked": 12,
+    "lunar": 0,
+    "mars": 22
+  },
+  "sintomas": {
+    "headache": "cefalea",
+    "nausea": "nausea",
+    "dizziness": "mareo",
+    "visionChange": "vision",
+    "rash": "erupcion"
+  },
+  "sin_equivalente": {
+    "comandante": "Rol de la base sin pantalla en la interfaz.",
+    "surgeon": "Cirujano de vuelo en Tierra: no es un tripulante de la misión; solo recibe reportes."
+  },
+  "notas": {
+    "presion_arterial_diastolica": "La interfaz la captura (`diastolic` en CheckInEntry) pero no es un `IndicatorId` ni tiene ficha: no hay reglas sobre ella."
+  }
+}

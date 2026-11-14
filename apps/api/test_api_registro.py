@@ -110,6 +110,11 @@ class Registro(unittest.TestCase):
         self.assertNotIn("explicacion", v)
         self.assertEqual(v["tramo"], "3 puntos")
 
+    def test_sintoma_desconocido_da_422(self):
+        h = self.como(self.ana)
+        r = self.c.post(f"/tripulantes/{self.ana}/sintomas", headers=h, json={"codigo": "headache", "gravedad": 1, "t_real": T})
+        self.assertEqual(r.status_code, 422)
+
     def test_sintomas_y_linea_base(self):
         h = self.como(self.ana)
         self.assertEqual(self.c.post(f"/tripulantes/{self.ana}/sintomas", headers=h,
