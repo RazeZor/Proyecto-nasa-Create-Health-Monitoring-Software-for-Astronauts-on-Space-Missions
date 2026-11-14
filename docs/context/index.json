@@ -43,6 +43,26 @@
           "simbolos": []
         },
         {
+          "ruta": "apps/api/almacen/base.py",
+          "lineas": 18,
+          "descripcion": "Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "guardar_linea_base",
+              "tipo": "función",
+              "firma": "guardar_linea_base(conn, tripulante_id, indicador, origen, mediana, mad, n, desde, hasta)",
+              "doc": "Reemplaza la fila de la misma clave. El peso w(d) de §5.2 se calcula al leer, no se guarda."
+            },
+            {
+              "nombre": "obtener_linea_base",
+              "tipo": "función",
+              "firma": "obtener_linea_base(conn, tripulante_id, indicador, origen)",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/almacen/db.py",
           "lineas": 36,
           "descripcion": "Conexión y migraciones del almacén SQLite (solo biblioteca estándar).",
@@ -203,6 +223,20 @@
               "tipo": "función",
               "firma": "leer_seccion(nombre: str, seccion: Literal['dosis', 'protones', 'cabina', 'eventos'])",
               "doc": "Solo `dosis` (objeto o null), `protones`, `cabina` o `eventos` (listas). Otra sección da 422."
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_almacen_base.py",
+          "lineas": 40,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "LineaBase",
+              "tipo": "clase",
+              "firma": "LineaBase(unittest.TestCase)",
+              "doc": ""
             }
           ]
         },

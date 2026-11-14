@@ -35,16 +35,23 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | --- | --- | --- |
 | [almacen/__init__.py](almacen/__init__.py) | 1 | — |
 | [almacen/__main__.py](almacen/__main__.py) | 13 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
+| [almacen/base.py](almacen/base.py) | 18 | Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo). |
 | [almacen/db.py](almacen/db.py) | 36 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
 | [almacen/lecturas.py](almacen/lecturas.py) | 47 | Lecturas de indicadores y síntomas de un tripulante. |
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 76 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [main.py](main.py) | 127 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [test_almacen_base.py](test_almacen_base.py) | 40 | — |
 | [test_almacen_db.py](test_almacen_db.py) | 38 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 63 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 54 | — |
 | [test_api.py](test_api.py) | 89 | — |
 
 ### API pública
+
+**almacen/base.py**
+
+- función `guardar_linea_base(conn, tripulante_id, indicador, origen, mediana, mad, n, desde, hasta)`: Reemplaza la fila de la misma clave. El peso w(d) de §5.2 se calcula al leer, no se guarda.
+- función `obtener_linea_base(conn, tripulante_id, indicador, origen)`
 
 **almacen/db.py**
 
@@ -97,6 +104,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 ### Tests
 
+- `apps/api/test_almacen_base.py`: 4 pruebas en LineaBase (4)
 - `apps/api/test_almacen_db.py`: 4 pruebas en Esquema (4)
 - `apps/api/test_almacen_lecturas.py`: 7 pruebas en Lecturas (7)
 - `apps/api/test_almacen_tripulacion.py`: 7 pruebas en Tripulacion (7)
