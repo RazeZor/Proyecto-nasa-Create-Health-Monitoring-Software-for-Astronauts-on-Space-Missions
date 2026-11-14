@@ -16,7 +16,7 @@ import {
   type PanelEntornoEtl,
   type ResumenDiarioEtl,
 } from "@/lib/etl-client"
-import { MISSION_DAYS } from "@/lib/mock/crew"
+import { MISSION_DAYS } from "@/lib/engine"
 import {
   CAREER_LIMIT_MSV,
   CO2_LIMIT_MMHG,

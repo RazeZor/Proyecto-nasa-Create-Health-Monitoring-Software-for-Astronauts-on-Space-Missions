@@ -262,3 +262,42 @@ export const S = {
     close: "Cerrar",
   },
 } as const
+
+/** Textos de las alertas que calcula el motor (packages/engine), por indicador y por capa. */
+export const MOTOR = {
+  indicador: {
+    fc: "Frecuencia cardíaca en reposo", pas: "Presión arterial sistólica", sueno: "Sueño", animo: "Estado de ánimo",
+    conductual: "Sueño y ánimo combinados", news2: "Puntaje clínico NEWS2", co2: "Síntoma + CO2 en cabina",
+  },
+  unidad: { fc: "lpm", pas: "mmHg", sueno: "h", animo: "/10", news2: "pts", co2: "mmHg" },
+  banda: {
+    A: "NEWS2 de 5 o más, o un parámetro en el rango extremo",
+    B: "Fuera de tu banda personal dos días seguidos",
+    C: "Deriva acumulada de varios días (CUSUM de 5 o más)",
+    context: "CO2 de 3 mmHg o más con síntomas",
+  },
+  causa: {
+    A: "Una lectura cruza un límite clínico de seguridad.",
+    B: "La lectura se aleja de tu línea base personal, ajustada por la adaptación al vuelo.",
+    C: "Se acumula una deriva sostenida frente a tu línea base durante varios días.",
+    context: "Síntomas compatibles con CO2 alto mientras el CO2 de cabina supera el límite.",
+  },
+  accion: {
+    fc: "Descansa, hidrátate y vuelve a medir mañana temprano.",
+    pas: "Siéntate, mide de nuevo en 5 min y avisa al Oficial Médico si se repite.",
+    sueno: "Atenúa las luces 1 h antes de dormir y reserva una ventana de sueño completa.",
+    animo: "Programa tiempo con la tripulación y comenta cómo te sientes en tu informe.",
+    conductual: "Protege tu ventana de sueño y habla con el Oficial Médico.",
+    news2: "Vuelve a medir en 5 min y llama al Oficial Médico.",
+    co2: "Acércate a la salida de aire, revisa el depurador e hidrátate.",
+  },
+  estable: "Todas las lecturas dentro de tu banda de línea base y límites de seguridad.",
+  dentroBanda: "Dentro de la banda",
+  zona: {
+    head: "Reporta cualquier cambio de visión o dolor de cabeza en tu registro.",
+    heart: "Mantén tu protocolo de ejercicio y objetivo de hidratación.",
+    bone: "Completa la sesión de ejercicio de resistencia de hoy.",
+    blood: "Mantén la higiene de manos; registra la temperatura cada mañana.",
+    mind: "Protege tu ventana de sueño; programa tiempo con la tripulación.",
+  },
+} as const

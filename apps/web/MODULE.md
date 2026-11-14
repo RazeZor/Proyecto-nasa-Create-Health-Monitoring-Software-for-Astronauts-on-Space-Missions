@@ -70,6 +70,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/api-registro.ts](lib/api-registro.ts) | 94 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
 | [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
 | [lib/cola.ts](lib/cola.ts) | 28 | Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local. |
+| [lib/engine.test.ts](lib/engine.test.ts) | 68 | — |
 | [lib/engine.ts](lib/engine.ts) | 156 | Análisis de la app: el escenario de partida (caso de referencia, trip-1) más los registros |
 | [lib/etl-client.ts](lib/etl-client.ts) | 160 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
 | [lib/mock/alerts.ts](lib/mock/alerts.ts) | 27 | — |
@@ -342,7 +343,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 ### Dependencias
 
-- Internas: `../../../packages/engine/fixtures/caso-referencia.json`, `../types`, `./api-registro`, `./api-registro.ts`, `./cola`, `./cola.ts`, `./globals.css`, `./sincronizar`, `./sincronizar.ts`, `./storage`, `./strings.ts`, `./types`, `./types.ts`, `./vocabulario.json`
+- Internas: `../../../packages/engine/fixtures/caso-referencia.json`, `../types`, `./api-registro`, `./api-registro.ts`, `./cola`, `./cola.ts`, `./engine.ts`, `./globals.css`, `./sincronizar`, `./sincronizar.ts`, `./storage`, `./strings.ts`, `./types`, `./types.ts`, `./vocabulario.json`
 - Externas: `@/components/about/about-view`, `@/components/alerts/alerts-view`, `@/components/app-context`, `@/components/body/body-figure`, `@/components/body/body-view`, `@/components/checkin/checkin-form`, `@/components/device/device-view`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/reports/reports-view`, `@/components/shared/delay-countdown`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/components/ui/sheet`, `@/components/ui/slider`, `@/lib/api-registro`, `@/lib/cola`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/mock/alerts`, `@/lib/mock/crew`, `@/lib/mock/environment`, `@/lib/mock/indicators`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/types`, `@/lib/utils`, `@/public/fichas/dosis_radiacion.json`, `@/public/fichas/estado_animo.json`, `@/public/fichas/frecuencia_cardiaca_reposo.json`, `@/public/fichas/glucosa.json`, `@/public/fichas/masa_corporal.json`, `@/public/fichas/presion_arterial_sistolica.json`, `@/public/fichas/spo2.json`, `@/public/fichas/sueno.json`, `@/public/fichas/temperatura_central.json`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/merge-props`, `@base-ui/react/popover`, `@base-ui/react/slider`, `@base-ui/react/use-render`, `class-variance-authority`, `clsx`, `cn`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`
 - Biblioteca estándar: `node:assert/strict`, `node:test`
 
@@ -350,5 +351,6 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 - `apps/web/lib/api-registro.test.ts`: 0 pruebas
 - `apps/web/lib/cola.test.ts`: 0 pruebas
+- `apps/web/lib/engine.test.ts`: 0 pruebas
 - `apps/web/lib/sincronizar.test.ts`: 0 pruebas
 <!-- CONTEXT:AUTO:END -->

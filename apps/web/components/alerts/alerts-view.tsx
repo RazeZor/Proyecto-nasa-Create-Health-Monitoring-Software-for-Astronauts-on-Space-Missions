@@ -6,7 +6,6 @@ import { useApp } from "@/components/app-context"
 import { EmptyState, PageHeader } from "@/components/shared/states"
 import { LayerChip, StatusBadge, statusSurface } from "@/components/shared/status"
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { getAlerts } from "@/lib/engine"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import type { Alert } from "@/lib/types"
@@ -30,7 +29,7 @@ function SentDialog({ a }: { a: Alert }) {
 }
 
 export function AlertsView() {
-  const { day, role } = useApp()
+  const { day, role, analisis } = useApp()
   const [shared, setShared] = useState<string[]>([])
   const [acked, setAcked] = useState<string[]>([])
   useEffect(() => {
@@ -38,7 +37,7 @@ export function AlertsView() {
     store.listAcknowledgedAlertIds().then(setAcked)
   }, [])
 
-  const all = [...getAlerts(day)].sort((a, b) => b.day - a.day || b.time.localeCompare(a.time))
+  const all = [...analisis.alerts(day)].sort((a, b) => b.day - a.day || b.time.localeCompare(a.time))
   const list = role === "astronaut" ? all : all.filter((a) => a.status === "act" || shared.includes(a.id))
 
   return (

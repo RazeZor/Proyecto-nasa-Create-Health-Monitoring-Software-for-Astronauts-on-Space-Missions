@@ -66,7 +66,7 @@ export function CheckInScreen() {
 }
 
 function CheckInForm({ onReset }: { onReset: () => void }) {
-  const { day, liveHr, device, simulator } = useApp()
+  const { day, liveHr, device, simulator, checkIns, recargarRegistros } = useApp()
   const watchOn = (device === "connected" || simulator) && liveHr !== null
   const [start] = useState(() => Date.now())
   const [elapsed, setElapsed] = useState(0)
@@ -101,12 +101,13 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
       glucose: num(g("glucose")), glucoseEnzyme: g("enzyme"),
       massKg: num(g("mass")), massMethod: g("massMethod"),
     }
-    const status = evaluateCheckIn(base)
+    const status = evaluateCheckIn(base, checkIns)
     const entry: CheckInEntry = { ...base, status, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
     setSaving(true)
     setError(false)
     try {
       await store.saveCheckIn(entry)
+      void recargarRegistros() // el motor recalcula cuerpo, tendencias y alertas
       void sincronizarRegistros() // sube a la API sin bloquear: sin red queda pendiente
       setResult({ status, sec })
       requestAnimationFrame(() => resultRef.current?.focus())

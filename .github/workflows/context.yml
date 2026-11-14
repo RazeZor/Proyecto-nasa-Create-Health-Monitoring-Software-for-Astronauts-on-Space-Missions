@@ -13,6 +13,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.18"
       - name: Lint de Python (ruff)
         run: pip install -q ruff && ruff check .
       - name: Contexto para IA al día
@@ -31,3 +34,5 @@ jobs:
               python -m unittest discover -s "$d" || exit 1
             fi
           done
+      - name: Tests de TypeScript (motor y lógica de la app; Node ejecuta TS sin compilar)
+        run: node --test packages/engine/*.test.ts apps/web/lib/*.test.ts

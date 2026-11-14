@@ -7,7 +7,6 @@ import { DelayCountdown, formatDelay, useReportState } from "@/components/shared
 import { EmptyState, PageHeader } from "@/components/shared/states"
 import { encolarReporte, listarReportes, retardoMin } from "@/lib/api-registro"
 import type { ReporteServidor } from "@/lib/cola"
-import { overallStatus } from "@/lib/engine"
 import { cargarPanelGold, type PanelEntornoEtl } from "@/lib/etl-client"
 import { SEED_REPORTS, THREAD } from "@/lib/mock/alerts"
 import { ppmToMmHg } from "@/lib/mock/environment"
@@ -52,7 +51,7 @@ function ReportRow({ r, surgeon, servidor }: { r: Report; surgeon: boolean; serv
 }
 
 export function ReportsView() {
-  const { day, profile, role } = useApp()
+  const { day, profile, role, analisis } = useApp()
   const [reports, setReports] = useState<Report[] | null>(null)
   const [gold, setGold] = useState<PanelEntornoEtl | null>(null)
   useEffect(() => {
@@ -92,7 +91,7 @@ export function ReportsView() {
       title: `Informe diario · Día ${day}`,
       createdAt: creado,
       delayMinutes: Math.min(profile.delayMinutes, 1),
-      summary: `Overall ${S.status[overallStatus(day)]}. Sent from ${profile.label} (one-way delay ${formatDelay(profile.delayMinutes)}, compressed to 1 min in demo).`,
+      summary: `Overall ${S.status[analisis.overall(day)]}. Sent from ${profile.label} (one-way delay ${formatDelay(profile.delayMinutes)}, compressed to 1 min in demo).`,
       reading: "Ver el registro de hoy",
       baseline: "In-flight baseline active",
       environment: envResumen,

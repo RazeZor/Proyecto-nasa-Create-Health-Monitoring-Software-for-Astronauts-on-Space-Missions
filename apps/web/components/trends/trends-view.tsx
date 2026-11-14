@@ -6,8 +6,7 @@ import { IndicatorCard } from "@/components/shared/indicator-card"
 import { LineChart } from "@/components/shared/line-chart"
 import { EmptyState, PageHeader } from "@/components/shared/states"
 import { LayerChip, ProvenanceTag } from "@/components/shared/status"
-import { getAlerts, getVitals } from "@/lib/engine"
-import { BASELINE_SWITCH_DAY, getBaselines, MISSION_DAYS } from "@/lib/mock/crew"
+import { BASELINE_SWITCH_DAY, MISSION_DAYS } from "@/lib/engine"
 import { INDICATORS } from "@/lib/mock/indicators"
 import { S } from "@/lib/strings"
 import type { IndicatorId } from "@/lib/types"
@@ -16,13 +15,13 @@ import { cn } from "@/lib/utils"
 const IDS = Object.keys(INDICATORS) as IndicatorId[]
 
 export function TrendsView() {
-  const { day } = useApp()
+  const { day, analisis } = useApp()
   const [id, setId] = useState<IndicatorId>("restingHr")
   const info = INDICATORS[id]
-  const points = getVitals(day)
+  const points = analisis.vitals(day)
     .map((v) => ({ day: v.day, value: v[id] as number | undefined }))
     .filter((p): p is { day: number; value: number } => typeof p.value === "number")
-  const alerts = getAlerts(day).filter((a) => a.zone === info.zone)
+  const alerts = analisis.alerts(day).filter((a) => a.zone === info.zone)
   const layers = [...new Set(alerts.map((a) => a.layer))]
 
   return (
@@ -54,7 +53,7 @@ export function TrendsView() {
           <EmptyState message={S.trends.noData} />
         ) : (
           <LineChart label={info.label} unit={info.unit} points={points} days={MISSION_DAYS} currentDay={day}
-            bands={getBaselines(id)} switchDay={BASELINE_SWITCH_DAY} markers={alerts.map((a) => a.day)}
+            bands={analisis.baselines(id)} switchDay={BASELINE_SWITCH_DAY} markers={alerts.map((a) => a.day)}
             threshold={info.safetyHigh ? { value: info.safetyHigh, label: `Safety limit ${info.safetyHigh}` } : info.safetyLow ? { value: info.safetyLow, label: `Safety limit ${info.safetyLow}` } : undefined} />
         )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
