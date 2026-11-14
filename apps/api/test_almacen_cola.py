@@ -1,5 +1,4 @@
 import unittest
-from datetime import datetime, timedelta, timezone
 
 from almacen import cola, conectar, migrar
 from almacen import tripulacion as tr

@@ -73,10 +73,11 @@ pip install -r pipelines/<modulo>/requirements.txt
 python tools/contextgen/contextgen.py --check       # sin salida y código 0: contexto al día
 python -m unittest discover -s tools/contextgen     # tests del generador
 python -m unittest discover -s pipelines/datalake   # tests del datalake
+ruff check .                                        # lint (instalar: uv tool install ruff o pip install ruff)
 cd pipelines/datalake && python index.py ingest goes && cd ../..   # requiere internet
 ```
 
-Si las cuatro funcionan, tu entorno está listo.
+Si funcionan, tu entorno está listo. Ruff se configura en `ruff.toml` (E, F, W e imports ordenados; no exige largo de línea) y el CI lo corre en cada PR.
 
 ## 6. Tu asistente de IA
 

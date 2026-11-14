@@ -1,0 +1,12 @@
+# Ruff para todo el repo (Python 3.12, como el CI). Solo reglas que atrapan errores reales.
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = ["E", "F", "W", "I"]  # pycodestyle, pyflakes, avisos de espacios, imports ordenados
+# E501 (líneas largas) no atrapa errores y los textos en español, SQL y f-strings se parten mal: no se exige.
+ignore = ["E501"]
+
+[lint.isort]
+# apps/api importa sus módulos hermanos (`almacen`, `main`) y packages/i18n por sys.path
+known-first-party = ["almacen", "main", "rutas_registro", "datalake", "reanclaje", "i18n"]

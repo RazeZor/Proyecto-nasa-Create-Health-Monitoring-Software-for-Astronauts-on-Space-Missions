@@ -506,7 +506,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_cola.py",
-          "lineas": 50,
+          "lineas": 49,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -520,7 +520,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_db.py",
-          "lineas": 83,
+          "lineas": 82,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -948,7 +948,7 @@
       "archivos": [
         {
           "ruta": "pipelines/reanclaje/index.py",
-          "lineas": 30,
+          "lineas": 31,
           "descripcion": "CLI del ETL de reanclaje.",
           "test": false,
           "simbolos": []
@@ -1031,7 +1031,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/test_panel.py",
-          "lineas": 70,
+          "lineas": 71,
           "descripcion": "",
           "test": true,
           "simbolos": [

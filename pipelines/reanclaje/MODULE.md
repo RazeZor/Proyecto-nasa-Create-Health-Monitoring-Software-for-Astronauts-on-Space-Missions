@@ -38,10 +38,10 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [index.py](index.py) | 30 | CLI del ETL de reanclaje. |
+| [index.py](index.py) | 31 | CLI del ETL de reanclaje. |
 | [panel.py](panel.py) | 82 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
 | [reanclaje.py](reanclaje.py) | 147 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
-| [test_panel.py](test_panel.py) | 70 | — |
+| [test_panel.py](test_panel.py) | 71 | — |
 | [test_reanclaje.py](test_reanclaje.py) | 87 | — |
 
 ### API pública
