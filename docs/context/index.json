@@ -14,6 +14,7 @@
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
         "Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.",
         "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez.",
+        "Vocabulario: los códigos de síntoma salen de `packages/schemas/vocabulario.json` (`almacen/vocabulario.py` lo lee); el retardo de reporte es 0 a 22 min (migración 002) y existe el indicador `presion_arterial_diastolica` (sin reglas ni ficha).",
         "La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).",
         "El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.",
         "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Incluye CORS de solo lectura (`GET`) para que `apps/web` consulte la API desde el navegador en entorno local.",
@@ -113,7 +114,7 @@
         {
           "ruta": "apps/api/almacen/cola.py",
           "lineas": 35,
-          "descripcion": "Cola de reportes hacia tierra con el retardo del día de misión (3 a 22 min, informe §4.2).",
+          "descripcion": "Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2).",
           "test": false,
           "simbolos": [
             {
@@ -170,7 +171,7 @@
         },
         {
           "ruta": "apps/api/almacen/lecturas.py",
-          "lineas": 47,
+          "lineas": 50,
           "descripcion": "Lecturas de indicadores y síntomas de un tripulante.",
           "test": false,
           "simbolos": [
@@ -249,6 +250,13 @@
               "doc": "Misión `demo` con astronauta, oficial médico y comandante, todos con consentimiento. Idempotente."
             }
           ]
+        },
+        {
+          "ruta": "apps/api/almacen/vocabulario.py",
+          "lineas": 7,
+          "descripcion": "Vocabulario compartido con la interfaz: lee el contrato packages/schemas/vocabulario.json.",
+          "test": false,
+          "simbolos": []
         },
         {
           "ruta": "apps/api/main.py",
@@ -400,7 +408,7 @@
               "nombre": "crear_sintoma",
               "tipo": "función",
               "firma": "crear_sintoma(cuerpo: SintomaIn, id: int=Depends(propio), conn=Depends(conexion))",
-              "doc": "Guarda un síntoma con `codigo` y `gravedad` de 1 a 3."
+              "doc": "Guarda un síntoma con `codigo` (cefalea, nausea, mareo, vision o erupcion) y `gravedad` de 1 a 3."
             },
             {
               "nombre": "listar_sintomas",
@@ -436,7 +444,7 @@
               "nombre": "crear_reporte",
               "tipo": "función",
               "firma": "crear_reporte(cuerpo: ReporteIn, id: int=Depends(propio), conn=Depends(conexion))",
-              "doc": "Encola un reporte con `retardo_min` de 3 a 22; `llega_t_real` = `creado_t_real` + retardo."
+              "doc": "Encola un reporte con `retardo_min` de 0 a 22; `llega_t_real` = `creado_t_real` + retardo."
             },
             {
               "nombre": "listar_reportes",
@@ -506,7 +514,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_cola.py",
-          "lineas": 49,
+          "lineas": 53,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -520,7 +528,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_db.py",
-          "lineas": 82,
+          "lineas": 92,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -534,7 +542,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_lecturas.py",
-          "lineas": 63,
+          "lineas": 73,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -576,7 +584,7 @@
         },
         {
           "ruta": "apps/api/test_api_registro.py",
-          "lineas": 151,
+          "lineas": 156,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -1817,7 +1825,7 @@
         },
         {
           "ruta": "packages/schemas/test_vocabulario.py",
-          "lineas": 58,
+          "lineas": 60,
           "descripcion": "El contrato vocabulario.json no puede desviarse de lo que de verdad usan la base de datos, las fichas y la interfaz.",
           "test": true,
           "simbolos": [

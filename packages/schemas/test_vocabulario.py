@@ -9,7 +9,8 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[2]
 V = json.loads((Path(__file__).parent / "vocabulario.json").read_text(encoding="utf-8"))
-SQL = (RAIZ / "apps/api/almacen/migraciones/001_inicial.sql").read_text(encoding="utf-8")
+MIGRACIONES = sorted((RAIZ / "apps/api/almacen/migraciones").glob("*.sql"))
+SQL = "\n".join(m.read_text(encoding="utf-8") for m in MIGRACIONES)
 TIPOS_TS = (RAIZ / "apps/web/lib/types.ts").read_text(encoding="utf-8")
 FICHAS = RAIZ / "apps/web/public/fichas"
 
@@ -28,10 +29,11 @@ class Vocabulario(unittest.TestCase):
         sembrados = set(re.findall(r"\('([a-z_0-9]+)', '[^']*', '(?:fisiologico|conductual)'", SQL))
         self.assertEqual({i["id"] for i in V["indicadores"]}, sembrados)
         for i in V["indicadores"]:
-            self.assertTrue((FICHAS / f"{i['id']}.json").exists(), i["id"])
+            if i.get("ficha", True):
+                self.assertTrue((FICHAS / f"{i['id']}.json").exists(), i["id"])
 
     def test_indicadores_ui_zonas_y_tipos_de_la_interfaz(self):
-        self.assertEqual({i["ui"] for i in V["indicadores"]}, union_ts("IndicatorId"))
+        self.assertEqual({i["ui"] for i in V["indicadores"] if i["ui"]}, union_ts("IndicatorId"))
         self.assertEqual({i["zona"] for i in V["indicadores"]}, {"heart", "blood", "mind", "bone"})
         self.assertLessEqual({i["zona"] for i in V["indicadores"]}, union_ts("ZoneId"))
 

@@ -110,7 +110,7 @@ def listar_lecturas(indicador: str | None = None, desde: str | None = None, hast
 
 @router.post("/tripulantes/{id}/sintomas", status_code=201, responses=ERRORES, summary="Registra un síntoma")
 def crear_sintoma(cuerpo: SintomaIn, id: int = Depends(propio), conn=Depends(conexion)):
-    """Guarda un síntoma con `codigo` y `gravedad` de 1 a 3."""
+    """Guarda un síntoma con `codigo` (cefalea, nausea, mareo, vision o erupcion) y `gravedad` de 1 a 3."""
     return {"id": lecturas.registrar_sintoma(conn, id, **cuerpo.model_dump())}
 
 
@@ -158,7 +158,7 @@ def listar_alertas(id: int, quien: int = Depends(actor), conn=Depends(conexion))
 
 @router.post("/tripulantes/{id}/reportes", status_code=201, responses=ERRORES, summary="Encola un reporte a tierra")
 def crear_reporte(cuerpo: ReporteIn, id: int = Depends(propio), conn=Depends(conexion)):
-    """Encola un reporte con `retardo_min` de 3 a 22; `llega_t_real` = `creado_t_real` + retardo."""
+    """Encola un reporte con `retardo_min` de 0 a 22; `llega_t_real` = `creado_t_real` + retardo."""
     return {"id": cola.encolar_reporte(conn, id, **cuerpo.model_dump())}
 
 

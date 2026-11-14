@@ -58,6 +58,16 @@ class Lecturas(unittest.TestCase):
         with self.assertRaises(ValueError):
             lc.registrar_sintoma(self.conn, self.t, "cefalea", 4, T)
 
+    def test_sintoma_fuera_de_la_lista_cerrada(self):
+        for codigo in ("headache", "x", ""):
+            with self.assertRaises(ValueError, msg=codigo):
+                lc.registrar_sintoma(self.conn, self.t, codigo, 1, T)
+        self.assertEqual(lc.leer_sintomas(self.conn, self.t), [])
+
+    def test_lectura_de_diastolica(self):
+        lc.registrar_lectura(self.conn, self.t, "presion_arterial_diastolica", 72, T)
+        self.assertEqual(lc.leer_lecturas(self.conn, self.t, "presion_arterial_diastolica")[0]["valor"], 72.0)
+
 
 if __name__ == "__main__":
     unittest.main()
