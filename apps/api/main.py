@@ -15,6 +15,7 @@ from typing import Literal
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "i18n"))  # monorepo sin instalar
 
 from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from i18n import t  # noqa: E402
 
 DESCRIPCION = (
@@ -29,6 +30,7 @@ app = FastAPI(title="VIGÍA: API del ETL", description=DESCRIPCION, openapi_tags
     {"name": "escenarios", "description": "Gold completo de un escenario: serie de 5 min, resumen diario y eventos."},
     {"name": "paneles", "description": "Panel de entorno ya resumido para la pantalla: dosis, protones, cabina y eventos."},
     {"name": "sistema", "description": "Estado del servicio."}])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
 # shortcut: ruta por defecto al data/ del datalake local; en despliegue fijar DATALAKE_DIR
 DATALAKE_DEFECTO = Path(__file__).resolve().parents[2] / "pipelines" / "datalake" / "data"
 

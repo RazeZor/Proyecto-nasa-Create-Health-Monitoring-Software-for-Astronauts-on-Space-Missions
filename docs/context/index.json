@@ -12,7 +12,7 @@
         "La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).",
         "Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.",
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
-        "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Sin CORS ni autenticación: es para uso local o de tierra.",
+        "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Incluye CORS de solo lectura (`GET`) para que `apps/web` consulte la API desde el navegador en entorno local.",
         "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
       ],
       "tags": [
@@ -29,7 +29,7 @@
       "archivos": [
         {
           "ruta": "apps/api/main.py",
-          "lineas": 127,
+          "lineas": 129,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -101,31 +101,1052 @@
     },
     {
       "modulo": "apps/web",
-      "proposito": "Interfaz a bordo de VIGÍA: registro diario, figura humana con el estado por sistema y vista del médico de vuelo. Todavía no está implementada (`app.tsx` está vacío).",
+      "proposito": "Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable.",
       "puntos_clave": [
-        "Stack previsto: React + Vite como PWA con service worker, IndexedDB (Dexie), motor de análisis en TypeScript puro y gráficas con Recharts o uPlot. Si el equipo no usa React, se hace con HTML, CSS y JS sin framework, y el mismo motor (informe §4.3).",
-        "Debe funcionar **sin conexión**: la demo apaga el wifi. Nada de servidor; Streamlit está descartado.",
-        "Motor híbrido: capa A clínica, capa B de desviación personal y capa C de deriva. Muestra 3 niveles como máximo (verde, ámbar, rojo). Solo el rojo escala al oficial médico (§4.2, §5.1).",
-        "Las fichas de indicador salen de un JSON con la URL de su fuente: la interfaz nunca muestra una afirmación sin origen.",
-        "Consume las filas curadas que exporta `pipelines/datalake` (campo `t_real` en UTC) como JSON estático. No importa código de `pipelines/`: el contrato va en `packages/schemas` (docs/ARQUITECTURA.md).",
-        "Organización interna por funcionalidad (`src/features/<feature>/`). El motor híbrido irá a `packages/engine` para que lo compartan la app de a bordo y la vista de tierra."
+        "Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + Recharts + componentes UI accesibles (`components/ui/*`).",
+        "Funciona **sin conexión**: el almacenamiento local (`lib/storage.ts`) usa IndexedDB (`vigia-db`) con respaldo en memoria y todas las vistas operan sin depender de red externa.",
+        "Motor híbrido (`lib/engine.ts`): evalúa las capas A (seguridad clínica), B (desviación de línea base personal) y C (deriva lenta), además del modo adaptación (días 1 a 14) y modo tormenta solar (≥10 pfu). Muestra 3 niveles (`ok`, `watch`, `act`); solo el nivel `act` (rojo) escala automáticamente al oficial médico (§4.2, §5.1).",
+        "Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `NEXT_PUBLIC_VIGIA_API_URL`): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles` y `/paneles/{nombre}` (`panel-demo`, `dosis-equivalente`) desde `apps/api` y cae automáticamente a `PANELES_RESPALDO` si la API está apagada o sin red.",
+        "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`, `transit`, `transit-docked`, `lunar`, `mars`) con conversión de CO2 de ppm a mmHg según la presión total de cabina (760, 527 y 424 mmHg).",
+        "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
       ],
       "tags": [
         "frontend",
         "interfaz",
         "react",
+        "nextjs",
         "pwa",
         "offline",
-        "motor-híbrido",
+        "motor-hibrido",
         "figura-humana",
-        "pendiente"
+        "fichas"
       ],
-      "env": [],
+      "env": [
+        "NEXT_PUBLIC_VIGIA_API_URL"
+      ],
       "archivos": [
         {
-          "ruta": "apps/web/app.tsx",
-          "lineas": 0,
-          "descripcion": "vacío (pendiente)",
+          "ruta": "apps/web/app/about/page.tsx",
+          "lineas": 5,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/alerts/page.tsx",
+          "lineas": 5,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/check-in/page.tsx",
+          "lineas": 5,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/device/page.tsx",
+          "lineas": 5,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/environment/page.tsx",
+          "lineas": 5,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/layout.tsx",
+          "lineas": 37,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "metadata",
+              "tipo": "constante",
+              "firma": "metadata",
+              "doc": ""
+            },
+            {
+              "nombre": "viewport",
+              "tipo": "constante",
+              "firma": "viewport",
+              "doc": ""
+            },
+            {
+              "nombre": "RootLayout",
+              "tipo": "función",
+              "firma": "RootLayout",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/page.tsx",
+          "lineas": 5,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/reports/page.tsx",
+          "lineas": 5,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/trends/page.tsx",
+          "lineas": 5,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/about/about-view.tsx",
+          "lineas": 58,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "AboutView",
+              "tipo": "función",
+              "firma": "AboutView",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/alerts/alerts-view.tsx",
+          "lineas": 101,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "AlertsView",
+              "tipo": "función",
+              "firma": "AlertsView",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/app-context.tsx",
+          "lineas": 73,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Sex",
+              "tipo": "tipo",
+              "firma": "Sex",
+              "doc": ""
+            },
+            {
+              "nombre": "AppProvider",
+              "tipo": "función",
+              "firma": "AppProvider",
+              "doc": ""
+            },
+            {
+              "nombre": "useApp",
+              "tipo": "función",
+              "firma": "useApp",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/body/body-figure.tsx",
+          "lineas": 298,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "BodySide",
+              "tipo": "tipo",
+              "firma": "BodySide",
+              "doc": ""
+            },
+            {
+              "nombre": "BodyFigure",
+              "tipo": "función",
+              "firma": "BodyFigure",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/body/body-view.tsx",
+          "lineas": 220,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "BodyView",
+              "tipo": "función",
+              "firma": "BodyView",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/checkin/checkin-form.tsx",
+          "lineas": 271,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "CheckInScreen",
+              "tipo": "función",
+              "firma": "CheckInScreen",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/device/device-view.tsx",
+          "lineas": 71,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "DeviceView",
+              "tipo": "función",
+              "firma": "DeviceView",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/device/switch.tsx",
+          "lineas": 18,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Switch",
+              "tipo": "función",
+              "firma": "Switch",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/environment/environment-view.tsx",
+          "lineas": 224,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "EnvironmentView",
+              "tipo": "función",
+              "firma": "EnvironmentView",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/reports/reports-view.tsx",
+          "lineas": 107,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ReportsView",
+              "tipo": "función",
+              "firma": "ReportsView",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/shared/delay-countdown.tsx",
+          "lineas": 35,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "formatDelay",
+              "tipo": "función",
+              "firma": "formatDelay",
+              "doc": ""
+            },
+            {
+              "nombre": "useReportState",
+              "tipo": "función",
+              "firma": "useReportState",
+              "doc": ""
+            },
+            {
+              "nombre": "DelayCountdown",
+              "tipo": "función",
+              "firma": "DelayCountdown",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/shared/indicator-card.tsx",
+          "lineas": 38,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "IndicatorCard",
+              "tipo": "función",
+              "firma": "IndicatorCard",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/shared/line-chart.tsx",
+          "lineas": 80,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "LineChart",
+              "tipo": "función",
+              "firma": "LineChart",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/shared/states.tsx",
+          "lineas": 50,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "EmptyState",
+              "tipo": "función",
+              "firma": "EmptyState",
+              "doc": ""
+            },
+            {
+              "nombre": "LoadingState",
+              "tipo": "función",
+              "firma": "LoadingState",
+              "doc": ""
+            },
+            {
+              "nombre": "ErrorState",
+              "tipo": "función",
+              "firma": "ErrorState",
+              "doc": ""
+            },
+            {
+              "nombre": "PageHeader",
+              "tipo": "función",
+              "firma": "PageHeader",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/shared/status.tsx",
+          "lineas": 73,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "STATUS_ICON",
+              "tipo": "constante",
+              "firma": "STATUS_ICON",
+              "doc": ""
+            },
+            {
+              "nombre": "statusText",
+              "tipo": "constante",
+              "firma": "statusText",
+              "doc": ""
+            },
+            {
+              "nombre": "statusSurface",
+              "tipo": "constante",
+              "firma": "statusSurface",
+              "doc": ""
+            },
+            {
+              "nombre": "StatusBadge",
+              "tipo": "función",
+              "firma": "StatusBadge",
+              "doc": ""
+            },
+            {
+              "nombre": "LayerChip",
+              "tipo": "función",
+              "firma": "LayerChip",
+              "doc": ""
+            },
+            {
+              "nombre": "ProvenanceTag",
+              "tipo": "función",
+              "firma": "ProvenanceTag",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/shell/alert-center.tsx",
+          "lineas": 174,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "AlertCenter",
+              "tipo": "función",
+              "firma": "AlertCenter",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/shell/app-shell.tsx",
+          "lineas": 288,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "AppShell",
+              "tipo": "función",
+              "firma": "AppShell",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/trends/trends-view.tsx",
+          "lineas": 75,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "TrendsView",
+              "tipo": "función",
+              "firma": "TrendsView",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/ui/badge.tsx",
+          "lineas": 51,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/components/ui/button.tsx",
+          "lineas": 57,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/components/ui/card.tsx",
+          "lineas": 102,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/components/ui/dialog.tsx",
+          "lineas": 160,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/components/ui/popover.tsx",
+          "lineas": 89,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/components/ui/sheet.tsx",
+          "lineas": 138,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/components/ui/slider.tsx",
+          "lineas": 51,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/engine.ts",
+          "lineas": 73,
+          "descripcion": "Analysis engine facade. Signatures are final; bodies return scripted mock results",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ADAPTATION_END_DAY",
+              "tipo": "constante",
+              "firma": "ADAPTATION_END_DAY",
+              "doc": ""
+            },
+            {
+              "nombre": "isAdaptation",
+              "tipo": "constante",
+              "firma": "isAdaptation",
+              "doc": ""
+            },
+            {
+              "nombre": "isStorm",
+              "tipo": "constante",
+              "firma": "isStorm",
+              "doc": ""
+            },
+            {
+              "nombre": "worst",
+              "tipo": "constante",
+              "firma": "worst",
+              "doc": ""
+            },
+            {
+              "nombre": "getVitals",
+              "tipo": "función",
+              "firma": "getVitals",
+              "doc": ""
+            },
+            {
+              "nombre": "getAlerts",
+              "tipo": "función",
+              "firma": "getAlerts",
+              "doc": ""
+            },
+            {
+              "nombre": "evaluateZones",
+              "tipo": "función",
+              "firma": "evaluateZones",
+              "doc": ""
+            },
+            {
+              "nombre": "overallStatus",
+              "tipo": "función",
+              "firma": "overallStatus",
+              "doc": ""
+            },
+            {
+              "nombre": "evaluateCheckIn",
+              "tipo": "función",
+              "firma": "evaluateCheckIn",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/etl-client.ts",
+          "lineas": 178,
+          "descripcion": "Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "API_BASE_URL",
+              "tipo": "constante",
+              "firma": "API_BASE_URL",
+              "doc": ""
+            },
+            {
+              "nombre": "VentanaEtl",
+              "tipo": "interfaz",
+              "firma": "VentanaEtl",
+              "doc": ""
+            },
+            {
+              "nombre": "DosisDiaEtl",
+              "tipo": "interfaz",
+              "firma": "DosisDiaEtl",
+              "doc": ""
+            },
+            {
+              "nombre": "DosisPanelEtl",
+              "tipo": "interfaz",
+              "firma": "DosisPanelEtl",
+              "doc": ""
+            },
+            {
+              "nombre": "ProtonesPanelEtl",
+              "tipo": "interfaz",
+              "firma": "ProtonesPanelEtl",
+              "doc": ""
+            },
+            {
+              "nombre": "CabinaPanelEtl",
+              "tipo": "interfaz",
+              "firma": "CabinaPanelEtl",
+              "doc": ""
+            },
+            {
+              "nombre": "EventoDonkiEtl",
+              "tipo": "interfaz",
+              "firma": "EventoDonkiEtl",
+              "doc": ""
+            },
+            {
+              "nombre": "PanelEntornoEtl",
+              "tipo": "interfaz",
+              "firma": "PanelEntornoEtl",
+              "doc": ""
+            },
+            {
+              "nombre": "PANELES_RESPALDO",
+              "tipo": "constante",
+              "firma": "PANELES_RESPALDO",
+              "doc": ""
+            },
+            {
+              "nombre": "verificarSaludApi",
+              "tipo": "función",
+              "firma": "verificarSaludApi",
+              "doc": ""
+            },
+            {
+              "nombre": "listarPanelesGold",
+              "tipo": "función",
+              "firma": "listarPanelesGold",
+              "doc": ""
+            },
+            {
+              "nombre": "cargarPanelGold",
+              "tipo": "función",
+              "firma": "cargarPanelGold",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/mock/alerts.ts",
+          "lineas": 60,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ALERTS",
+              "tipo": "constante",
+              "firma": "ALERTS",
+              "doc": ""
+            },
+            {
+              "nombre": "SEED_REPORTS",
+              "tipo": "constante",
+              "firma": "SEED_REPORTS",
+              "doc": ""
+            },
+            {
+              "nombre": "THREAD",
+              "tipo": "constante",
+              "firma": "THREAD",
+              "doc": ""
+            },
+            {
+              "nombre": "REMINDERS",
+              "tipo": "constante",
+              "firma": "REMINDERS",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/mock/crew.ts",
+          "lineas": 62,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "MISSION_DAYS",
+              "tipo": "constante",
+              "firma": "MISSION_DAYS",
+              "doc": ""
+            },
+            {
+              "nombre": "CURRENT_DAY",
+              "tipo": "constante",
+              "firma": "CURRENT_DAY",
+              "doc": ""
+            },
+            {
+              "nombre": "BASELINE_SWITCH_DAY",
+              "tipo": "constante",
+              "firma": "BASELINE_SWITCH_DAY",
+              "doc": ""
+            },
+            {
+              "nombre": "PROFILES",
+              "tipo": "constante",
+              "firma": "PROFILES",
+              "doc": ""
+            },
+            {
+              "nombre": "VITALS",
+              "tipo": "constante",
+              "firma": "VITALS",
+              "doc": ""
+            },
+            {
+              "nombre": "getBaselines",
+              "tipo": "función",
+              "firma": "getBaselines",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/mock/environment.ts",
+          "lineas": 70,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "PRIOR_CAREER_MSV",
+              "tipo": "constante",
+              "firma": "PRIOR_CAREER_MSV",
+              "doc": ""
+            },
+            {
+              "nombre": "CAREER_LIMIT_MSV",
+              "tipo": "constante",
+              "firma": "CAREER_LIMIT_MSV",
+              "doc": ""
+            },
+            {
+              "nombre": "CO2_LIMIT_MMHG",
+              "tipo": "constante",
+              "firma": "CO2_LIMIT_MMHG",
+              "doc": ""
+            },
+            {
+              "nombre": "PFU_THRESHOLD",
+              "tipo": "constante",
+              "firma": "PFU_THRESHOLD",
+              "doc": ""
+            },
+            {
+              "nombre": "RADIATION_INDICATOR",
+              "tipo": "constante",
+              "firma": "RADIATION_INDICATOR",
+              "doc": ""
+            },
+            {
+              "nombre": "ENV_SOURCES",
+              "tipo": "constante",
+              "firma": "ENV_SOURCES",
+              "doc": ""
+            },
+            {
+              "nombre": "ENV",
+              "tipo": "constante",
+              "firma": "ENV",
+              "doc": ""
+            },
+            {
+              "nombre": "SOLAR_EVENTS",
+              "tipo": "constante",
+              "firma": "SOLAR_EVENTS",
+              "doc": ""
+            },
+            {
+              "nombre": "ppmToMmHg",
+              "tipo": "constante",
+              "firma": "ppmToMmHg",
+              "doc": ""
+            },
+            {
+              "nombre": "isStormDay",
+              "tipo": "constante",
+              "firma": "isStormDay",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/mock/indicators.ts",
+          "lineas": 134,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "INDICATORS",
+              "tipo": "constante",
+              "firma": "INDICATORS",
+              "doc": ""
+            },
+            {
+              "nombre": "howToForProfile",
+              "tipo": "función",
+              "firma": "howToForProfile",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/storage.ts",
+          "lineas": 42,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "HealthStore",
+              "tipo": "interfaz",
+              "firma": "HealthStore",
+              "doc": ""
+            },
+            {
+              "nombre": "localStore",
+              "tipo": "constante",
+              "firma": "localStore",
+              "doc": ""
+            },
+            {
+              "nombre": "store",
+              "tipo": "constante",
+              "firma": "store",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/strings.ts",
+          "lineas": 263,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "S",
+              "tipo": "constante",
+              "firma": "S",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/types.ts",
+          "lineas": 161,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Status",
+              "tipo": "tipo",
+              "firma": "Status",
+              "doc": ""
+            },
+            {
+              "nombre": "Layer",
+              "tipo": "tipo",
+              "firma": "Layer",
+              "doc": ""
+            },
+            {
+              "nombre": "Role",
+              "tipo": "tipo",
+              "firma": "Role",
+              "doc": ""
+            },
+            {
+              "nombre": "ProfileId",
+              "tipo": "tipo",
+              "firma": "ProfileId",
+              "doc": ""
+            },
+            {
+              "nombre": "Provenance",
+              "tipo": "tipo",
+              "firma": "Provenance",
+              "doc": ""
+            },
+            {
+              "nombre": "MissionProfile",
+              "tipo": "interfaz",
+              "firma": "MissionProfile",
+              "doc": ""
+            },
+            {
+              "nombre": "ZoneId",
+              "tipo": "tipo",
+              "firma": "ZoneId",
+              "doc": ""
+            },
+            {
+              "nombre": "Symptom",
+              "tipo": "tipo",
+              "firma": "Symptom",
+              "doc": ""
+            },
+            {
+              "nombre": "DailyVitals",
+              "tipo": "interfaz",
+              "firma": "DailyVitals",
+              "doc": ""
+            },
+            {
+              "nombre": "ZoneResult",
+              "tipo": "interfaz",
+              "firma": "ZoneResult",
+              "doc": ""
+            },
+            {
+              "nombre": "Alert",
+              "tipo": "interfaz",
+              "firma": "Alert",
+              "doc": ""
+            },
+            {
+              "nombre": "IndicatorId",
+              "tipo": "tipo",
+              "firma": "IndicatorId",
+              "doc": ""
+            },
+            {
+              "nombre": "IndicatorInfo",
+              "tipo": "interfaz",
+              "firma": "IndicatorInfo",
+              "doc": ""
+            },
+            {
+              "nombre": "Baseline",
+              "tipo": "interfaz",
+              "firma": "Baseline",
+              "doc": ""
+            },
+            {
+              "nombre": "CheckInEntry",
+              "tipo": "interfaz",
+              "firma": "CheckInEntry",
+              "doc": ""
+            },
+            {
+              "nombre": "EnvDay",
+              "tipo": "interfaz",
+              "firma": "EnvDay",
+              "doc": ""
+            },
+            {
+              "nombre": "SolarEvent",
+              "tipo": "interfaz",
+              "firma": "SolarEvent",
+              "doc": ""
+            },
+            {
+              "nombre": "ReportState",
+              "tipo": "tipo",
+              "firma": "ReportState",
+              "doc": ""
+            },
+            {
+              "nombre": "Report",
+              "tipo": "interfaz",
+              "firma": "Report",
+              "doc": ""
+            },
+            {
+              "nombre": "ThreadMessage",
+              "tipo": "interfaz",
+              "firma": "ThreadMessage",
+              "doc": ""
+            },
+            {
+              "nombre": "DeviceState",
+              "tipo": "tipo",
+              "firma": "DeviceState",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/utils.ts",
+          "lineas": 6,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "cn",
+              "tipo": "función",
+              "firma": "cn",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/next.config.mjs",
+          "lineas": 11,
+          "descripcion": "@type {import('next').NextConfig}",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/postcss.config.mjs",
+          "lineas": 8,
+          "descripcion": "@type {import('postcss-load-config').Config}",
           "test": false,
           "simbolos": []
         }

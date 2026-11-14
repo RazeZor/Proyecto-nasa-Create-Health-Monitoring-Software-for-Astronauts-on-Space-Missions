@@ -14,7 +14,7 @@ API FastAPI de solo lectura que expone la zona gold del ETL (`pipelines/reanclaj
 - La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).
 - Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.
 - Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.
-- Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Sin CORS ni autenticación: es para uso local o de tierra.
+- Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Incluye CORS de solo lectura (`GET`) para que `apps/web` consulte la API desde el navegador en entorno local.
 - Los mensajes de error salen de `packages/i18n` (`api.error.*`).
 
 ## Relación con el informe
@@ -33,7 +33,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [main.py](main.py) | 127 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [main.py](main.py) | 129 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [test_api.py](test_api.py) | 89 | — |
 
 ### API pública
