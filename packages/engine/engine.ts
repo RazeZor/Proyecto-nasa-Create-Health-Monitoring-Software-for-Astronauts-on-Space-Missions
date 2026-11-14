@@ -19,6 +19,8 @@ export const CUSUM_K = 0.75
 export const CUSUM_H = 5.0
 export const CUSUM_DIA_INICIO = 21
 export const CO2_LIMITE_MMHG = 3.0
+/** Días con el instrumento nuevo que forman la línea base en vuelo tras un cambio de instrumento (anexo A.6). */
+export const DIAS_VENTANA_REINICIO = 7
 
 export interface Lectura {
   dia_mision: number
@@ -34,6 +36,9 @@ export interface Lectura {
 export interface Tripulante { id: string; lecturas: Lectura[] }
 export interface EntornoDia { co2_mmhg_max_horario?: number; modo_tormenta?: boolean }
 export type Capa = "A" | "B" | "C" | "contexto"
+/** Desde `dia_mision` la FC en reposo se mide con otro instrumento (manual ↔ reloj, o otro reloj). */
+export interface CambioInstrumento { dia_mision: number; indicador: "fc" }
+export interface OpcionesMotor { cambiosInstrumento?: CambioInstrumento[] }
 export interface Alerta {
   dia_mision: number
   tripulante_id: string
@@ -92,12 +97,20 @@ const redondear = (x: number, d: number) => Math.round(x * 10 ** d) / 10 ** d
 export function evaluarTripulante(
   tripulante: Tripulante,
   entornoPorDia: Record<number, EntornoDia | undefined>,
+  opciones: OpcionesMotor = {},
 ): Alerta[] {
   const lecturas = [...tripulante.lecturas].sort((a, b) => a.dia_mision - b.dia_mision)
   const prevuelo = lecturas.filter((r) => r.dia_mision <= 0)
   const vuelo = lecturas.filter((r) => r.dia_mision >= 1)
   const piso = SUPUESTOS.mad_min
-  const [medFc, madFc] = madBruto(prevuelo.map((r) => r.fc_reposo_lpm), piso.fc)
+  let [medFc, madFc] = madBruto(prevuelo.map((r) => r.fc_reposo_lpm), piso.fc)
+  // A.6: tras un cambio de instrumento la FC no es comparable con su línea base. Se pausa su capa B y C
+  // DIAS_VENTANA_REINICIO días, se forma una línea base en vuelo con el instrumento nuevo y se sigue contra ella
+  // (sin desplazamiento de adaptación: ya lo incluye). La capa A no cambia: los límites clínicos son absolutos.
+  // Sin cambios el motor es idéntico al simulador de Python (test de paridad).
+  const diasCambio = new Set((opciones.cambiosInstrumento ?? []).filter((c) => c.indicador === "fc").map((c) => c.dia_mision))
+  let ventanaFc: number[] | null = null
+  let desplazFc = SUPUESTOS.fc_desplazamiento_lpm
   const [medPas, madPas] = madBruto(prevuelo.map((r) => r.pas_mmHg), piso.pas)
   const [medSueno, madSueno] = madBruto(prevuelo.map((r) => r.sueno_h), piso.sueno)
   const [medAnimo, madAnimo] = madBruto(prevuelo.map((r) => r.animo_1_10), piso.animo)
@@ -120,8 +133,23 @@ export function evaluarTripulante(
     const { pts, maxIndividual } = puntosNews2(r.fc_reposo_lpm, r.pas_mmHg, r.spo2_pct, r.temp_central_c)
     if (pts >= 5 || maxIndividual === 3) alertas.push(nueva(d, "A", "rojo", "news2", pts, tormenta))
 
+    if (diasCambio.has(d)) {
+      ventanaFc = []
+      consecB.fc = 0
+      cusum.fc = 0
+    }
+    const fcEnVentana = ventanaFc !== null
+    if (ventanaFc !== null) {
+      ventanaFc.push(r.fc_reposo_lpm)
+      if (ventanaFc.length >= DIAS_VENTANA_REINICIO) {
+        ;[medFc, madFc] = madBruto(ventanaFc, piso.fc)
+        desplazFc = 0
+        ventanaFc = null
+      }
+    }
+
     // Capa B: desviación personal respecto a la referencia ajustada por w(d)
-    const zFc = (0.6745 * (r.fc_reposo_lpm - (medFc + SUPUESTOS.fc_desplazamiento_lpm * w))) / madFc
+    const zFc = fcEnVentana ? 0 : (0.6745 * (r.fc_reposo_lpm - (medFc + desplazFc * w))) / madFc
     const zPas = (0.6745 * (r.pas_mmHg - (medPas + SUPUESTOS.pas_desplazamiento_mmHg * w))) / madPas
     const zSueno = (0.6745 * (r.sueno_h - (medSueno + SUPUESTOS.sueno_desplazamiento_h * w))) / madSueno
     const zAnimo = (0.6745 * (r.animo_1_10 - medAnimo)) / madAnimo
@@ -133,6 +161,7 @@ export function evaluarTripulante(
       ["animo", zAnimo, Z_UMBRAL_CONDUCTUAL * margen, r.animo_1_10],
     ]
     for (const [ind, z, umbral, valor] of paresB) {
+      if (ind === "fc" && fcEnVentana) continue // la FC está formando su línea base en vuelo
       consecB[ind] = Math.abs(z) >= umbral ? consecB[ind] + 1 : 0
       if (consecB[ind] >= DIAS_CONSECUTIVOS_B) {
         const rojo = Math.abs(z) >= umbral + 1.5 || tormenta
@@ -142,7 +171,7 @@ export function evaluarTripulante(
 
     // Capa C: CUSUM desde el día 21 (deriva sostenida)
     if (d >= CUSUM_DIA_INICIO) {
-      cusum.fc = Math.max(0, cusum.fc + zFc - CUSUM_K)
+      cusum.fc = fcEnVentana ? 0 : Math.max(0, cusum.fc + zFc - CUSUM_K)
       cusum.pas = Math.max(0, cusum.pas - zPas - CUSUM_K)
       cusum.sueno = Math.max(0, cusum.sueno - zSueno - CUSUM_K)
       cusum.animo = Math.max(0, cusum.animo - zAnimo - CUSUM_K)

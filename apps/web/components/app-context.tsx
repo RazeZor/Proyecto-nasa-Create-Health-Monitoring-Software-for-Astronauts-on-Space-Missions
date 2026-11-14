@@ -1,8 +1,9 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { cargarCatalogo, type Catalogo } from "@/lib/catalogo"
 import { type Analisis, analizar } from "@/lib/engine"
+import { enviarOrdenReloj, INTERVALO_SONDEO_MS, leerReloj, type OrdenReloj, type RespuestaReloj, siguienteEstado } from "@/lib/reloj"
 import { store } from "@/lib/storage"
 import { sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
@@ -22,6 +23,9 @@ interface AppState {
   simulator: boolean
   setSimulator: (b: boolean) => void
   liveHr: number | null
+  /** lo que la API sabe del Galaxy Watch del tripulante (null sin sondeo o sin API) */
+  reloj: RespuestaReloj | null
+  ordenReloj: (tipo: OrdenReloj) => Promise<boolean>
   sex: Sex
   setSex: (s: Sex) => void
   voice: boolean
@@ -69,7 +73,13 @@ function Sesion({ catalogo, children }: { catalogo: Catalogo; children: React.Re
   const [profileId, setProfileId] = useState<ProfileId>("transit")
   const [role, setRole] = useState<Role>("astronaut")
   const [theme, setTheme] = useState<"dark" | "light">("dark")
-  const [device, setDevice] = useState<DeviceState>("disconnected")
+  const [device, setDeviceRaw] = useState<DeviceState>("disconnected")
+  const [reloj, setReloj] = useState<RespuestaReloj | null>(null)
+  const conectandoDesde = useRef(0)
+  const setDevice = useCallback((s: DeviceState) => {
+    if (s === "connecting") conectandoDesde.current = Date.now()
+    setDeviceRaw(s)
+  }, [])
   const [simulator, setSimulator] = useState(false)
   const [liveHr, setLiveHr] = useState<number | null>(null)
   const [sex, setSex] = useState<Sex>("female")
@@ -91,22 +101,51 @@ function Sesion({ catalogo, children }: { catalogo: Catalogo; children: React.Re
     document.documentElement.classList.toggle("dark", theme === "dark")
   }, [theme])
 
-  const streaming = device === "connected" || simulator
+  // Reloj real: mientras el usuario no lo desconecte, se sondea la API (que a su vez escucha a smart-monitor).
+  const sondeando = device !== "disconnected" && TRIPULANTE !== null
   useEffect(() => {
-    if (!streaming) {
+    if (!sondeando || TRIPULANTE === null) {
+      setReloj(null)
+      return
+    }
+    const id_tripulante = TRIPULANTE
+    let vivo = true
+    const sondear = async () => {
+      const r = await leerReloj(id_tripulante)
+      if (!vivo) return
+      setReloj(r)
+      setDeviceRaw((d) => siguienteEstado(d, r, Date.now(), conectandoDesde.current))
+    }
+    void sondear()
+    const id = window.setInterval(sondear, INTERVALO_SONDEO_MS)
+    return () => {
+      vivo = false
+      window.clearInterval(id)
+    }
+  }, [sondeando])
+  const ordenReloj = useCallback(
+    (tipo: OrdenReloj) => (TRIPULANTE === null ? Promise.resolve(false) : enviarOrdenReloj(TRIPULANTE, tipo)),
+    [],
+  )
+
+  // Simulador: solo cuando no hay reloj real transmitiendo.
+  const simulando = simulator && device !== "connected"
+  useEffect(() => {
+    if (!simulando) {
       setLiveHr(null)
       return
     }
     setLiveHr(69)
     const id = window.setInterval(() => setLiveHr(66 + Math.round(Math.random() * 6)), 1500)
     return () => window.clearInterval(id)
-  }, [streaming])
+  }, [simulando])
+  const hrEnVivo = device === "connected" ? (reloj?.reloj?.fc_lpm ?? null) : liveHr
 
   const profile = catalogo.perfiles.find((p) => p.id === profileId) ?? catalogo.perfiles[1]
 
   const value = useMemo(
-    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo }),
-    [day, setDay, profile, role, theme, toggleTheme, device, simulator, liveHr, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
+    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo }),
+    [day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, hrEnVivo, reloj, ordenReloj, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

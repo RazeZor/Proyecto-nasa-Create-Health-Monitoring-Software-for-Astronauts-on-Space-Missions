@@ -22,7 +22,9 @@
       "actor_desconocido": "provide a valid crew member in the X-Tripulante header",
       "sin_permiso": "you cannot view or modify another crew member's data",
       "dato_invalido": "invalid data: {detalle}",
-      "linea_base_no_existe": "there is no baseline for that indicator and origin"
+      "linea_base_no_existe": "there is no baseline for that indicator and origin",
+      "reloj_sin_conexion": "the watch server is not connected (check SMART_URL and that smart-monitor is running)",
+      "reloj_sin_tripulante": "the watch server does not know this crew member (check SMART_TRIPULANTES or the name on the watch)"
     }
   }
 }

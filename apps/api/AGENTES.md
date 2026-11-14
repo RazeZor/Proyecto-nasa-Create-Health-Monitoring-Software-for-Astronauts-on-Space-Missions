@@ -151,3 +151,29 @@ La app solo conoce esta API. Lo que todavía no sale de una fuente real lo sirve
 | `GET /tripulantes/{id}/mensajes` | hilo con tierra `{id, de, autor, dia, hora, texto}`: ejemplo más las respuestas reales a tus reportes |
 
 Las tres de `/tripulantes/{id}/...` siguen la regla de privacidad del registro (otro tripulante: 403; sin cabecera: 401). `POST /tripulantes/{id}/reportes` acepta además `contenido` (objeto libre: título, resumen, lectura...) y el `GET` lo devuelve. `python3 -m almacen sembrar` también siembra un informe de ejemplo ya respondido.
+
+## Reloj en vivo (Galaxy Watch4, vía smart-monitor)
+
+El reloj no habla con esta API: habla con el servidor de [smart-monitor](https://github.com/smoraleslo/smart-monitor) (otra unidad desplegable, puerto 8765). Con `SMART_URL=ws://<host>:8765/live` la API se conecta a ese `/live` como un panel más (`puente_reloj.py`), guarda en memoria el último estado de cada tripulante y persiste cada **chequeo guiado válido** como lecturas `frecuencia_cardiaca_reposo` y `spo2` con `origen: sensor`, `metodo: galaxy_watch4`, `naturaleza: Real`. Sin `SMART_URL` el puente no arranca y las rutas responden igual, sin datos.
+
+| Endpoint | Devuelve |
+| --- | --- |
+| `GET /reloj/estado` | `{configurado, conectado, ultima_vez, error}` del puente; sin datos de nadie |
+| `GET /tripulantes/{id}/reloj` | `{puente, vinculado, reloj}`; `reloj` trae `fc_lpm`, `ultima_lectura`, `serie` (120 puntos), `resumen`, `chequeos` (14), `chequeo_estado`, `chequeo_progreso`, `notas`, `avisos` |
+| `POST /tripulantes/{id}/reloj/ordenes` | `{tipo: medir_spo2 \| iniciar_chequeo}` → 202; 503 si el puente no está conectado; 422 si el servidor del reloj no conoce al tripulante |
+
+- **Identidad:** el reloj identifica a la persona por su nombre (campo «Tripulante» del reloj). `SMART_TRIPULANTES="Sebastián=1,Ana=2"` lo traduce a ids; si un nombre no está, se compara con el `alias` del tripulante, sin distinguir mayúsculas.
+- **Privacidad:** las dos rutas `/tripulantes/{id}/reloj...` siguen la regla del registro (otro tripulante: 403; sin cabecera: 401).
+- **Qué llega al motor:** solo la FC en reposo y el SpO₂ del chequeo, nunca una lectura suelta de 1 Hz (anexo A.6: el ejercicio no debe disparar la capa A). El resto (`serie`, `resumen`, sueño) es para mostrar, y el sueño es experimental.
+- Un 202 en una orden solo dice que salió hacia el servidor del reloj: si el reloj no está conectado, el aviso llega después en `avisos`.
+
+Más rutas del reloj:
+
+| Endpoint | Devuelve |
+| --- | --- |
+| `GET /reloj/tripulacion` | `[{nombre, conectado, relojes_conectados, ultima_lectura, chequeo_hoy}]`: dato mínimo para coordinar, sin valores fisiológicos. `chequeo_hoy`: `true` válido, `false` fallido, `null` sin hacer. Pide `X-Tripulante` |
+| `GET /reloj/config` | `{tolerancia, presets}` de movimiento del chequeo (estricta, normal, flexible, personalizada) |
+| `PUT /reloj/config` | `{preset, mov_quieto?, mov_inquieto?, mov_sacudida?, max_inquietos_pct?}` → 202 y se aplica a todos los relojes; confirma con el `GET`. Pide `X-Tripulante` |
+| `GET /tripulantes/{id}/reloj/export.csv` | lecturas por segundo del reloj del tripulante (CSV de smart-monitor); `desde=YYYY-MM-DD` opcional |
+
+Cambiar la tolerancia seguido hace incomparables los chequeos entre sí (cada uno guarda con qué valores se midió).

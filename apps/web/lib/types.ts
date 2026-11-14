@@ -100,10 +100,14 @@ export interface CheckInEntry {
   durationSec: number
   restingHr: number | null
   hrFromWatch: boolean
+  /** Instrumento de la FC en reposo: "manual", "simulador" o "galaxy_watch4:<dispositivo>" (A.6). Ausente = manual. */
+  hrInstrument?: string
   systolic: number | null
   diastolic: number | null
   spo2: number | null
   spo2Site: string
+  /** La SpO2 vino del reloj (muñeca, SDK de Samsung) y no de un oxímetro a mano. */
+  spo2FromWatch?: boolean
   tempC: number | null
   tempMethod: string
   sleepH: number | null

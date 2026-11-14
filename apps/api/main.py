@@ -17,6 +17,7 @@ from typing import Literal
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "i18n"))  # monorepo sin instalar
 
+import puente_reloj  # noqa: E402
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
@@ -54,26 +55,33 @@ async def _reloj(segundos):
 
 @asynccontextmanager
 async def ciclo_de_vida(_app):
-    """Reloj de la cola de reportes: cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 lo apaga)."""
+    """Reloj de la cola de reportes: cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 lo apaga). Con `SMART_URL`, además,
+    el puente con el servidor del Galaxy Watch (puente_reloj.py)."""
     segundos = float(os.environ.get("VIGIA_RELOJ_SEG", "5"))
-    tarea = asyncio.create_task(_reloj(segundos)) if segundos > 0 else None
+    tareas = [asyncio.create_task(_reloj(segundos))] if segundos > 0 else []
+    puente_reloj.PUENTE = puente_reloj.crear_puente()
+    if puente_reloj.PUENTE:
+        tareas.append(asyncio.create_task(puente_reloj.PUENTE.correr()))
     yield
-    if tarea:
+    for tarea in tareas:
         tarea.cancel()
         with suppress(asyncio.CancelledError):
             await tarea
+    puente_reloj.PUENTE = None
 
 
 app = FastAPI(lifespan=ciclo_de_vida, title="VIGÍA: API del ETL", description=DESCRIPCION, openapi_tags=[
     {"name": "escenarios", "description": "Gold completo de un escenario: serie de 5 min, resumen diario y eventos."},
     {"name": "paneles", "description": "Panel de entorno ya resumido para la pantalla: dosis, protones, cabina y eventos."},
     {"name": "registro", "description": "Registro de la tripulación en el almacén SQLite: lecturas, alertas y cola."},
+    {"name": "reloj", "description": "Galaxy Watch4 en vivo, a través del servidor smart-monitor (SMART_URL)."},
     {"name": "sistema", "description": "Estado del servicio."}])
 # shortcut: cualquier origen, sin cookies ni autenticación real (X-Tripulante); acotar `allow_origins` al desplegar
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT"], allow_headers=["*"],
                    allow_private_network=True)  # shortcut: sin lista de orígenes; acotar antes de producción
 app.include_router(rutas_registro)
 app.include_router(rutas_dashboard)
+app.include_router(puente_reloj.router)
 
 
 @app.exception_handler(ValueError)

@@ -73,3 +73,12 @@ test("líneas base: dos tramos con la personal de vuelo desplazada", () => {
   assert.ok(vuelo.low > pre.low && vuelo.high < pre.high + 4)
   assert.ok(vuelo.low < vuelo.high)
 })
+
+test("cambios de instrumento de la FC: manual -> reloj -> otro reloj, en orden de día", async () => {
+  const { cambiosDeInstrumento } = await import("./engine.ts")
+  const e = (day: number, hrInstrument?: string, restingHr: number | null = 70) => ({ day, hrInstrument, restingHr }) as CheckInEntry
+  assert.deepEqual(cambiosDeInstrumento([e(3), e(5, "galaxy_watch4:gw-a"), e(4, "manual"), e(6, "galaxy_watch4:gw-a"),
+    e(8, "galaxy_watch4:gw-b"), e(9, "manual", null), e(-2, "galaxy_watch4:gw-a")]),
+    [{ dia_mision: 5, indicador: "fc" }, { dia_mision: 8, indicador: "fc" }])
+  assert.deepEqual(cambiosDeInstrumento([e(2), e(3, "manual")]), [])
+})

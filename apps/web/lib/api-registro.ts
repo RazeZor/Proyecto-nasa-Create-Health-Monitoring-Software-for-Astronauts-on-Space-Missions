@@ -29,10 +29,10 @@ export const tReal = (iso: string): string => new Date(iso).toISOString().replac
 export function lecturasDeCheckIn(e: CheckInEntry): Lectura[] {
   const t = tReal(e.createdAt)
   const medidas: [string, number | null, string | null, "manual" | "sensor"][] = [
-    [IDS.restingHr, e.restingHr, null, e.hrFromWatch ? "sensor" : "manual"],
+    [IDS.restingHr, e.restingHr, e.hrInstrument ?? null, e.hrFromWatch ? "sensor" : "manual"],
     [IDS.systolic, e.systolic, null, "manual"],
     ["presion_arterial_diastolica", e.diastolic, null, "manual"],
-    [IDS.spo2, e.spo2, e.spo2Site || null, "manual"],
+    [IDS.spo2, e.spo2, e.spo2FromWatch ? "galaxy_watch4" : e.spo2Site || null, e.spo2FromWatch ? "sensor" : "manual"],
     [IDS.tempC, e.tempC, e.tempMethod || null, "manual"],
     [IDS.sleepH, e.sleepH, null, "manual"],
     [IDS.mood, e.mood, null, "manual"],
