@@ -12,7 +12,7 @@ V = json.loads((Path(__file__).parent / "vocabulario.json").read_text(encoding="
 MIGRACIONES = sorted((RAIZ / "apps/api/almacen/migraciones").glob("*.sql"))
 SQL = "\n".join(m.read_text(encoding="utf-8") for m in MIGRACIONES)
 TIPOS_TS = (RAIZ / "apps/web/lib/types.ts").read_text(encoding="utf-8")
-FICHAS = RAIZ / "apps/web/public/fichas"
+FICHAS = RAIZ / "packages/schemas/fichas"
 
 
 def check_sql(columna):

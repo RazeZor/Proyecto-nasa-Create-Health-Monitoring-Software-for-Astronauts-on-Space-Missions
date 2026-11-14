@@ -8,7 +8,7 @@ import { ProvenanceTag, StatusBadge, statusSurface } from "@/components/shared/s
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Slider } from "@/components/ui/slider"
 import { evaluateCheckIn } from "@/lib/engine"
-import { howToForProfile, INDICATORS } from "@/lib/mock/indicators"
+import { comoMedirEnPerfil } from "@/lib/catalogo"
 import { S } from "@/lib/strings"
 import { sincronizarRegistros } from "@/lib/sincronizacion"
 import { store } from "@/lib/storage"
@@ -20,7 +20,7 @@ const inputCls =
 const selCls = "min-h-11 rounded-lg border border-input bg-background px-2 text-sm"
 
 function InfoPop({ id, label }: { id: IndicatorId; label: string }) {
-  const { profile } = useApp()
+  const { profile, catalogo } = useApp()
   return (
     <Popover>
       <PopoverTrigger
@@ -33,9 +33,9 @@ function InfoPop({ id, label }: { id: IndicatorId; label: string }) {
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {S.checkin.howTo} · {profile.label}
         </p>
-        <p className="text-sm">{howToForProfile(id, profile.id)}</p>
+        <p className="text-sm">{comoMedirEnPerfil(catalogo, id, profile.id)}</p>
         <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{S.checkin.whyMatters}</p>
-        <p className="text-sm">{INDICATORS[id].whyNeeded}</p>
+        <p className="text-sm">{catalogo.indicadores[id].whyNeeded}</p>
       </PopoverContent>
     </Popover>
   )
@@ -66,7 +66,7 @@ export function CheckInScreen() {
 }
 
 function CheckInForm({ onReset }: { onReset: () => void }) {
-  const { day, liveHr, device, simulator, checkIns, recargarRegistros } = useApp()
+  const { day, liveHr, device, simulator, checkIns, recargarRegistros, catalogo } = useApp()
   const watchOn = (device === "connected" || simulator) && liveHr !== null
   const [start] = useState(() => Date.now())
   const [elapsed, setElapsed] = useState(0)
@@ -101,7 +101,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
       glucose: num(g("glucose")), glucoseEnzyme: g("enzyme"),
       massKg: num(g("mass")), massMethod: g("massMethod"),
     }
-    const status = evaluateCheckIn(base, checkIns)
+    const status = evaluateCheckIn(base, checkIns, catalogo.historial)
     const entry: CheckInEntry = { ...base, status, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
     setSaving(true)
     setError(false)

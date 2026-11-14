@@ -8,7 +8,7 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 ## Puntos clave
 
 - No importa el pipeline (regla 3 de la arquitectura): lee `<DATALAKE_DIR>/gold/*.json` y `gold/manifest.json`. No ejecuta el ETL ni escribe nada; para generar datos se corre `pipelines/reanclaje/index.py`.
-- Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`; `GET /perfiles`; `GET /simulacion/caso-referencia` y `GET /simulacion/kpi`.
+- Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`; `GET /perfiles`; `GET /simulacion/caso-referencia` y `GET /simulacion/kpi`. Tablero (`rutas_dashboard.py`): `GET /fichas` y `/fichas/{id}` (de `packages/schemas/fichas`), `GET /entorno/referencia`, y por tripulante `historial`, `recordatorios` y `mensajes`.
 - Documentación para agentes: `AGENTES.md` (cómo leer los datos y sus trampas) y `GET /openapi.json` (contrato, con resumen y descripción en cada ruta). Un test exige que cada ruta tenga ambos y aparezca en la guía; al agregar una ruta, documéntala en las dos partes.
 - Escenario, panel o simulación se distinguen por el resumen del manifiesto del ETL (`serie5min` = escenario, `dosis` = panel, `tipo == "simulacion"` = simulación), no por el nombre: un escenario puede llamarse `panel-demo` y los archivos de simulación no aparecen en `/paneles` ni `/escenarios`. La API agrega `panel-` por dentro: el panel del escenario `x` es `/paneles/x` (archivo `panel-x.json`). Pedir un tipo como otro da 404.
 - La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).
@@ -22,6 +22,7 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 - La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).
 - El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.
 - Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Incluye CORS de solo lectura (`GET`) para que `apps/web` consulte la API desde el navegador en entorno local.
+- La app solo conoce la API: lo que aún no sale de una fuente real lo sirve el backend rotulado `Simulado`. Los mockups están en `demo/` (recordatorios, hilo de mensajes, referencia de entorno, informe de ejemplo) y el historial es el caso de referencia del simulador (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N). `DIA_ACTUAL_DEMO = 24` fija el día de la demo. `python3 -m almacen sembrar` siembra además un informe ya respondido. Los informes guardan su `contenido` (migración 003).
 - Los mensajes de error salen de `packages/i18n` (`api.error.*`).
 
 ## Relación con el informe
@@ -41,16 +42,17 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
 | [almacen/__init__.py](almacen/__init__.py) | 1 | — |
-| [almacen/__main__.py](almacen/__main__.py) | 13 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
+| [almacen/__main__.py](almacen/__main__.py) | 18 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
 | [almacen/alertas.py](almacen/alertas.py) | 99 | Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4). |
 | [almacen/base.py](almacen/base.py) | 18 | Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo). |
-| [almacen/cola.py](almacen/cola.py) | 35 | Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2). |
+| [almacen/cola.py](almacen/cola.py) | 40 | Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2). |
 | [almacen/db.py](almacen/db.py) | 44 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
 | [almacen/lecturas.py](almacen/lecturas.py) | 50 | Lecturas de indicadores y síntomas de un tripulante. |
-| [almacen/tripulacion.py](almacen/tripulacion.py) | 79 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
+| [almacen/tripulacion.py](almacen/tripulacion.py) | 96 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [almacen/vocabulario.py](almacen/vocabulario.py) | 7 | Vocabulario compartido con la interfaz: lee el contrato packages/schemas/vocabulario.json. |
-| [main.py](main.py) | 207 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
-| [rutas_registro.py](rutas_registro.py) | 213 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
+| [main.py](main.py) | 209 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [rutas_dashboard.py](rutas_dashboard.py) | 79 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
+| [rutas_registro.py](rutas_registro.py) | 214 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
 | [test_almacen_cola.py](test_almacen_cola.py) | 53 | — |
@@ -58,6 +60,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
 | [test_api.py](test_api.py) | 112 | — |
+| [test_api_dashboard.py](test_api_dashboard.py) | 97 | — |
 | [test_api_registro.py](test_api_registro.py) | 201 | — |
 
 ### API pública
@@ -78,7 +81,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 **almacen/cola.py**
 
-- función `encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min)`
+- función `encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min, contenido=None)`
 - función `avanzar_cola(conn, ahora)`: Pasa a `entregado` los reportes que ya llegaron a tierra; devuelve cuántos.
 - función `responder_reporte(conn, reporte_id, respuesta, t_real)`: Solo un reporte `entregado` puede responderse, y no antes de su llegada a tierra.
 - función `leer_reportes(conn, tripulante_id)`
@@ -104,6 +107,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `tiene_consentimiento(conn, tripulante_id, regla)`
 - función `dia_de_vuelo(conn, tripulante_id, t_real)`: Día de vuelo (1 = día 1 de la misión) o None si t_real es anterior al vuelo.
 - función `t_mision(conn, tripulante_id, t_real)`: `D022T00:05:00`; None antes del día 1 (línea base de tierra).
+- función `sembrar_informes_demo(conn, ids)`: Informes de ejemplo ya respondidos por tierra (apps/api/demo/informes.json). Idempotente por título.
 - función `sembrar_demo(conn)`: Misión `demo` con astronauta, oficial médico y comandante, todos con consentimiento. Idempotente.
 
 **main.py**
@@ -121,6 +125,15 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `leer_perfiles()`: Catálogo oficial de los 5 perfiles de misión (§3.3): presión de cabina en mmHg, latencia unidireccional y gravedad.
 - función `leer_caso_referencia()`: Caso determinista (semilla 2026) con 14 días pre-vuelo, 30 de vuelo, 4 tripulantes (A1, A2, A3 y control) y
 - función `leer_kpi_simulacion()`: Métricas agregadas del protocolo de 500 misiones con anomalía + 500 de control + semilla 2027 (§5.5).
+
+**rutas_dashboard.py**
+
+- función `listar_fichas()`: Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice.
+- función `leer_ficha(id: str)`: Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...).
+- función `referencia_entorno()`: Límites de radiación y CO2, umbral de tormenta y fuentes del panel. `dosis_previa_carrera_msv` es simulada.
+- función `historial(id: int=Depends(propio))`: Escenario de partida para el motor: `lecturas` de 14 días de prevuelo (días <= 0) y 30 de vuelo, y
+- función `recordatorios(id: int=Depends(propio))`: Lista de textos. Simulado: aún no hay plan de actividades a bordo.
+- función `mensajes(id: int=Depends(propio), conn=Depends(conexion))`: `{id, de: astronaut|surgeon, autor, dia, hora, texto}`: el hilo de ejemplo más las respuestas reales de tierra
 
 **rutas_registro.py**
 
@@ -144,7 +157,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `crear_alerta(cuerpo: AlertaIn, id: int=Depends(propio), conn=Depends(conexion))`: Guarda la alerta (solo adición). Una roja de la capa A escala al oficial médico (o al comandante si el afectado
 - función `listar_alertas(id: int, quien: int=Depends(actor), conn=Depends(conexion))`: Con tu propio id: todas tus alertas. Con el de otro: solo sus alertas rojas escaladas a ti; ese acceso queda
 - función `crear_reporte(cuerpo: ReporteIn, id: int=Depends(propio), conn=Depends(conexion))`: Encola un reporte con `retardo_min` de 0 a 22; `llega_t_real` = `creado_t_real` + retardo.
-- función `listar_reportes(id: int=Depends(propio), conn=Depends(conexion))`: Reportes del tripulante con `estado` en_cola, entregado o respondido.
+- función `listar_reportes(id: int=Depends(propio), conn=Depends(conexion))`: Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null).
 - función `avanzar(cuerpo: AvanceIn, quien: int=Depends(actor), conn=Depends(conexion))`: Pasa a `entregado` los reportes con `llega_t_real` <= `ahora`; devuelve `{"entregados": n}`.
 - función `responder(reporte_id: int, cuerpo: RespuestaIn, quien: int=Depends(actor), conn=Depends(conexion))`: Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422.
 - función `escalamientos_recibidos(quien: int=Depends(actor), conn=Depends(conexion))`: Avisos rojos escalados a ti: `{id, alerta_id, tripulante_id, contenido: {indicador, valor, t_real, tramo},
@@ -161,7 +174,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 ### Dependencias
 
-- Internas: `main`, `rutas_registro`
+- Internas: `main`, `rutas_dashboard`, `rutas_registro`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: `almacen`, `fastapi`, `pydantic`
 - Biblioteca estándar: `asyncio`, `concurrent`, `contextlib`, `datetime`, `hashlib`, `json`, `math`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`
@@ -175,5 +188,6 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_almacen_lecturas.py`: 9 pruebas en Lecturas (9)
 - `apps/api/test_almacen_tripulacion.py`: 8 pruebas en Tripulacion (8)
 - `apps/api/test_api.py`: 10 pruebas en Api (10)
+- `apps/api/test_api_dashboard.py`: 9 pruebas en Dashboard (9)
 - `apps/api/test_api_registro.py`: 18 pruebas en Registro (18)
 <!-- CONTEXT:AUTO:END -->

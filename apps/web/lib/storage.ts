@@ -1,11 +1,9 @@
-import type { CheckInEntry, Report } from "./types"
+import type { CheckInEntry } from "./types"
 
 /** Swap this implementation for IndexedDB/Dexie later; consumers only use the interface. */
 export interface HealthStore {
   listCheckIns(): Promise<CheckInEntry[]>
   saveCheckIn(entry: CheckInEntry): Promise<void>
-  listReports(): Promise<Report[]>
-  saveReport(report: Report): Promise<void>
   listSharedAlertIds(): Promise<string[]>
   shareAlert(id: string): Promise<void>
   listAcknowledgedAlertIds(): Promise<string[]>
@@ -33,8 +31,6 @@ async function append<T>(key: string, item: T) {
 export const localStore: HealthStore = {
   listCheckIns: async () => read<CheckInEntry[]>("checkins", []),
   saveCheckIn: (e) => append("checkins", e),
-  listReports: async () => read<Report[]>("reports", []),
-  saveReport: (r) => append("reports", r),
   listSharedAlertIds: async () => read<string[]>("shared", []),
   shareAlert: (id) => append("shared", id),
   listAcknowledgedAlertIds: async () => read<string[]>("acked", []),

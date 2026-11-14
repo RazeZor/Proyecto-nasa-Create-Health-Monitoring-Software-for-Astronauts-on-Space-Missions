@@ -8,7 +8,6 @@ import { BodyFigure, type BodySide } from "@/components/body/body-figure"
 import { PageHeader } from "@/components/shared/states"
 import { LayerChip, ProvenanceTag, StatusBadge, STATUS_ICON, statusSurface, statusText } from "@/components/shared/status"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { REMINDERS } from "@/lib/mock/alerts"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import type { ZoneId } from "@/lib/types"
@@ -69,7 +68,7 @@ function Segmented<T extends string>({
 }
 
 export function BodyView() {
-  const { day, sex, setSex, analisis } = useApp()
+  const { day, sex, setSex, analisis, catalogo } = useApp()
   const [side, setSide] = useState<BodySide>("front")
   const zones = analisis.zones(day)
   const overall = analisis.overall(day)
@@ -155,7 +154,7 @@ export function BodyView() {
                 <ListChecks aria-hidden className="size-4" /> {S.body.reminders}
               </h2>
               <ul className="mt-3 flex flex-col gap-2 text-sm">
-                {REMINDERS.map((r) => (
+                {catalogo.recordatorios.map((r) => (
                   <li key={r} className="flex gap-2">
                     <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
                     {r}

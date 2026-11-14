@@ -1,4 +1,4 @@
-"""Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar)."""
+"""Valida las fichas de packages/schemas/fichas contra ficha.schema.json (solo biblioteca estándar)."""
 import json
 import unittest
 from pathlib import Path
@@ -7,7 +7,7 @@ from validador import validar
 
 RAIZ = Path(__file__).resolve().parents[2]
 ESQUEMA = json.loads((Path(__file__).parent / "ficha.schema.json").read_text(encoding="utf-8"))
-FICHAS = RAIZ / "apps" / "web" / "public" / "fichas"
+FICHAS = RAIZ / "packages" / "schemas" / "fichas"
 
 
 class Fichas(unittest.TestCase):

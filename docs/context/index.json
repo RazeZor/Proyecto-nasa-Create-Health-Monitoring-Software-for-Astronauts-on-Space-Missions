@@ -6,7 +6,7 @@
       "proposito": "API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`).",
       "puntos_clave": [
         "No importa el pipeline (regla 3 de la arquitectura): lee `<DATALAKE_DIR>/gold/*.json` y `gold/manifest.json`. No ejecuta el ETL ni escribe nada; para generar datos se corre `pipelines/reanclaje/index.py`.",
-        "Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`; `GET /perfiles`; `GET /simulacion/caso-referencia` y `GET /simulacion/kpi`.",
+        "Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`; `GET /perfiles`; `GET /simulacion/caso-referencia` y `GET /simulacion/kpi`. Tablero (`rutas_dashboard.py`): `GET /fichas` y `/fichas/{id}` (de `packages/schemas/fichas`), `GET /entorno/referencia`, y por tripulante `historial`, `recordatorios` y `mensajes`.",
         "Documentación para agentes: `AGENTES.md` (cómo leer los datos y sus trampas) y `GET /openapi.json` (contrato, con resumen y descripción en cada ruta). Un test exige que cada ruta tenga ambos y aparezca en la guía; al agregar una ruta, documéntala en las dos partes.",
         "Escenario, panel o simulación se distinguen por el resumen del manifiesto del ETL (`serie5min` = escenario, `dosis` = panel, `tipo == \"simulacion\"` = simulación), no por el nombre: un escenario puede llamarse `panel-demo` y los archivos de simulación no aparecen en `/paneles` ni `/escenarios`. La API agrega `panel-` por dentro: el panel del escenario `x` es `/paneles/x` (archivo `panel-x.json`). Pedir un tipo como otro da 404.",
         "La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).",
@@ -20,6 +20,7 @@
         "La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).",
         "El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.",
         "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Incluye CORS de solo lectura (`GET`) para que `apps/web` consulte la API desde el navegador en entorno local.",
+        "La app solo conoce la API: lo que aún no sale de una fuente real lo sirve el backend rotulado `Simulado`. Los mockups están en `demo/` (recordatorios, hilo de mensajes, referencia de entorno, informe de ejemplo) y el historial es el caso de referencia del simulador (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N). `DIA_ACTUAL_DEMO = 24` fija el día de la demo. `python3 -m almacen sembrar` siembra además un informe ya respondido. Los informes guardan su `contenido` (migración 003).",
         "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
       ],
       "tags": [
@@ -45,7 +46,7 @@
         },
         {
           "ruta": "apps/api/almacen/__main__.py",
-          "lineas": 13,
+          "lineas": 18,
           "descripcion": "CLI: python3 -m almacen migrar|sembrar (desde apps/api).",
           "test": false,
           "simbolos": []
@@ -116,14 +117,14 @@
         },
         {
           "ruta": "apps/api/almacen/cola.py",
-          "lineas": 35,
+          "lineas": 40,
           "descripcion": "Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2).",
           "test": false,
           "simbolos": [
             {
               "nombre": "encolar_reporte",
               "tipo": "función",
-              "firma": "encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min)",
+              "firma": "encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min, contenido=None)",
               "doc": ""
             },
             {
@@ -206,7 +207,7 @@
         },
         {
           "ruta": "apps/api/almacen/tripulacion.py",
-          "lineas": 79,
+          "lineas": 96,
           "descripcion": "Misión, tripulantes y consentimiento; conversión de t_real a hora de misión.",
           "test": false,
           "simbolos": [
@@ -247,6 +248,12 @@
               "doc": "`D022T00:05:00`; None antes del día 1 (línea base de tierra)."
             },
             {
+              "nombre": "sembrar_informes_demo",
+              "tipo": "función",
+              "firma": "sembrar_informes_demo(conn, ids)",
+              "doc": "Informes de ejemplo ya respondidos por tierra (apps/api/demo/informes.json). Idempotente por título."
+            },
+            {
               "nombre": "sembrar_demo",
               "tipo": "función",
               "firma": "sembrar_demo(conn)",
@@ -263,7 +270,7 @@
         },
         {
           "ruta": "apps/api/main.py",
-          "lineas": 207,
+          "lineas": 209,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -348,8 +355,52 @@
           ]
         },
         {
+          "ruta": "apps/api/rutas_dashboard.py",
+          "lineas": 79,
+          "descripcion": "Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante,",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "listar_fichas",
+              "tipo": "función",
+              "firma": "listar_fichas()",
+              "doc": "Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice."
+            },
+            {
+              "nombre": "leer_ficha",
+              "tipo": "función",
+              "firma": "leer_ficha(id: str)",
+              "doc": "Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...)."
+            },
+            {
+              "nombre": "referencia_entorno",
+              "tipo": "función",
+              "firma": "referencia_entorno()",
+              "doc": "Límites de radiación y CO2, umbral de tormenta y fuentes del panel. `dosis_previa_carrera_msv` es simulada."
+            },
+            {
+              "nombre": "historial",
+              "tipo": "función",
+              "firma": "historial(id: int=Depends(propio))",
+              "doc": "Escenario de partida para el motor: `lecturas` de 14 días de prevuelo (días <= 0) y 30 de vuelo, y"
+            },
+            {
+              "nombre": "recordatorios",
+              "tipo": "función",
+              "firma": "recordatorios(id: int=Depends(propio))",
+              "doc": "Lista de textos. Simulado: aún no hay plan de actividades a bordo."
+            },
+            {
+              "nombre": "mensajes",
+              "tipo": "función",
+              "firma": "mensajes(id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "`{id, de: astronaut|surgeon, autor, dia, hora, texto}`: el hilo de ejemplo más las respuestas reales de tierra"
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/rutas_registro.py",
-          "lineas": 213,
+          "lineas": 214,
           "descripcion": "Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md).",
           "test": false,
           "simbolos": [
@@ -477,7 +528,7 @@
               "nombre": "listar_reportes",
               "tipo": "función",
               "firma": "listar_reportes(id: int=Depends(propio), conn=Depends(conexion))",
-              "doc": "Reportes del tripulante con `estado` en_cola, entregado o respondido."
+              "doc": "Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null)."
             },
             {
               "nombre": "avanzar",
@@ -610,6 +661,20 @@
           ]
         },
         {
+          "ruta": "apps/api/test_api_dashboard.py",
+          "lineas": 97,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Dashboard",
+              "tipo": "clase",
+              "firma": "Dashboard(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/test_api_registro.py",
           "lineas": 201,
           "descripcion": "",
@@ -630,11 +695,11 @@
       "proposito": "Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable.",
       "puntos_clave": [
         "Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + Recharts + componentes UI accesibles (`components/ui/*`).",
-        "Funciona **sin conexión**: el almacenamiento local (`lib/storage.ts`) usa IndexedDB (`vigia-db`) con respaldo en memoria y todas las vistas operan sin depender de red externa.",
-        "Motor híbrido: `packages/engine` (TypeScript puro, port 1:1 del simulador de Python, con test de paridad) evalúa las capas A, B y C y la regla de contexto. `lib/engine.ts` (`analizar(checkIns)`) lo aplica al escenario de partida (caso de referencia, trip-1) más los registros del usuario; `AppProvider` lo recalcula en `analisis` cada vez que se guarda un check-in, y cuerpo, tendencias, alertas e informes lo leen de ahí. Modo adaptación (días 1 a 14) y modo tormenta (del entorno del escenario). Tres niveles (`ok`, `watch`, `act`); solo `act` escala al oficial médico (§4.2, §5.1). Importa `packages/engine` por ruta relativa (`experimental.externalDir` en `next.config.mjs`). El pulso de `/device` sigue simulado a propósito: el reloj inteligente lo integra otro equipo, no este módulo.",
-        "Acoplado a las fichas validadas de `public/fichas/*.json` (`packages/schemas/ficha.schema.json`), al catálogo oficial de perfiles (`packages/schemas/perfiles.json`) y a la API del ETL (`apps/api`, vía `lib/etl-client.ts` y `lib/api-registro.ts`, que llaman a `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA`, leída al compilar, por defecto `http://127.0.0.1:8000`. Así, en la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa): `lib/mock/indicators.ts` importa las fichas oficiales con sus protocolos por perfil (`estacion`, `transito`, `superficie`), riesgos HRP y URLs de fuentes científicas; la vista de entorno (`/environment`) consume en vivo `/paneles`, `/paneles/{nombre}`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` desde `apps/api` sin generar series sintéticas (`Math.sin`) si la API está apagada.",
+        "**La app solo conoce la API**: perfiles (`/perfiles`), fichas (`/fichas`), referencia de entorno (`/entorno/referencia`), historial simulado del tripulante (`/tripulantes/{id}/historial`), recordatorios, mensajes con tierra e informes salen de `apps/api`. `lib/catalogo.ts` los pide al arrancar (`cargarCatalogo`) y los traduce al modelo de la interfaz; `AppProvider` no muestra la app hasta tenerlos y, si la API no responde, muestra un aviso con «Reintentar». No hay datos de ejemplo en el cliente (`lib/mock` ya no existe): los mockups viven en `apps/api/demo/`. Lo único local son los registros del usuario (`lib/storage.ts`, `localStorage`), que se suben a la API.",
+        "Motor híbrido: `packages/engine` (TypeScript puro, port 1:1 del simulador de Python, con test de paridad) evalúa las capas A, B y C y la regla de contexto. `lib/engine.ts` (`analizar(checkIns, historial)`) lo aplica al historial de la API más los registros del usuario; `AppProvider` lo recalcula en `analisis` cada vez que se guarda un check-in, y cuerpo, tendencias, alertas e informes lo leen de ahí. Modo adaptación (días 1 a 14) y modo tormenta (del `entorno_diario` del historial). Tres niveles (`ok`, `watch`, `act`); solo `act` escala al oficial médico (§4.2, §5.1). Importa `packages/engine` por ruta relativa (`experimental.externalDir` en `next.config.mjs`). El pulso de `/device` sigue simulado a propósito: el reloj inteligente lo integra otro equipo, no este módulo.",
+        "Llamadas a la API: `lib/catalogo.ts`, `lib/etl-client.ts` y `lib/api-registro.ts` usan `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA` (se lee al compilar; por defecto `http://127.0.0.1:8000`). En la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa. La vista de entorno consume `/paneles`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` sin generar series sintéticas.",
         "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
-        "El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden y se detiene en el primer fallo; reenviar es seguro. La identidad es un atajo: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (id de la API; `cd apps/api && python3 -m almacen sembrar` crea astronauta=1). Sin esa variable, o sin red, la app funciona solo con el almacén local. Los informes de `/reports` usan la cola real: al encolar se envía `POST /reportes` (en la demo el retardo se acorta a 1 min como en la vista local), se consulta `GET /reportes` cada 3 s y el estado y la cuenta atrás salen del servidor (`lib/cola.ts`); si llega una respuesta se muestra. Sin red o sin identidad, el informe usa el cálculo local; un informe encolado sin red no se reenvía después (la API no tiene idempotencia para reportes). El contenido del informe sigue solo en el almacén local: la cola guarda hora, retardo, estado y respuesta. `t_real` es la hora real del envío, no el día de misión elegido en la interfaz: la API lo ve como día 1 de la misión demo.",
+        "El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden y se detiene en el primer fallo; reenviar es seguro. Identidad provisional: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (por defecto 1, el astronauta de `python3 -m almacen sembrar`). Los informes viven en la API con su `contenido`: `/reports` los lee de `GET /tripulantes/{id}/reportes` cada 3 s y al encolar envía `POST` con el contenido; si la API no responde, avisa y no guarda nada local. `t_real` es la hora real del envío, no el día de misión elegido en la interfaz.",
         "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.",
         "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
       ],
@@ -823,7 +888,7 @@
         },
         {
           "ruta": "apps/web/components/app-context.tsx",
-          "lineas": 88,
+          "lineas": 118,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -869,7 +934,7 @@
         },
         {
           "ruta": "apps/web/components/body/body-view.tsx",
-          "lineas": 219,
+          "lineas": 218,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -925,7 +990,7 @@
         },
         {
           "ruta": "apps/web/components/environment/environment-view.tsx",
-          "lineas": 363,
+          "lineas": 359,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -939,7 +1004,7 @@
         },
         {
           "ruta": "apps/web/components/reports/reports-view.tsx",
-          "lineas": 136,
+          "lineas": 126,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1174,14 +1239,14 @@
         },
         {
           "ruta": "apps/web/lib/api-registro.test.ts",
-          "lineas": 39,
+          "lineas": 49,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/api-registro.ts",
-          "lineas": 95,
+          "lineas": 105,
           "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
           "test": false,
           "simbolos": [
@@ -1256,6 +1321,93 @@
               "tipo": "función",
               "firma": "listarReportes",
               "doc": ""
+            },
+            {
+              "nombre": "reporteDeServidor",
+              "tipo": "función",
+              "firma": "reporteDeServidor",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/catalogo.test.ts",
+          "lineas": 35,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/catalogo.ts",
+          "lineas": 161,
+          "descripcion": "Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "FichaJson",
+              "tipo": "tipo",
+              "firma": "FichaJson",
+              "doc": ""
+            },
+            {
+              "nombre": "LecturaHistorial",
+              "tipo": "interfaz",
+              "firma": "LecturaHistorial",
+              "doc": ""
+            },
+            {
+              "nombre": "Historial",
+              "tipo": "interfaz",
+              "firma": "Historial",
+              "doc": ""
+            },
+            {
+              "nombre": "ReferenciaEntorno",
+              "tipo": "interfaz",
+              "firma": "ReferenciaEntorno",
+              "doc": ""
+            },
+            {
+              "nombre": "Catalogo",
+              "tipo": "interfaz",
+              "firma": "Catalogo",
+              "doc": ""
+            },
+            {
+              "nombre": "perfilesUi",
+              "tipo": "función",
+              "firma": "perfilesUi",
+              "doc": ""
+            },
+            {
+              "nombre": "indicadoresUi",
+              "tipo": "función",
+              "firma": "indicadoresUi",
+              "doc": ""
+            },
+            {
+              "nombre": "comoMedirEnPerfil",
+              "tipo": "función",
+              "firma": "comoMedirEnPerfil",
+              "doc": ""
+            },
+            {
+              "nombre": "mensajesUi",
+              "tipo": "constante",
+              "firma": "mensajesUi",
+              "doc": ""
+            },
+            {
+              "nombre": "fuentesUi",
+              "tipo": "constante",
+              "firma": "fuentesUi",
+              "doc": ""
+            },
+            {
+              "nombre": "cargarCatalogo",
+              "tipo": "función",
+              "firma": "cargarCatalogo",
+              "doc": ""
             }
           ]
         },
@@ -1268,7 +1420,7 @@
         },
         {
           "ruta": "apps/web/lib/cola.ts",
-          "lineas": 28,
+          "lineas": 39,
           "descripcion": "Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local.",
           "test": false,
           "simbolos": [
@@ -1276,6 +1428,12 @@
               "nombre": "ReporteServidor",
               "tipo": "interfaz",
               "firma": "ReporteServidor",
+              "doc": ""
+            },
+            {
+              "nombre": "ContenidoReporte",
+              "tipo": "interfaz",
+              "firma": "ContenidoReporte",
               "doc": ""
             },
             {
@@ -1288,7 +1446,7 @@
         },
         {
           "ruta": "apps/web/lib/engine.test.ts",
-          "lineas": 68,
+          "lineas": 75,
           "descripcion": "",
           "test": true,
           "simbolos": []
@@ -1296,7 +1454,7 @@
         {
           "ruta": "apps/web/lib/engine.ts",
           "lineas": 156,
-          "descripcion": "Análisis de la app: el escenario de partida (caso de referencia, trip-1) más los registros",
+          "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial) más los registros",
           "test": false,
           "simbolos": [
             {
@@ -1309,12 +1467,6 @@
               "nombre": "BASELINE_SWITCH_DAY",
               "tipo": "constante",
               "firma": "BASELINE_SWITCH_DAY",
-              "doc": ""
-            },
-            {
-              "nombre": "MISSION_DAYS",
-              "tipo": "constante",
-              "firma": "MISSION_DAYS",
               "doc": ""
             },
             {
@@ -1448,128 +1600,6 @@
           ]
         },
         {
-          "ruta": "apps/web/lib/mock/alerts.ts",
-          "lineas": 27,
-          "descripcion": "",
-          "test": false,
-          "simbolos": [
-            {
-              "nombre": "SEED_REPORTS",
-              "tipo": "constante",
-              "firma": "SEED_REPORTS",
-              "doc": ""
-            },
-            {
-              "nombre": "THREAD",
-              "tipo": "constante",
-              "firma": "THREAD",
-              "doc": ""
-            },
-            {
-              "nombre": "REMINDERS",
-              "tipo": "constante",
-              "firma": "REMINDERS",
-              "doc": ""
-            }
-          ]
-        },
-        {
-          "ruta": "apps/web/lib/mock/crew.ts",
-          "lineas": 11,
-          "descripcion": "",
-          "test": false,
-          "simbolos": [
-            {
-              "nombre": "CURRENT_DAY",
-              "tipo": "constante",
-              "firma": "CURRENT_DAY",
-              "doc": ""
-            },
-            {
-              "nombre": "PROFILES",
-              "tipo": "constante",
-              "firma": "PROFILES",
-              "doc": ""
-            }
-          ]
-        },
-        {
-          "ruta": "apps/web/lib/mock/environment.ts",
-          "lineas": 43,
-          "descripcion": "",
-          "test": false,
-          "simbolos": [
-            {
-              "nombre": "PRIOR_CAREER_MSV",
-              "tipo": "constante",
-              "firma": "PRIOR_CAREER_MSV",
-              "doc": ""
-            },
-            {
-              "nombre": "CAREER_LIMIT_MSV",
-              "tipo": "constante",
-              "firma": "CAREER_LIMIT_MSV",
-              "doc": ""
-            },
-            {
-              "nombre": "CO2_LIMIT_MMHG",
-              "tipo": "constante",
-              "firma": "CO2_LIMIT_MMHG",
-              "doc": ""
-            },
-            {
-              "nombre": "PFU_THRESHOLD",
-              "tipo": "constante",
-              "firma": "PFU_THRESHOLD",
-              "doc": ""
-            },
-            {
-              "nombre": "RADIATION_INDICATOR",
-              "tipo": "constante",
-              "firma": "RADIATION_INDICATOR",
-              "doc": ""
-            },
-            {
-              "nombre": "ENV_SOURCES",
-              "tipo": "constante",
-              "firma": "ENV_SOURCES",
-              "doc": ""
-            },
-            {
-              "nombre": "ppmToMmHg",
-              "tipo": "constante",
-              "firma": "ppmToMmHg",
-              "doc": ""
-            },
-            {
-              "nombre": "isStormDay",
-              "tipo": "constante",
-              "firma": "isStormDay",
-              "doc": ""
-            }
-          ]
-        },
-        {
-          "ruta": "apps/web/lib/mock/indicators.ts",
-          "lineas": 134,
-          "descripcion": "",
-          "test": false,
-          "simbolos": [
-            {
-              "nombre": "INDICATORS",
-              "tipo": "constante",
-              "firma": "INDICATORS",
-              "doc": ""
-            },
-            {
-              "nombre": "howToForProfile",
-              "tipo": "función",
-              "firma": "howToForProfile",
-              "doc": ""
-            }
-          ]
-        },
-        {
           "ruta": "apps/web/lib/sincronizacion.ts",
           "lineas": 30,
           "descripcion": "",
@@ -1618,7 +1648,7 @@
         },
         {
           "ruta": "apps/web/lib/storage.ts",
-          "lineas": 46,
+          "lineas": 42,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1644,7 +1674,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 303,
+          "lineas": 306,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1798,7 +1828,7 @@
         },
         {
           "ruta": "apps/web/lib/utils.ts",
-          "lineas": 6,
+          "lineas": 10,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1806,6 +1836,12 @@
               "nombre": "cn",
               "tipo": "función",
               "firma": "cn",
+              "doc": ""
+            },
+            {
+              "nombre": "ppmToMmHg",
+              "tipo": "constante",
+              "firma": "ppmToMmHg",
               "doc": ""
             }
           ]
@@ -2112,7 +2148,7 @@
         "`caso-referencia.schema.json` valida los casos de prueba reproducibles y KPI de la simulación (`pipelines/reanclaje/simulacion.py`) para verificar de forma idéntica el futuro motor híbrido (`packages/engine`).",
         "`vocabulario.json` es el contrato de vocabulario entre la interfaz (claves `ui` en inglés) y la API (claves de la base, en español): indicadores con su zona del cuerpo, niveles, capas, roles, perfiles, retardo por perfil y síntomas. Las claves de la API son las canónicas; la interfaz traduce en el borde. `test_vocabulario.py` lo compara con la migración SQL, las fichas y `apps/web/lib/types.ts`: si un lado cambia sin el contrato, falla. Sus apartados `sin_equivalente` y `notas` documentan lo que aún no encaja (diastólica).",
         "`peligro` es una lista con los cinco peligros del HRP (`radiacion`, `aislamiento`, `distancia`, `gravedad_alterada`, `entorno_cerrado`). Un `null` en `unidad`, `referencia_en_vuelo` o `prevencion` significa que el informe no lo respalda.",
-        "Los datos de fichas viven en `apps/web/public/fichas/<id>.json` con `index.json`. Si cambia cualquier esquema, se versiona aquí antes de tocar los consumidores."
+        "Los datos de fichas viven en `packages/schemas/fichas/<id>.json` con `index.json`; la app los recibe por la API (`GET /fichas`), nunca los importa. Si cambia cualquier esquema, se versiona aquí antes de tocar los consumidores."
       ],
       "tags": [
         "schemas",
@@ -2132,7 +2168,7 @@
         {
           "ruta": "packages/schemas/test_fichas.py",
           "lineas": 42,
-          "descripcion": "Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar).",
+          "descripcion": "Valida las fichas de packages/schemas/fichas contra ficha.schema.json (solo biblioteca estándar).",
           "test": true,
           "simbolos": [
             {

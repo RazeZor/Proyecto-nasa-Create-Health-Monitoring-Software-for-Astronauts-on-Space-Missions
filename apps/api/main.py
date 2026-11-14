@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "i18n"
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
+from rutas_dashboard import router as rutas_dashboard  # noqa: E402
 
 from almacen import conectar, migrar  # noqa: E402
 from almacen.cola import avanzar_cola  # noqa: E402
@@ -72,6 +73,7 @@ app = FastAPI(lifespan=ciclo_de_vida, title="VIGÍA: API del ETL", description=D
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT"], allow_headers=["*"],
                    allow_private_network=True)  # shortcut: sin lista de orígenes; acotar antes de producción
 app.include_router(rutas_registro)
+app.include_router(rutas_dashboard)
 
 
 @app.exception_handler(ValueError)

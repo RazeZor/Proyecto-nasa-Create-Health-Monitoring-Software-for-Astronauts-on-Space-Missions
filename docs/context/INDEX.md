@@ -6,8 +6,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
-| [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 19 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 54 |
+| [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 21 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 52 |
 | [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y regla de contexto (CO2 con síntomas). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 2 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
@@ -41,32 +41,31 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `BodyFigure` | función | [apps/web/components/body/body-figure.tsx](../../apps/web/components/body/body-figure.tsx) |
 | `BodySide` | tipo | [apps/web/components/body/body-figure.tsx](../../apps/web/components/body/body-figure.tsx) |
 | `BodyView` | función | [apps/web/components/body/body-view.tsx](../../apps/web/components/body/body-view.tsx) |
-| `CAREER_LIMIT_MSV` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `CO2_LIMITE_MMHG` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
-| `CO2_LIMIT_MMHG` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
-| `CURRENT_DAY` | constante | [apps/web/lib/mock/crew.ts](../../apps/web/lib/mock/crew.ts) |
 | `CUSUM_DIA_INICIO` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `CUSUM_H` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `CUSUM_K` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `CabinaPanelEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `Capa` | tipo | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `Catalogo` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
+| `Catalogo` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `Catalogos` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
 | `CheckInEntry` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `CheckInScreen` | función | [apps/web/components/checkin/checkin-form.tsx](../../apps/web/components/checkin/checkin-form.tsx) |
 | `Cola` | clase | [apps/api/test_almacen_cola.py](../../apps/api/test_almacen_cola.py) |
 | `Construir` | clase | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
+| `ContenidoReporte` | interfaz | [apps/web/lib/cola.ts](../../apps/web/lib/cola.ts) |
 | `ContextoIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `Contratos` | clase | [packages/schemas/test_schemas.py](../../packages/schemas/test_schemas.py) |
 | `DIAS_CONSECUTIVOS_B` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `DailyVitals` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
+| `Dashboard` | clase | [apps/api/test_api_dashboard.py](../../apps/api/test_api_dashboard.py) |
 | `DelayCountdown` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
 | `Dependencias` | interfaz | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
 | `DeviceState` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `DeviceView` | función | [apps/web/components/device/device-view.tsx](../../apps/web/components/device/device-view.tsx) |
 | `DosisDiaEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `DosisPanelEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
-| `ENV_SOURCES` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `EmptyState` | función | [apps/web/components/shared/states.tsx](../../apps/web/components/shared/states.tsx) |
 | `EntornoDia` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `EnvDay` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
@@ -76,12 +75,13 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `EstructuraInesperada` | clase | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `Evaluar` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
 | `EventoDonkiEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
+| `FichaJson` | tipo | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `Fichas` | clase | [packages/schemas/test_fichas.py](../../packages/schemas/test_fichas.py) |
 | `FixtureDelMotor` | clase | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
 | `Generador` | clase | [tools/contextgen/test_contextgen.py](../../tools/contextgen/test_contextgen.py) |
 | `HealthStore` | interfaz | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
+| `Historial` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `IDIOMAS` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
-| `INDICATORS` | constante | [apps/web/lib/mock/indicators.ts](../../apps/web/lib/mock/indicators.ts) |
 | `Idioma` | tipo | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `IndicatorCard` | función | [apps/web/components/shared/indicator-card.tsx](../../apps/web/components/shared/indicator-card.tsx) |
 | `IndicatorId` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
@@ -90,6 +90,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Layer` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `LayerChip` | función | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `Lectura` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
+| `LecturaHistorial` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `LecturaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `Lecturas` | clase | [apps/api/test_almacen_lecturas.py](../../apps/api/test_almacen_lecturas.py) |
 | `Limpieza` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
@@ -97,13 +98,9 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `LineaBase` | clase | [apps/api/test_almacen_base.py](../../apps/api/test_almacen_base.py) |
 | `LineaBaseIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `LoadingState` | función | [apps/web/components/shared/states.tsx](../../apps/web/components/shared/states.tsx) |
-| `MISSION_DAYS` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `MOTOR` | constante | [apps/web/lib/strings.ts](../../apps/web/lib/strings.ts) |
 | `MissionProfile` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
-| `PFU_THRESHOLD` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `PRINCIPAL` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
-| `PRIOR_CAREER_MSV` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
-| `PROFILES` | constante | [apps/web/lib/mock/crew.ts](../../apps/web/lib/mock/crew.ts) |
 | `Page` | función | [apps/web/app/about/page.tsx](../../apps/web/app/about/page.tsx) |
 | `Page` | función | [apps/web/app/alerts/page.tsx](../../apps/web/app/alerts/page.tsx) |
 | `Page` | función | [apps/web/app/check-in/page.tsx](../../apps/web/app/check-in/page.tsx) |
@@ -121,8 +118,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Provenance` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `ProvenanceTag` | función | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `Publicar` | clase | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
-| `RADIATION_INDICATOR` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
-| `REMINDERS` | constante | [apps/web/lib/mock/alerts.ts](../../apps/web/lib/mock/alerts.ts) |
+| `ReferenciaEntorno` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `Registro` | clase | [apps/api/test_api_registro.py](../../apps/api/test_api_registro.py) |
 | `Report` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `ReportState` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
@@ -134,7 +130,6 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Role` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `RootLayout` | función | [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx) |
 | `S` | constante | [apps/web/lib/strings.ts](../../apps/web/lib/strings.ts) |
-| `SEED_REPORTS` | constante | [apps/web/lib/mock/alerts.ts](../../apps/web/lib/mock/alerts.ts) |
 | `STATUS_ICON` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `SUPUESTOS` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `Sex` | tipo | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
@@ -145,7 +140,6 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `StatusBadge` | función | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
 | `Switch` | función | [apps/web/components/device/switch.tsx](../../apps/web/components/device/switch.tsx) |
 | `Symptom` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
-| `THREAD` | constante | [apps/web/lib/mock/alerts.ts](../../apps/web/lib/mock/alerts.ts) |
 | `TRIPULANTE` | constante | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `ThreadMessage` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `Traduccion` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
@@ -173,6 +167,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `avanzar_cola` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `bloque` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `capaApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `cargarCatalogo` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `cargarEscenarioDiario` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarKpiSimulacion` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarPanelGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
@@ -184,6 +179,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `clean_goes` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `clean_radlab` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `cn` | función | [apps/web/lib/utils.ts](../../apps/web/lib/utils.ts) |
+| `comoMedirEnPerfil` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `conectar` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
 | `conexion` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `consentir` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
@@ -220,23 +216,25 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `factorAdaptacion` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `faltantes` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `formatDelay` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
+| `fuentesUi` | constante | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `generar` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `generar_caso_referencia` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `generar_mision` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `guardar` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `guardar_linea_base` | función | [apps/api/almacen/base.py](../../apps/api/almacen/base.py) |
 | `guardar_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
-| `howToForProfile` | función | [apps/web/lib/mock/indicators.ts](../../apps/web/lib/mock/indicators.ts) |
+| `historial` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `idioma_actual` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `indicadorApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `indicadoresUi` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `ingest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `isAdaptation` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
-| `isStormDay` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
 | `lecturasDeCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `leer` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `leer_caso_referencia` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_diario` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_escenario` | función | [apps/api/main.py](../../apps/api/main.py) |
+| `leer_ficha` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `leer_kpi_simulacion` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_lecturas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `leer_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
@@ -253,6 +251,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `listar_alertas` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `listar_escalamientos` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `listar_escenarios` | función | [apps/api/main.py](../../apps/api/main.py) |
+| `listar_fichas` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `listar_lecturas` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `listar_paneles` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `listar_reportes` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
@@ -264,6 +263,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `manifest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `mediana` | función | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `medidas` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
+| `mensajes` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
+| `mensajesUi` | constante | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `metadata` | constante | [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx) |
 | `migrar` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
 | `modulo_de` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
@@ -275,13 +276,16 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `pendientes` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `pendientes` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `perfilApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
-| `ppmToMmHg` | constante | [apps/web/lib/mock/environment.ts](../../apps/web/lib/mock/environment.ts) |
+| `perfilesUi` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
+| `ppmToMmHg` | constante | [apps/web/lib/utils.ts](../../apps/web/lib/utils.ts) |
 | `propio` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `publicar` | función | [pipelines/reanclaje/panel.py](../../pipelines/reanclaje/panel.py) |
 | `publicar_simulacion` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `puntosNews2` | función | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `radlab` | función | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
 | `read` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
+| `recordatorios` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
+| `referencia_entorno` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `registrar_alerta` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `registrar_lectura` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `registrar_sintoma` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
@@ -289,12 +293,14 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `render_auto` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `render_indice` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `render_modulo` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `reporteDeServidor` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `responder` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `responder_reporte` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `retardoMin` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `ruta_por_defecto` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
 | `salud` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `sembrar_demo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
+| `sembrar_informes_demo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `sincronizar` | función | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
 | `sincronizarRegistros` | función | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `sintomasDeCheckIn` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |

@@ -15,7 +15,7 @@ Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON 
 - `caso-referencia.schema.json` valida los casos de prueba reproducibles y KPI de la simulación (`pipelines/reanclaje/simulacion.py`) para verificar de forma idéntica el futuro motor híbrido (`packages/engine`).
 - `vocabulario.json` es el contrato de vocabulario entre la interfaz (claves `ui` en inglés) y la API (claves de la base, en español): indicadores con su zona del cuerpo, niveles, capas, roles, perfiles, retardo por perfil y síntomas. Las claves de la API son las canónicas; la interfaz traduce en el borde. `test_vocabulario.py` lo compara con la migración SQL, las fichas y `apps/web/lib/types.ts`: si un lado cambia sin el contrato, falla. Sus apartados `sin_equivalente` y `notas` documentan lo que aún no encaja (diastólica).
 - `peligro` es una lista con los cinco peligros del HRP (`radiacion`, `aislamiento`, `distancia`, `gravedad_alterada`, `entorno_cerrado`). Un `null` en `unidad`, `referencia_en_vuelo` o `prevencion` significa que el informe no lo respalda.
-- Los datos de fichas viven en `apps/web/public/fichas/<id>.json` con `index.json`. Si cambia cualquier esquema, se versiona aquí antes de tocar los consumidores.
+- Los datos de fichas viven en `packages/schemas/fichas/<id>.json` con `index.json`; la app los recibe por la API (`GET /fichas`), nunca los importa. Si cambia cualquier esquema, se versiona aquí antes de tocar los consumidores.
 
 ## Relación con el informe
 
@@ -33,7 +33,7 @@ tags: schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, 
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [test_fichas.py](test_fichas.py) | 42 | Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar). |
+| [test_fichas.py](test_fichas.py) | 42 | Valida las fichas de packages/schemas/fichas contra ficha.schema.json (solo biblioteca estándar). |
 | [test_schemas.py](test_schemas.py) | 122 | Pruebas de contrato para perfiles, lecturas, entorno Gold y caso de referencia. |
 | [test_vocabulario.py](test_vocabulario.py) | 65 | El contrato vocabulario.json no puede desviarse de lo que de verdad usan la base de datos, las fichas y la interfaz. |
 | [validador.py](validador.py) | 82 | Validador mínimo de JSON Schema (Draft 2020-12) con solo biblioteca estándar. |

@@ -136,3 +136,18 @@ GET  /tripulantes/1/alertas  (X-Tripulante: 3)   # comandante: no es destinatari
 GET  /tripulantes/1/lecturas  (X-Tripulante: 2)
 -> 403 {"detail": "no puedes ver ni modificar datos de otro tripulante"}
 ```
+
+## Tablero: fichas, referencia y datos de demo
+
+La app solo conoce esta API. Lo que todavía no sale de una fuente real lo sirve el backend rotulado `Simulado` (archivos en `apps/api/demo/` y el caso de referencia del simulador), nunca la app.
+
+| Endpoint | Devuelve |
+| --- | --- |
+| `GET /fichas` | todas las fichas de indicadores (`packages/schemas/fichas`), en el orden de `index.json` |
+| `GET /fichas/{id}` | una ficha; id fuera del índice: 404 |
+| `GET /entorno/referencia` | `limite_carrera_msv`, `co2_limite_mmhg`, `umbral_protones_pfu`, `fuentes`, `dosis_previa_carrera_msv` (simulada) |
+| `GET /tripulantes/{id}/historial` | escenario de partida del motor: `lecturas` (14 días de prevuelo y 30 de vuelo), `entorno_diario`, `dia_actual`, `dias_vuelo`; `naturaleza: Simulado` |
+| `GET /tripulantes/{id}/recordatorios` | lista de textos del día (simulada) |
+| `GET /tripulantes/{id}/mensajes` | hilo con tierra `{id, de, autor, dia, hora, texto}`: ejemplo más las respuestas reales a tus reportes |
+
+Las tres de `/tripulantes/{id}/...` siguen la regla de privacidad del registro (otro tripulante: 403; sin cabecera: 401). `POST /tripulantes/{id}/reportes` acepta además `contenido` (objeto libre: título, resumen, lectura...) y el `GET` lo devuelve. `python3 -m almacen sembrar` también siembra un informe de ejemplo ya respondido.

@@ -3,8 +3,8 @@ import { sincronizar } from "./sincronizar"
 import { store } from "./storage"
 
 /** Identidad provisional (atajo): id de tripulante de la API en `NEXT_PUBLIC_VIGIA_TRIPULANTE`.
- *  Sin ella la interfaz funciona solo con el almacén local. Reemplazar por autenticación real. */
-export const TRIPULANTE = Number(process.env.NEXT_PUBLIC_VIGIA_TRIPULANTE) || null
+ *  Sin ella se usa el 1 (astronauta de la misión demo). Reemplazar por autenticación real. */
+export const TRIPULANTE: number | null = Number(process.env.NEXT_PUBLIC_VIGIA_TRIPULANTE) || 1 // 1 = astronauta de la misión demo
 
 let enCurso: Promise<number> | null = null
 

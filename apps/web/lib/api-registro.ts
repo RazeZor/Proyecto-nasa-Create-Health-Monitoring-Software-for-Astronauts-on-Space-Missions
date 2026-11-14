@@ -4,8 +4,8 @@
  * Offline primero: nada aquí lanza por falta de red; devuelve false y el dato sigue en el almacén local.
  */
 import vocabulario from "./vocabulario.json" with { type: "json" }
-import type { ReporteServidor } from "./cola"
-import type { CheckInEntry, IndicatorId, Layer, ProfileId, Status } from "./types"
+import type { ContenidoReporte, ReporteServidor } from "./cola"
+import type { CheckInEntry, IndicatorId, Layer, ProfileId, Report, Status } from "./types"
 
 // Por defecto, el proxy del mismo origen (next.config.mjs); NEXT_PUBLIC_VIGIA_API_URL lo salta con una URL directa.
 export const API_BASE_URL = process.env.NEXT_PUBLIC_VIGIA_API_URL || "/vigia-api"
@@ -71,12 +71,12 @@ export async function enviarCheckIn(e: CheckInEntry, tripulante: number): Promis
 }
 
 /** Encola un reporte con el retardo del perfil (o `retardo` si se acorta, como en la demo); devuelve su id o null. */
-export async function encolarReporte(perfil: ProfileId, creado: string, tripulante: number, retardo = retardoMin(perfil)): Promise<number | null> {
+export async function encolarReporte(perfil: ProfileId, creado: string, tripulante: number, retardo = retardoMin(perfil), contenido?: ContenidoReporte): Promise<number | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reportes`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) },
-      body: JSON.stringify({ creado_t_real: tReal(creado), retardo_min: retardo }),
+      body: JSON.stringify({ creado_t_real: tReal(creado), retardo_min: retardo, contenido }),
     })
     return res.ok ? ((await res.json()) as { id: number }).id : null
   } catch {
@@ -91,5 +91,15 @@ export async function listarReportes(tripulante: number): Promise<ReporteServido
     return res.ok ? ((await res.json()) as ReporteServidor[]) : []
   } catch {
     return []
+  }
+}
+
+/** Un reporte de la API en el modelo de la interfaz. Sin `contenido` (encolado por otra vía) muestra solo el estado. */
+export function reporteDeServidor(s: ReporteServidor): Report {
+  const c = s.contenido
+  return {
+    id: String(s.id), serverId: s.id, createdAt: Date.parse(s.creado_t_real), delayMinutes: s.retardo_min,
+    title: c?.titulo ?? `#${s.id}`, summary: c?.resumen ?? "", reading: c?.lectura ?? "", baseline: c?.linea_base ?? "",
+    environment: c?.entorno ?? "", actionTaken: c?.accion ?? "",
   }
 }
