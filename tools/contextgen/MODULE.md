@@ -31,7 +31,7 @@ tags: herramientas, documentación, contexto, ia, agents.md, ci, pre-commit
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [contextgen.py](contextgen.py) | 409 | Genera el contexto del repositorio para cualquier asistente de IA (AGENTS.md). |
+| [contextgen.py](contextgen.py) | 416 | Genera el contexto del repositorio para cualquier asistente de IA (AGENTS.md). |
 | [test_contextgen.py](test_contextgen.py) | 149 | — |
 
 ### API pública
@@ -46,9 +46,9 @@ tags: herramientas, documentación, contexto, ia, agents.md, ci, pre-commit
 - función `analizar_py(texto)`
 - función `analizar_js(texto)`
 - función `analizar(root, ruta)`
-- función `render_auto(nombre, infos)`
+- función `render_auto(nombre, infos, paquetes=())`
 - función `bloque(texto, ini, fin)`
-- función `render_modulo(nombre, infos, actual)`
+- función `render_modulo(nombre, infos, actual, paquetes=())`
 - función `leer_manual(texto)`: (propósito, puntos clave, tags) del bloque MANUAL.
 - función `render_indice(datos)`
 - función `generar(root)`: {ruta relativa: contenido esperado} de todo lo que mantiene el generador.

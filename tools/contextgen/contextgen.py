@@ -214,7 +214,7 @@ def _celda(s):
     return s.replace("|", "\\|").replace("\n", " ")
 
 
-def render_auto(nombre, infos):
+def render_auto(nombre, infos, paquetes=()):
     locales = {Path(i["ruta"]).stem for i in infos}
     stdlib = getattr(sys, "stdlib_module_names", frozenset())
     out = [AUTO_INI, "## Mapa del módulo (generado)", "",
@@ -253,12 +253,16 @@ def render_auto(nombre, infos):
 
     imports = {m for i in infos for m in i["imports"]}
     internos = sorted(m for m in imports if m in locales or m.startswith("."))
-    terceros = sorted(m for m in imports - set(internos) if m not in stdlib and not m.startswith("node:"))
-    biblioteca = sorted(m for m in imports - set(internos) - set(terceros))
+    monorepo = sorted(m for m in imports - set(internos) if m in paquetes)
+    resto = imports - set(internos) - set(monorepo)
+    terceros = sorted(m for m in resto if m not in stdlib and not m.startswith("node:"))
+    biblioteca = sorted(resto - set(terceros))
     if imports:
         out += ["", "### Dependencias", ""]
         if internos:
             out.append("- Internas: " + ", ".join(f"`{m}`" for m in internos))
+        if monorepo:
+            out.append("- Paquetes del monorepo: " + ", ".join(f"`packages/{m}`" for m in monorepo))
         out.append("- Externas: " + (", ".join(f"`{m}`" for m in terceros) or "ninguna"))
         if biblioteca:
             out.append("- Biblioteca estándar: " + ", ".join(f"`{m}`" for m in biblioteca))
@@ -279,12 +283,13 @@ def bloque(texto, ini, fin):
     return texto[a:b + len(fin)] if a != -1 and b > a else None
 
 
-def render_modulo(nombre, infos, actual):
+def render_modulo(nombre, infos, actual, paquetes=()):
     manual = (bloque(actual, MANUAL_INI, MANUAL_FIN) if actual else None) or PLANTILLA_MANUAL
+    auto = render_auto(nombre, infos, paquetes)
     if actual and bloque(actual, AUTO_INI, AUTO_FIN):
-        return actual.replace(bloque(actual, AUTO_INI, AUTO_FIN), render_auto(nombre, infos))
+        return actual.replace(bloque(actual, AUTO_INI, AUTO_FIN), auto)
     cabecera = actual[:actual.find(MANUAL_INI)].rstrip() if actual and MANUAL_INI in actual else f"# Módulo `{nombre}`"
-    return f"{cabecera}\n\n{manual}\n\n{render_auto(nombre, infos)}\n"
+    return f"{cabecera}\n\n{manual}\n\n{auto}\n"
 
 
 def leer_manual(texto):
@@ -324,10 +329,12 @@ def render_indice(datos):
 def generar(root):
     """{ruta relativa: contenido esperado} de todo lo que mantiene el generador."""
     salida, datos = {}, []
-    for nombre, rutas in sorted(modulos(root).items()):
+    todos = modulos(root)
+    paquetes = {n.split("/", 1)[1] for n in todos if n.startswith("packages/")}
+    for nombre, rutas in sorted(todos.items()):
         infos = [analizar(root, r) for r in rutas]
         destino = root / nombre / "MODULE.md"
-        contenido = render_modulo(nombre, infos, leer(destino) if destino.exists() else "")
+        contenido = render_modulo(nombre, infos, leer(destino) if destino.exists() else "", paquetes)
         salida[f"{nombre}/MODULE.md"] = contenido
         proposito, puntos, tags = leer_manual(contenido)
         datos.append({

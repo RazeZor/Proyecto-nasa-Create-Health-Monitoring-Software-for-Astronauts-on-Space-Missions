@@ -18,7 +18,7 @@ Monorepo por unidad desplegable. El detalle y los ejemplos están en [docs/ARQUI
 
 - `apps/`: lo que usa una persona. `apps/web` es la PWA a bordo, organizada por funcionalidad (`src/features/<feature>/`).
 - `pipelines/`: ingesta y procesamiento de datos con el patrón medallón (raw → curated → gold), idempotentes y con manifiesto.
-- `packages/`: librerías compartidas puras, sin IO: motor híbrido (`engine`) y contratos de datos (`schemas`).
+- `packages/`: librerías compartidas puras, sin IO: traducciones (`i18n`), motor híbrido (`engine`) y contratos de datos (`schemas`).
 - `tools/`: herramientas del equipo.
 
 Regla de dependencias:
@@ -30,8 +30,12 @@ Regla de dependencias:
 
 ## Reglas del repositorio
 
+Las convenciones completas (nombres, git, i18n, datos, tests) están en [docs/CONVENCIONES.md](docs/CONVENCIONES.md) y son obligatorias. Las más importantes:
+
 - Idioma: español en el código, los comentarios, los commits y la documentación.
-- Cada módulo declara sus dependencias en su carpeta (`requirements.txt` o `package.json`). `pipelines/datalake` y `tools/contextgen` usan **solo la biblioteca estándar**; no les agregues dependencias sin acordarlo con el equipo.
+- **i18n:** todo texto que ve un usuario sale de `packages/i18n` con `t("area.clave")`, nunca como string literal. El español es el principal y el obligatorio: toda clave nueva va primero en `locales/es.json`. El inglés es **secundario**: si sabes traducirla, agrégala a `en.json`; si no, no pasa nada, se muestra en español. Nunca agregues a `en.json` una clave que no esté en `es.json`.
+- Ramas `<tipo>/<tema>` (`feat/`, `fix/`, `docs/`, `data/`…), commits en español y en infinitivo, y nada directo a `main`.
+- Cada módulo declara sus dependencias en su carpeta (`requirements.txt` o `package.json`). `pipelines/datalake`, `packages/i18n` y `tools/contextgen` usan **solo la biblioteca estándar**; no les agregues dependencias sin acordarlo con el equipo.
 - Los datos nunca van a git. Solo suben las fixtures pequeñas de los tests.
 - Las horas se guardan en UTC ISO 8601 (`YYYY-MM-DDTHH:MM:SSZ`) en el campo `t_real`.
 - El datalake nunca sobrescribe `data/raw/`. Si una fuente cambia de estructura, se lanza `EstructuraInesperada` y no se escribe nada.
@@ -62,6 +66,8 @@ En Windows, si `python` no está en el PATH, usa `py`. Si hay un conflicto de me
 ```sh
 python -m unittest discover -s pipelines/datalake        # tests del datalake
 python -m unittest discover -s tools/contextgen          # tests del generador de contexto
+python -m unittest discover -s packages/i18n             # tests y reglas de los catálogos
+python packages/i18n/i18n.py                             # traducciones al inglés pendientes
 cd pipelines/datalake && python index.py ingest goes     # ingesta (goes | donki | radlab | eda)
 cd pipelines/datalake && python index.py read goes       # filas limpias
 ```

@@ -1,0 +1,18 @@
+{
+  "app": {
+    "nombre": "VIGÍA",
+    "lema": "Health monitoring for astronauts on missions",
+    "idioma": "Language"
+  },
+  "alertas": {
+    "verde": "Stable",
+    "ambar": "Under observation",
+    "rojo": "Needs medical attention"
+  },
+  "cli": {
+    "datalake": {
+      "uso": "Usage:\n  python index.py ingest goes|donki|radlab|eda [key=value ...]\n  python index.py read <source> [from] [to]\n  python index.py manifest\nLanguage: VIGIA_LANG=es|en (default es)",
+      "error": "error: {detalle}"
+    }
+  }
+}

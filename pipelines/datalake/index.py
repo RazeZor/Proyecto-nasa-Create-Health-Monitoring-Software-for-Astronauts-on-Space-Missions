@@ -1,4 +1,4 @@
-"""CLI del datalake.
+"""CLI del datalake. Mensajes en español por defecto; VIGIA_LANG=en para inglés.
 
   python3 index.py ingest goes|donki|radlab|eda [clave=valor ...]
   python3 index.py read <fuente> [desde] [hasta]
@@ -6,10 +6,12 @@
 """
 import json
 import sys
+from pathlib import Path
 
-import datalake
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "i18n"))  # monorepo sin instalar
 
-USO = __doc__
+import datalake  # noqa: E402
+from i18n import t  # noqa: E402
 
 if __name__ == "__main__":
     cmd, *args = sys.argv[1:] or ["-h"]
@@ -22,7 +24,7 @@ if __name__ == "__main__":
         elif cmd == "manifest":
             salida = datalake.manifest()
         else:
-            sys.exit(USO)
+            sys.exit(t("cli.datalake.uso"))
     except (ValueError, OSError) as e:  # incluye ESTRUCTURA_INESPERADA y fallos de red
-        sys.exit(f"error: {e}")
+        sys.exit(t("cli.datalake.error", detalle=e))
     print(json.dumps(salida, indent=2, ensure_ascii=False))

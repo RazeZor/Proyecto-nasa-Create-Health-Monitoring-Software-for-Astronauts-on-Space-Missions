@@ -11,6 +11,7 @@ pipelines/            Ingesta y procesamiento de datos, de un script a big data
 packages/             Librerías compartidas, sin efectos secundarios
   engine/             (próximo) motor híbrido A/B/C en TypeScript puro
   schemas/            (próximo) contratos de datos: JSON Schema de filas y fichas
+  i18n/               traducciones: español principal, inglés secundario (Python y TS)
 tools/                Herramientas del equipo, no van al producto
   contextgen/         Genera el contexto para IA (MODULE.md, docs/context)
 docs/                 Arquitectura, setup y contexto generado
@@ -95,6 +96,7 @@ Una feature solo expone lo que exporta su `index.ts`. Las features se comunican 
 
 - `packages/engine`: motor híbrido (capa A clínica, capa B de desviación personal, capa C de deriva; informe §5.1). Usa funciones puras con tests unitarios: los mismos datos dan siempre el mismo nivel. Lo usan `apps/web` y, si existe, `apps/api`.
 - `packages/schemas`: JSON Schema de las filas curadas (`t_real`, fuente…) y de las fichas de indicador (los seis campos del reto más la URL de la fuente). Es el contrato entre `pipelines/` y `apps/`. Si cambia, se versiona.
+- `packages/i18n`: catálogos de traducción. Español principal y obligatorio; inglés secundario, que cae al español si falta. Todo texto que ve un usuario sale de aquí.
 
 ## De las capas del informe a las carpetas
 
@@ -109,10 +111,7 @@ Una feature solo expone lo que exporta su `index.ts`. Las features se comunican 
 
 ## Convenciones
 
-- Carpetas en minúscula y `kebab-case` (`registro-diario`). Archivos Python en `snake_case`. Componentes React en `PascalCase.tsx`.
-- Todo en español: código, comentarios, commits y documentación.
-- Las horas se guardan en UTC ISO 8601 en `t_real`.
-- Cada módulo declara sus dependencias en su propia carpeta: `requirements.txt` o `package.json`.
+Los nombres, el idioma, i18n, git, los datos y los tests se definen en [CONVENCIONES.md](CONVENCIONES.md).
 
 ## Agregar un módulo nuevo
 

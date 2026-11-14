@@ -17,6 +17,8 @@ jobs:
         run: python tools/contextgen/contextgen.py --check
       - name: Avisos de puntos clave y del patrón de carpetas
         run: python tools/contextgen/contextgen.py --lint
+      - name: Traducciones al inglés pendientes (informativo, no bloquea)
+        run: python packages/i18n/i18n.py
       - name: Tests de Python (cada módulo con test_*.py)
         run: |
           for d in pipelines/*/ packages/*/ tools/*/ apps/*/; do
