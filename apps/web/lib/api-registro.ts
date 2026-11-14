@@ -4,6 +4,7 @@
  * Offline primero: nada aquí lanza por falta de red; devuelve false y el dato sigue en el almacén local.
  */
 import vocabulario from "./vocabulario.json" with { type: "json" }
+import type { ReporteServidor } from "./cola"
 import type { CheckInEntry, IndicatorId, Layer, ProfileId, Status } from "./types"
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_VIGIA_API_URL ?? "http://localhost:8000"
@@ -68,5 +69,26 @@ export async function enviarCheckIn(e: CheckInEntry, tripulante: number): Promis
   return (await Promise.all(envios)).every(Boolean)
 }
 
-export const encolarReporte = (perfil: ProfileId, creado: string, tripulante: number) =>
-  enviar(`/tripulantes/${tripulante}/reportes`, tripulante, { creado_t_real: tReal(creado), retardo_min: retardoMin(perfil) })
+/** Encola un reporte con el retardo del perfil (o `retardo` si se acorta, como en la demo); devuelve su id o null. */
+export async function encolarReporte(perfil: ProfileId, creado: string, tripulante: number, retardo = retardoMin(perfil)): Promise<number | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reportes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) },
+      body: JSON.stringify({ creado_t_real: tReal(creado), retardo_min: retardo }),
+    })
+    return res.ok ? ((await res.json()) as { id: number }).id : null
+  } catch {
+    return null
+  }
+}
+
+/** Reportes propios con su estado en la cola; lista vacía si no hay red. */
+export async function listarReportes(tripulante: number): Promise<ReporteServidor[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reportes`, { headers: { "X-Tripulante": String(tripulante) } })
+    return res.ok ? ((await res.json()) as ReporteServidor[]) : []
+  } catch {
+    return []
+  }
+}
