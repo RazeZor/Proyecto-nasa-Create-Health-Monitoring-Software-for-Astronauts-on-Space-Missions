@@ -1,0 +1,417 @@
+[
+ {
+  "id": "norsk2015",
+  "doi": "10.1113/jphysiol.2014.284869",
+  "seccion": "2.4, 5.1",
+  "afirma": "Presión de 24 h baja 8-10 mmHg y resistencia vascular sistémica 39 % en la ISS",
+  "titulo_contiene": [
+   "ambulatory blood pressure"
+  ],
+  "resumen_contiene": [
+   "8–10 mmHg",
+   "39%"
+  ]
+ },
+ {
+  "id": "stahn2017",
+  "doi": "10.1038/s41598-017-15560-w",
+  "seccion": "2.4, A.2",
+  "afirma": "Temperatura central sube ~1 °C en vuelo largo; >40 °C en ejercicio",
+  "titulo_contiene": [
+   "core body temperature"
+  ],
+  "resumen_contiene": [
+   "2.5 months"
+  ],
+  "texto_contiene": [
+   "exceeded 40"
+  ]
+ },
+ {
+  "id": "jones2022",
+  "doi": "10.1093/sleep/zsac006",
+  "seccion": "2.1, 5.3",
+  "afirma": "Déficit de sueño en vuelo asociado a peor desempeño (24 astronautas, misiones de 6 meses)",
+  "titulo_contiene": [
+   "sleep deficiency"
+  ],
+  "resumen_contiene": [
+   "24",
+   "six-month"
+  ]
+ },
+ {
+  "id": "basner2011",
+  "doi": "10.1016/j.actaastro.2011.07.015",
+  "seccion": "5.3",
+  "afirma": "Validez de la PVT-B de 3 minutos; umbral de lapso 355 ms",
+  "titulo_contiene": [
+   "brief",
+   "psychomotor vigilance"
+  ],
+  "resumen_contiene": [
+   "355 ms"
+  ]
+ },
+ {
+  "id": "barger2014",
+  "doi": "10.1016/S1474-4422(14)70122-X",
+  "seccion": "2.4",
+  "afirma": "Sueño en vuelo de ~6 h; actigrafía + registro diario",
+  "titulo_contiene": [
+   "sleep deficiency",
+   "astronauts"
+  ],
+  "resumen_contiene": [
+   "actigraphy",
+   "6"
+  ]
+ },
+ {
+  "id": "overbey2024",
+  "doi": "10.1038/s41586-024-07639-y",
+  "seccion": "3.1",
+  "afirma": "Datos humanos de Inspiration4 (SOMA) en OSDR",
+  "titulo_contiene": [
+   "Space Omics and Medical Atlas"
+  ],
+  "resumen_contiene": [
+   "Inspiration4"
+  ]
+ },
+ {
+  "id": "zwart2014",
+  "doi": "10.3357/ASEM.3979.2014",
+  "seccion": "2.4",
+  "afirma": "Pérdida de masa en vuelo; BMMD vs SLAMMD",
+  "titulo_contiene": [
+   "body mass"
+  ],
+  "resumen_contiene": [
+   "-4.4%",
+   "-2.8%"
+  ]
+ },
+ {
+  "id": "williams2009",
+  "doi": "10.1503/cmaj.090628",
+  "seccion": "5.2",
+  "afirma": "Aclimatación: volumen plasmático cae ~17 % en 24 h; mareo espacial 2-3 días",
+  "titulo_contiene": [
+   "acclimation"
+  ],
+  "resumen_contiene": [],
+  "texto_contiene": [
+   "17% reduction in plasma volume"
+  ]
+ },
+ {
+  "id": "patel2020",
+  "doi": "10.1038/s41526-020-00124-6",
+  "seccion": "2.1",
+  "afirma": "Cinco peligros y más de 30 riesgos de salud",
+  "titulo_contiene": [
+   "red planet"
+  ],
+  "resumen_contiene": [
+   "hazards"
+  ],
+  "texto_contiene": [
+   "over 30 human health risks"
+  ]
+ },
+ {
+  "id": "page1954",
+  "doi": "10.1093/biomet/41.1-2.100",
+  "seccion": "5.1 capa C",
+  "afirma": "CUSUM",
+  "titulo_contiene": [
+   "continuous inspection"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "leys2013",
+  "doi": "10.1016/j.jesp.2013.03.013",
+  "seccion": "5.1 capa B",
+  "afirma": "La mediana y la MAD son robustas frente a la media y la desviación estándar para detectar atípicos",
+  "titulo_contiene": [
+   "median"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "smith2013",
+  "doi": "10.1016/j.resuscitation.2012.12.016",
+  "seccion": "5.1 capa A",
+  "afirma": "NEWS discrimina pacientes en riesgo de paro, ingreso no previsto a UCI y muerte",
+  "titulo_contiene": [
+   "National Early Warning Score"
+  ],
+  "resumen_contiene": [
+   "AUROC"
+  ]
+ },
+ {
+  "id": "pimentel2019",
+  "doi": "10.1016/j.resuscitation.2018.09.026",
+  "seccion": "5.1 capa A",
+  "afirma": "Validación de NEWS2 frente a NEWS",
+  "titulo_contiene": [
+   "National Early Warning Score 2"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "mishra2020",
+  "doi": "10.1038/s41551-020-00640-6",
+  "seccion": "5.1 capas B y C",
+  "afirma": "Desviación de la FC en reposo frente a la línea base personal detecta infección antes de síntomas; alerta por CUSUM",
+  "titulo_contiene": [
+   "smartwatch"
+  ],
+  "resumen_contiene": [
+   "resting heart rate"
+  ],
+  "texto_contiene": [
+   "CuSum"
+  ]
+ },
+ {
+  "id": "alavi2022",
+  "doi": "10.1038/s41591-021-01593-2",
+  "seccion": "5.1 capas B y C",
+  "afirma": "Sistema de alertas en tiempo real con FC en reposo vs línea base personal (CUSUM), validado con miles de participantes",
+  "titulo_contiene": [
+   "real-time alerting"
+  ],
+  "resumen_contiene": [
+   "3,318",
+   "80%"
+  ]
+ },
+ {
+  "id": "radin2020",
+  "doi": "10.1016/S2589-7500(19)30222-5",
+  "seccion": "5.1 capa B",
+  "afirma": "FC en reposo y sueño de vestibles frente a la línea base individual mejoran la vigilancia",
+  "titulo_contiene": [
+   "wearable"
+  ],
+  "resumen_contiene": [
+   "resting heart rate"
+  ]
+ },
+ {
+  "id": "quer2021",
+  "doi": "10.1038/s41591-020-1123-x",
+  "seccion": "5.1, 5.6",
+  "afirma": "Combinar datos de sensor con síntomas autorreportados mejora la detección",
+  "titulo_contiene": [
+   "self-reported symptoms"
+  ],
+  "resumen_contiene": [
+   "symptoms"
+  ]
+ },
+ {
+  "id": "li2017",
+  "doi": "10.1371/journal.pbio.2001402",
+  "seccion": "2.3",
+  "afirma": "Las desviaciones respecto a la línea base personal de vestibles revelan enfermedad incipiente",
+  "titulo_contiene": [
+   "wearable biosensors"
+  ],
+  "resumen_contiene": [
+   "personalized"
+  ]
+ },
+ {
+  "id": "garrett2019",
+  "doi": "10.1126/science.aau8650",
+  "seccion": "2.3",
+  "afirma": "Estudio de gemelos de NASA: cambios multisistema longitudinales frente a la línea base de la persona",
+  "titulo_contiene": [
+   "Twins Study"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "law2014",
+  "doi": "10.1097/JOM.0000000000000158",
+  "seccion": "3.3, 5.1 contexto",
+  "afirma": "Relación entre CO2 de cabina y cefalea en la ISS",
+  "titulo_contiene": [
+   "carbon dioxide",
+   "headache"
+  ],
+  "resumen_contiene": [
+   "doubled",
+   "2.5 mm Hg"
+  ]
+ },
+ {
+  "id": "lee2020",
+  "doi": "10.1038/s41526-020-0097-9",
+  "seccion": "2.1",
+  "afirma": "SANS: revisión y actualización",
+  "titulo_contiene": [
+   "neuro-ocular"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "mader2011",
+  "doi": "10.1016/j.ophtha.2011.06.021",
+  "seccion": "2.1",
+  "afirma": "Edema de disco, aplanamiento del globo y pliegues coroideos en astronautas tras vuelo largo",
+  "titulo_contiene": [
+   "optic disc edema"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "vico2000",
+  "doi": "10.1016/S0140-6736(00)02217-0",
+  "seccion": "2.1",
+  "afirma": "Pérdida ósea en vuelo de larga duración",
+  "titulo_contiene": [
+   "bone"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "zeitlin2013",
+  "doi": "10.1126/science.1235989",
+  "seccion": "3.1",
+  "afirma": "MSL-RAD midió la dosis en crucero a Marte (1,84 mSv/día)",
+  "titulo_contiene": [
+   "Mars Science Laboratory"
+  ],
+  "resumen_contiene": [
+   "0.66"
+  ]
+ },
+ {
+  "id": "kintz2016",
+  "doi": "10.3357/AMHP.4626.2016",
+  "seccion": "2.1",
+  "afirma": "El retardo de comunicación afecta a la tripulación (estudio en la ISS con 50 s por trayecto)",
+  "titulo_contiene": [
+   "communication delays"
+  ],
+  "resumen_contiene": [
+   "delay"
+  ]
+ },
+ {
+  "id": "mukkamala2015",
+  "doi": "10.1109/TBME.2015.2441951",
+  "seccion": "2.4, A.2",
+  "afirma": "La presión sin manguito por onda de pulso necesita calibración y deriva con cambios vasculares",
+  "titulo_contiene": [
+   "pulse transit time"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "marino2013",
+  "doi": "10.5665/sleep.3142",
+  "seccion": "2.4",
+  "afirma": "Actigrafía: buena para sueño total, mala para detectar vigilia/eficiencia",
+  "titulo_contiene": [
+   "actigraphy"
+  ],
+  "resumen_contiene": [
+   "0.329"
+  ]
+ },
+ {
+  "id": "demol2010",
+  "doi": "10.1371/journal.pone.0015485",
+  "seccion": "2.4",
+  "afirma": "Exactitud de glucómetros en altitud: diferencias por enzima",
+  "titulo_contiene": [
+   "glucose"
+  ],
+  "resumen_contiene": [
+   "altitude"
+  ]
+ },
+ {
+  "id": "sendelbach2013",
+  "doi": "10.1097/NCI.0b013e3182a903f9",
+  "seccion": "4.2, 5.6",
+  "afirma": "Fatiga de alarmas: la mayoría de las alarmas no son accionables",
+  "titulo_contiene": [
+   "alarm fatigue"
+  ],
+  "resumen_contiene": [
+   "72% to 99%"
+  ]
+ },
+ {
+  "id": "bangor2008",
+  "doi": "10.1080/10447310802205776",
+  "seccion": "6.3",
+  "afirma": "Evaluación empírica de la escala SUS",
+  "titulo_contiene": [
+   "System Usability Scale"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "afshinnekoo2020",
+  "doi": "10.1016/j.cell.2020.10.050",
+  "seccion": "2.1",
+  "afirma": "Rasgos biológicos fundamentales del vuelo espacial, multisistema",
+  "titulo_contiene": [
+   "Fundamental Biological Features"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "leach1996",
+  "doi": "10.1152/jappl.1996.81.1.105",
+  "seccion": "5.2",
+  "afirma": "Volumen plasmático cae al inicio del vuelo",
+  "titulo_contiene": [
+   "body fluid"
+  ],
+  "resumen_contiene": [
+   "plasma volume"
+  ]
+ },
+ {
+  "id": "lang2004",
+  "doi": "10.1359/JBMR.040307",
+  "seccion": "2.1",
+  "afirma": "Hueso: 1 %/mes en columna y 1,5 %/mes en cadera",
+  "titulo_contiene": [
+   "bone"
+  ],
+  "resumen_contiene": [
+   "1.5%/month"
+  ]
+ },
+ {
+  "id": "lackner2006",
+  "doi": "10.1007/s00221-006-0697-y",
+  "seccion": "5.2",
+  "afirma": "Incidencia y curso del mareo espacial",
+  "titulo_contiene": [
+   "space motion sickness"
+  ],
+  "resumen_contiene": []
+ },
+ {
+  "id": "mampre2026",
+  "doi": "10.1002/jcph.70240",
+  "seccion": "2.4",
+  "afirma": "Microtoma capilar en microgravedad (Polaris Dawn)",
+  "titulo_contiene": [
+   "Volumetric Absorptive Microsampling"
+  ],
+  "resumen_contiene": []
+ }
+]
