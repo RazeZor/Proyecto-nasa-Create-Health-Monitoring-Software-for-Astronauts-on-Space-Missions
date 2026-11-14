@@ -2,6 +2,7 @@
 import math
 
 from .tripulacion import _insertar, _utc, t_mision
+from .vocabulario import SINTOMAS
 
 
 def _numero(valor):
@@ -38,6 +39,8 @@ def leer_lecturas(conn, tripulante_id, indicador=None, desde=None, hasta=None):
 
 
 def registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real):
+    if codigo not in SINTOMAS:
+        raise ValueError(f"síntoma desconocido {codigo!r}; admitidos: {sorted(SINTOMAS)}")
     marca = t_mision(conn, tripulante_id, t_real)
     return _insertar(conn, "INSERT INTO sintoma (tripulante_id, t_real, t_mision, codigo, gravedad) VALUES (?, ?, ?, ?, ?)",
                      (tripulante_id, t_real, marca, codigo, gravedad))

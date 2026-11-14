@@ -33,7 +33,7 @@ tags: schemas, contratos, fichas, indicadores, json-schema, peligros, hrp
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
 | [test_fichas.py](test_fichas.py) | 79 | Valida las fichas de apps/web/public/fichas contra ficha.schema.json (solo biblioteca estándar). |
-| [test_vocabulario.py](test_vocabulario.py) | 58 | El contrato vocabulario.json no puede desviarse de lo que de verdad usan la base de datos, las fichas y la interfaz. |
+| [test_vocabulario.py](test_vocabulario.py) | 60 | El contrato vocabulario.json no puede desviarse de lo que de verdad usan la base de datos, las fichas y la interfaz. |
 
 ### Dependencias
 

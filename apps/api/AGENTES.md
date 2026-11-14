@@ -100,14 +100,14 @@ Además del gold (solo lectura), la API guarda el registro de la tripulación en
 | --- | --- |
 | `POST /tripulantes/{id}/lecturas` | Guarda `{indicador, valor, t_real, origen?, metodo?, naturaleza?}` → 201 `{id}`. Reenviar la misma da el mismo `id` |
 | `GET /tripulantes/{id}/lecturas` | Lecturas propias; filtros `indicador`, `desde`, `hasta` |
-| `POST /tripulantes/{id}/sintomas` y `GET` | Síntomas `{codigo, gravedad 1 a 3, t_real}` |
+| `POST /tripulantes/{id}/sintomas` y `GET` | Síntomas `{codigo, gravedad 1 a 3, t_real}`; `codigo` es uno de cefalea, nausea, mareo, vision, erupcion (otro: 422) |
 | `PUT /tripulantes/{id}/linea-base/{indicador}/{origen}` y `GET` | Mediana y MAD de `tierra` o `vuelo` (404 si no hay) |
 | `POST /tripulantes/{id}/alertas` | Registra una alerta del motor → `{id, escalamiento_id}` |
 | `GET /tripulantes/{id}/alertas` | Con tu id: tus alertas completas. Con el de otro: solo el dato mínimo de las que te escalaron |
 | `GET /escalamientos` | Tu bandeja: avisos rojos escalados a ti, con `contenido` y `contexto_astronauta` (no deja `lectura_ajena`) |
 | `GET /tripulantes/{id}/escalamientos` | Transparencia: qué se envió sobre ti, a quién y con qué contenido |
 | `POST /escalamientos/{escalamiento_id}/contexto` | `{texto}`: el afectado añade contexto una sola vez (otro: 403; segunda vez: 422) |
-| `POST /tripulantes/{id}/reportes` y `GET` | Reportes a tierra con `retardo_min` de 3 a 22 |
+| `POST /tripulantes/{id}/reportes` y `GET` | Reportes a tierra con `retardo_min` de 0 a 22 |
 | `POST /reportes/avanzar` | `{ahora}` → entrega los reportes que ya llegaron; `{entregados: n}` |
 | `POST /reportes/{reporte_id}/respuesta` | `{respuesta, t_real}` sobre un reporte entregado |
 

@@ -26,10 +26,14 @@ class Cola(unittest.TestCase):
         self.assertEqual(cola.avanzar_cola(self.conn, "2026-11-14T09:00:00Z"), 0)
 
     def test_retardo_fuera_de_rango(self):
-        for malo in (2, 23, 0, -5, "10", 10.5, True):
+        for malo in (23, -1, -5, "10", 10.5, True):
             with self.assertRaises(ValueError, msg=repr(malo)):
                 cola.encolar_reporte(self.conn, self.t, T, malo)
         self.assertEqual(cola.leer_reportes(self.conn, self.t), [])
+
+    def test_retardo_cero_llega_al_instante(self):
+        cola.encolar_reporte(self.conn, self.t, T, 0)
+        self.assertEqual(cola.leer_reportes(self.conn, self.t)[0]["llega_t_real"], T)
 
     def test_responder_solo_tras_entregar(self):
         r = cola.encolar_reporte(self.conn, self.t, T, 10)
