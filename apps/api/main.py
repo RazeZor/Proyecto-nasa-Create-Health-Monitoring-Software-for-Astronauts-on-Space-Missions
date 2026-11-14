@@ -15,6 +15,7 @@ from typing import Literal
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "i18n"))  # monorepo sin instalar
 
 from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
 
 from i18n import t  # noqa: E402
@@ -33,6 +34,7 @@ app = FastAPI(title="VIGÍA: API del ETL", description=DESCRIPCION, openapi_tags
     {"name": "paneles", "description": "Panel de entorno ya resumido para la pantalla: dosis, protones, cabina y eventos."},
     {"name": "registro", "description": "Registro de la tripulación en el almacén SQLite: lecturas, alertas y cola."},
     {"name": "sistema", "description": "Estado del servicio."}])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
 app.include_router(rutas_registro)
 
 
