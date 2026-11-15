@@ -17,6 +17,7 @@ import { ProvenanceTag, StatusBadge, STATUS_ICON, statusSurface, statusText } fr
 import { evaluateCheckIn } from "@/lib/engine"
 import { comoMedirEnPerfil } from "@/lib/catalogo"
 import { fcReposoSugerida, spo2Sugerida, suenoSugerido, ultimoCambioInstrumento } from "@/lib/reloj"
+import { rutaDe } from "@/lib/roles"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import type { CheckInEntry, IndicatorId, Status, Symptom } from "@/lib/types"
@@ -321,7 +322,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
             {S.checkin.reviewCount(result.registradas, MEDIDAS.length)} · {S.checkin.completedIn} <span className="font-mono font-semibold text-foreground">{result.sec}</span> s
           </p>
           <div className="flex w-full flex-wrap gap-3">
-            <Link href="/" className={cn(botonPrincipal, "flex-1 basis-64")}>
+            <Link href={rutaDe("astronaut")} className={cn(botonPrincipal, "flex-1 basis-64")}>
               {S.checkin.toBody} <ArrowRight aria-hidden className="size-6" />
             </Link>
             <button type="button" onClick={onReset} className={cn(botonSecundario, "flex-1 basis-48")}>

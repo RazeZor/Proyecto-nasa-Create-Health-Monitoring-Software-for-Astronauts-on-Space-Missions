@@ -13,6 +13,7 @@ import { ICONO_INDICADOR, IconoPulso, IconoRegistro } from "@/components/shared/
 import { LineChart } from "@/components/shared/line-chart"
 import { LayerChip, ProvenanceTag, StatusBadge, STATUS_ICON, statusSurface, statusText } from "@/components/shared/status"
 import { BASELINE_SWITCH_DAY } from "@/lib/engine"
+import { rutaDe } from "@/lib/roles"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import type { DailyVitals, IndicatorId, Status, Symptom, ZoneId } from "@/lib/types"
@@ -313,7 +314,7 @@ export function BodyView() {
           <Ecg lpm={lpm} className="hidden h-14 w-40 text-[#e5484d] sm:block xl:w-56" />
         </button>
         <div className="flex flex-col items-stretch gap-1">
-          <Link href="/check-in" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-md hover:bg-primary/90 active:scale-[0.98]">
+          <Link href={rutaDe("astronaut", "check-in")} className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-md hover:bg-primary/90 active:scale-[0.98]">
             <IconoRegistro className="size-7" /> {S.body.startCheckIn}
           </Link>
           <p className="text-center text-xs text-muted-foreground">
@@ -559,7 +560,7 @@ export function BodyView() {
         <Siguiente estado={z.status} texto={z.next} />
         <Bloque titulo={S.trends.whatItIs}><p className="text-sm leading-relaxed text-muted-foreground">{info.whatItIs}</p></Bloque>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href="/trends" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-5 text-base font-semibold hover:bg-accent">
+          <Link href={rutaDe("astronaut", "trends")} className="inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-5 text-base font-semibold hover:bg-accent">
             {S.body.seeTrend} <ArrowRight aria-hidden className="size-5" />
           </Link>
           {procedencia}

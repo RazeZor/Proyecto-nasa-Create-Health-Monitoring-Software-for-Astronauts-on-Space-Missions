@@ -108,7 +108,7 @@ function SentDialog({ esc, onContexto }: { esc: Escalamiento; onContexto: () => 
 }
 
 /** Bandeja real del oficial médico: solo el dato mínimo de cada aviso escalado (§5.4). */
-function Bandeja() {
+export function Bandeja() {
   const [avisos, setAvisos] = useState<Escalamiento[] | null>(null)
   const [alias, setAlias] = useState<Record<number, string>>({})
   useEffect(() => {

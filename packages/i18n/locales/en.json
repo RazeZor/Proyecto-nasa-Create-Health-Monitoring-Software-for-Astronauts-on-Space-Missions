@@ -912,6 +912,18 @@
       },
       "gravity": {
         "Microgravedad": "Microgravity"
+      },
+      "start": {
+        "title": "Who are you?",
+        "subtitle": "Each role sees its own dashboard. Pick yours to enter.",
+        "astronaut": "Your health, your daily log and your alerts. Private data stays here.",
+        "cmo": "The crew at a glance: watches and escalated red alerts, with the minimum data.",
+        "surgeon": "From the ground: reports arriving after the delay, and your replies.",
+        "enter": "Enter"
+      },
+      "crew": {
+        "title": "Crew",
+        "subtitle": "Watch status and alerts escalated to you as medical officer."
       }
     },
     "MOTOR": {

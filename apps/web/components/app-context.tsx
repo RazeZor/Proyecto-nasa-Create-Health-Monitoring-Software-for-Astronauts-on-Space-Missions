@@ -1,9 +1,11 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { cargarCatalogo, type Catalogo } from "@/lib/catalogo"
 import { type Analisis, analizar } from "@/lib/engine"
 import { enviarOrdenReloj, INTERVALO_SONDEO_MS, leerReloj, type OrdenReloj, type RespuestaReloj, siguienteEstado } from "@/lib/reloj"
+import { rolDeRuta } from "@/lib/roles"
 import { leerModo, store, usarModo } from "@/lib/storage"
 import { sincronizarAlertasRojas, sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
@@ -15,7 +17,6 @@ interface AppState {
   profile: MissionProfile
   setProfileId: (id: ProfileId) => void
   role: Role
-  setRole: (r: Role) => void
   theme: "dark" | "light"
   toggleTheme: () => void
   device: DeviceState
@@ -107,7 +108,8 @@ const CLAVE_RELOJ = "vigia:reloj"
 function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Catalogo; mode: Mode; setMode: (m: Mode) => void; recargar: () => void; children: React.ReactNode }) {
   const [day, setDayRaw] = useState(catalogo.historial.dia_actual)
   const [profileId, setProfileId] = useState<ProfileId>("transit")
-  const [role, setRole] = useState<Role>("astronaut")
+  // el rol sale de la ruta (/astronauta, /oficial, /medico); en el inicio, sin rol, rige el del astronauta
+  const role: Role = rolDeRuta(usePathname() ?? "") ?? "astronaut"
   const [theme, setTheme] = useState<"dark" | "light">("light")
   const [device, setDeviceRaw] = useState<DeviceState>("disconnected")
   const [reloj, setReloj] = useState<RespuestaReloj | null>(null)
@@ -228,7 +230,7 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   const hrEnVivo = device === "connected" ? (reloj?.reloj?.fc_lpm ?? null) : liveHr
 
   const value = useMemo(
-    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo, mode, setMode, online, pending, escalations }),
+    () => ({ day, setDay, profile, setProfileId, role, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo, mode, setMode, online, pending, escalations }),
     [mode, setMode, online, pending, escalations, day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, hrEnVivo, reloj, ordenReloj, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

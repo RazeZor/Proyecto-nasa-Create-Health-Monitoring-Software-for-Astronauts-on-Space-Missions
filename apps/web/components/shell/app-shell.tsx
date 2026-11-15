@@ -13,37 +13,55 @@ import { STATUS_ICON, statusSurface, statusText } from "@/components/shared/stat
 import { AlertCenter } from "@/components/shell/alert-center"
 import { isAdaptation } from "@/lib/engine"
 import { cambiarIdioma, IDIOMA, S } from "@/lib/strings"
+import { rolDeRuta, rutaDe, type Seccion } from "@/lib/roles"
 import type { Mode, ProfileId, Role } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-const NAV = [
-  { href: "/", label: S.nav.body, icon: IconoCuerpo },
-  { href: "/check-in", label: S.nav.checkin, icon: IconoRegistro },
-  { href: "/trends", label: S.nav.trends, icon: IconoTendencias },
-  { href: "/environment", label: S.nav.environment, icon: IconoEntorno },
-  { href: "/alerts", label: S.nav.alerts, icon: IconoAlertas },
-  { href: "/reports", label: S.nav.reports, icon: IconoInformes },
-  { href: "/device", label: S.nav.device, icon: IconoDispositivo },
-  { href: "/about", label: S.nav.about, icon: IconoAcerca },
-]
+type Pestana = { seccion: Seccion | null; label: string; icon: typeof IconoCuerpo }
+// null = el inicio del rol. Cada rol tiene su propio menú (lib/roles.ts decide qué pantallas existen).
+const NAV: Record<Role, Pestana[]> = {
+  astronaut: [
+    { seccion: null, label: S.nav.body, icon: IconoCuerpo },
+    { seccion: "check-in", label: S.nav.checkin, icon: IconoRegistro },
+    { seccion: "trends", label: S.nav.trends, icon: IconoTendencias },
+    { seccion: "environment", label: S.nav.environment, icon: IconoEntorno },
+    { seccion: "alerts", label: S.nav.alerts, icon: IconoAlertas },
+    { seccion: "reports", label: S.nav.reports, icon: IconoInformes },
+    { seccion: "device", label: S.nav.device, icon: IconoDispositivo },
+    { seccion: "about", label: S.nav.about, icon: IconoAcerca },
+  ],
+  cmo: [
+    { seccion: null, label: S.crew.title, icon: IconoDispositivo },
+    { seccion: "alerts", label: S.nav.alerts, icon: IconoAlertas },
+    { seccion: "environment", label: S.nav.environment, icon: IconoEntorno },
+    { seccion: "device", label: S.nav.device, icon: IconoDispositivo },
+    { seccion: "about", label: S.nav.about, icon: IconoAcerca },
+  ],
+  surgeon: [
+    { seccion: null, label: S.nav.reports, icon: IconoInformes },
+    { seccion: "alerts", label: S.nav.alerts, icon: IconoAlertas },
+    { seccion: "environment", label: S.nav.environment, icon: IconoEntorno },
+    { seccion: "about", label: S.nav.about, icon: IconoAcerca },
+  ],
+}
 
-function useActiveIndex() {
-  const path = usePathname()
-  return NAV.findIndex(({ href }) => (href === "/" ? path === "/" : path.startsWith(href)))
+function useActiveIndex(rol: Role) {
+  const path = usePathname() ?? ""
+  return NAV[rol].findIndex(({ seccion }) => (seccion === null ? path === rutaDe(rol) : path.startsWith(rutaDe(rol, seccion))))
 }
 
 /** Pestañas de sección: icono sobre etiqueta, del tamaño de un dedo; en pantallas estrechas se desplazan. */
-function NavLinks() {
-  const activeIndex = useActiveIndex()
+function NavLinks({ rol }: { rol: Role }) {
+  const activeIndex = useActiveIndex(rol)
   return (
     <nav aria-label={S.nav.label} className="order-last min-w-0 basis-full sm:order-none sm:flex-1 sm:basis-auto sm:overflow-x-auto">
       <ul className="flex flex-wrap items-stretch justify-center gap-1 px-2 sm:flex-nowrap sm:justify-start">
-        {NAV.map(({ href, label, icon: Icon }, i) => {
+        {NAV[rol].map(({ seccion, label, icon: Icon }, i) => {
           const active = i === activeIndex
           return (
-            <li key={href}>
+            <li key={label}>
               <Link
-                href={href}
+                href={seccion ? rutaDe(rol, seccion) : rutaDe(rol)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "group flex h-16 min-w-[4.75rem] flex-col items-center justify-center gap-0.5 rounded-2xl px-2 text-xs font-semibold transition-colors xl:min-w-[5.75rem] xl:text-[0.8rem]",
@@ -66,9 +84,10 @@ function NavLinks() {
 /** Logotipo «Centinela»: su punto muestra el estado del sistema, como define la guía de marca. */
 function Brand() {
   const { day, analisis } = useApp()
+  const propio = rolDeRuta(usePathname() ?? "") === "astronaut" // el estado personal solo lo ve su dueño
   return (
     <Link href="/" aria-label={S.app.name} className="flex h-16 shrink-0 items-center pl-4 pr-2 md:pl-6">
-      <Logo estado={analisis.overall(day)} className="h-11" />
+      <Logo estado={propio ? analisis.overall(day) : "ok"} className="h-11" />
     </Link>
   )
 }
@@ -101,15 +120,16 @@ function Cell({ label, children, className, corta }: { label: string; children: 
 }
 
 function TopBar() {
-  const { day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, voice, setVoice, catalogo, analisis, mode, setMode, online, pending } = useApp()
+  const rol = rolDeRuta(usePathname() ?? "")
+  const { day, setDay, profile, setProfileId, theme, toggleTheme, voice, setVoice, catalogo, analisis, mode, setMode, online, pending } = useApp()
   const MISSION_DAYS = analisis.missionDays
   return (
     <header className="border-b border-border bg-card shadow-sm">
       <div className="flex flex-wrap items-center gap-1 sm:flex-nowrap">
         <Brand />
-        <NavLinks />
+        {rol && <NavLinks rol={rol} />}
         <div className="flex shrink-0 items-center gap-2 pr-4 md:pr-6">
-          <SystemStatus />
+          {rol === "astronaut" && <SystemStatus />}
           <button
             type="button"
             onClick={() => setVoice(!voice)}
@@ -130,7 +150,7 @@ function TopBar() {
       </div>
 
       {/* Contexto de la misión: una sola franja, con la etiqueta al lado de cada control */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border bg-background/70 px-4 py-1.5 md:px-6">
+      {rol && <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border bg-background/70 px-4 py-1.5 md:px-6">
         <Cell label={S.top.profile} corta>
           <select className={cn(selectCls, "max-w-44")} value={profile.id} onChange={(e) => setProfileId(e.target.value as ProfileId)}>
             {catalogo.perfiles.map((p) => (
@@ -174,25 +194,19 @@ function TopBar() {
           {online ? S.shell.linkOnline : S.shell.linkOffline}
           {pending > 0 && <span className="font-mono text-xs text-muted-foreground">· {S.shell.pending(pending)}</span>}
         </p>
-
-        <Cell label={S.top.viewAs} className="ml-auto">
-          <select className={cn(selectCls, "max-w-44")} value={role} onChange={(e) => setRole(e.target.value as Role)}>
-            {(Object.keys(S.roles) as Role[]).map((r) => (
-              <option key={r} value={r}>{S.roles[r]}</option>
-            ))}
-          </select>
-        </Cell>
-      </div>
+      </div>}
     </header>
   )
 }
 
 function Banners() {
+  const rol = rolDeRuta(usePathname() ?? "")
   const { day, analisis, mode, setMode, online, checkIns, catalogo } = useApp()
   const tormenta = analisis.stormInfo(day)
-  const sinRegistros = mode === "real" && checkIns.length === 0 && catalogo.historial.lecturas.length === 0
+  const sinRegistros = rol === "astronaut" && mode === "real" && checkIns.length === 0 && catalogo.historial.lecturas.length === 0
   // sitio público de la hackatón: el modo real usa un tripulante de prueba compartido por todos los visitantes
   const publico = process.env.NEXT_PUBLIC_VIGIA_PUBLICO === "1" && mode === "real"
+  if (!rol) return null // el inicio solo elige el rol: sin banners de misión
   return (
     <>
       {mode === "demo" && (
@@ -220,7 +234,7 @@ function Banners() {
             <p className="font-semibold">{S.banners.realEmpty}</p>
             <p className="text-sm text-muted-foreground">{S.banners.realEmptyDetail}</p>
           </div>
-          <Link href="/check-in" className="inline-flex min-h-10 items-center rounded-sm bg-primary px-4 text-sm font-semibold text-primary-foreground">{S.banners.realEmptyCta}</Link>
+          <Link href={rutaDe("astronaut", "check-in")} className="inline-flex min-h-10 items-center rounded-sm bg-primary px-4 text-sm font-semibold text-primary-foreground">{S.banners.realEmptyCta}</Link>
           <button type="button" onClick={() => setMode("demo")} className="min-h-10 rounded-sm border border-input px-4 text-sm font-medium hover:bg-accent">{S.banners.realEmptyDemo}</button>
         </div>
       )}
@@ -234,7 +248,7 @@ function Banners() {
           </div>
         </div>
       )}
-      {isAdaptation(day) && (
+      {rol === "astronaut" && isAdaptation(day) && (
         <div role="status" className="flex items-start gap-3 border-b border-primary/30 bg-primary/10 px-4 py-3 md:px-6">
           <Sprout aria-hidden className="mt-0.5 size-5 shrink-0 text-primary" />
           <div>

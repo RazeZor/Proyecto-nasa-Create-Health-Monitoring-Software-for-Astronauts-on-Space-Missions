@@ -912,6 +912,18 @@
       },
       "gravity": {
         "Microgravedad": "Microgravedad"
+      },
+      "start": {
+        "title": "¿Quién eres?",
+        "subtitle": "Cada rol ve su propio tablero. Elige el tuyo para entrar.",
+        "astronaut": "Tu salud, tu registro diario y tus alertas. Lo privado no sale de aquí.",
+        "cmo": "La tripulación de un vistazo: relojes y avisos rojos escalados, con el dato mínimo.",
+        "surgeon": "Desde Tierra: los informes que llegan tras el retardo y tus respuestas.",
+        "enter": "Entrar"
+      },
+      "crew": {
+        "title": "Tripulación",
+        "subtitle": "Estado de los relojes y avisos escalados a ti como oficial médico."
       }
     },
     "MOTOR": {

@@ -107,6 +107,18 @@ export const S = {
     C: tx("web.S.layerLong.C"),
     context: tx("web.S.layerLong.context"),
   } satisfies Record<Layer, string>,
+  start: {
+    title: tx("web.S.start.title"),
+    subtitle: tx("web.S.start.subtitle"),
+    astronaut: tx("web.S.start.astronaut"),
+    cmo: tx("web.S.start.cmo"),
+    surgeon: tx("web.S.start.surgeon"),
+    enter: tx("web.S.start.enter"),
+  },
+  crew: {
+    title: tx("web.S.crew.title"),
+    subtitle: tx("web.S.crew.subtitle"),
+  },
   roles: {
     astronaut: tx("web.S.roles.astronaut"),
     cmo: tx("web.S.roles.cmo"),

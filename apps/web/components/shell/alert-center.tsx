@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { ArrowRight, X } from "lucide-react"
 import { type Icono, IconoCampana, IconoCandado, IconoEscalada, IconoEscudoAviso, IconoTripulacion } from "@/components/alerts/iconos"
 import { useApp } from "@/components/app-context"
+import { rolDeRuta, rutaDe } from "@/lib/roles"
 import { STATUS_ICON } from "@/components/shared/status"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
@@ -126,12 +127,17 @@ function ToastItem({ t, onDone }: { t: Toast; onDone: (id: string) => void }) {
   )
 }
 
+/** Avisos emergentes: son del astronauta (su registro y sus alertas privadas); los otros roles no los reciben. */
 export function AlertCenter() {
+  return rolDeRuta(usePathname() ?? "") === "astronaut" ? <AvisosDelAstronauta /> : null
+}
+
+function AvisosDelAstronauta() {
   const { day, voice, analisis } = useApp()
   const seen = useRef(new Set<string>())
   // en la pantalla de registro el recordatorio sobra y taparía el cronómetro y el botón de confirmar
   const ruta = usePathname() ?? ""
-  const enRegistro = ruta.startsWith("/check-in")
+  const enRegistro = ruta.startsWith(rutaDe("astronaut", "check-in"))
   // `ocultos`: avisos que no caben en la pila; no se pierden de vista, se cuentan y se enlazan a Alertas
   const [{ toasts, ocultos }, setPila] = useState<{ toasts: Toast[]; ocultos: number }>({ toasts: [], ocultos: 0 })
 
@@ -162,7 +168,7 @@ export function AlertCenter() {
         id: a.id, kind, stamp: [`${S.common.day} ${a.day}`, a.time].filter(Boolean).join(" · "),
         title: kind === "env" ? `${a.indicator}${a.value ? ` · ${a.value}` : ""}` : `${S.status[a.status]} · ${a.indicator} ${a.value}`, body: a.action,
         meta: kind === "act" ? (a.escalates ? S.toast.escalated : S.toast.private) : kind === "env" ? S.toast.crew : S.toast.private,
-        href: kind === "env" ? "/environment" : "/alerts", ttl: kind === "watch" ? 12000 : 20000,
+        href: rutaDe("astronaut", kind === "env" ? "environment" : "alerts"), ttl: kind === "watch" ? 12000 : 20000,
       })
     }
     push(fresh)
@@ -179,7 +185,7 @@ export function AlertCenter() {
         seen.current.add("reminder")
         push([{
           id: "reminder", kind: "reminder", stamp: S.toast.reminderMeta,
-          title: S.toast.reminderTitle, body: S.toast.reminderBody, meta: S.toast.autoClose, href: "/check-in", ttl: 10000,
+          title: S.toast.reminderTitle, body: S.toast.reminderBody, meta: S.toast.autoClose, href: rutaDe("astronaut", "check-in"), ttl: 10000,
         }])
       })
     }, 8000)
@@ -189,7 +195,7 @@ export function AlertCenter() {
   // un aviso no repite lo que la pantalla abierta ya muestra entero: ni las alertas en Alertas ni el entorno en Entorno.
   // Durante el registro no se muestra ninguno: taparían el dial y el resultado del registro ya trae el estado y el siguiente paso
   const visibles = toasts.filter((t) =>
-    enRegistro ? false : ruta.startsWith("/alerts") ? t.kind !== "watch" && t.kind !== "act" : ruta.startsWith("/environment") ? t.kind !== "env" : true)
+    enRegistro ? false : ruta.startsWith(rutaDe("astronaut", "alerts")) ? t.kind !== "watch" && t.kind !== "act" : ruta.startsWith(rutaDe("astronaut", "environment")) ? t.kind !== "env" : true)
   return (
     // franja baja y a la derecha: lejos de la barra superior y de la acción principal de cada pantalla; solo el aviso recibe toques
     <section aria-label={S.toast.region} className="pointer-events-none fixed bottom-3 right-3 z-50 w-[min(38rem,calc(100vw-1.5rem))] md:bottom-5 md:right-5">
@@ -200,7 +206,7 @@ export function AlertCenter() {
       </ol>
       {visibles.length > 0 && ocultos > 0 && (
         <Link
-          href="/alerts"
+          href={rutaDe("astronaut", "alerts")}
           onClick={() => setPila({ toasts: [], ocultos: 0 })}
           className="pointer-events-auto ml-auto mt-2 flex min-h-12 w-fit items-center justify-center gap-2 rounded-full border border-border bg-popover px-5 text-base font-semibold text-popover-foreground shadow-lg shadow-black/20 hover:bg-accent active:scale-[0.98]"
         >
