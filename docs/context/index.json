@@ -4585,6 +4585,34 @@
               "doc": ""
             }
           ]
+        },
+        {
+          "ruta": "pipelines/reanclaje/test_trayectoria.py",
+          "lineas": 47,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "TrayectoriaTest",
+              "tipo": "clase",
+              "firma": "TrayectoriaTest(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "pipelines/reanclaje/trayectoria.py",
+          "lineas": 46,
+          "descripcion": "Trayectoria de la nave en el tránsito Tierra→Marte (diseño: docs/superpowers/specs/2026-11-15-viaje-a-marte-design.md).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "posicion",
+              "tipo": "función",
+              "firma": "posicion(dia)",
+              "doc": "Dónde están la nave, la Tierra y Marte el día `dia` (0 = salida, 259 = llegada) y qué retardo hay a la Tierra."
+            }
+          ]
         }
       ]
     },

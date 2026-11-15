@@ -47,6 +47,8 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 | [test_panel.py](test_panel.py) | 76 | — |
 | [test_reanclaje.py](test_reanclaje.py) | 106 | — |
 | [test_simulacion.py](test_simulacion.py) | 170 | — |
+| [test_trayectoria.py](test_trayectoria.py) | 47 | — |
+| [trayectoria.py](trayectoria.py) | 46 | Trayectoria de la nave en el tránsito Tierra→Marte (diseño: docs/superpowers/specs/2026-11-15-viaje-a-marte-design.md). |
 
 ### API pública
 
@@ -77,6 +79,10 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 - función `publicar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)`: Genera y persiste `caso_referencia.json` y `kpi.json` en `gold/` con SHA-256.
 - función `publicar_barrido(n_misiones=200, semilla=SEMILLA_DEFECTO)`: Persiste el barrido de k y h en `gold/barrido.json`.
 
+**trayectoria.py**
+
+- función `posicion(dia)`: Dónde están la nave, la Tierra y Marte el día `dia` (0 = salida, 259 = llegada) y qué retardo hay a la Tierra.
+
 ### Puntos de entrada
 
 - `pipelines/reanclaje/index.py`
@@ -91,7 +97,7 @@ python3 index.py manifest                 SHA-256 y tamaños de cada escenario g
 
 ### Dependencias
 
-- Internas: `panel`, `reanclaje`, `simulacion`
+- Internas: `panel`, `reanclaje`, `simulacion`, `trayectoria`
 - Externas: `datalake`, `validador`
 - Biblioteca estándar: `collections`, `datetime`, `hashlib`, `json`, `math`, `pathlib`, `random`, `statistics`, `sys`, `tempfile`, `unittest`
 
@@ -100,4 +106,5 @@ python3 index.py manifest                 SHA-256 y tamaños de cada escenario g
 - `pipelines/reanclaje/test_panel.py`: 7 pruebas en Panel (6), Publicar (1)
 - `pipelines/reanclaje/test_reanclaje.py`: 10 pruebas en Pasos (6), Construir (4)
 - `pipelines/reanclaje/test_simulacion.py`: 17 pruebas en Simulacion (3), Reglas (13), FixtureDelMotor (1)
+- `pipelines/reanclaje/test_trayectoria.py`: 6 pruebas en TrayectoriaTest (6)
 <!-- CONTEXT:AUTO:END -->

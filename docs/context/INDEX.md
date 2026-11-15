@@ -12,7 +12,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
 | [pipelines/datalake](../../pipelines/datalake/MODULE.md) | Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLab y EDA, con un CLI para ingerir y leer. | ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli | 3 |
-| [pipelines/reanclaje](../../pipelines/reanclaje/MODULE.md) | ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA), reancla cada ventana real a la línea de tiempo de misión y publica la zona gold y el JSON del panel de entorno que consume la app. | etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, flujo-protones, simulacion, kpi | 7 |
+| [pipelines/reanclaje](../../pipelines/reanclaje/MODULE.md) | ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA), reancla cada ventana real a la línea de tiempo de misión y publica la zona gold y el JSON del panel de entorno que consume la app. | etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, flujo-protones, simulacion, kpi | 9 |
 | [tools/contextgen](../../tools/contextgen/MODULE.md) | Genera el contexto del repositorio para cualquier asistente de IA: los `MODULE.md`, `docs/context/` y los adaptadores por herramienta. | herramientas, documentación, contexto, ia, agents.md, ci, pre-commit | 2 |
 | [tools/modelo-anatomico](../../tools/modelo-anatomico/MODULE.md) | Guiones que generaron el modelo anatómico del cuerpo 3D de la app (`apps/web/public/modelos/cuerpo.glb`, `cuerpo.json` y `ATRIBUCION.md`) a partir de los OBJ originales de BodyParts3D. Se guardan para que el modelo sea reproducible y su procedencia, verificable. | herramientas, modelo-3d, anatomía, bodyparts3d, glb, three.js, atribución, licencia | 4 |
 | [tools/presentacion](../../tools/presentacion/MODULE.md) | Genera las presentaciones de VIGÍA para NASA Space Apps (la demo oficial de 7 diapositivas en inglés y el pitch de 4 minutos) como `.pptx`, y toma las capturas limpias de la app que llevan dentro. | herramientas, presentacion, pptx, pptxgenjs, capturas, puppeteer, demo | 5 |
@@ -305,6 +305,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ToleranciaIn` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `Traduccion` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
 | `Trayecto` | función | [apps/web/components/reports/trayecto.tsx](../../apps/web/components/reports/trayecto.tsx) |
+| `TrayectoriaTest` | clase | [pipelines/reanclaje/test_trayectoria.py](../../pipelines/reanclaje/test_trayectoria.py) |
 | `TrendsView` | función | [apps/web/components/trends/trends-view.tsx](../../apps/web/components/trends/trends-view.tsx) |
 | `Tripulacion` | clase | [apps/api/test_almacen_tripulacion.py](../../apps/api/test_almacen_tripulacion.py) |
 | `Tripulante` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
@@ -537,6 +538,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `persistir_chequeos` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `pesoVuelo` | función | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `por_nombre` | función | [tools/modelo-anatomico/construir.py](../../tools/modelo-anatomico/construir.py) |
+| `posicion` | función | [pipelines/reanclaje/trayectoria.py](../../pipelines/reanclaje/trayectoria.py) |
 | `propio` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `propio_o_clinico` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `propio_o_clinico_intradia` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
