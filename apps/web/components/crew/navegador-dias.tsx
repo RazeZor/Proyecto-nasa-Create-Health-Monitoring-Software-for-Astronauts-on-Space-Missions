@@ -8,13 +8,13 @@ const pos = (d: number, dias: number) => `${((d - 1) / Math.max(dias - 1, 1)) * 
 
 /**
  * Navegador de días de misión para pantalla táctil: el día grande con saltos de 1 y 7, y debajo la línea del viaje con lo
- * recorrido, la marca de «hoy» (el día actual del viaje, al que se vuelve con un toque) y los días con alerta.
+ * recorrido, la marca de «hoy» (el día actual del viaje, al que se vuelve con un toque) y los días con alerta, en ámbar o rojo según su gravedad (todo lo demás, en verde).
  */
-export function NavegadorDias({ dia, dias, hoy, diasConAlerta, onCambiar }: {
+export function NavegadorDias({ dia, dias, hoy, alertas, onCambiar }: {
   dia: number
   dias: number
   hoy: number
-  diasConAlerta: number[]
+  alertas: { dia: number; estado: "watch" | "act" }[]
   onCambiar: (d: number) => void
 }) {
   const boton = "flex size-11 items-center justify-center hover:bg-accent active:bg-accent disabled:opacity-40"
@@ -40,21 +40,28 @@ export function NavegadorDias({ dia, dias, hoy, diasConAlerta, onCambiar }: {
           {S.crew.backToToday(hoy)}
         </button>
       </div>
-      <div className="relative px-1 pb-5 pt-4">
-        {/* líneas de la pista: lo recorrido hasta hoy en color, lo que falta apagado, las alertas encima */}
-        <div aria-hidden className="pointer-events-none absolute inset-x-1 top-1/2 -mt-[0.6rem] h-1.5 rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary/40" style={{ width: pos(hoy, dias) }} />
-          {diasConAlerta.map((d) => (
-            <span key={d} title={S.crew.alertDay} className="absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-status-watch" style={{ left: pos(d, dias) }} />
+      <div className="relative px-3.5 pb-6">
+        {/* pista: todo en verde (lo recorrido hasta hoy lleno, lo que falta apagado); solo los días con alerta cambian de color */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-3.5 top-[22px] h-2 -translate-y-1/2 rounded-full bg-status-ok/15">
+          <div className="h-full rounded-full bg-status-ok/55" style={{ width: pos(hoy, dias) }} />
+          {alertas.map((a) => (
+            <span
+              key={a.dia} title={S.crew.alertDay}
+              className={cn("absolute top-1/2 h-4 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full", a.estado === "act" ? "bg-status-act" : "bg-status-watch")}
+              style={{ left: pos(a.dia, dias) }}
+            />
           ))}
-          <span className="absolute -top-7 -translate-x-1/2 text-xs font-semibold text-primary" style={{ left: pos(hoy, dias) }}>{S.crew.today}</span>
-          <span className="absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 bg-primary" style={{ left: pos(hoy, dias) }} />
+          <span className="absolute top-1/2 h-6 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-status-ok" style={{ left: pos(hoy, dias) }} />
         </div>
         <input
           type="range" min={1} max={dias} step={1} value={dia} onChange={(e) => onCambiar(Number(e.target.value))}
-          aria-label={S.top.missionDay} className={cn("relative z-10 block h-11 w-full cursor-pointer appearance-none bg-transparent accent-primary")}
+          aria-label={S.top.missionDay} className="slider-dias relative z-10 block h-11 w-full cursor-pointer"
         />
-        <div aria-hidden className="mt-1 flex justify-between font-mono text-xs text-muted-foreground"><span>1</span><span>{dias}</span></div>
+        <div aria-hidden className="relative mt-1 h-5 font-mono text-xs text-muted-foreground">
+          <span className="absolute left-0">1</span>
+          <span className="absolute -translate-x-1/2 font-sans text-sm font-semibold text-status-ok" style={{ left: pos(hoy, dias) }}>{S.crew.today}</span>
+          <span className="absolute right-0">{dias}</span>
+        </div>
       </div>
     </div>
   )

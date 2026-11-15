@@ -73,9 +73,9 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/checkin/iconos.tsx](components/checkin/iconos.tsx) | 95 | Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/crew/crew-body.tsx](components/crew/crew-body.tsx) | 122 | — |
 | [components/crew/crew-view.tsx](components/crew/crew-view.tsx) | 22 | — |
-| [components/crew/historico.tsx](components/crew/historico.tsx) | 42 | — |
+| [components/crew/historico.tsx](components/crew/historico.tsx) | 45 | — |
 | [components/crew/modo-animado.tsx](components/crew/modo-animado.tsx) | 67 | — |
-| [components/crew/navegador-dias.tsx](components/crew/navegador-dias.tsx) | 61 | — |
+| [components/crew/navegador-dias.tsx](components/crew/navegador-dias.tsx) | 68 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 345 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 62 | — |
 | [components/device/iconos.tsx](components/device/iconos.tsx) | 117 | Iconos e ilustración de la pantalla Dispositivo, con el lenguaje de `components/shared/iconos.tsx`: |

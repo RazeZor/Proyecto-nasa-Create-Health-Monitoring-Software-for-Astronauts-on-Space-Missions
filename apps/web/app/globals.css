@@ -223,3 +223,17 @@
   /* The timer drives auto-dismiss, so it must keep its real duration. */
   .toast-timer { animation-duration: var(--ttl, 12s) !important; }
 }
+
+/* Deslizador del navegador de días: pista transparente (la dibuja el componente) y un pulgar verde grande para el dedo */
+.slider-dias { appearance: none; background: transparent; }
+.slider-dias::-webkit-slider-runnable-track { background: transparent; height: 44px; }
+.slider-dias::-moz-range-track { background: transparent; height: 44px; }
+.slider-dias::-webkit-slider-thumb {
+  appearance: none; width: 28px; height: 28px; margin-top: 8px; border-radius: 9999px;
+  background: var(--status-ok); border: 3px solid var(--card); box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+.slider-dias::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 9999px;
+  background: var(--status-ok); border: 3px solid var(--card); box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+.slider-dias:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--status-ok); outline-offset: 2px; }

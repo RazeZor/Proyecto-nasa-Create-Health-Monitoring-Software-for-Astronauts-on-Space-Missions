@@ -1809,7 +1809,7 @@
         },
         {
           "ruta": "apps/web/components/crew/historico.tsx",
-          "lineas": 42,
+          "lineas": 45,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1849,7 +1849,7 @@
         },
         {
           "ruta": "apps/web/components/crew/navegador-dias.tsx",
-          "lineas": 61,
+          "lineas": 68,
           "descripcion": "",
           "test": false,
           "simbolos": [
