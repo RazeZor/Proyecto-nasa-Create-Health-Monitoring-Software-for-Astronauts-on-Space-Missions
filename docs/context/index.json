@@ -22,7 +22,7 @@
         "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests.",
         "`GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del caso de referencia (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 27`) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).",
         "`mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta. `/fichas`, `/fichas/{id}` y `recordatorios` aceptan `lang=en`: las fichas toman los textos de `packages/schemas/fichas_en/<id>.json` (solo campos de texto y títulos de fuente; si falta la traducción se sirve en español).",
-        "Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).",
+        "Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Los astronautas de prueba de la misión demo enlazan cada uno a su manera: Sebastián por alias (su reloj se llama «Sebastián») y Fernando por vínculo en `reloj_vinculo` (su reloj se llama «Galaxy Fernando»); los tests del puente no usan esos nombres. Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).",
         "`.env` de la raíz: `main.cargar_env` lo lee al arrancar (lifespan) con la biblioteca estándar, sin pisar variables ya definidas ni definir las vacías, y lo deshace al apagar. Así `.env.example` describe lo que la API realmente lee.",
         "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
       ],
@@ -216,7 +216,7 @@
         },
         {
           "ruta": "apps/api/almacen/tripulacion.py",
-          "lineas": 96,
+          "lineas": 110,
           "descripcion": "Misión, tripulantes y consentimiento; conversión de t_real a hora de misión.",
           "test": false,
           "simbolos": [
@@ -266,7 +266,7 @@
               "nombre": "sembrar_demo",
               "tipo": "función",
               "firma": "sembrar_demo(conn)",
-              "doc": "Misión `demo` con astronauta, oficial médico y comandante, todos con consentimiento. Idempotente."
+              "doc": "Misión `demo` con astronauta, oficial médico, comandante y los astronautas de prueba Sebastián y Fernando, todos"
             }
           ]
         },
@@ -863,7 +863,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_tripulacion.py",
-          "lineas": 59,
+          "lineas": 68,
           "descripcion": "",
           "test": true,
           "simbolos": [

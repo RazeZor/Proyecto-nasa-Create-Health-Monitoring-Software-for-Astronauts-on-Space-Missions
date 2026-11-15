@@ -241,15 +241,15 @@ class Persistencia(Base):
     def test_reloj_desconocido_no_se_da_de_alta_salvo_autoregistro(self):
         conn = conectar()
         try:
-            self.assertEqual(pr.persistir_chequeos(conn, [dict(CHEQUEO, tripulante="Fernando")], self.mapa), 0)
-            self.assertIsNone(pr.resolver_id(conn, "fernando", {}))
-            self.assertEqual(conn.execute("SELECT COUNT(*) FROM tripulante WHERE alias = 'Fernando'").fetchone()[0], 0)
+            self.assertEqual(pr.persistir_chequeos(conn, [dict(CHEQUEO, tripulante="Marcos")], self.mapa), 0)
+            self.assertIsNone(pr.resolver_id(conn, "marcos", {}))
+            self.assertEqual(conn.execute("SELECT COUNT(*) FROM tripulante WHERE alias = 'Marcos'").fetchone()[0], 0)
             # con SMART_AUTOREGISTRO=1 (registrar) sí: rol astronauta y una sola vez
-            self.assertEqual(pr.persistir_chequeos(conn, [dict(CHEQUEO, tripulante="Fernando")], self.mapa, registrar=True), 2)
-            id_ = pr.resolver_id(conn, "fernando", {})
+            self.assertEqual(pr.persistir_chequeos(conn, [dict(CHEQUEO, tripulante="Marcos")], self.mapa, registrar=True), 2)
+            id_ = pr.resolver_id(conn, "marcos", {})
             self.assertNotIn(id_, self.ids.values())
-            self.assertEqual(pr.persistir_chequeos(conn, [dict(CHEQUEO, tripulante="Fernando")], self.mapa, registrar=True), 2)
-            self.assertEqual(conn.execute("SELECT COUNT(*) FROM tripulante WHERE alias = 'Fernando'").fetchone()[0], 1)
+            self.assertEqual(pr.persistir_chequeos(conn, [dict(CHEQUEO, tripulante="Marcos")], self.mapa, registrar=True), 2)
+            self.assertEqual(conn.execute("SELECT COUNT(*) FROM tripulante WHERE alias = 'Marcos'").fetchone()[0], 1)
             self.assertEqual(conn.execute("SELECT rol FROM tripulante WHERE id = ?", (id_,)).fetchone()[0], "astronauta")
         finally:
             conn.close()
@@ -260,7 +260,7 @@ class Persistencia(Base):
         try:
             conn.execute("INSERT INTO reloj_vinculo VALUES ('Seba Reloj', ?, '2026-11-15T00:00:00Z')", (self.ana,))
             conn.commit()
-            self.assertEqual(pr.mapa_completo(conn, {"ana": 7}), {"ana": 7, "seba reloj": self.ana})
+            self.assertEqual(pr.mapa_completo(conn, {"ana": 7}), {"ana": 7, "galaxy fernando": self.ids["fernando"], "seba reloj": self.ana})
             self.assertEqual(pr.resolver_id(conn, "SEBA RELOJ", {}), self.ana)
             self.assertEqual(sorted(pr.nombres_de(conn, self.ana, {})), ["astronauta", "seba reloj"])
             self.assertEqual(pr.persistir_chequeos(conn, [dict(CHEQUEO, tripulante="Seba Reloj")], {}), 2)
@@ -319,12 +319,12 @@ class Rutas(Base):
 
     def test_reloj_no_vinculado_no_se_ve_aunque_este_en_memoria(self):
         pr.ESTADO.aplicar({"type": "lectura", "tripulante": "Tripulante 7f3a", "t": "2026-11-14T18:48:57Z", "fc_lpm": 70})
-        pr.ESTADO.aplicar({"type": "lectura", "tripulante": "Fernando", "t": "2026-11-14T18:48:57Z", "fc_lpm": 71})
+        pr.ESTADO.aplicar({"type": "lectura", "tripulante": "Marcos", "t": "2026-11-14T18:48:57Z", "fc_lpm": 71})
         r = self.c.get(f"/tripulantes/{self.ana}/reloj", headers=self.h).json()
         self.assertEqual((r["vinculado"], r["reloj"]), (False, None))
         filas = self.c.get("/reloj/tripulacion", headers=self.h).json()
         self.assertEqual([(f["nombre"], f["vinculado"], f["tripulante_id"], f["nombre_por_defecto"]) for f in filas],
-                         [("Fernando", False, None, False), ("Tripulante 7f3a", False, None, True)])
+                         [("Marcos", False, None, False), ("Tripulante 7f3a", False, None, True)])
 
     def test_vincular_y_desvincular_desde_la_api(self):
         ruta = f"/tripulantes/{self.ana}/reloj/vinculo"

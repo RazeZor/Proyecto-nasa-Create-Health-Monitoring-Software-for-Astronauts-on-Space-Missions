@@ -50,9 +50,18 @@ class Tripulacion(unittest.TestCase):
     def test_sembrar_demo_es_idempotente(self):
         a, b = tr.sembrar_demo(self.conn), tr.sembrar_demo(self.conn)
         self.assertEqual(a, b)
-        self.assertEqual(set(a), {"astronauta", "oficial_medico", "comandante"})
+        self.assertEqual(set(a), {"astronauta", "oficial_medico", "comandante", "sebastian", "fernando"})
         for id_ in a.values():
             self.assertTrue(tr.tiene_consentimiento(self.conn, id_, "escalamiento_rojo"))
+
+    def test_los_astronautas_de_prueba_enlazan_su_reloj_cada_uno_a_su_manera(self):
+        ids = tr.sembrar_demo(self.conn)
+        tr.sembrar_demo(self.conn)  # idempotente también con el vínculo
+        from puente_reloj import resolver_id
+        self.assertEqual(resolver_id(self.conn, "Sebastián", {}), ids["sebastian"])  # por alias
+        self.assertIsNone(resolver_id(self.conn, "Galaxy Sebastián", {}))
+        self.assertEqual(resolver_id(self.conn, tr.NOMBRE_RELOJ_FERNANDO, {}), ids["fernando"])  # por vínculo
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM reloj_vinculo").fetchone()[0], 1)
 
 
 if __name__ == "__main__":

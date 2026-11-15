@@ -24,7 +24,7 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 - Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests.
 - `GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del caso de referencia (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 27`) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).
 - `mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta. `/fichas`, `/fichas/{id}` y `recordatorios` aceptan `lang=en`: las fichas toman los textos de `packages/schemas/fichas_en/<id>.json` (solo campos de texto y títulos de fuente; si falta la traducción se sirve en español).
-- Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).
+- Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Los astronautas de prueba de la misión demo enlazan cada uno a su manera: Sebastián por alias (su reloj se llama «Sebastián») y Fernando por vínculo en `reloj_vinculo` (su reloj se llama «Galaxy Fernando»); los tests del puente no usan esos nombres. Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).
 - `.env` de la raíz: `main.cargar_env` lo lee al arrancar (lifespan) con la biblioteca estándar, sin pisar variables ya definidas ni definir las vacías, y lo deshace al apagar. Así `.env.example` describe lo que la API realmente lee.
 - Los mensajes de error salen de `packages/i18n` (`api.error.*`).
 
@@ -51,7 +51,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/cola.py](almacen/cola.py) | 40 | Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2). |
 | [almacen/db.py](almacen/db.py) | 44 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
 | [almacen/lecturas.py](almacen/lecturas.py) | 50 | Lecturas de indicadores y síntomas de un tripulante. |
-| [almacen/tripulacion.py](almacen/tripulacion.py) | 96 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
+| [almacen/tripulacion.py](almacen/tripulacion.py) | 110 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [almacen/vocabulario.py](almacen/vocabulario.py) | 7 | Vocabulario compartido con la interfaz: lee el contrato packages/schemas/vocabulario.json. |
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
 | [main.py](main.py) | 233 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
@@ -63,7 +63,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_cola.py](test_almacen_cola.py) | 53 | — |
 | [test_almacen_db.py](test_almacen_db.py) | 97 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
-| [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
+| [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 68 | — |
 | [test_api.py](test_api.py) | 144 | — |
 | [test_api_dashboard.py](test_api_dashboard.py) | 281 | — |
 | [test_api_registro.py](test_api_registro.py) | 208 | — |
@@ -114,7 +114,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `dia_de_vuelo(conn, tripulante_id, t_real)`: Día de vuelo (1 = día 1 de la misión) o None si t_real es anterior al vuelo.
 - función `t_mision(conn, tripulante_id, t_real)`: `D022T00:05:00`; None antes del día 1 (línea base de tierra).
 - función `sembrar_informes_demo(conn, ids)`: Informes de ejemplo ya respondidos por tierra (apps/api/demo/informes.json). Idempotente por título.
-- función `sembrar_demo(conn)`: Misión `demo` con astronauta, oficial médico y comandante, todos con consentimiento. Idempotente.
+- función `sembrar_demo(conn)`: Misión `demo` con astronauta, oficial médico, comandante y los astronautas de prueba Sebastián y Fernando, todos
 
 **gold.py**
 
@@ -232,7 +232,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_almacen_cola.py`: 5 pruebas en Cola (5)
 - `apps/api/test_almacen_db.py`: 8 pruebas en Esquema (8)
 - `apps/api/test_almacen_lecturas.py`: 9 pruebas en Lecturas (9)
-- `apps/api/test_almacen_tripulacion.py`: 8 pruebas en Tripulacion (8)
+- `apps/api/test_almacen_tripulacion.py`: 9 pruebas en Tripulacion (9)
 - `apps/api/test_api.py`: 13 pruebas en Api (12), Entorno (1)
 - `apps/api/test_api_dashboard.py`: 21 pruebas en Dashboard (18), Entorno (3)
 - `apps/api/test_api_registro.py`: 19 pruebas en Registro (19)

@@ -84,8 +84,12 @@ def sembrar_informes_demo(conn, ids):
         cola.responder_reporte(conn, rid, informe["respuesta"], llega)
 
 
+NOMBRE_RELOJ_FERNANDO = "Galaxy Fernando"
+
+
 def sembrar_demo(conn):
-    """Misión `demo` con astronauta, oficial médico y comandante, todos con consentimiento. Idempotente."""
+    """Misión `demo` con astronauta, oficial médico, comandante y los astronautas de prueba Sebastián y Fernando, todos
+    con consentimiento. Idempotente."""
     fila = conn.execute("SELECT id FROM mision WHERE nombre = 'demo'").fetchone()
     mision = fila[0] if fila else crear_mision(conn, "demo", "estacion", DEMO_DIA1)
     ids = {}
@@ -93,4 +97,14 @@ def sembrar_demo(conn):
         fila = conn.execute("SELECT id FROM tripulante WHERE mision_id = ? AND alias = ?", (mision, rol)).fetchone()
         ids[rol] = fila[0] if fila else crear_tripulante(conn, rol, mision, rol)
         consentir(conn, ids[rol], "escalamiento_rojo", DEMO_DIA1)
+    # Dos astronautas de prueba, cada uno con su forma de enlazar el reloj (puente_reloj.py, `resolver_id`):
+    # Sebastián, por alias (el reloj se llama «Sebastián»: no hace falta configurar nada); Fernando, por un
+    # vínculo explícito en `reloj_vinculo` (su reloj se llama «Galaxy Fernando», distinto de su alias).
+    for clave, alias in (("sebastian", "Sebastián"), ("fernando", "Fernando")):
+        fila = conn.execute("SELECT id FROM tripulante WHERE mision_id = ? AND alias = ?", (mision, alias)).fetchone()
+        ids[clave] = fila[0] if fila else crear_tripulante(conn, alias, mision, "astronauta")
+        consentir(conn, ids[clave], "escalamiento_rojo", DEMO_DIA1)
+    conn.execute("INSERT OR IGNORE INTO reloj_vinculo (nombre, tripulante_id, t_real) VALUES (?, ?, ?)",
+                 (NOMBRE_RELOJ_FERNANDO, ids["fernando"], DEMO_DIA1))
+    conn.commit()
     return ids
