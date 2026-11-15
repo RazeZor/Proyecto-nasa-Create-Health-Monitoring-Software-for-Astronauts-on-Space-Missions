@@ -32,6 +32,12 @@ test("no todos ven lo mismo: el registro diario es del astronauta y los informes
   assert.equal(permitida("surgeon", "device"), false)
 })
 
+test("los clínicos ven el cuerpo de cada tripulante; el astronauta solo el suyo, que es su inicio", () => {
+  assert.equal(permitida("cmo", "body"), true)
+  assert.equal(permitida("surgeon", "body"), true)
+  assert.equal(permitida("astronaut", "body"), false) // sin /astronauta/body: no hay selector de otros tripulantes
+})
+
 test("el service worker guarda para uso sin conexión cada pantalla de cada rol", () => {
   const sw = readFileSync(new URL("../public/sw.js", import.meta.url), "utf-8")
   for (const rol of Object.keys(SECCIONES) as Role[]) {

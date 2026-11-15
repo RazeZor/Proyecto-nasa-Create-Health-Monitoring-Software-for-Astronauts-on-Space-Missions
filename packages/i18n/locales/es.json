@@ -923,7 +923,12 @@
       },
       "crew": {
         "title": "Tripulación",
-        "subtitle": "Estado de los relojes y avisos escalados a ti como oficial médico."
+        "subtitle": "Estado de los relojes y avisos escalados a ti como oficial médico.",
+        "bodyTitle": "Cuerpos de la tripulación",
+        "bodySubtitle": "El cuerpo de cada tripulante con sus propias lecturas. Es de solo lectura y cada consulta queda en la auditoría.",
+        "pick": "Tripulante",
+        "bodyError": "No se pudo leer el historial de este tripulante.",
+        "navBody": "Cuerpos"
       }
     },
     "MOTOR": {

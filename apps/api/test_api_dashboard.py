@@ -90,10 +90,40 @@ class Dashboard(unittest.TestCase):
         self.assertEqual({x["rol"] for x in t}, {"astronauta", "oficial_medico", "comandante"})
         self.assertEqual(self.c.get("/tripulacion").status_code, 401)
 
-    def test_historial_y_demo_ajenos_dan_403(self):
+    def test_recordatorios_y_mensajes_ajenos_dan_403_y_sin_identidad_401(self):
         for ruta in ("historial", "recordatorios", "mensajes"):
-            self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/{ruta}", headers={"X-Tripulante": str(self.med)}).status_code, 403, ruta)
+            self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/{ruta}", headers={"X-Tripulante": str(self.ids["comandante"])}).status_code, 403, ruta)
             self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/{ruta}").status_code, 401, ruta)
+        for ruta in ("recordatorios", "mensajes"):  # lo demás del tablero sigue siendo del dueño, también para el oficial
+            self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/{ruta}", headers={"X-Tripulante": str(self.med)}).status_code, 403, ruta)
+
+    def test_el_oficial_medico_lee_el_historial_de_la_tripulacion_y_queda_auditado(self):
+        # el cuerpo de cada tripulante lo ven los clínicos (oficial médico y, desde Tierra, el cirujano de vuelo); los demás, solo el suyo
+        r = self.c.get(f"/tripulantes/{self.ana}/historial", params={"modo": "demo"}, headers={"X-Tripulante": str(self.med)})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()["lecturas"]), 44)
+        conn = conectar()
+        (fila,) = conn.execute("SELECT actor_id, entidad, entidad_id FROM auditoria WHERE accion = 'lectura_ajena'").fetchall()
+        conn.close()
+        self.assertEqual(tuple(fila), (self.med, "historial", self.ana))
+
+    def test_el_astronauta_y_el_comandante_no_leen_el_historial_de_otro(self):
+        for quien in (self.ana, self.ids["comandante"]):
+            otro = self.med if quien == self.ana else self.ana
+            r = self.c.get(f"/tripulantes/{otro}/historial", headers={"X-Tripulante": str(quien)})
+            self.assertEqual(r.status_code, 403, quien)
+        conn = conectar()
+        n = conn.execute("SELECT COUNT(*) FROM auditoria WHERE accion = 'lectura_ajena'").fetchone()[0]
+        conn.close()
+        self.assertEqual(n, 0)  # un intento denegado no es una lectura
+
+    def test_el_oficial_no_lee_el_historial_de_otra_mision(self):
+        conn = conectar()
+        otra = tr.crear_mision(conn, "otra", "estacion", T)
+        ajeno = tr.crear_tripulante(conn, "ajeno", otra, "astronauta")
+        conn.close()
+        r = self.c.get(f"/tripulantes/{ajeno}/historial", headers={"X-Tripulante": str(self.med)})
+        self.assertEqual(r.status_code, 403)
 
     def test_recordatorios_y_mensajes(self):
         rec = self.c.get(f"/tripulantes/{self.ana}/recordatorios", headers=self.h).json()

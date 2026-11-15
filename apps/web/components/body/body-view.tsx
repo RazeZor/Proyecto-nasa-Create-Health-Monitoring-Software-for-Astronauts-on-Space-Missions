@@ -189,7 +189,8 @@ function Tarjeta({ lectura, unidad, compacta, activa, onClick, refCb }: {
   )
 }
 
-export function BodyView() {
+/** `ajeno`: el cuerpo de otro tripulante, en solo lectura (sin registro diario ni enlace a sus tendencias). */
+export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
   const { day, sex, setSex, analisis, catalogo, mode, theme, liveHr } = useApp()
   const lecturas = useLecturas()
   const zones = analisis.zones(day)
@@ -199,7 +200,7 @@ export function BodyView() {
   const [modeloReal, setModeloReal] = useState<boolean | null>(null) // null: aún cargando
   const since = useSinceLastCheckIn()
   /** Modo real sin un solo registro: no se afirma «todo en orden» de lo que nadie midió. */
-  const sinDatos = mode === "real" && since === null && catalogo.historial.lecturas.length === 0
+  const sinDatos = mode === "real" && (ajeno || since === null) && catalogo.historial.lecturas.length === 0
   const OverallIcon = STATUS_ICON[overall]
   const driver = zones.find((z) => z.status === overall && z.layer)
   const hoy = analisis.vitals(day).find((v) => v.day === day)
@@ -313,14 +314,16 @@ export function BodyView() {
           </span>
           <Ecg lpm={lpm} className="hidden h-14 w-40 text-[#e5484d] sm:block xl:w-56" />
         </button>
-        <div className="flex flex-col items-stretch gap-1">
-          <Link href={rutaDe("astronaut", "check-in")} className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-md hover:bg-primary/90 active:scale-[0.98]">
-            <IconoRegistro className="size-7" /> {S.body.startCheckIn}
-          </Link>
-          <p className="text-center text-xs text-muted-foreground">
-            {since === undefined ? " " : since === null ? S.body.never : S.body.sinceLast(since)}
-          </p>
-        </div>
+        {!ajeno && (
+          <div className="flex flex-col items-stretch gap-1">
+            <Link href={rutaDe("astronaut", "check-in")} className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-md hover:bg-primary/90 active:scale-[0.98]">
+              <IconoRegistro className="size-7" /> {S.body.startCheckIn}
+            </Link>
+            <p className="text-center text-xs text-muted-foreground">
+              {since === undefined ? " " : since === null ? S.body.never : S.body.sinceLast(since)}
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Indicadores a los lados, cuerpo al centro */}
@@ -560,9 +563,11 @@ export function BodyView() {
         <Siguiente estado={z.status} texto={z.next} />
         <Bloque titulo={S.trends.whatItIs}><p className="text-sm leading-relaxed text-muted-foreground">{info.whatItIs}</p></Bloque>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href={rutaDe("astronaut", "trends")} className="inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-5 text-base font-semibold hover:bg-accent">
-            {S.body.seeTrend} <ArrowRight aria-hidden className="size-5" />
-          </Link>
+          {!ajeno && (
+            <Link href={rutaDe("astronaut", "trends")} className="inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-5 text-base font-semibold hover:bg-accent">
+              {S.body.seeTrend} <ArrowRight aria-hidden className="size-5" />
+            </Link>
+          )}
           {procedencia}
         </div>
       </aside>

@@ -923,7 +923,12 @@
       },
       "crew": {
         "title": "Crew",
-        "subtitle": "Watch status and alerts escalated to you as medical officer."
+        "subtitle": "Watch status and alerts escalated to you as medical officer.",
+        "bodyTitle": "Crew bodies",
+        "bodySubtitle": "Each crew member's body with their own readings. Read-only; every lookup is audited.",
+        "pick": "Crew member",
+        "bodyError": "Could not read this crew member's history.",
+        "navBody": "Bodies"
       }
     },
     "MOTOR": {

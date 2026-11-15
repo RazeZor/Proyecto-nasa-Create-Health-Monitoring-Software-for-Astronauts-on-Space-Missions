@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
-import { cargarCatalogo, type Catalogo } from "@/lib/catalogo"
+import { cargarCatalogo, type Catalogo, type Historial } from "@/lib/catalogo"
 import { type Analisis, analizar } from "@/lib/engine"
 import { enviarOrdenReloj, INTERVALO_SONDEO_MS, leerReloj, type OrdenReloj, type RespuestaReloj, siguienteEstado } from "@/lib/reloj"
 import { rolDeRuta } from "@/lib/roles"
@@ -234,6 +234,20 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
     [mode, setMode, online, pending, escalations, day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, hrEnVivo, reloj, ordenReloj, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
+}
+
+/**
+ * Muestra `children` con los datos de otro tripulante, en solo lectura: su historial analizado por el motor, sin los
+ * registros locales ni el pulso del reloj del que mira. Lo usan el oficial médico y el cirujano de vuelo.
+ */
+export function VerComo({ historial, children }: { historial: Historial; children: React.ReactNode }) {
+  const app = useApp()
+  const analisis = useMemo(() => analizar([], historial, app.profile.cabinPressureMmHg), [historial, app.profile.cabinPressureMmHg])
+  const valor = useMemo(
+    () => ({ ...app, analisis, catalogo: { ...app.catalogo, historial }, checkIns: [], liveHr: null, reloj: null, pending: 0, escalations: {} }),
+    [app, analisis, historial],
+  )
+  return <Ctx.Provider value={valor}>{children}</Ctx.Provider>
 }
 
 export function useApp() {

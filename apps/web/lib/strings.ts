@@ -118,6 +118,11 @@ export const S = {
   crew: {
     title: tx("web.S.crew.title"),
     subtitle: tx("web.S.crew.subtitle"),
+    bodyTitle: tx("web.S.crew.bodyTitle"),
+    bodySubtitle: tx("web.S.crew.bodySubtitle"),
+    pick: tx("web.S.crew.pick"),
+    bodyError: tx("web.S.crew.bodyError"),
+    navBody: tx("web.S.crew.navBody"),
   },
   roles: {
     astronaut: tx("web.S.roles.astronaut"),

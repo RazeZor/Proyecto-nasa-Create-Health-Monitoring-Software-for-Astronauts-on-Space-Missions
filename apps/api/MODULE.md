@@ -56,7 +56,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
 | [main.py](main.py) | 224 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 587 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
-| [rutas_dashboard.py](rutas_dashboard.py) | 242 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
+| [rutas_dashboard.py](rutas_dashboard.py) | 258 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
 | [rutas_registro.py](rutas_registro.py) | 230 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
@@ -65,7 +65,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
 | [test_api.py](test_api.py) | 138 | — |
-| [test_api_dashboard.py](test_api_dashboard.py) | 251 | — |
+| [test_api_dashboard.py](test_api_dashboard.py) | 281 | — |
 | [test_api_registro.py](test_api_registro.py) | 208 | — |
 | [test_puente_reloj.py](test_puente_reloj.py) | 441 | — |
 
@@ -172,10 +172,11 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 **rutas_dashboard.py**
 
+- función `propio_o_clinico(id: int, quien: int=Depends(actor), conn=Depends(conexion))`: El dueño, o el oficial médico de su misión: los clínicos ven el cuerpo completo de la tripulación y cada
 - función `listar_fichas(lang: Literal['es', 'en']='es')`: Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice.
 - función `leer_ficha(id: str, lang: Literal['es', 'en']='es')`: Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...).
 - función `referencia_entorno(lang: Literal['es', 'en']='es')`: Límites de radiación y CO2, umbral de tormenta y fuentes del panel (`lang=en` en inglés).
-- función `historial(id: int=Depends(propio), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))`: Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`.
+- función `historial(id: int=Depends(propio_o_clinico), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))`: Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`. Con tu id, o con el
 - función `tripulacion_de_la_mision(quien: int=Depends(actor), conn=Depends(conexion))`: `{id, alias, rol}` de cada tripulante de la misión de quien pregunta (para saber quién es el oficial médico).
 - función `recordatorios(id: int=Depends(propio), lang: Literal['es', 'en']='es')`: Lista de textos (`lang=en` en inglés). Simulado: aún no hay plan de actividades a bordo.
 - función `mensajes(id: int=Depends(propio), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))`: `{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas de tierra a los reportes del tripulante.
@@ -233,7 +234,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_almacen_lecturas.py`: 9 pruebas en Lecturas (9)
 - `apps/api/test_almacen_tripulacion.py`: 8 pruebas en Tripulacion (8)
 - `apps/api/test_api.py`: 12 pruebas en Api (11), Entorno (1)
-- `apps/api/test_api_dashboard.py`: 18 pruebas en Dashboard (15), Entorno (3)
+- `apps/api/test_api_dashboard.py`: 21 pruebas en Dashboard (18), Entorno (3)
 - `apps/api/test_api_registro.py`: 19 pruebas en Registro (19)
 - `apps/api/test_puente_reloj.py`: 28 pruebas en Estado (12), Persistencia (7), Rutas (7), ExtremoAExtremo (2)
 <!-- CONTEXT:AUTO:END -->

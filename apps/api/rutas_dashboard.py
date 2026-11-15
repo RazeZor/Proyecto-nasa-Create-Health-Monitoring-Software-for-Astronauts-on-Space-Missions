@@ -10,7 +10,7 @@ from typing import Literal
 import gold
 from fastapi import APIRouter, Depends, HTTPException
 
-from almacen import cola, lecturas, tripulacion
+from almacen import alertas, cola, lecturas, tripulacion
 from i18n import t
 from rutas_registro import ERRORES, actor, conexion, propio
 
@@ -30,6 +30,21 @@ CAMPO_DE_INDICADOR = {
     "presion_arterial_diastolica": "pad_mmHg", "spo2": "spo2_pct", "temperatura_central": "temp_central_c",
     "sueno": "sueno_h", "estado_animo": "animo_1_10", "glucosa": "glucosa_mg_dl", "masa_corporal": "masa_kg",
 }
+
+
+def propio_o_clinico(id: int, quien: int = Depends(actor), conn=Depends(conexion)) -> int:
+    """El dueño, o el oficial médico de su misión: los clínicos ven el cuerpo completo de la tripulación y cada
+    lectura ajena queda en la auditoría. Cualquier otro recibe 403.
+    shortcut: el cirujano de vuelo (Tierra) aún no es un tripulante; la web lo atiende con el id del oficial (#46)."""
+    if id == quien:
+        return id
+    clinico = conn.execute(
+        "SELECT 1 FROM tripulante a JOIN tripulante b ON b.mision_id = a.mision_id "
+        "WHERE a.id = ? AND a.rol = 'oficial_medico' AND b.id = ?", (quien, id)).fetchone()
+    if not clinico:
+        raise HTTPException(403, t("api.error.sin_permiso"))
+    alertas.anotar(conn, quien, "lectura_ajena", "historial", id)
+    return id
 
 
 def _json(ruta):
@@ -170,9 +185,10 @@ def _lecturas_reales(conn, id):
 
 
 @router.get("/tripulantes/{id}/historial", responses=ERRORES, summary="Historial fisiológico y entorno del tripulante")
-def historial(id: int = Depends(propio), modo: Literal["real", "demo"] = "real", lang: Literal["es", "en"] = "es",
+def historial(id: int = Depends(propio_o_clinico), modo: Literal["real", "demo"] = "real", lang: Literal["es", "en"] = "es",
               conn=Depends(conexion)):
-    """Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`.
+    """Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`. Con tu id, o con el
+    de cualquier tripulante de tu misión si eres el oficial médico (cada lectura ajena se audita); otro tripulante, 403.
 
     - `modo=real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`) y el entorno medido
       del panel gold `mision-real`. Sin simulación: un día sin registro no tiene lecturas.

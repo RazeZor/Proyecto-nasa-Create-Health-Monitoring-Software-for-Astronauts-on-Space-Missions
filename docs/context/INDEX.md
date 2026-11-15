@@ -7,7 +7,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 24 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 85 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 87 |
 | [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 3 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
@@ -73,6 +73,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Contratos` | clase | [packages/schemas/test_schemas.py](../../packages/schemas/test_schemas.py) |
 | `CrewView` | función | [apps/web/components/crew/crew-view.tsx](../../apps/web/components/crew/crew-view.tsx) |
 | `CrewWatches` | función | [apps/web/components/device/reloj-extras.tsx](../../apps/web/components/device/reloj-extras.tsx) |
+| `CuerpoTripulacion` | función | [apps/web/components/crew/crew-body.tsx](../../apps/web/components/crew/crew-body.tsx) |
 | `DIAS_AMBAR_PARA_RECOMENDAR` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `DIAS_CONSECUTIVOS_B` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `DIAS_TRANSICION` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
@@ -218,6 +219,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `PROTONES_TORMENTA_PFU` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `Page` | función | [apps/web/app/[rol]/about/page.tsx](../../apps/web/app/[rol]/about/page.tsx) |
 | `Page` | función | [apps/web/app/[rol]/alerts/page.tsx](../../apps/web/app/[rol]/alerts/page.tsx) |
+| `Page` | función | [apps/web/app/[rol]/body/page.tsx](../../apps/web/app/[rol]/body/page.tsx) |
 | `Page` | función | [apps/web/app/[rol]/check-in/page.tsx](../../apps/web/app/[rol]/check-in/page.tsx) |
 | `Page` | función | [apps/web/app/[rol]/device/page.tsx](../../apps/web/app/[rol]/device/page.tsx) |
 | `Page` | función | [apps/web/app/[rol]/environment/page.tsx](../../apps/web/app/[rol]/environment/page.tsx) |
@@ -298,6 +300,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Validar` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
 | `Vec3` | tipo | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `VentanaEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
+| `VerComo` | función | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
 | `VinculoIn` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `Vista` | tipo | [apps/web/components/body/escena.ts](../../apps/web/components/body/escena.ts) |
 | `Vocabulario` | clase | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
@@ -337,6 +340,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `cargar` | función | [tools/modelo-anatomico/construir.py](../../tools/modelo-anatomico/construir.py) |
 | `cargarCatalogo` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `cargarEscenarioDiario` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
+| `cargarHistorialAjeno` | constante | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `cargarKpiSimulacion` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarPanelGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargar_env` | función | [apps/api/main.py](../../apps/api/main.py) |
@@ -513,6 +517,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `por_nombre` | función | [tools/modelo-anatomico/construir.py](../../tools/modelo-anatomico/construir.py) |
 | `ppmToMmHg` | constante | [apps/web/lib/utils.ts](../../apps/web/lib/utils.ts) |
 | `propio` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `propio_o_clinico` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `publicar` | función | [pipelines/reanclaje/panel.py](../../pipelines/reanclaje/panel.py) |
 | `publicar_barrido` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `publicar_simulacion` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |

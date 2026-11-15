@@ -32,6 +32,7 @@ const NAV: Record<Role, Pestana[]> = {
   ],
   cmo: [
     { seccion: null, label: S.crew.title, icon: IconoDispositivo },
+    { seccion: "body", label: S.crew.navBody, icon: IconoCuerpo },
     { seccion: "alerts", label: S.nav.alerts, icon: IconoAlertas },
     { seccion: "environment", label: S.nav.environment, icon: IconoEntorno },
     { seccion: "device", label: S.nav.device, icon: IconoDispositivo },
@@ -39,6 +40,7 @@ const NAV: Record<Role, Pestana[]> = {
   ],
   surgeon: [
     { seccion: null, label: S.nav.reports, icon: IconoInformes },
+    { seccion: "body", label: S.crew.navBody, icon: IconoCuerpo },
     { seccion: "alerts", label: S.nav.alerts, icon: IconoAlertas },
     { seccion: "environment", label: S.nav.environment, icon: IconoEntorno },
     { seccion: "about", label: S.nav.about, icon: IconoAcerca },

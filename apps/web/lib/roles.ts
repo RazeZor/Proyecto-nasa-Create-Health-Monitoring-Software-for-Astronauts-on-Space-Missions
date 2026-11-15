@@ -6,14 +6,15 @@ import type { Role } from "./types.ts"
 
 export const RUTA_DE_ROL: Record<Role, string> = { astronaut: "astronauta", cmo: "oficial", surgeon: "medico" }
 
-export type Seccion = "check-in" | "trends" | "environment" | "alerts" | "reports" | "device" | "about"
+export type Seccion = "body" | "check-in" | "trends" | "environment" | "alerts" | "reports" | "device" | "about"
 
 // El astronauta ve lo suyo; el oficial médico, la tripulación (relojes y avisos escalados); el cirujano de
-// vuelo, en Tierra, solo lo que le llega: informes y avisos rojos. Nadie más ve los registros privados.
+// vuelo, en Tierra, lo que le llega (informes y avisos). Los dos clínicos ven el cuerpo de cada tripulante (`body`);
+// el astronauta solo el suyo, que es su inicio.
 export const SECCIONES: Record<Role, Seccion[]> = {
   astronaut: ["check-in", "trends", "environment", "alerts", "reports", "device", "about"],
-  cmo: ["alerts", "environment", "device", "about"],
-  surgeon: ["reports", "alerts", "environment", "about"],
+  cmo: ["body", "alerts", "environment", "device", "about"],
+  surgeon: ["body", "reports", "alerts", "environment", "about"],
 }
 
 export const permitida = (rol: Role, seccion: Seccion): boolean => SECCIONES[rol].includes(seccion)
