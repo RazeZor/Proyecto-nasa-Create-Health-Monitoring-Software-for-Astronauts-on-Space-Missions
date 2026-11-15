@@ -10,10 +10,11 @@ import { BodyStage, type Marcador } from "@/components/body/body-stage"
 import { Ecg } from "@/components/body/ecg"
 import type { Proyeccion, Vista, ZonaCaliente } from "@/components/body/escena"
 import { ICONO_INDICADOR, IconoPulso, IconoRegistro } from "@/components/shared/iconos"
-import { LineChart } from "@/components/shared/line-chart"
+import { GraficoIntradia } from "@/components/shared/grafico-intradia"
 import { LayerChip, ProvenanceTag, StatusBadge, STATUS_ICON, statusSurface, statusText } from "@/components/shared/status"
-import { BASELINE_SWITCH_DAY } from "@/lib/engine"
+import { cargarIntradia, type Intradia } from "@/lib/catalogo"
 import { rutaDe } from "@/lib/roles"
+import { TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import type { DailyVitals, IndicatorId, Status, Symptom, ZoneId } from "@/lib/types"
@@ -38,7 +39,6 @@ const SEMANALES: IndicatorId[] = ["glucose", "massKg"]
 const HEX: Record<Status, string> = { ok: "#16a34a", watch: "#f59e0b", act: "#ef4444" }
 const TRAZO: Record<Status, string> = { ok: "stroke-status-ok", watch: "stroke-status-watch", act: "stroke-status-act" }
 const BARRA: Record<Status, string> = { ok: "bg-status-ok", watch: "bg-status-watch", act: "bg-status-act" }
-const DIAS_MINI = 14
 
 function useSinceLastCheckIn() {
   const [label, setLabel] = useState<string | null | undefined>(undefined)
@@ -90,7 +90,6 @@ interface Lectura {
   valor: string | null
   /** Día de la medida si no es la de hoy (indicadores semanales). */
   diaMedida: number | null
-  serie: { day: number; value: number }[]
   estado: Status
 }
 
@@ -110,7 +109,6 @@ function useLecturas(): Record<IndicatorId, Lectura> {
         id,
         valor: v == null ? null : id === "systolic" && fila?.diastolic != null ? `${fmt(v)}/${fmt(fila.diastolic)}` : fmt(v),
         diaMedida: fila && v != null && fila.day !== day ? fila.day : null,
-        serie: serie.flatMap((x) => (typeof x[id] === "number" ? [{ day: x.day, value: x[id] as number }] : [])),
         estado: estados[id],
       }
     }
@@ -118,22 +116,22 @@ function useLecturas(): Record<IndicatorId, Lectura> {
   }, [day, analisis])
 }
 
-function Mini({ puntos, color }: { puntos: { day: number; value: number }[]; color: string }) {
-  const ult = puntos.slice(-DIAS_MINI)
-  if (ult.length < 2) return null
-  const min = Math.min(...ult.map((p) => p.value)), max = Math.max(...ult.map((p) => p.value))
-  const x = (i: number) => 3 + (i / (ult.length - 1)) * 90
+/** Mini curva de hoy (lecturas intradía): en tiempo real no se dibuja la evolución por días, que es del histórico. */
+function Mini({ valores, color }: { valores: number[]; color: string }) {
+  if (valores.length < 2) return null
+  const min = Math.min(...valores), max = Math.max(...valores)
+  const x = (i: number) => 3 + (i / (valores.length - 1)) * 90
   const y = (v: number) => 30 - ((v - min) / (max - min || 1)) * 24
   return (
     <svg viewBox="0 0 96 34" className="h-9 w-24 shrink-0" aria-hidden>
-      <polyline points={ult.map((p, i) => `${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ")} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.85} />
-      <circle cx={x(ult.length - 1)} cy={y(ult.at(-1)!.value)} r={3} fill={color} />
+      <polyline points={valores.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ")} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.85} />
+      <circle cx={x(valores.length - 1)} cy={y(valores.at(-1)!)} r={3} fill={color} />
     </svg>
   )
 }
 
-function Tarjeta({ lectura, unidad, compacta, activa, onClick, refCb }: {
-  lectura: Lectura; unidad: string; compacta: boolean; activa: boolean; onClick: () => void; refCb: (el: HTMLButtonElement | null) => void
+function Tarjeta({ lectura, unidad, hoy, compacta, activa, onClick, refCb }: {
+  lectura: Lectura; unidad: string; hoy: number[]; compacta: boolean; activa: boolean; onClick: () => void; refCb: (el: HTMLButtonElement | null) => void
 }) {
   const Icono = ICONO_INDICADOR[lectura.id]
   const color = COLOR[lectura.id]
@@ -171,7 +169,7 @@ function Tarjeta({ lectura, unidad, compacta, activa, onClick, refCb }: {
               <span className="font-mono text-4xl font-semibold leading-none tabular-nums">{lectura.valor ?? "—"}</span>
               <span className="text-sm text-muted-foreground">{lectura.valor ? unidad : ""}</span>
             </span>
-            <Mini puntos={lectura.serie} color={color} />
+            <Mini valores={hoy} color={color} />
           </span>
           <span className={cn("flex items-center gap-1.5 text-sm font-medium", lectura.valor ? statusText[lectura.estado] : "text-muted-foreground")}>
             {lectura.valor ? (
@@ -189,10 +187,36 @@ function Tarjeta({ lectura, unidad, compacta, activa, onClick, refCb }: {
   )
 }
 
-/** `ajeno`: el cuerpo de otro tripulante, en solo lectura (sin registro diario ni enlace a sus tendencias). */
-export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
+/** Campo de `/intradia` de cada indicador que un sensor mide varias veces al día; el resto es diario o semanal. */
+const CAMPO_INTRADIA: Partial<Record<IndicatorId, keyof Intradia["series"]>> = {
+  restingHr: "fc_reposo_lpm", spo2: "spo2_pct", tempC: "temp_central_c", systolic: "pas_mmHg",
+}
+const MINUTO_MS = 60_000
+
+/** Las lecturas de hoy por hora, refrescadas cada minuto (tiempo real). `tripulante`/`actor`: por defecto, uno mismo. */
+function useIntradia(tripulante: number | null, actor: number | null) {
+  const { mode } = useApp()
+  const [intradia, setIntradia] = useState<Intradia | null>(null)
+  useEffect(() => {
+    if (tripulante === null || actor === null) return
+    let vivo = true
+    const leer = () => cargarIntradia(tripulante, actor, mode).then((r) => vivo && setIntradia(r))
+    void leer()
+    const reloj = setInterval(leer, MINUTO_MS)
+    return () => {
+      vivo = false
+      clearInterval(reloj)
+    }
+  }, [tripulante, actor, mode])
+  return intradia
+}
+
+/** `ajeno`: el cuerpo de otro tripulante (`tripulante`), en solo lectura y consultado como `actor`. */
+export function BodyView({ ajeno = false, tripulante = TRIPULANTE, actor = tripulante }: { ajeno?: boolean; tripulante?: number | null; actor?: number | null }) {
   const { day, sex, setSex, analisis, catalogo, mode, theme, liveHr } = useApp()
   const lecturas = useLecturas()
+  const intradia = useIntradia(tripulante, actor)
+  const hoyDe = (id: IndicatorId) => (CAMPO_INTRADIA[id] ? (intradia?.series[CAMPO_INTRADIA[id]] ?? []).map((p) => p.valor) : [])
   const zones = analisis.zones(day)
   const overall = analisis.overall(day)
   const [sel, setSel] = useState<Seleccion>(null)
@@ -264,6 +288,7 @@ export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
       key={id}
       lectura={lecturas[id]}
       unidad={catalogo.indicadores[id].unit}
+      hoy={hoyDe(id)}
       compacta={!general}
       activa={sel?.tipo === "indicador" && sel.id === id}
       onClick={() => elegir({ tipo: "indicador", id })}
@@ -547,11 +572,18 @@ export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
           </div>
         )}
 
-        {lectura.serie.length > 1 && (
-          <div className="rounded-2xl border border-border p-2">
-            <LineChart label={info.label} unit={info.unit} points={lectura.serie} days={analisis.missionDays} currentDay={day} band={banda} switchDay={BASELINE_SWITCH_DAY}
-              threshold={info.safetyHigh ? { value: info.safetyHigh, label: `${S.trends.safetyLimit} ${info.safetyHigh}` } : info.safetyLow ? { value: info.safetyLow, label: `${S.trends.safetyLimit} ${info.safetyLow}` } : undefined} />
+        {CAMPO_INTRADIA[id] ? (
+          <div className="rounded-2xl border border-border p-3">
+            <GraficoIntradia
+              puntos={intradia?.series[CAMPO_INTRADIA[id]] ?? []}
+              unidad={info.unit}
+              color={color}
+              banda={banda.find((b) => b.day === day) ?? null}
+              formato={ENTEROS.includes(id) ? (v) => String(Math.round(v)) : num}
+            />
           </div>
+        ) : (
+          <p className="rounded-2xl border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">{S.body.dailyOnly}</p>
         )}
 
         <Bloque titulo={`${S.body.now} · ${S.zones[z.zone]}`}>

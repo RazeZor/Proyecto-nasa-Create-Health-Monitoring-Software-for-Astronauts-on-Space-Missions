@@ -7,8 +7,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 24 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 89 |
-| [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 3 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 91 |
+| [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 5 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
 | [pipelines/datalake](../../pipelines/datalake/MODULE.md) | Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLab y EDA, con un CLI para ingerir y leer. | ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli | 3 |
@@ -83,6 +83,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `DelayCountdown` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
 | `Dependencias` | interfaz | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
 | `DependenciasAlertas` | interfaz | [apps/web/lib/alertas-sync.ts](../../apps/web/lib/alertas-sync.ts) |
+| `Descomposicion` | función | [apps/web/components/trends/descomposicion.tsx](../../apps/web/components/trends/descomposicion.tsx) |
+| `Descomposicion` | interfaz | [packages/engine/series.ts](../../packages/engine/series.ts) |
 | `DeviceState` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `DeviceView` | función | [apps/web/components/device/device-view.tsx](../../apps/web/components/device/device-view.tsx) |
 | `Dial` | función | [apps/web/components/checkin/controles.tsx](../../apps/web/components/checkin/controles.tsx) |
@@ -117,6 +119,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `FixtureDelMotor` | clase | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
 | `Generador` | clase | [tools/contextgen/test_contextgen.py](../../tools/contextgen/test_contextgen.py) |
 | `GiroBotones` | función | [apps/web/components/shared/giro-botones.tsx](../../apps/web/components/shared/giro-botones.tsx) |
+| `GraficoIntradia` | función | [apps/web/components/shared/grafico-intradia.tsx](../../apps/web/components/shared/grafico-intradia.tsx) |
 | `HUECO_MS` | constante | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `HealthStore` | interfaz | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
 | `Historial` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
@@ -188,6 +191,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `IndicatorCard` | función | [apps/web/components/shared/indicator-card.tsx](../../apps/web/components/shared/indicator-card.tsx) |
 | `IndicatorId` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `IndicatorInfo` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
+| `Intradia` | tipo | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `KpiSimulacionEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `Layer` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `LayerChip` | función | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
@@ -203,6 +207,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `LoadingState` | función | [apps/web/components/shared/states.tsx](../../apps/web/components/shared/states.tsx) |
 | `Logo` | función | [apps/web/components/shared/logo.tsx](../../apps/web/components/shared/logo.tsx) |
 | `Lugar` | tipo | [apps/web/components/trends/resumen.ts](../../apps/web/components/trends/resumen.ts) |
+| `MIN_DIAS_CICLO` | constante | [packages/engine/series.ts](../../packages/engine/series.ts) |
+| `MIN_DIAS_DESCOMPOSICION` | constante | [packages/engine/series.ts](../../packages/engine/series.ts) |
 | `MOTOR` | constante | [apps/web/lib/strings.ts](../../apps/web/lib/strings.ts) |
 | `Malla` | interfaz | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `Marcador` | interfaz | [apps/web/components/body/body-stage.tsx](../../apps/web/components/body/body-stage.tsx) |
@@ -245,6 +251,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Proyeccion` | tipo | [apps/web/components/body/escena.ts](../../apps/web/components/body/escena.ts) |
 | `Publicar` | clase | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
 | `Puente` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
+| `Punto` | interfaz | [packages/engine/series.ts](../../packages/engine/series.ts) |
+| `PuntoIntradia` | tipo | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `RUTA_DE_ROL` | constante | [apps/web/lib/roles.ts](../../apps/web/lib/roles.ts) |
 | `Raiz` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
 | `Referencia` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
@@ -292,6 +300,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `TrendsView` | función | [apps/web/components/trends/trends-view.tsx](../../apps/web/components/trends/trends-view.tsx) |
 | `Tripulacion` | clase | [apps/api/test_almacen_tripulacion.py](../../apps/api/test_almacen_tripulacion.py) |
 | `Tripulante` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
+| `UMBRAL_CICLO` | constante | [packages/engine/series.ts](../../packages/engine/series.ts) |
 | `VENTANA_DIA_INICIO` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `VENTANA_MAX_LECTURAS` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `VENTANA_MIN_LECTURAS` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
@@ -342,6 +351,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `cargarCatalogo` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `cargarEscenarioDiario` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarHistorialAjeno` | constante | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
+| `cargarIntradia` | constante | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `cargarKpiSimulacion` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarPanelGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargar_env` | función | [apps/api/main.py](../../apps/api/main.py) |
@@ -382,6 +392,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `d` | función | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
 | `dato_invalido` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `descargarCsvReloj` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
+| `descomponer` | función | [packages/engine/series.ts](../../packages/engine/series.ts) |
 | `desvincular_reloj` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `detectarIdioma` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `dia_de_vuelo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
@@ -433,6 +444,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `indicadorApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `indicadoresUi` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `ingest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
+| `intradia` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `ip_lan` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `isAdaptation` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `lectura` | función | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |

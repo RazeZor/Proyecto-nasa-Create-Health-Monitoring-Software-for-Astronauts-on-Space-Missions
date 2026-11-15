@@ -3,12 +3,14 @@ historial, recordatorios y mensajes. La app no guarda datos de ejemplo: los que 
 viven aquí (apps/api/demo/ y el caso de referencia del simulador) y se rotulan `Simulado`.
 """
 import json
+import math
+import random
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
 
 import gold
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from almacen import alertas, cola, lecturas, tripulacion
 from i18n import t
@@ -218,6 +220,62 @@ def historial(id: int = Depends(propio_o_clinico), modo: Literal["real", "demo"]
     return {**comun, "naturaleza": "Real", "dias_prevuelo": sum(f["dia_mision"] <= 0 for f in filas),
             "dias_vuelo": max(DIAS_VUELO_MINIMO, dia_actual), "dia_actual": dia_actual,
             "entorno_diario": [reales[d] for d in sorted(reales)], "lecturas": filas}
+
+
+# Lo que un sensor puede medir varias veces al día; el resto (sueño, ánimo, masa, glucosa) es diario o semanal.
+INTRADIA = {"frecuencia_cardiaca_reposo": "fc_reposo_lpm", "spo2": "spo2_pct", "temperatura_central": "temp_central_c",
+            "presion_arterial_sistolica": "pas_mmHg"}
+# campo -> (amplitud circadiana, desviación del ruido, margen máximo respecto al valor diario, decimales)
+_SIMULACION_INTRADIA = {"fc_reposo_lpm": (6, 1.5, 12, 1), "spo2_pct": (0, 0.25, 1, 1),
+                        "temp_central_c": (0.25, 0.05, 0.5, 2), "pas_mmHg": (5, 2.5, 12, 1)}
+PASO_INTRADIA_MIN = 15
+
+
+def _intradia_demo(id, dia, base, hasta):
+    """Puntos cada 15 min desde las 00:00 hasta `hasta` alrededor del valor diario `base` del caso de referencia: ritmo
+    circadiano suave (máximo a las 16:00) y ruido acotado. La semilla es (tripulante, día, campo): siempre los mismos."""
+    fin = int(hasta[:2]) * 60 + int(hasta[3:])
+    series = {}
+    for campo, (amplitud, ruido, margen, decimales) in _SIMULACION_INTRADIA.items():
+        centro = base.get(campo)
+        azar = random.Random(f"{id}-{dia}-{campo}")
+        puntos = []
+        for minuto in range(0, fin + 1, PASO_INTRADIA_MIN) if centro is not None else ():
+            ciclo = math.cos(2 * math.pi * (minuto / 60 - 16) / 24)
+            valor = min(max(centro + amplitud * ciclo + azar.gauss(0, ruido), centro - margen), centro + margen)
+            if campo == "spo2_pct":
+                valor = min(valor, 100)
+            puntos.append({"hora": f"{minuto // 60:02d}:{minuto % 60:02d}", "valor": round(valor, decimales)})
+        series[campo] = puntos
+    return series
+
+
+@router.get("/tripulantes/{id}/intradia", responses=ERRORES, summary="Lecturas de un día por hora")
+def intradia(id: int = Depends(propio_o_clinico), modo: Literal["real", "demo"] = "real", dia: int | None = None,
+             hasta: str | None = Query(None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$"), conn=Depends(conexion)):
+    """Lo del tiempo real: pulso, SpO2, temperatura y presión sistólica de un día (`dia`, por defecto hoy) con su hora UTC
+    (`{hora: "HH:MM", valor}`). Los mismos permisos que el historial (el tuyo, o el de tu misión si eres clínico; auditado).
+
+    - `modo=real`: las lecturas `Real` de ese día, sin agrupar. Sin lecturas, listas vacías.
+    - `modo=demo`: simuladas cada 15 min hasta `hasta` (por defecto la hora actual) alrededor del valor diario del
+      tripulante simulado del caso de referencia (día `DIA_ACTUAL_DEMO`); `naturaleza: Simulado`."""
+    if modo == "demo":
+        dia = dia or DIA_ACTUAL_DEMO
+        caso = _json(_CASO)
+        simulado = caso["tripulantes"][(id - 1) % len(caso["tripulantes"])]  # el mismo turno que en `historial`
+        base = next((f for f in simulado["lecturas"] if f["dia_mision"] == dia), {})
+        hasta = hasta or datetime.now(timezone.utc).strftime("%H:%M")
+        return {"dia": dia, "naturaleza": "Simulado", "series": _intradia_demo(id, dia, base, hasta)}
+    dia1 = tripulacion._dia1(conn, id)
+    if dia is None:
+        dia = tripulacion.dia_de_vuelo(conn, id, datetime.now(timezone.utc).strftime(tripulacion.FORMATO)) or 1
+    series = {campo: [] for campo in INTRADIA.values()}
+    for r in lecturas.leer_lecturas(conn, id):
+        if r["naturaleza"] != "Real" or r["indicador"] not in INTRADIA:
+            continue
+        if (tripulacion._utc(r["t_real"]) - dia1).days + 1 == dia:
+            series[INTRADIA[r["indicador"]]].append({"hora": r["t_real"][11:16], "valor": r["valor"]})
+    return {"dia": dia, "naturaleza": "Real", "series": series}
 
 
 @router.get("/tripulacion", responses={401: ERRORES[401]}, summary="Tripulación de tu misión")

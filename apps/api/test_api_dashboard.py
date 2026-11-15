@@ -107,6 +107,42 @@ class Dashboard(unittest.TestCase):
         conn.close()
         self.assertEqual(tuple(fila), (self.med, "historial", self.ana))
 
+    def test_intradia_demo_simula_el_dia_cada_15_min_cerca_del_valor_diario(self):
+        r = self.c.get(f"/tripulantes/{self.ana}/intradia", params={"modo": "demo", "hasta": "12:00"}, headers=self.h)
+        self.assertEqual(r.status_code, 200)
+        d = r.json()
+        self.assertEqual((d["dia"], d["naturaleza"]), (27, "Simulado"))
+        self.assertEqual(set(d["series"]), {"fc_reposo_lpm", "spo2_pct", "temp_central_c", "pas_mmHg"})
+        fc = d["series"]["fc_reposo_lpm"]
+        self.assertEqual([p["hora"] for p in fc[:3]] + [fc[-1]["hora"]], ["00:00", "00:15", "00:30", "12:00"])
+        self.assertEqual(len(fc), 49)
+        diario = self.c.get(f"/tripulantes/{self.ana}/historial", params={"modo": "demo"}, headers=self.h).json()
+        base = next(f for f in diario["lecturas"] if f["dia_mision"] == 27)
+        for campo, margen in (("fc_reposo_lpm", 15), ("spo2_pct", 1.5), ("temp_central_c", 0.6), ("pas_mmHg", 15)):
+            for p in d["series"][campo]:
+                self.assertLessEqual(abs(p["valor"] - base[campo]), margen, (campo, p))
+        self.assertTrue(all(p["valor"] <= 100 for p in d["series"]["spo2_pct"]))
+        otra = self.c.get(f"/tripulantes/{self.ana}/intradia", params={"modo": "demo", "hasta": "12:00"}, headers=self.h).json()
+        self.assertEqual(otra, d)  # determinista: el mismo día da los mismos puntos
+
+    def test_intradia_real_devuelve_las_lecturas_de_ese_dia_con_su_hora(self):
+        for indicador, valor, t_real, naturaleza in (("spo2", 97, "2026-11-14T08:10:00Z", "Real"),
+                                                     ("spo2", 95, "2026-11-14T20:40:00Z", "Real"),
+                                                     ("spo2", 80, "2026-11-14T21:00:00Z", "Simulado"),
+                                                     ("spo2", 99, "2026-11-15T08:00:00Z", "Real")):
+            self.c.post(f"/tripulantes/{self.ana}/lecturas", headers=self.h,
+                        json={"indicador": indicador, "valor": valor, "t_real": t_real, "naturaleza": naturaleza})
+        d = self.c.get(f"/tripulantes/{self.ana}/intradia", params={"modo": "real", "dia": 1}, headers=self.h).json()
+        self.assertEqual((d["dia"], d["naturaleza"]), (1, "Real"))
+        self.assertEqual(d["series"]["spo2_pct"], [{"hora": "08:10", "valor": 97.0}, {"hora": "20:40", "valor": 95.0}])
+        self.assertEqual(d["series"]["fc_reposo_lpm"], [])
+
+    def test_intradia_ajena_solo_para_clinicos(self):
+        self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/intradia", params={"modo": "demo"},
+                                    headers={"X-Tripulante": str(self.med)}).status_code, 200)
+        self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/intradia",
+                                    headers={"X-Tripulante": str(self.ids["comandante"])}).status_code, 403)
+
     def test_el_astronauta_y_el_comandante_no_leen_el_historial_de_otro(self):
         for quien in (self.ana, self.ids["comandante"]):
             otro = self.med if quien == self.ana else self.ana

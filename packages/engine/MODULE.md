@@ -15,6 +15,7 @@ Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación
 - Solo en TypeScript (Python evalúa series completas): valores `null` (medida no tomada: no puntúa, no alerta y rompe los dos días seguidos), tripulante sin prevuelo (capa A desde el día 1; B y C cuando la ventana en vuelo llega a 5 lecturas) y cambio de instrumento (A.6): `{ cambiosInstrumento }` descarta la línea base y la ventana de la FC y pausa sus capas B y C `DIAS_VENTANA_REINICIO` (8) días; la capa A sigue.
 - `analizarTripulante` devuelve además `referencias` (centro, dispersión, z y peso de vuelo por día): con ellas la interfaz dibuja la banda personal. Las claves y los códigos (`fc`, `cefalea`...) son los de la API y el simulador, no los de la UI.
 - Glucosa (semanal) en la capa B: su persistencia son dos medidas seguidas y un día sin medida no la rompe (`SEMANALES`). Síntomas: uno que el entorno no explica (todo salvo `cefalea` con CO2 sobre el límite) da `sintoma_<código>`, ámbar personal de capa `contexto`, sin escalar; la interfaz lo lleva a su zona del cuerpo.
+- `series.ts` (`descomponer`) no es parte del motor ni tiene paridad con Python: separa una serie diaria en tendencia (regresión local ±3 días), ciclo semanal (solo con >= 14 días y autocorrelación a 7 días >= 0.3) y residuo, para el histórico de la interfaz. Con < 10 días devuelve null. Tests en `series.test.ts`.
 - Pendiente declarado en el informe: masa corporal en la capa C y corrección metrológica de la capa A.
 
 ## Relación con el informe
@@ -36,6 +37,8 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 | [engine.ts](engine.ts) | 289 | Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD), |
 | [instrumento.test.ts](instrumento.test.ts) | 41 | — |
 | [paridad-referencia.test.ts](paridad-referencia.test.ts) | 98 | — |
+| [series.test.ts](series.test.ts) | 45 | — |
+| [series.ts](series.ts) | 85 | Descomposición de una serie diaria en tendencia, ciclo y residuo, para el histórico de la interfaz. No es parte del |
 
 ### API pública
 
@@ -73,9 +76,18 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 - función `analizarTripulante`
 - función `evaluarTripulante`
 
+**series.ts**
+
+- interfaz `Punto`
+- interfaz `Descomposicion`
+- constante `MIN_DIAS_DESCOMPOSICION`
+- constante `MIN_DIAS_CICLO`
+- constante `UMBRAL_CICLO`
+- función `descomponer`
+
 ### Dependencias
 
-- Internas: `./engine.ts`, `./fixtures/caso-referencia.json`
+- Internas: `./engine.ts`, `./fixtures/caso-referencia.json`, `./series.ts`
 - Externas: ninguna
 - Biblioteca estándar: `node:assert/strict`, `node:test`
 
@@ -83,4 +95,5 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 
 - `packages/engine/instrumento.test.ts`: 0 pruebas
 - `packages/engine/paridad-referencia.test.ts`: 0 pruebas
+- `packages/engine/series.test.ts`: 0 pruebas
 <!-- CONTEXT:AUTO:END -->

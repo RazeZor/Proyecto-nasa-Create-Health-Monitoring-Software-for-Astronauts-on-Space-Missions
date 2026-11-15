@@ -7,6 +7,7 @@ import { ICONO_INDICADOR } from "@/components/shared/iconos"
 import { LineChart } from "@/components/shared/line-chart"
 import { EmptyState } from "@/components/shared/states"
 import { LayerChip, ProvenanceTag, StatusBadge, STATUS_ICON, statusText } from "@/components/shared/status"
+import { Descomposicion } from "@/components/trends/descomposicion"
 import { resumir, type Resumen } from "@/components/trends/resumen"
 import { BASELINE_SWITCH_DAY } from "@/lib/engine"
 import { S } from "@/lib/strings"
@@ -199,6 +200,9 @@ export function TrendsView() {
                       {S.trends.backToToday}
                     </button>
                   )}
+                </div>
+                <div className="mt-3 border-t border-border pt-3">
+                  <Descomposicion puntos={points} dia={day} dias={analisis.missionDays} color="#2f6fdb" />
                 </div>
               </>
             )}

@@ -115,7 +115,7 @@ export function CuerpoTripulacion({ modo: inicial = "real" }: { modo?: "real" | 
           style={{ transitionDuration: `${DURACION_MS}ms` }}
         >
           <VerComo key={elegido} historial={historial}>
-            {modo === "real" ? <HoyDelTripulante /> : <Historico />}
+            {modo === "real" ? <HoyDelTripulante tripulante={elegido} actor={actor} /> : <Historico />}
           </VerComo>
         </div>
       )}
@@ -124,9 +124,9 @@ export function CuerpoTripulacion({ modo: inicial = "real" }: { modo?: "real" | 
 }
 
 /** En tiempo real el cuerpo es el de hoy: el día de misión vuelve al actual del tripulante. */
-function HoyDelTripulante() {
+function HoyDelTripulante({ tripulante, actor }: { tripulante: number | null; actor: number | null }) {
   const { setDay, catalogo } = useApp()
   const hoy = catalogo.historial.dia_actual
   useEffect(() => setDay(hoy), [setDay, hoy])
-  return <BodyView ajeno />
+  return <BodyView ajeno tripulante={tripulante} actor={actor} />
 }

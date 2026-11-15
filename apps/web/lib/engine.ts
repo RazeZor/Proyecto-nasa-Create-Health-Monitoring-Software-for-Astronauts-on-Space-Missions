@@ -8,6 +8,7 @@ import {
   type Alerta, type CambioInstrumento, type EntornoDia, type IndicadorB, type Lectura,
   analizarTripulante, DIA_FIN_ADAPTACION, PROTONES_TORMENTA_PFU, puntosNews2, Z_UMBRAL_CONDUCTUAL, Z_UMBRAL_FISIOLOGICO,
 } from "../../../packages/engine/engine.ts"
+export { descomponer, type Descomposicion } from "../../../packages/engine/series.ts"
 import type { EntornoHistorial, Historial, OrigenDato } from "./catalogo.ts"
 import { MOTOR, S } from "./strings.ts"
 import vocabulario from "./vocabulario.json" with { type: "json" }

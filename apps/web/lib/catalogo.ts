@@ -204,5 +204,15 @@ export async function cargarCatalogo(tripulante: number, modo: Mode = "real"): P
 }
 
 /** Historial de otro tripulante de la misión: solo lo concede el servidor al oficial médico (queda auditado). */
+/** Puntos de un día con su hora UTC (`/tripulantes/{id}/intradia`): lo que mide un sensor varias veces al día. */
+export type PuntoIntradia = { hora: string; valor: number }
+export type Intradia = {
+  dia: number
+  naturaleza: "Real" | "Simulado"
+  series: Record<"fc_reposo_lpm" | "spo2_pct" | "temp_central_c" | "pas_mmHg", PuntoIntradia[]>
+}
+export const cargarIntradia = (tripulante: number, actor: number, modo: Mode): Promise<Intradia | null> =>
+  pedir<Intradia>(`/tripulantes/${tripulante}/intradia?modo=${modo}`, actor).catch(() => null)
+
 export const cargarHistorialAjeno = (tripulante: number, actor: number, modo: Mode): Promise<Historial | null> =>
   pedir<Historial>(`/tripulantes/${tripulante}/historial?modo=${modo}&lang=${IDIOMA}`, actor).catch(() => null)
