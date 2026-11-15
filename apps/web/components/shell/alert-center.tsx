@@ -73,6 +73,8 @@ function ToastItem({ t, onDone }: { t: Toast; onDone: (id: string) => void }) {
   const urgent = t.kind === "act" || t.kind === "env"
   // mientras el dedo está encima, el temporizador se detiene (con ratón o teclado ya lo hace la regla CSS de `.group`)
   const [tocando, setTocando] = useState(false)
+  // plegado muestra solo el título (tocarlo despliega el detalle); el lector de pantalla lo lee entero igualmente
+  const [abierto, setAbierto] = useState(false)
   return (
     <li
       role={urgent ? "alert" : "status"}
@@ -84,19 +86,23 @@ function ToastItem({ t, onDone }: { t: Toast; onDone: (id: string) => void }) {
     >
       <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1.5", style.bar)} />
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5 pl-5 pr-2.5">
-        <span className={cn("flex size-12 shrink-0 items-center justify-center rounded-full", style.disco)}>
-          <Icon aria-hidden className="size-7" />
+        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full", style.disco)}>
+          <Icon aria-hidden className="size-6" />
         </span>
         <div className="min-w-0 flex-1 basis-64">
-          <p className={cn("line-clamp-2 text-lg font-semibold leading-snug", urgent && style.text)}>
-            <span className="sr-only">{S.toast.auto}: </span>
-            {t.title}
-          </p>
-          <p className="line-clamp-2 text-base leading-snug">{t.body}</p>
-          <p className="mt-1 flex items-start gap-1.5 text-sm leading-snug text-muted-foreground">
-            <MetaIcon className="mt-0.5 size-4 shrink-0" />
-            <span>{t.meta} <span className="whitespace-nowrap font-mono">· {t.stamp}</span></span>
-          </p>
+          <button type="button" aria-expanded={abierto} onClick={() => setAbierto((v) => !v)} className="block w-full min-h-11 text-left">
+            <span className={cn("block text-lg font-semibold leading-snug", !abierto && "line-clamp-1", urgent && style.text)}>
+              <span className="sr-only">{S.toast.auto}: </span>
+              {t.title}
+            </span>
+          </button>
+          <div className={abierto ? undefined : "sr-only"}>
+            <p className="text-base leading-snug">{t.body}</p>
+            <p className="mt-1 flex items-start gap-1.5 text-sm leading-snug text-muted-foreground">
+              <MetaIcon className="mt-0.5 size-4 shrink-0" />
+              <span>{t.meta} <span className="whitespace-nowrap font-mono">· {t.stamp}</span></span>
+            </p>
+          </div>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
           <Link
