@@ -17,6 +17,8 @@ Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON 
 - `peligro` es una lista con los cinco peligros del HRP (`radiacion`, `aislamiento`, `distancia`, `gravedad_alterada`, `entorno_cerrado`). Un `null` en `unidad`, `referencia_en_vuelo` o `prevencion` significa que el informe no lo respalda.
 - Los datos de fichas viven en `packages/schemas/fichas/<id>.json` con `index.json`; la app los recibe por la API (`GET /fichas`), nunca los importa. Si cambia cualquier esquema, se versiona aquí antes de tocar los consumidores.
 
+- `fichas_en/<id>.json` trae la traducción al inglés de cada ficha: solo los campos de texto (`nombre`, `que_es`, `como_se_mide_en_vuelo`, `por_que`, `referencia_en_vuelo`, `cuando_avisar`, `prevencion`) y `fuentes` como lista de títulos en el mismo orden. El español manda: una ficha nueva o cambiada se edita primero en `fichas/`; `test_fichas.py` exige que la traducción no invente campos ni cambie la estructura. La API las aplica con `?lang=en`.
+
 ## Relación con el informe
 
 - §3.2 Fichas de indicador. §3.3 Perfiles de misión y presiones de cabina. §3.4 Reanclaje y doble marca temporal. §5.1 Motor híbrido y §5.5 Simulación reproducible.
@@ -33,7 +35,7 @@ tags: schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, 
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [test_fichas.py](test_fichas.py) | 42 | Valida las fichas de packages/schemas/fichas contra ficha.schema.json (solo biblioteca estándar). |
+| [test_fichas.py](test_fichas.py) | 57 | Valida las fichas de packages/schemas/fichas contra ficha.schema.json (solo biblioteca estándar). |
 | [test_schemas.py](test_schemas.py) | 122 | Pruebas de contrato para perfiles, lecturas, entorno Gold y caso de referencia. |
 | [test_vocabulario.py](test_vocabulario.py) | 65 | El contrato vocabulario.json no puede desviarse de lo que de verdad usan la base de datos, las fichas y la interfaz. |
 | [validador.py](validador.py) | 82 | Validador mínimo de JSON Schema (Draft 2020-12) con solo biblioteca estándar. |

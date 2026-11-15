@@ -12,7 +12,8 @@ Traducciones compartidas de VIGÍA. El español es el idioma principal y el ingl
 - Lo que sí falla en CI: claves en `en.json` que no existen en `es.json`, textos vacíos, o `{variables}` distintas entre idiomas.
 - Las claves van anidadas por área y se usan con puntos: `alertas.rojo`, `cli.datalake.uso`. Una clave inexistente devuelve la propia clave, para que se note en pantalla.
 - Python: `t(clave, idioma=None, **variables)`. El idioma sale de `VIGIA_LANG` (`es` por defecto). Desde otro módulo se importa agregando `packages/i18n` al `sys.path` (ver `pipelines/datalake/index.py`).
-- TypeScript: `t(clave, idioma, variables)` es puro. La app elige el idioma con `detectarIdioma(preferenciaGuardada, navigator.language)`. Requiere `resolveJsonModule`. Aún no se ha compilado (no hay `apps/web/package.json`).
+- TypeScript: `t(clave, idioma, variables)` es puro. La app elige el idioma con `detectarIdioma(preferenciaGuardada, navigator.language)`. Requiere `resolveJsonModule`; los JSON se importan con `with { type: "json" }` para que el mismo archivo corra en Node (tests) y en el empaquetador.
+- Todos los textos de `apps/web` viven en el subárbol `web` (`web.S.*` para la interfaz y `web.MOTOR.*` para las alertas del motor); `apps/web/lib/strings.ts` solo les da forma y tipos. Un texto nuevo de la interfaz nace aquí, en español.
 - Las dos implementaciones deben comportarse igual. Si cambias una, cambia la otra.
 
 ## Relación con el informe
@@ -32,7 +33,7 @@ tags: i18n, idiomas, español, inglés, traducciones, packages
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
 | [i18n.py](i18n.py) | 71 | Traducciones de VIGÍA: español es el idioma principal e inglés el secundario. |
-| [i18n.ts](i18n.ts) | 44 | Traducciones de VIGÍA: español es el idioma principal e inglés el secundario. |
+| [i18n.ts](i18n.ts) | 45 | Traducciones de VIGÍA: español es el idioma principal e inglés el secundario. |
 | [test_i18n.py](test_i18n.py) | 58 | — |
 
 ### API pública

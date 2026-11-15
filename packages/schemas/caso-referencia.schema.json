@@ -90,7 +90,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["dia_mision", "tripulante_id", "capa", "nivel", "indicador", "valor", "escalada_auto"],
+        "required": ["dia_mision", "tripulante_id", "capa", "nivel", "indicador", "valor", "escalada_auto", "ambito", "informativa"],
         "properties": {
           "dia_mision": { "type": "integer" },
           "tripulante_id": { "type": "string" },
@@ -98,7 +98,9 @@
           "nivel": { "enum": ["ambar", "rojo"] },
           "indicador": { "type": "string" },
           "valor": { "type": ["number", "null"] },
-          "escalada_auto": { "type": "boolean" }
+          "escalada_auto": { "type": "boolean" },
+          "ambito": { "enum": ["personal", "tripulacion"] },
+          "informativa": { "type": "boolean" }
         }
       }
     }

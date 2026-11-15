@@ -20,9 +20,9 @@ ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA),
 - `ALTEA-Survey` es el único instrumento de RadLab con `dose_equivalent_rate` (408 321 filas, cada minuto, de 2010-09 a 2012-06 en la ISS; revisado con una consulta a toda la base). `escenarios/dosis-equivalente.json` lo usa: un día completo (2011-11-16, cobertura 1,0) da 913 µSv, sin `orientativa`. Ese día está por encima de los 0,2 a 0,5 mSv/día que cita el informe; es un día y los datos son preliminares.
 - El panel repite `ventanas` (fuente y fechas reales) y un `aviso`: que series de fechas reales distintas caigan en el mismo día de misión es decisión del escenario, no un hecho observado (§3.4 regla 4).
 - GOES separa la serie por satélite (`G18 >=10 MeV`) para no mezclar satélites en el mismo paso.
-- Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...` y `index.py simular [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.
-- `simulacion.py` implementa el protocolo reproducible del informe §5.5 (14 días previos al vuelo + 30 días de misión, 4 tripulantes, semilla principal `2026` y validación `2027`, adaptación `w(d) = 1 - exp(-d / 4)`, anomalías `A1`, `A2` y `A3`, motor de referencia NEWS2 + MAD + CUSUM) y publica `gold/caso_referencia.json` y `gold/kpi.json` con `tipo: "simulacion"` en `gold/manifest.json`.
-- `escenarios/mision-vigia.json` y `escenarios/tormenta-mayo-2024.json` definen escenarios multi-día reales (5 días continuos de `ALTEA-Survey` / RadLab ISS mayo 2024, 5 días de `EDA RR-1`, 14 eventos `DONKI` SEP de mayo 2024 y serie `GOES-18`).
+- Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...`, `index.py simular [n]` e `index.py barrer [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.
+- `simulacion.py` implementa el protocolo de §5.5 tal cual: 14 días de prevuelo + 30 de misión, 4 tripulantes, y las anomalías A1 (deriva de sueño, FC y ánimo en trip-1, días 18 a 27), A2 (CO2 de 4,6 mmHg el día 12 con cefalea en trip-2 y trip-3) y A3 (200 pfu los días 22 y 23). El motor de referencia sigue §5.1 y §5.2 (línea base de tierra a vuelo; el detector no conoce los desplazamientos de `SUPUESTOS`, que solo usa el generador). Publica `gold/caso_referencia.json` y `gold/kpi.json` (detección por anomalía, días hasta la alerta, mitad de intensidad, alerta por azar, comparador de 91 lpm y falsas alarmas por tripulante y semana, con segunda semilla). `index.py barrer` publica `gold/barrido.json` (k y h del CUSUM). Las cifras del informe salen de aquí: si cambia una regla, se vuelve a correr y se actualiza el informe; no se ajustan parámetros para recuperar un número.
+- Escenarios que usa la app (la API los busca por nombre): `mision-real` es el entorno del modo real, anclado al día 1 de la misión (GOES y DONKI en su fecha real, y RadLab ALTEA-Survey y EDA RR-1 reanclados); `mision-vigia` es el del modo demo (ventanas en los días 18 a 23, con los 14 eventos SEP de mayo de 2024). El servicio de GOES solo guarda 24 horas: hay que reingerir y republicar (`index.py panel`) para que el modo real avance. Una ventana de DONKI ya consultada y sin eventos es un resultado válido (no falla); cualquier otra ventana sin datos sí.
 
 ## Relación con el informe
 
@@ -40,13 +40,13 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [index.py](index.py) | 36 | CLI del ETL de reanclaje. |
+| [index.py](index.py) | 39 | CLI del ETL de reanclaje. |
 | [panel.py](panel.py) | 82 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
-| [reanclaje.py](reanclaje.py) | 147 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
-| [simulacion.py](simulacion.py) | 468 | Simulador reproducible y generación de caso de referencia para VIGÍA (§5.5). |
+| [reanclaje.py](reanclaje.py) | 155 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
+| [simulacion.py](simulacion.py) | 538 | Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5). |
 | [test_panel.py](test_panel.py) | 71 | — |
-| [test_reanclaje.py](test_reanclaje.py) | 87 | — |
-| [test_simulacion.py](test_simulacion.py) | 63 | — |
+| [test_reanclaje.py](test_reanclaje.py) | 96 | — |
+| [test_simulacion.py](test_simulacion.py) | 170 | — |
 
 ### API pública
 
@@ -63,16 +63,19 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 - función `diario(puntos)`: Resumen por día de misión: máximo, dosis del día (tasas de dosis) y máximo del promedio
 - función `eventos(filas, corrimiento)`
 - función `validar(escenario)`
-- función `construir(escenario)`: Genera y guarda el gold del escenario. Si falta curated en una ventana no escribe nada.
+- función `construir(escenario)`: Genera y guarda el gold del escenario. Si falta curated en una ventana no escribe nada (salvo DONKI ya
 - función `guardar(clave, datos, destino=None, **resumen)`: Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en
 
 **simulacion.py**
 
-- función `evaluar_tripulante(tripulante, entorno_por_dia)`: Ejecuta el motor híbrido de referencia (Capas A, B, C y contexto) sobre un tripulante.
-- función `generar_mision(rng, asignaciones=None, con_tormenta=False)`: Genera una misión completa (4 tripulantes x 44 días) y calcula sus alertas.
-- función `generar_caso_referencia(semilla=SEMILLA_DEFECTO)`: Construye el caso de referencia único con trip-1=A1, trip-2=A2, trip-3=A3, trip-4=nominal.
-- función `ejecutar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)`: Ejecuta el protocolo completo: 500 anomalías (por tipo) + 500 control + media intensidad + semilla 2027.
+- función `evaluar_tripulante(tripulante, entorno_por_dia, cusum_k=CUSUM_K, cusum_h=CUSUM_H)`: Motor híbrido de referencia sobre un tripulante: alertas de las capas A, B, C y de contexto.
+- función `generar_mision(rng, a1=None, a2=False, a3=False)`: Genera una misión (entorno y 4 tripulantes x 44 días). `a1` = intensidad de la deriva en trip-1.
+- función `evaluar_mision(entorno, tripulantes, cusum_k=CUSUM_K, cusum_h=CUSUM_H)`
+- función `generar_caso_referencia(semilla=SEMILLA_DEFECTO)`: Caso de referencia: una misión con A1 (trip-1), A2 (trip-2 y trip-3) y A3; trip-4 es nominal.
+- función `barrer(n_misiones=200, semilla=SEMILLA_DEFECTO, ks=(0.5, 0.75, 1.0), hs=(4.0, 5.0, 6.0))`: Barrido de k y h del CUSUM (§5.1): falsas alarmas en control y detección de A1 por combinación.
+- función `ejecutar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)`: Protocolo completo: n misiones con anomalías y n de control, mitad de intensidad y segunda semilla.
 - función `publicar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)`: Genera y persiste `caso_referencia.json` y `kpi.json` en `gold/` con SHA-256.
+- función `publicar_barrido(n_misiones=200, semilla=SEMILLA_DEFECTO)`: Persiste el barrido de k y h en `gold/barrido.json`.
 
 ### Puntos de entrada
 
@@ -82,6 +85,7 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 python3 index.py build <escenario.json>   curated -> gold (ver escenarios/ejemplo.json)
 python3 index.py panel <escenario.json> [destino.json]   gold -> panel de entorno para la app
 python3 index.py simular [n_misiones]     genera caso_referencia.json y kpi.json en gold/
+python3 index.py barrer [n_misiones]      barrido de k y h del CUSUM en gold/barrido.json
 python3 index.py manifest                 SHA-256 y tamaños de cada escenario generado
 ```
 
@@ -94,6 +98,6 @@ python3 index.py manifest                 SHA-256 y tamaños de cada escenario g
 ### Tests
 
 - `pipelines/reanclaje/test_panel.py`: 6 pruebas en Panel (5), Publicar (1)
-- `pipelines/reanclaje/test_reanclaje.py`: 8 pruebas en Pasos (6), Construir (2)
-- `pipelines/reanclaje/test_simulacion.py`: 4 pruebas en Simulacion (3), FixtureDelMotor (1)
+- `pipelines/reanclaje/test_reanclaje.py`: 9 pruebas en Pasos (6), Construir (3)
+- `pipelines/reanclaje/test_simulacion.py`: 17 pruebas en Simulacion (3), Reglas (13), FixtureDelMotor (1)
 <!-- CONTEXT:AUTO:END -->

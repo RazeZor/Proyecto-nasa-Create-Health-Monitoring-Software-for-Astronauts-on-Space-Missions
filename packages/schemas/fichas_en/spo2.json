@@ -1,0 +1,19 @@
+{
+  "id": "spo2",
+  "nombre": "Oxygen saturation (SpO2)",
+  "que_es": "Percentage of the hemoglobin in the blood that is carrying oxygen.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Sensor always at the same site (finger or forehead), and the site noted. Warm hand and 30 seconds without moving.",
+    "transito": "Same as on station.",
+    "superficie": "Same as on station. In exploration atmosphere, compare with the profile baseline."
+  },
+  "por_que": "Detects hypoxia: the exploration atmosphere (8.2 psia, 34% O2) is mildly hypoxic.",
+  "referencia_en_vuelo": "In that atmosphere the inspired O2 pressure is 128 mmHg, equivalent to an altitude of about 1,220 m. Ground-based evidence indicates that the forehead is less affected than the finger by peripheral vasoconstriction.",
+  "cuando_avisar": "Extreme band of layer A (91% or less). From 92 to 95% it adds points only if it also departs from the profile baseline.",
+  "prevencion": "Cabin atmosphere control to keep the partial pressure of oxygen within the NASA-STD-3001 limits, with continuous monitoring.",
+  "fuentes": [
+    "Royal College of Physicians: NEWS2 scoring table",
+    "NASA HRP: Risks of Human Spaceflight",
+    "VIGÍA technical report, §2.4"
+  ]
+}

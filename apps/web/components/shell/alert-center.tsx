@@ -55,7 +55,7 @@ function playTone(urgent: boolean) {
 function speak(text: string) {
   if (!("speechSynthesis" in window)) return
   const u = new SpeechSynthesisUtterance(text)
-  u.lang = "es-ES"
+  u.lang = document.documentElement.lang === "en" ? "en-US" : "es-ES"
   window.speechSynthesis.speak(u)
 }
 
@@ -123,26 +123,20 @@ export function AlertCenter() {
 
   useEffect(() => {
     const fresh: Toast[] = []
-    if (analisis.storm(day) && !seen.current.has(`storm-${day}`)) {
-      seen.current.add(`storm-${day}`)
-      fresh.push({
-        id: `storm-${day}`, kind: "env", stamp: `${S.common.day} ${day}`,
-        title: S.toast.stormTitle, body: S.banners.stormDetail, meta: S.toast.crew, href: "/environment", ttl: 20000,
-      })
-    }
-    for (const a of analisis.alerts(day).filter((x) => x.day === day)) {
+    // la tormenta y el CO2 llegan como alertas de entorno del motor; las informativas (adaptación) no avisan
+    for (const a of analisis.alerts(day).filter((x) => x.day === day && !x.informative)) {
       if (seen.current.has(a.id)) continue
       seen.current.add(a.id)
-      const kind: Kind = a.layer === "context" ? "env" : a.status === "act" ? "act" : "watch"
+      const kind: Kind = a.scope === "crew" ? "env" : a.status === "act" ? "act" : "watch"
       fresh.push({
-        id: a.id, kind, stamp: `${S.common.day} ${a.day} · ${a.time}`,
-        title: `${S.status[a.status]} · ${a.indicator} ${a.value}`, body: a.action,
-        meta: kind === "act" ? S.toast.escalated : kind === "env" ? S.toast.crew : S.toast.private,
-        href: "/alerts", ttl: kind === "watch" ? 12000 : 20000,
+        id: a.id, kind, stamp: [`${S.common.day} ${a.day}`, a.time].filter(Boolean).join(" · "),
+        title: kind === "env" ? `${a.indicator}${a.value ? ` · ${a.value}` : ""}` : `${S.status[a.status]} · ${a.indicator} ${a.value}`, body: a.action,
+        meta: kind === "act" ? (a.escalates ? S.toast.escalated : S.toast.private) : kind === "env" ? S.toast.crew : S.toast.private,
+        href: kind === "env" ? "/environment" : "/alerts", ttl: kind === "watch" ? 12000 : 20000,
       })
     }
     push(fresh)
-  }, [day, push])
+  }, [day, push, analisis])
 
   useEffect(() => {
     const id = window.setTimeout(() => {

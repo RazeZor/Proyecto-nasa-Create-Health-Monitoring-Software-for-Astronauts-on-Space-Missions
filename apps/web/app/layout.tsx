@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { AppProvider } from '@/components/app-context'
 import { AppShell } from '@/components/shell/app-shell'
+import { SwRegister } from '@/components/shell/sw-register'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
       <body className="font-sans antialiased">
+        <SwRegister />
         <AppProvider>
           <AppShell>{children}</AppShell>
         </AppProvider>

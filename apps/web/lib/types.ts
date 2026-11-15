@@ -1,6 +1,8 @@
 export type Status = "ok" | "watch" | "act"
 export type Layer = "A" | "B" | "C" | "context"
 export type Role = "astronaut" | "cmo" | "surgeon"
+/** `real`: lo que el tripulante registra y el entorno medido. `demo`: escenario simulado con anomalías inyectadas. */
+export type Mode = "real" | "demo"
 export type ProfileId = "station" | "transit" | "transit-docked" | "lunar" | "mars"
 
 export type Provenance =
@@ -21,15 +23,16 @@ export type ZoneId = "head" | "heart" | "bone" | "blood" | "mind"
 
 export type Symptom = "headache" | "nausea" | "dizziness" | "visionChange" | "rash"
 
+/** Lecturas de un día; `null` es una medida que ese día no se tomó. */
 export interface DailyVitals {
   day: number
-  restingHr: number
-  systolic: number
-  diastolic: number
-  spo2: number
-  tempC: number
-  sleepH: number
-  mood: number
+  restingHr: number | null
+  systolic: number | null
+  diastolic: number | null
+  spo2: number | null
+  tempC: number | null
+  sleepH: number | null
+  mood: number | null
   symptoms: Symptom[]
   glucose?: number
   massKg?: number
@@ -48,14 +51,29 @@ export interface Alert {
   id: string
   day: number
   time: string
+  /** Hora del registro del tripulante que la produjo; null si viene solo del historial. */
+  createdAt: string | null
   status: Status
   layer: Layer
-  zone: ZoneId
+  /** Zona del cuerpo; null en las alertas de entorno que no son un estado del cuerpo (tormenta). */
+  zone: ZoneId | null
   indicator: string
   value: string
   clinicalBand: string
   cause: string
   action: string
+  /** `crew`: dato ambiental compartido con toda la tripulación, sin datos personales (§5.4). */
+  scope: "personal" | "crew"
+  /** Calculada en modo adaptación: se muestra, no alerta ni cambia el estado. */
+  informative: boolean
+  /** Rojo de la capa A: sale solo hacia el oficial médico. */
+  escalates: boolean
+  /** Procedencia del dato ambiental (Real o Simulado, fuente y fecha real). */
+  source?: string
+  /** Dato mínimo del escalamiento: el parámetro clínico que más puntúa. */
+  clinical?: { indicador: string; valor: number; tramo: string }
+  /** Tres días seguidos en ámbar: se recomienda compartir (sin hacerlo por el astronauta). */
+  recommendShare?: boolean
 }
 
 export type IndicatorId =
@@ -85,12 +103,13 @@ export interface IndicatorInfo {
   safetyHigh?: number
 }
 
-export interface Baseline {
-  phase: "pre-flight" | "in-flight"
-  fromDay: number
-  toDay: number
+/** Banda personal de un día: centro ± umbral de la capa B con la referencia vigente. */
+export interface BandPoint {
+  day: number
   low: number
   high: number
+  /** 0 = línea base de tierra; 1 = línea base en vuelo; entre medias, la transición (§5.2). */
+  flightWeight: number
 }
 
 export interface CheckInEntry {

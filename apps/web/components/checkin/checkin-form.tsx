@@ -11,7 +11,6 @@ import { evaluateCheckIn } from "@/lib/engine"
 import { comoMedirEnPerfil } from "@/lib/catalogo"
 import { fcReposoSugerida, spo2Sugerida, suenoSugerido, ultimoCambioInstrumento } from "@/lib/reloj"
 import { S } from "@/lib/strings"
-import { sincronizarRegistros } from "@/lib/sincronizacion"
 import { store } from "@/lib/storage"
 import type { CheckInEntry, IndicatorId, Status, Symptom } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -69,7 +68,10 @@ export function CheckInScreen() {
 }
 
 function CheckInForm({ onReset }: { onReset: () => void }) {
-  const { day, liveHr, device, simulator, reloj, checkIns, recargarRegistros, catalogo } = useApp()
+  const app = useApp()
+  const { liveHr, device, simulator, reloj, checkIns, recargarRegistros, catalogo, mode, profile } = app
+  // modo real: el registro es de hoy (el día de misión que da la API), no del día que se esté consultando
+  const day = mode === "real" ? catalogo.historial.dia_actual : app.day
   // A.6: con el reloj real se precarga la FC en reposo del día (chequeo, sueño o día despierto), nunca el pulso
   // instantáneo; el simulador sigue dando su valor de demostración.
   const fcReloj = device === "connected" ? fcReposoSugerida(reloj) : null
@@ -120,14 +122,14 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
       glucose: num(g("glucose")), glucoseEnzyme: g("enzyme"),
       massKg: num(g("mass")), massMethod: g("massMethod"),
     }
-    const status = evaluateCheckIn(base, checkIns, catalogo.historial)
+    const status = evaluateCheckIn(base, checkIns, catalogo.historial, profile.cabinPressureMmHg)
     const entry: CheckInEntry = { ...base, status, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
     setSaving(true)
     setError(false)
     try {
       await store.saveCheckIn(entry)
-      void recargarRegistros() // el motor recalcula cuerpo, tendencias y alertas
-      void sincronizarRegistros() // sube a la API sin bloquear: sin red queda pendiente
+      if (mode === "real") app.setDay(day)
+      void recargarRegistros() // el motor recalcula cuerpo, tendencias y alertas; el contexto sube lo pendiente a la API
       setResult({ status, sec })
       requestAnimationFrame(() => resultRef.current?.focus())
     } catch {
@@ -174,7 +176,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
             over ? "border-status-watch/50 text-status-watch" : "border-border",
           )}
           role="timer"
-          aria-label={`${S.checkin.elapsed} ${elapsed} seconds ${S.checkin.target}`}
+          aria-label={`${S.checkin.elapsed} ${elapsed} ${S.checkin.seconds} ${S.checkin.target}`}
         >
           <Timer aria-hidden className="size-5" />
           <span className="text-sm text-muted-foreground">{S.checkin.elapsed}</span>
@@ -183,6 +185,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
         </div>
       </PageHeader>
       <p id="ci-sub" className="sr-only">{S.checkin.subtitle}</p>
+      {mode === "real" && <p className="mb-4 text-sm text-muted-foreground">{S.checkin.dayReal(day)}</p>}
 
       {cambiaInstrumento && !cambioInstrumento && <p role="status" className="mb-4 rounded-lg border border-status-watch/40 bg-status-watch/10 p-3 text-sm">{S.device.instrumentChange(`${instrumentoPrevio} → ${instrumentoHr}`)}</p>}
       {cambioInstrumento && <p role="alert" className="mb-4 rounded-lg border border-status-watch/40 bg-status-watch/10 p-3 text-sm">{S.device.instrumentChange(cambioInstrumento.detalle ?? "")}</p>}
@@ -221,7 +224,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
               value={spo2Value} onChange={(e) => setSpo2(e.target.value)} />
             <select name="spo2Site" className={selCls} aria-label={S.checkin.site} disabled={spo2FromWatch}
               value={spo2FromWatch ? WRIST : spo2Site} onChange={(e) => setSpo2Site(e.target.value)}>
-              <option>Dedo</option><option>Frente</option><option>Oreja</option><option value={WRIST}>{S.checkin.wrist}</option>
+              <option value="Dedo">{S.checkin.optFinger}</option><option value="Frente">{S.checkin.optForehead}</option><option value="Oreja">{S.checkin.optEar}</option><option value={WRIST}>{S.checkin.wrist}</option>
             </select>
           </div>
           {spo2FromWatch && <p className="mt-1 text-xs text-muted-foreground">{S.checkin.spo2WatchNote}</p>}
@@ -231,7 +234,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
           <div className="flex gap-2">
             <input id="temp" name="temp" type="number" step="0.1" min={33} max={42} className={inputCls} placeholder="36.7" />
             <select name="tempMethod" className={selCls} aria-label={S.checkin.method}>
-              <option>Oral</option><option>Temporal</option><option>Timpánica</option>
+              <option value="Oral">{S.checkin.optOral}</option><option value="Temporal">{S.checkin.optTemporal}</option><option value="Timpánica">{S.checkin.optTympanic}</option>
             </select>
           </div>
         </Field>
@@ -291,7 +294,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
             <div className="flex gap-2">
               <input id="mass" name="mass" type="number" step="0.1" min={30} max={150} className={inputCls} placeholder="74.0" />
               <select name="massMethod" className={selCls} aria-label={S.checkin.method}>
-                <option>Inercial</option><option>Gravimétrica</option>
+                <option value="Inercial">{S.checkin.optInertial}</option><option value="Gravimétrica">{S.checkin.optGravimetric}</option>
               </select>
             </div>
           </Field>
@@ -301,7 +304,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
       {error && <div className="mt-4"><ErrorState message={S.checkin.saveError} /></div>}
 
       <div className="sticky bottom-0 mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border bg-background/95 py-4 backdrop-blur">
-        <ProvenanceTag provenance={{ kind: "measured" }} />
+        <ProvenanceTag provenance={{ kind: mode === "real" ? "measured" : "simulated" }} />
         <button type="submit" disabled={saving}
           className="min-h-12 rounded-lg bg-primary px-8 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
           {saving ? S.checkin.saving : S.checkin.submit}

@@ -6,6 +6,8 @@
  */
 
 // Por defecto, el proxy del mismo origen (next.config.mjs); NEXT_PUBLIC_VIGIA_API_URL lo salta con una URL directa.
+import { guardarCache, leerCache } from "./storage"
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_VIGIA_API_URL || "/vigia-api"
 
 export interface VentanaEtl {
@@ -109,13 +111,16 @@ export interface KpiSimulacionEtl {
   resultados: Record<string, unknown>
 }
 
+/** Pide a la API y guarda una copia local; si no hay enlace devuelve la última copia (a bordo la red solo sincroniza). */
 async function getJson<T>(ruta: string): Promise<T | null> {
   try {
     const res = await fetch(`${API_BASE_URL}${ruta}`, { cache: "no-store" })
     if (!res.ok) return null
-    return (await res.json()) as T
+    const datos = (await res.json()) as T
+    guardarCache(`etl:${ruta}`, datos)
+    return datos
   } catch {
-    return null
+    return leerCache<T>(`etl:${ruta}`)
   }
 }
 

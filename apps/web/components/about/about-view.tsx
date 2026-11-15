@@ -3,19 +3,11 @@ import { LayerChip, ProvenanceTag } from "@/components/shared/status"
 import { S } from "@/lib/strings"
 import type { Layer, Provenance } from "@/lib/types"
 
-const PROV: [Provenance, string][] = [
-  [{ kind: "measured" }, "Introducido por el astronauta o transmitido desde un dispositivo vinculado."],
-  [{ kind: "simulated" }, "Fisiología sintética generada para este prototipo."],
-  [{ kind: "scenario" }, "Evento guionizado para demostrar una respuesta."],
-  [{ kind: "real", source: "NASA OSDR", date: "2021" }, "Datos públicos archivados de misiones reproducidos en los días de misión."],
-]
-
-const HAZARDS = [
-  ["Radiación", "Dosis y eventos de partículas solares del clima espacial."],
-  ["Aislamiento y confinamiento", "Ánimo, sueño y salud conductual."],
-  ["Distancia a la Tierra", "Retardo de comunicación; la tripulación debe actuar primero."],
-  ["Gravedad alterada", "Desplazamiento de fluidos, pérdida ósea y muscular, cambios de visión."],
-  ["Entorno cerrado hostil", "CO2, temperatura, humedad y presión de cabina."],
+const PROV = (): [Provenance, string][] => [
+  [{ kind: "measured" }, S.about.provMeasured],
+  [{ kind: "simulated" }, S.about.provSimulated],
+  [{ kind: "scenario" }, S.about.provScenario],
+  [{ kind: "real", source: "NASA OSDR / NOAA SWPC", date: "2011-2026" }, S.about.provReal],
 ]
 
 export function AboutView() {
@@ -34,7 +26,7 @@ export function AboutView() {
       <section className="rounded-xl border border-border bg-card p-5">
         <h2 className="font-semibold">{S.about.provenance}</h2>
         <ul className="mt-3 flex flex-col gap-3">
-          {PROV.map(([p, d]) => (
+          {PROV().map(([p, d]) => (
             <li key={p.kind} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
               <ProvenanceTag provenance={p} className="self-start" /><span className="text-sm text-muted-foreground">{d}</span>
             </li>
@@ -44,7 +36,7 @@ export function AboutView() {
       <section className="rounded-xl border border-border bg-card p-5">
         <h2 className="font-semibold">{S.about.hazards}</h2>
         <dl className="mt-3 grid gap-3 sm:grid-cols-2">
-          {HAZARDS.map(([k, v]) => (
+          {S.about.hazardList.map(([k, v]) => (
             <div key={k}><dt className="font-medium">{k}</dt><dd className="text-sm text-muted-foreground">{v}</dd></div>
           ))}
         </dl>

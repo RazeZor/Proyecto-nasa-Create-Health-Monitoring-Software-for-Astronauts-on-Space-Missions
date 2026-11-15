@@ -6,21 +6,22 @@
       "proposito": "API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`).",
       "puntos_clave": [
         "No importa el pipeline (regla 3 de la arquitectura): lee `<DATALAKE_DIR>/gold/*.json` y `gold/manifest.json`. No ejecuta el ETL ni escribe nada; para generar datos se corre `pipelines/reanclaje/index.py`.",
-        "Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`; `GET /perfiles`; `GET /simulacion/caso-referencia` y `GET /simulacion/kpi`. Tablero (`rutas_dashboard.py`): `GET /fichas` y `/fichas/{id}` (de `packages/schemas/fichas`), `GET /entorno/referencia`, y por tripulante `historial`, `recordatorios` y `mensajes`.",
+        "Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`; `GET /perfiles`; `GET /simulacion/caso-referencia` y `GET /simulacion/kpi`. Tablero (`rutas_dashboard.py`): `GET /fichas` y `/fichas/{id}` (de `packages/schemas/fichas`), `GET /entorno/referencia`, `GET /tripulacion`, y por tripulante `historial`, `recordatorios` y `mensajes`.",
         "Documentación para agentes: `AGENTES.md` (cómo leer los datos y sus trampas) y `GET /openapi.json` (contrato, con resumen y descripción en cada ruta). Un test exige que cada ruta tenga ambos y aparezca en la guía; al agregar una ruta, documéntala en las dos partes.",
         "Escenario, panel o simulación se distinguen por el resumen del manifiesto del ETL (`serie5min` = escenario, `dosis` = panel, `tipo == \"simulacion\"` = simulación), no por el nombre: un escenario puede llamarse `panel-demo` y los archivos de simulación no aparecen en `/paneles` ni `/escenarios`. La API agrega `panel-` por dentro: el panel del escenario `x` es `/paneles/x` (archivo `panel-x.json`). Pedir un tipo como otro da 404.",
         "La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).",
         "Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.",
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
         "Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.",
-        "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez.",
+        "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez. Reenviar la misma alerta (tripulante, indicador, capa, `t_real` y valor) devuelve el id que ya tenía: la app reintenta sin duplicar avisos.",
         "Reloj de la cola: al arrancar, `ciclo_de_vida` en `main.py` lanza una tarea que cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 la apaga) pasa a `entregado` los reportes cuyo retardo ya pasó, con la hora real del servidor. Ya no hace falta llamar a `POST /reportes/avanzar` (queda para pruebas y para forzar una hora). Con varios procesos, cada uno corre su reloj: es idempotente.",
         "CORS abierto a `GET`, `POST` y `PUT` desde cualquier origen (atajo, sin autenticación real; acotar `allow_origins` al desplegar) Acepta también el preflight de red privada (`allow_private_network`): sin él Chrome bloquea la llamada desde otra máquina de la LAN.",
         "Vocabulario: los códigos de síntoma salen de `packages/schemas/vocabulario.json` (`almacen/vocabulario.py` lo lee); el retardo de reporte es 0 a 22 min (migración 002) y existe el indicador `presion_arterial_diastolica` (sin reglas ni ficha).",
         "La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).",
         "El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.",
         "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Incluye CORS de solo lectura (`GET`) para que `apps/web` consulte la API desde el navegador en entorno local.",
-        "La app solo conoce la API: lo que aún no sale de una fuente real lo sirve el backend rotulado `Simulado`. Los mockups están en `demo/` (recordatorios, hilo de mensajes, referencia de entorno, informe de ejemplo) y el historial es el caso de referencia del simulador (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N). `DIA_ACTUAL_DEMO = 24` fija el día de la demo. `python3 -m almacen sembrar` siembra además un informe ya respondido. Los informes guardan su `contenido` (migración 003).",
+        "`GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del caso de referencia (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 27`) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).",
+        "`mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta. `/fichas`, `/fichas/{id}` y `recordatorios` aceptan `lang=en`: las fichas toman los textos de `packages/schemas/fichas_en/<id>.json` (solo campos de texto y títulos de fuente; si falta la traducción se sirve en español).",
         "Reloj (`puente_reloj.py`): con `SMART_URL` (`ws://<host>:8765/live` de smart-monitor) se conecta como un panel, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). El nombre del reloj se traduce a id con `SMART_TRIPULANTES` o, si falta, por `alias`. Rutas `GET /reloj/estado`, `GET /tripulantes/{id}/reloj` y `POST /tripulantes/{id}/reloj/ordenes` (privacidad del registro). `websockets` solo se importa con `SMART_URL`. Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).",
         "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
       ],
@@ -56,7 +57,7 @@
         },
         {
           "ruta": "apps/api/almacen/alertas.py",
-          "lineas": 99,
+          "lineas": 104,
           "descripcion": "Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4).",
           "test": false,
           "simbolos": [
@@ -76,7 +77,7 @@
               "nombre": "registrar_alerta",
               "tipo": "función",
               "firma": "registrar_alerta(conn, tripulante_id, indicador, capa, nivel, valor, t_real, explicacion, regla_version, tramo=None)",
-              "doc": "Guarda la alerta; una roja de la capa A escala en la misma transacción."
+              "doc": "Guarda la alerta; una roja de la capa A escala en la misma transacción. Reenviar la misma (tripulante,"
             },
             {
               "nombre": "agregar_contexto",
@@ -272,8 +273,40 @@
           "simbolos": []
         },
         {
+          "ruta": "apps/api/gold.py",
+          "lineas": 42,
+          "descripcion": "Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "carpeta",
+              "tipo": "función",
+              "firma": "carpeta()",
+              "doc": ""
+            },
+            {
+              "nombre": "manifiesto",
+              "tipo": "función",
+              "firma": "manifiesto()",
+              "doc": ""
+            },
+            {
+              "nombre": "leer_verificado",
+              "tipo": "función",
+              "firma": "leer_verificado(clave, predicado, nombre_error=None)",
+              "doc": "El JSON gold `clave` si está en el manifiesto, cumple `predicado` y su SHA-256 coincide; si no, 404 o 500."
+            },
+            {
+              "nombre": "panel",
+              "tipo": "función",
+              "firma": "panel(nombre)",
+              "doc": "Panel de entorno publicado para un escenario, o None si el ETL no lo publicó o fue alterado."
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/main.py",
-          "lineas": 217,
+          "lineas": 196,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -475,20 +508,20 @@
         },
         {
           "ruta": "apps/api/rutas_dashboard.py",
-          "lineas": 79,
+          "lineas": 230,
           "descripcion": "Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante,",
           "test": false,
           "simbolos": [
             {
               "nombre": "listar_fichas",
               "tipo": "función",
-              "firma": "listar_fichas()",
+              "firma": "listar_fichas(lang: Literal['es', 'en']='es')",
               "doc": "Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice."
             },
             {
               "nombre": "leer_ficha",
               "tipo": "función",
-              "firma": "leer_ficha(id: str)",
+              "firma": "leer_ficha(id: str, lang: Literal['es', 'en']='es')",
               "doc": "Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...)."
             },
             {
@@ -500,20 +533,26 @@
             {
               "nombre": "historial",
               "tipo": "función",
-              "firma": "historial(id: int=Depends(propio))",
-              "doc": "Escenario de partida para el motor: `lecturas` de 14 días de prevuelo (días <= 0) y 30 de vuelo, y"
+              "firma": "historial(id: int=Depends(propio), modo: Literal['real', 'demo']='real', conn=Depends(conexion))",
+              "doc": "Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`."
+            },
+            {
+              "nombre": "tripulacion_de_la_mision",
+              "tipo": "función",
+              "firma": "tripulacion_de_la_mision(quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "`{id, alias, rol}` de cada tripulante de la misión de quien pregunta (para saber quién es el oficial médico)."
             },
             {
               "nombre": "recordatorios",
               "tipo": "función",
-              "firma": "recordatorios(id: int=Depends(propio))",
-              "doc": "Lista de textos. Simulado: aún no hay plan de actividades a bordo."
+              "firma": "recordatorios(id: int=Depends(propio), lang: Literal['es', 'en']='es')",
+              "doc": "Lista de textos (`lang=en` en inglés). Simulado: aún no hay plan de actividades a bordo."
             },
             {
               "nombre": "mensajes",
               "tipo": "función",
-              "firma": "mensajes(id: int=Depends(propio), conn=Depends(conexion))",
-              "doc": "`{id, de: astronaut|surgeon, autor, dia, hora, texto}`: el hilo de ejemplo más las respuestas reales de tierra"
+              "firma": "mensajes(id: int=Depends(propio), modo: Literal['real', 'demo']='real', conn=Depends(conexion))",
+              "doc": "`{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas reales de tierra a los reportes del"
             }
           ]
         },
@@ -725,7 +764,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_db.py",
-          "lineas": 92,
+          "lineas": 97,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -781,7 +820,7 @@
         },
         {
           "ruta": "apps/api/test_api_dashboard.py",
-          "lineas": 97,
+          "lineas": 208,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -790,12 +829,18 @@
               "tipo": "clase",
               "firma": "Dashboard(unittest.TestCase)",
               "doc": ""
+            },
+            {
+              "nombre": "Entorno",
+              "tipo": "clase",
+              "firma": "Entorno(unittest.TestCase)",
+              "doc": "El entorno que evalúa el motor sale del panel gold (medición real reanclada), con su fuente y fecha real."
             }
           ]
         },
         {
           "ruta": "apps/api/test_api_registro.py",
-          "lineas": 201,
+          "lineas": 208,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -849,16 +894,20 @@
     },
     {
       "modulo": "apps/web",
-      "proposito": "Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad, cola de informes con retardo y conexión con wearable.",
+      "proposito": "Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo.",
       "puntos_clave": [
-        "Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + Recharts + componentes UI accesibles (`components/ui/*`).",
-        "**La app solo conoce la API**: perfiles (`/perfiles`), fichas (`/fichas`), referencia de entorno (`/entorno/referencia`), historial simulado del tripulante (`/tripulantes/{id}/historial`), recordatorios, mensajes con tierra e informes salen de `apps/api`. `lib/catalogo.ts` los pide al arrancar (`cargarCatalogo`) y los traduce al modelo de la interfaz; `AppProvider` no muestra la app hasta tenerlos y, si la API no responde, muestra un aviso con «Reintentar». No hay datos de ejemplo en el cliente (`lib/mock` ya no existe): los mockups viven en `apps/api/demo/`. Lo único local son los registros del usuario (`lib/storage.ts`, `localStorage`), que se suben a la API.",
-        "Motor híbrido: `packages/engine` (TypeScript puro, port 1:1 del simulador de Python, con test de paridad) evalúa las capas A, B y C y la regla de contexto. `lib/engine.ts` (`analizar(checkIns, historial)`) lo aplica al historial de la API más los registros del usuario y lo complementa con `alertasCheckIn` y `lecturasZona` para que las 5 zonas del cuerpo humano (`head`, `heart`, `bone`, `blood`, `mind`) respondan a lecturas reales (FC, PA, SpO2, CO2, síntomas neurovestibulares, pérdida de masa corporal vs. prevuelo, temperatura central, glucosa, síntomas inmunes, sueño y ánimo) y muestren sus valores del día frente a su banda de referencia en el cajón lateral de `components/body/body-view.tsx`. `AppProvider` lo recalcula en `analisis` cada vez que se guarda un check-in, y cuerpo, tendencias, alertas e informes lo leen de ahí. Modo adaptación (días 1 a 14) y modo tormenta (del `entorno_diario` del historial). Tres niveles (`ok`, `watch`, `act`); solo `act` escala al oficial médico (§4.2, §5.1). Importa `packages/engine` por ruta relativa (`experimental.externalDir` en `next.config.mjs`). El pulso de `/device` viene del Galaxy Watch real a través de la API (ver el punto del reloj).",
+        "Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + componentes UI accesibles (`components/ui/*`). Las gráficas son SVG propio (`components/shared/line-chart.tsx`).",
+        "**Dos modos de datos** (selector «Datos» de la barra superior; `lib/storage.ts`: `leerModo`, `usarModo`). `real` (por defecto; `NEXT_PUBLIC_VIGIA_MODO=demo` lo cambia): solo lo que el tripulante registra y el entorno medido; el registro se guarda en el día de misión de hoy y se sube a la API con `naturaleza: Real`. `demo`: tripulante simulado de 30 días con las anomalías de §5.5, todo rotulado; lo registrado en demo usa otro almacén (prefijo `vigia:` frente a `vigia:real:`) y **nunca** se sube ni escala. La API recibe el modo en `?modo=`.",
+        "**La app solo conoce la API, pero abre sin ella**: perfiles, fichas, referencia de entorno, historial, recordatorios, mensajes e informes salen de `apps/api`. `lib/catalogo.ts` (`cargarCatalogo(tripulante, modo)`) los pide al arrancar y guarda una copia local; si la API no responde, abre con esa copia (`catalogo.sinEnlace`), muestra «sin enlace» y reintenta cada 30 s y al volver la red. Solo la primera apertura en un dispositivo necesita enlace. `lib/etl-client.ts` hace lo mismo con el panel de entorno. No hay datos de ejemplo en el cliente: los mockups viven en `apps/api/demo/`.",
+        "Sin conexión (§4.2): `public/sw.js` (escrito a mano, sin dependencias) guarda la carcasa (el HTML de las 8 pantallas y sus recursos de `/_next/static`) al instalarse; navegación con red primero y copia como respaldo; no intercepta `/vigia-api`. Se registra solo en producción (`components/shell/sw-register.tsx`). `app/manifest.ts` es el manifiesto. Si cambias las rutas, actualiza `PANTALLAS` en `sw.js`; si cambias la estrategia, sube la versión de `CACHE`.",
+        "Motor híbrido: `packages/engine` evalúa las capas A, B y C y las reglas de contexto. `lib/engine.ts` (`analizar(checkIns, historial, presionCabinaMmHg)`) lo aplica al historial de la API más los registros locales; `AppProvider` lo recalcula en `analisis` al guardar un registro o cambiar de perfil. **El entorno entra al motor**: el CO2 real llega en ppm y se convierte con la presión de cabina del perfil activo (cambiar de perfil puede cambiar la alerta, §3.3); la tormenta sale del flujo (>= 10 pfu) o de un evento SEP real de DONKI. Cada alerta de entorno lleva su procedencia (`source`: Real o Simulado, fuente y fecha real). Una medida no tomada es `null`, nunca 0. Las alertas `informative` (capa B en adaptación) se muestran pero no cambian el estado ni avisan. La banda personal de las tendencias es la referencia del motor día a día (`analisis.band`).",
+        "Privacidad y escalamiento (§5.4): solo el rojo de la capa A sale del dispositivo. `lib/alertas-sync.ts` (núcleo puro) y `sincronizarAlertasRojas` envían a `POST /tripulantes/{id}/alertas` el dato mínimo (indicador, valor, hora y tramo) de los rojos sobre registros propios, sin duplicar y reintentando sin red. `/alerts` muestra lo que salió de verdad (`GET .../escalamientos`), deja añadir contexto una vez y, como oficial médico, lee su bandeja real (`GET /escalamientos`). Verde y ámbar no salen; tras 3 días en ámbar se recomienda compartir. Las alertas de entorno se rotulan «compartida con la tripulación». En modo demo el escalamiento se rotula como simulado.",
         "Llamadas a la API: `lib/catalogo.ts`, `lib/etl-client.ts` y `lib/api-registro.ts` usan `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA` (se lee al compilar; por defecto `http://127.0.0.1:8000`). En la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa. La vista de entorno consume `/paneles`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` sin generar series sintéticas.",
-        "`lib/api-registro.ts` conecta todas las rutas de `apps/api/rutas_registro.py` (`POST`/`GET` de lecturas, síntomas, alertas y reportes; `PUT`/`GET` de línea base en `tierra` y `vuelo`; `GET` de escalamientos recibidos y propios; `POST` de contexto en escalamientos, avance de cola y respuesta de Tierra) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false`/`null`/`[]` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
-        "El registro diario, las líneas base y las alertas del motor se sincronizan con la API mediante `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden, se combinan lecturas/síntomas remotos de SQLite (`cargarRegistrosCombinados`) y se persisten las líneas base y alertas nuevas sin duplicar (`sincronizarMotorConServidor`). Identidad provisional: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (por defecto 1, el astronauta de `python3 -m almacen sembrar`; el rol `cmo`/`surgeon` firma con el actor 2). En `/reports`, el Cirujano de Vuelo puede avanzar la cola (`POST /reportes/avanzar`) y responder informes entregados (`POST /reportes/{id}/respuesta`), actualizando el hilo de mensajes en vivo; en `/alerts`, se consultan los escalamientos reales y el astronauta puede adjuntar contexto una sola vez (`POST /escalamientos/{id}/contexto`); en `/trends`, se lee la línea base guardada en SQLite (`GET /linea-base/...`).",
-        "Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), la SpO2 del reloj de las últimas 12 h (`spo2Sugerida`, sitio «Muñeca (reloj)», sube como `sensor`/`galaxy_watch4`; contrato `spo2_sitio: muneca`), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. El motor no reinicia la línea base ante un cambio de instrumento (no tiene ventana en vuelo y debe mantener paridad con el simulador): solo se avisa.",
+        "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
+        "El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`), solo en modo real: `AppProvider` envía los pendientes en orden al cambiar el análisis, al volver la red y cada 30 s si queda algo; la barra muestra cuántos faltan. Identidad provisional: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (por defecto 1, el astronauta de `python3 -m almacen sembrar`). Los informes viven en la API con su `contenido` (lectura, línea base, entorno con procedencia y acción del día): `/reports` los lee cada 3 s; como cirujano de vuelo se puede responder un informe entregado. `t_real` es la hora real del envío.",
+        "Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), la SpO2 del reloj de las últimas 12 h (`spo2Sugerida`, sitio «Muñeca (reloj)», sube como `sensor`/`galaxy_watch4`; contrato `spo2_sitio: muneca`), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. Ante un cambio de instrumento el motor descarta la línea base y la ventana de la FC y pausa sus capas B y C 8 días (A.6); `cambiosDeInstrumento` lo detecta con `hrInstrument` de los registros y `fc_instrumento` del historial.",
         "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.",
+        "i18n: ningún texto visible es literal. `lib/strings.ts` da forma y tipos a las claves `web.*` de `packages/i18n` (español e inglés); el idioma se resuelve en el navegador (preferencia guardada o idioma del navegador) y cambiarlo recarga la página. Las fichas y los recordatorios se piden a la API con `?lang=` (traducciones en `packages/schemas/fichas_en`); los nombres de perfil salen de `web.S.profiles`. Los mensajes de tierra y los errores de la API siguen en español.",
         "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
       ],
       "tags": [
@@ -874,7 +923,9 @@
       ],
       "env": [
         "NEXT_PUBLIC_VIGIA_API_URL",
+        "NEXT_PUBLIC_VIGIA_MODO",
         "NEXT_PUBLIC_VIGIA_TRIPULANTE",
+        "NODE_ENV",
         "VIGIA_API_INTERNA"
       ],
       "archivos": [
@@ -950,7 +1001,7 @@
         },
         {
           "ruta": "apps/web/app/layout.tsx",
-          "lineas": 37,
+          "lineas": 39,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -970,6 +1021,20 @@
               "nombre": "RootLayout",
               "tipo": "función",
               "firma": "RootLayout",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/manifest.ts",
+          "lineas": 19,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "manifest",
+              "tipo": "función",
+              "firma": "manifest",
               "doc": ""
             }
           ]
@@ -1018,7 +1083,7 @@
         },
         {
           "ruta": "apps/web/components/about/about-view.tsx",
-          "lineas": 58,
+          "lineas": 50,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1032,7 +1097,7 @@
         },
         {
           "ruta": "apps/web/components/alerts/alerts-view.tsx",
-          "lineas": 213,
+          "lineas": 204,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1046,7 +1111,7 @@
         },
         {
           "ruta": "apps/web/components/app-context.tsx",
-          "lineas": 162,
+          "lineas": 218,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1092,7 +1157,7 @@
         },
         {
           "ruta": "apps/web/components/body/body-view.tsx",
-          "lineas": 242,
+          "lineas": 271,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1106,7 +1171,7 @@
         },
         {
           "ruta": "apps/web/components/checkin/checkin-form.tsx",
-          "lineas": 312,
+          "lineas": 315,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1182,7 +1247,7 @@
         },
         {
           "ruta": "apps/web/components/environment/environment-view.tsx",
-          "lineas": 359,
+          "lineas": 269,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1196,7 +1261,7 @@
         },
         {
           "ruta": "apps/web/components/reports/reports-view.tsx",
-          "lineas": 196,
+          "lineas": 149,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1250,7 +1315,7 @@
         },
         {
           "ruta": "apps/web/components/shared/line-chart.tsx",
-          "lineas": 80,
+          "lineas": 82,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1340,7 +1405,7 @@
         },
         {
           "ruta": "apps/web/components/shell/alert-center.tsx",
-          "lineas": 173,
+          "lineas": 167,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1354,7 +1419,7 @@
         },
         {
           "ruta": "apps/web/components/shell/app-shell.tsx",
-          "lineas": 288,
+          "lineas": 329,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1367,8 +1432,22 @@
           ]
         },
         {
+          "ruta": "apps/web/components/shell/sw-register.tsx",
+          "lineas": 15,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "SwRegister",
+              "tipo": "función",
+              "firma": "SwRegister",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/trends/trends-view.tsx",
-          "lineas": 101,
+          "lineas": 73,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1430,15 +1509,60 @@
           "simbolos": []
         },
         {
+          "ruta": "apps/web/lib/alertas-sync.test.ts",
+          "lineas": 52,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/alertas-sync.ts",
+          "lineas": 35,
+          "descripcion": "Núcleo puro del escalamiento de alertas rojas (§5.4): sin red ni almacenamiento, que se inyectan.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "AvisoRojo",
+              "tipo": "interfaz",
+              "firma": "AvisoRojo",
+              "doc": ""
+            },
+            {
+              "nombre": "DependenciasAlertas",
+              "tipo": "interfaz",
+              "firma": "DependenciasAlertas",
+              "doc": ""
+            },
+            {
+              "nombre": "claveAlerta",
+              "tipo": "constante",
+              "firma": "claveAlerta",
+              "doc": ""
+            },
+            {
+              "nombre": "escalable",
+              "tipo": "constante",
+              "firma": "escalable",
+              "doc": ""
+            },
+            {
+              "nombre": "sincronizarAlertas",
+              "tipo": "función",
+              "firma": "sincronizarAlertas",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/api-registro.test.ts",
-          "lineas": 104,
+          "lineas": 54,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/api-registro.ts",
-          "lineas": 477,
+          "lineas": 157,
           "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
           "test": false,
           "simbolos": [
@@ -1449,57 +1573,9 @@
               "doc": ""
             },
             {
-              "nombre": "LecturaServidor",
-              "tipo": "interfaz",
-              "firma": "LecturaServidor",
-              "doc": ""
-            },
-            {
-              "nombre": "SintomaServidor",
-              "tipo": "interfaz",
-              "firma": "SintomaServidor",
-              "doc": ""
-            },
-            {
-              "nombre": "OrigenLineaBase",
-              "tipo": "tipo",
-              "firma": "OrigenLineaBase",
-              "doc": ""
-            },
-            {
-              "nombre": "LineaBaseServidor",
-              "tipo": "interfaz",
-              "firma": "LineaBaseServidor",
-              "doc": ""
-            },
-            {
-              "nombre": "AlertaInServidor",
-              "tipo": "interfaz",
-              "firma": "AlertaInServidor",
-              "doc": ""
-            },
-            {
-              "nombre": "AlertaServidor",
-              "tipo": "interfaz",
-              "firma": "AlertaServidor",
-              "doc": ""
-            },
-            {
-              "nombre": "EscalamientoServidor",
-              "tipo": "interfaz",
-              "firma": "EscalamientoServidor",
-              "doc": ""
-            },
-            {
               "nombre": "indicadorApi",
               "tipo": "constante",
               "firma": "indicadorApi",
-              "doc": ""
-            },
-            {
-              "nombre": "indicadorMotorApi",
-              "tipo": "constante",
-              "firma": "indicadorMotorApi",
               "doc": ""
             },
             {
@@ -1533,18 +1609,6 @@
               "doc": ""
             },
             {
-              "nombre": "tRealDeDia",
-              "tipo": "constante",
-              "firma": "tRealDeDia",
-              "doc": ""
-            },
-            {
-              "nombre": "diaDeTMision",
-              "tipo": "constante",
-              "firma": "diaDeTMision",
-              "doc": ""
-            },
-            {
               "nombre": "lecturasDeCheckIn",
               "tipo": "función",
               "firma": "lecturasDeCheckIn",
@@ -1575,87 +1639,51 @@
               "doc": ""
             },
             {
+              "nombre": "responderReporte",
+              "tipo": "constante",
+              "firma": "responderReporte",
+              "doc": ""
+            },
+            {
               "nombre": "reporteDeServidor",
               "tipo": "función",
               "firma": "reporteDeServidor",
               "doc": ""
             },
             {
-              "nombre": "avanzarCola",
-              "tipo": "función",
-              "firma": "avanzarCola",
+              "nombre": "Escalamiento",
+              "tipo": "interfaz",
+              "firma": "Escalamiento",
               "doc": ""
             },
             {
-              "nombre": "responderReporte",
+              "nombre": "enviarAlertaRoja",
               "tipo": "función",
-              "firma": "responderReporte",
+              "firma": "enviarAlertaRoja",
               "doc": ""
             },
             {
-              "nombre": "listarLecturas",
-              "tipo": "función",
-              "firma": "listarLecturas",
+              "nombre": "escalamientosPropios",
+              "tipo": "constante",
+              "firma": "escalamientosPropios",
               "doc": ""
             },
             {
-              "nombre": "listarSintomas",
-              "tipo": "función",
-              "firma": "listarSintomas",
+              "nombre": "escalamientosRecibidos",
+              "tipo": "constante",
+              "firma": "escalamientosRecibidos",
               "doc": ""
             },
             {
-              "nombre": "checkInsDeServidor",
-              "tipo": "función",
-              "firma": "checkInsDeServidor",
+              "nombre": "leerTripulacion",
+              "tipo": "constante",
+              "firma": "leerTripulacion",
               "doc": ""
             },
             {
-              "nombre": "guardarLineaBase",
-              "tipo": "función",
-              "firma": "guardarLineaBase",
-              "doc": ""
-            },
-            {
-              "nombre": "leerLineaBase",
-              "tipo": "función",
-              "firma": "leerLineaBase",
-              "doc": ""
-            },
-            {
-              "nombre": "alertaInDeMotor",
-              "tipo": "función",
-              "firma": "alertaInDeMotor",
-              "doc": ""
-            },
-            {
-              "nombre": "crearAlerta",
-              "tipo": "función",
-              "firma": "crearAlerta",
-              "doc": ""
-            },
-            {
-              "nombre": "listarAlertas",
-              "tipo": "función",
-              "firma": "listarAlertas",
-              "doc": ""
-            },
-            {
-              "nombre": "listarEscalamientosRecibidos",
-              "tipo": "función",
-              "firma": "listarEscalamientosRecibidos",
-              "doc": ""
-            },
-            {
-              "nombre": "listarEscalamientosPropios",
-              "tipo": "función",
-              "firma": "listarEscalamientosPropios",
-              "doc": ""
-            },
-            {
-              "nombre": "agregarContextoEscalamiento",
-              "tipo": "función",
-              "firma": "agregarContextoEscalamiento",
+              "nombre": "agregarContexto",
+              "tipo": "constante",
+              "firma": "agregarContexto",
               "doc": ""
             }
           ]
@@ -1669,7 +1697,7 @@
         },
         {
           "ruta": "apps/web/lib/catalogo.ts",
-          "lineas": 170,
+          "lineas": 204,
           "descripcion": "Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de",
           "test": false,
           "simbolos": [
@@ -1683,6 +1711,24 @@
               "nombre": "LecturaHistorial",
               "tipo": "interfaz",
               "firma": "LecturaHistorial",
+              "doc": ""
+            },
+            {
+              "nombre": "OrigenDato",
+              "tipo": "interfaz",
+              "firma": "OrigenDato",
+              "doc": ""
+            },
+            {
+              "nombre": "EventoSep",
+              "tipo": "interfaz",
+              "firma": "EventoSep",
+              "doc": ""
+            },
+            {
+              "nombre": "EntornoHistorial",
+              "tipo": "interfaz",
+              "firma": "EntornoHistorial",
               "doc": ""
             },
             {
@@ -1734,12 +1780,6 @@
               "doc": ""
             },
             {
-              "nombre": "leerMensajes",
-              "tipo": "función",
-              "firma": "leerMensajes",
-              "doc": ""
-            },
-            {
               "nombre": "cargarCatalogo",
               "tipo": "función",
               "firma": "cargarCatalogo",
@@ -1756,7 +1796,7 @@
         },
         {
           "ruta": "apps/web/lib/cola.ts",
-          "lineas": 39,
+          "lineas": 41,
           "descripcion": "Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local.",
           "test": false,
           "simbolos": [
@@ -1782,15 +1822,15 @@
         },
         {
           "ruta": "apps/web/lib/engine.test.ts",
-          "lineas": 130,
+          "lineas": 151,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/engine.ts",
-          "lineas": 339,
-          "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial) más los registros",
+          "lineas": 252,
+          "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más",
           "test": false,
           "simbolos": [
             {
@@ -1809,6 +1849,12 @@
               "nombre": "isAdaptation",
               "tipo": "constante",
               "firma": "isAdaptation",
+              "doc": ""
+            },
+            {
+              "nombre": "DIAS_AMBAR_PARA_RECOMENDAR",
+              "tipo": "constante",
+              "firma": "DIAS_AMBAR_PARA_RECOMENDAR",
               "doc": ""
             },
             {
@@ -1845,7 +1891,7 @@
         },
         {
           "ruta": "apps/web/lib/etl-client.ts",
-          "lineas": 161,
+          "lineas": 166,
           "descripcion": "Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -2114,7 +2160,7 @@
         },
         {
           "ruta": "apps/web/lib/sincronizacion.ts",
-          "lineas": 83,
+          "lineas": 57,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2125,27 +2171,15 @@
               "doc": ""
             },
             {
-              "nombre": "actorDeRol",
-              "tipo": "constante",
-              "firma": "actorDeRol",
-              "doc": ""
-            },
-            {
               "nombre": "sincronizarRegistros",
               "tipo": "función",
               "firma": "sincronizarRegistros",
               "doc": ""
             },
             {
-              "nombre": "cargarRegistrosCombinados",
+              "nombre": "sincronizarAlertasRojas",
               "tipo": "función",
-              "firma": "cargarRegistrosCombinados",
-              "doc": ""
-            },
-            {
-              "nombre": "sincronizarMotorConServidor",
-              "tipo": "función",
-              "firma": "sincronizarMotorConServidor",
+              "firma": "sincronizarAlertasRojas",
               "doc": ""
             }
           ]
@@ -2179,7 +2213,7 @@
         },
         {
           "ruta": "apps/web/lib/storage.ts",
-          "lineas": 42,
+          "lineas": 91,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2187,6 +2221,24 @@
               "nombre": "HealthStore",
               "tipo": "interfaz",
               "firma": "HealthStore",
+              "doc": ""
+            },
+            {
+              "nombre": "leerModo",
+              "tipo": "función",
+              "firma": "leerModo",
+              "doc": ""
+            },
+            {
+              "nombre": "usarModo",
+              "tipo": "función",
+              "firma": "usarModo",
+              "doc": ""
+            },
+            {
+              "nombre": "modoActual",
+              "tipo": "constante",
+              "firma": "modoActual",
               "doc": ""
             },
             {
@@ -2200,15 +2252,39 @@
               "tipo": "constante",
               "firma": "store",
               "doc": ""
+            },
+            {
+              "nombre": "leerCache",
+              "tipo": "constante",
+              "firma": "leerCache",
+              "doc": ""
+            },
+            {
+              "nombre": "guardarCache",
+              "tipo": "función",
+              "firma": "guardarCache",
+              "doc": ""
             }
           ]
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 383,
-          "descripcion": "",
+          "lineas": 589,
+          "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "IDIOMA",
+              "tipo": "constante",
+              "firma": "IDIOMA",
+              "doc": ""
+            },
+            {
+              "nombre": "cambiarIdioma",
+              "tipo": "función",
+              "firma": "cambiarIdioma",
+              "doc": ""
+            },
             {
               "nombre": "S",
               "tipo": "constante",
@@ -2225,7 +2301,7 @@
         },
         {
           "ruta": "apps/web/lib/types.ts",
-          "lineas": 167,
+          "lineas": 186,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2245,6 +2321,12 @@
               "nombre": "Role",
               "tipo": "tipo",
               "firma": "Role",
+              "doc": ""
+            },
+            {
+              "nombre": "Mode",
+              "tipo": "tipo",
+              "firma": "Mode",
               "doc": ""
             },
             {
@@ -2308,9 +2390,9 @@
               "doc": ""
             },
             {
-              "nombre": "Baseline",
+              "nombre": "BandPoint",
               "tipo": "interfaz",
-              "firma": "Baseline",
+              "firma": "BandPoint",
               "doc": ""
             },
             {
@@ -2390,19 +2472,29 @@
           "descripcion": "@type {import('postcss-load-config').Config}",
           "test": false,
           "simbolos": []
+        },
+        {
+          "ruta": "apps/web/public/sw.js",
+          "lineas": 64,
+          "descripcion": "Service worker de VIGÍA: deja la aplicación disponible sin enlace (informe §4.2, \"todo funciona sin enlace\").",
+          "test": false,
+          "simbolos": []
         }
       ]
     },
     {
       "modulo": "packages/engine",
-      "proposito": "Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y regla de contexto (CO2 con síntomas). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro.",
+      "proposito": "Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro.",
       "puntos_clave": [
         "Es el port 1:1 de `evaluar_tripulante` en `pipelines/reanclaje/simulacion.py`. Si cambias una regla o una constante, cámbiala en los dos lados.",
-        "`paridad-referencia.test.ts` compara el motor con `fixtures/caso-referencia.json` (4 tripulantes, 10 alertas). `test_simulacion.py` exige que ese fixture sea idéntico a `generar_caso_referencia()`: si el simulador cambia, regenera el fixture con `json.dump(simulacion.generar_caso_referencia(), ...)`.",
+        "`paridad-referencia.test.ts` compara el motor con `fixtures/caso-referencia.json` (4 tripulantes; anomalías A1, A2 y A3 de §5.5). `test_simulacion.py` exige que ese fixture sea idéntico a `generar_caso_referencia()`: si el simulador cambia, regenera el fixture con `json.dumps(simulacion.generar_caso_referencia(), indent=1, ensure_ascii=False)`.",
         "Sin dependencias ni IO. Los tests corren con `node --test packages/engine/*.test.ts` (Node 22.18 o más, que ejecuta TypeScript sin compilar).",
-        "La línea base sale de los días <= 0 (prevuelo); `w(d) = 1 - exp(-d/tau)` desplaza la referencia de FC, PAS y sueño en vuelo. Las claves y los códigos (`fc`, `cefalea`...) son los del API/simulador, no los de la UI: la interfaz traduce en su borde.",
-        "Cambio de instrumento (A.6): `evaluarTripulante(..., { cambiosInstrumento })`. Desde el día del cambio la FC pasa `DIAS_VENTANA_REINICIO` (7) días registrados formando una línea base en vuelo; en ese tiempo se pausan su capa B y su CUSUM (la capa A sigue). Luego se compara contra esa base sin desplazamiento de adaptación. Es opcional y por defecto vacío: el simulador de Python no simula cambios de instrumento, así que la paridad y los KPI no cambian. Si algún día los simula, hay que portar la regla a `simulacion.py`. `apps/web/lib/engine.ts` detecta los cambios con `hrInstrument` de cada registro (`instrumento.test.ts`).",
-        "Brecha conocida frente al plan: el simulador usa pisos `MAD_MIN` y un `w(d)` más simples que los del plan (§4); el motor sigue al simulador porque los KPI del informe se calculan con él."
+        "Línea base de tierra a vuelo (§5.2): la referencia de cada indicador mezcla la mediana y el MAD del prevuelo (días <= 0) con los de la ventana en vuelo (hasta 14 lecturas desde el día 8, con 3 días de rezago y sin los días que superaron el umbral o tuvieron alerta), con peso `w = min(1, (d - 14) / 7)`. **El motor no usa los desplazamientos de `SUPUESTOS`**: son del generador; aquí solo valen los pisos `mad_min`.",
+        "Reglas (§5.1 y §5.4): capa A roja (un parámetro en tramo extremo o suma >= 5) con `escalada_auto: true` siempre; capa A ámbar con suma 3 o 4. Capa B siempre ámbar; en adaptación (días 1 a 14) sale con `informativa: true` (se muestra, no alerta). Capa C desde el día 21, solo FC al alza y sueño y ánimo a la baja, ámbar, y la suma vuelve a cero al emitir. Contexto: CO2 **mayor** que 3 mmHg con `cefalea` y tormenta (flujo >= 10 pfu o `modo_tormenta` por evento SEP); ambas con `ambito: \"tripulacion\"`, ámbar y sin escalar.",
+        "Solo en TypeScript (Python evalúa series completas): valores `null` (medida no tomada: no puntúa, no alerta y rompe los dos días seguidos), tripulante sin prevuelo (capa A desde el día 1; B y C cuando la ventana en vuelo llega a 5 lecturas) y cambio de instrumento (A.6): `{ cambiosInstrumento }` descarta la línea base y la ventana de la FC y pausa sus capas B y C `DIAS_VENTANA_REINICIO` (8) días; la capa A sigue.",
+        "`analizarTripulante` devuelve además `referencias` (centro, dispersión, z y peso de vuelo por día): con ellas la interfaz dibuja la banda personal. Las claves y los códigos (`fc`, `cefalea`...) son los de la API y el simulador, no los de la UI.",
+        "Glucosa (semanal) en la capa B: su persistencia son dos medidas seguidas y un día sin medida no la rompe (`SEMANALES`). Síntomas: uno que el entorno no explica (todo salvo `cefalea` con CO2 sobre el límite) da `sintoma_<código>`, ámbar personal de capa `contexto`, sin escalar; la interfaz lo lleva a su zona del cuerpo.",
+        "Pendiente declarado en el informe: masa corporal en la capa C y corrección metrológica de la capa A."
       ],
       "tags": [
         "engine",
@@ -2417,8 +2509,8 @@
       "archivos": [
         {
           "ruta": "packages/engine/engine.ts",
-          "lineas": 194,
-          "descripcion": "Motor híbrido de VIGÍA (informe §5.1): capa A (NEWS2), capa B (desviación personal con MAD),",
+          "lineas": 289,
+          "descripcion": "Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD),",
           "test": false,
           "simbolos": [
             {
@@ -2470,9 +2562,57 @@
               "doc": ""
             },
             {
+              "nombre": "PROTONES_TORMENTA_PFU",
+              "tipo": "constante",
+              "firma": "PROTONES_TORMENTA_PFU",
+              "doc": ""
+            },
+            {
+              "nombre": "DIA_FIN_ADAPTACION",
+              "tipo": "constante",
+              "firma": "DIA_FIN_ADAPTACION",
+              "doc": ""
+            },
+            {
+              "nombre": "DIAS_TRANSICION",
+              "tipo": "constante",
+              "firma": "DIAS_TRANSICION",
+              "doc": ""
+            },
+            {
+              "nombre": "VENTANA_DIA_INICIO",
+              "tipo": "constante",
+              "firma": "VENTANA_DIA_INICIO",
+              "doc": ""
+            },
+            {
+              "nombre": "VENTANA_MAX_LECTURAS",
+              "tipo": "constante",
+              "firma": "VENTANA_MAX_LECTURAS",
+              "doc": ""
+            },
+            {
+              "nombre": "VENTANA_REZAGO_DIAS",
+              "tipo": "constante",
+              "firma": "VENTANA_REZAGO_DIAS",
+              "doc": ""
+            },
+            {
+              "nombre": "VENTANA_MIN_LECTURAS",
+              "tipo": "constante",
+              "firma": "VENTANA_MIN_LECTURAS",
+              "doc": ""
+            },
+            {
               "nombre": "DIAS_VENTANA_REINICIO",
               "tipo": "constante",
               "firma": "DIAS_VENTANA_REINICIO",
+              "doc": ""
+            },
+            {
+              "nombre": "IndicadorB",
+              "tipo": "tipo",
+              "firma": "IndicadorB",
               "doc": ""
             },
             {
@@ -2518,9 +2658,9 @@
               "doc": ""
             },
             {
-              "nombre": "factorAdaptacion",
-              "tipo": "constante",
-              "firma": "factorAdaptacion",
+              "nombre": "Referencia",
+              "tipo": "interfaz",
+              "firma": "Referencia",
               "doc": ""
             },
             {
@@ -2536,9 +2676,21 @@
               "doc": ""
             },
             {
+              "nombre": "pesoVuelo",
+              "tipo": "función",
+              "firma": "pesoVuelo",
+              "doc": ""
+            },
+            {
               "nombre": "puntosNews2",
               "tipo": "función",
               "firma": "puntosNews2",
+              "doc": ""
+            },
+            {
+              "nombre": "analizarTripulante",
+              "tipo": "función",
+              "firma": "analizarTripulante",
               "doc": ""
             },
             {
@@ -2558,7 +2710,7 @@
         },
         {
           "ruta": "packages/engine/paridad-referencia.test.ts",
-          "lineas": 37,
+          "lineas": 98,
           "descripcion": "",
           "test": true,
           "simbolos": []
@@ -2574,7 +2726,8 @@
         "Lo que sí falla en CI: claves en `en.json` que no existen en `es.json`, textos vacíos, o `{variables}` distintas entre idiomas.",
         "Las claves van anidadas por área y se usan con puntos: `alertas.rojo`, `cli.datalake.uso`. Una clave inexistente devuelve la propia clave, para que se note en pantalla.",
         "Python: `t(clave, idioma=None, **variables)`. El idioma sale de `VIGIA_LANG` (`es` por defecto). Desde otro módulo se importa agregando `packages/i18n` al `sys.path` (ver `pipelines/datalake/index.py`).",
-        "TypeScript: `t(clave, idioma, variables)` es puro. La app elige el idioma con `detectarIdioma(preferenciaGuardada, navigator.language)`. Requiere `resolveJsonModule`. Aún no se ha compilado (no hay `apps/web/package.json`).",
+        "TypeScript: `t(clave, idioma, variables)` es puro. La app elige el idioma con `detectarIdioma(preferenciaGuardada, navigator.language)`. Requiere `resolveJsonModule`; los JSON se importan con `with { type: \"json\" }` para que el mismo archivo corra en Node (tests) y en el empaquetador.",
+        "Todos los textos de `apps/web` viven en el subárbol `web` (`web.S.*` para la interfaz y `web.MOTOR.*` para las alertas del motor); `apps/web/lib/strings.ts` solo les da forma y tipos. Un texto nuevo de la interfaz nace aquí, en español.",
         "Las dos implementaciones deben comportarse igual. Si cambias una, cambia la otra."
       ],
       "tags": [
@@ -2629,7 +2782,7 @@
         },
         {
           "ruta": "packages/i18n/i18n.ts",
-          "lineas": 44,
+          "lineas": 45,
           "descripcion": "Traducciones de VIGÍA: español es el idioma principal e inglés el secundario.",
           "test": false,
           "simbolos": [
@@ -2705,7 +2858,8 @@
         "`caso-referencia.schema.json` valida los casos de prueba reproducibles y KPI de la simulación (`pipelines/reanclaje/simulacion.py`) para verificar de forma idéntica el futuro motor híbrido (`packages/engine`).",
         "`vocabulario.json` es el contrato de vocabulario entre la interfaz (claves `ui` en inglés) y la API (claves de la base, en español): indicadores con su zona del cuerpo, niveles, capas, roles, perfiles, retardo por perfil y síntomas. Las claves de la API son las canónicas; la interfaz traduce en el borde. `test_vocabulario.py` lo compara con la migración SQL, las fichas y `apps/web/lib/types.ts`: si un lado cambia sin el contrato, falla. Sus apartados `sin_equivalente` y `notas` documentan lo que aún no encaja (diastólica).",
         "`peligro` es una lista con los cinco peligros del HRP (`radiacion`, `aislamiento`, `distancia`, `gravedad_alterada`, `entorno_cerrado`). Un `null` en `unidad`, `referencia_en_vuelo` o `prevencion` significa que el informe no lo respalda.",
-        "Los datos de fichas viven en `packages/schemas/fichas/<id>.json` con `index.json`; la app los recibe por la API (`GET /fichas`), nunca los importa. Si cambia cualquier esquema, se versiona aquí antes de tocar los consumidores."
+        "Los datos de fichas viven en `packages/schemas/fichas/<id>.json` con `index.json`; la app los recibe por la API (`GET /fichas`), nunca los importa. Si cambia cualquier esquema, se versiona aquí antes de tocar los consumidores.",
+        "`fichas_en/<id>.json` trae la traducción al inglés de cada ficha: solo los campos de texto (`nombre`, `que_es`, `como_se_mide_en_vuelo`, `por_que`, `referencia_en_vuelo`, `cuando_avisar`, `prevencion`) y `fuentes` como lista de títulos en el mismo orden. El español manda: una ficha nueva o cambiada se edita primero en `fichas/`; `test_fichas.py` exige que la traducción no invente campos ni cambie la estructura. La API las aplica con `?lang=en`."
       ],
       "tags": [
         "schemas",
@@ -2724,7 +2878,7 @@
       "archivos": [
         {
           "ruta": "packages/schemas/test_fichas.py",
-          "lineas": 42,
+          "lineas": 57,
           "descripcion": "Valida las fichas de packages/schemas/fichas contra ficha.schema.json (solo biblioteca estándar).",
           "test": true,
           "simbolos": [
@@ -2933,9 +3087,9 @@
         "`ALTEA-Survey` es el único instrumento de RadLab con `dose_equivalent_rate` (408 321 filas, cada minuto, de 2010-09 a 2012-06 en la ISS; revisado con una consulta a toda la base). `escenarios/dosis-equivalente.json` lo usa: un día completo (2011-11-16, cobertura 1,0) da 913 µSv, sin `orientativa`. Ese día está por encima de los 0,2 a 0,5 mSv/día que cita el informe; es un día y los datos son preliminares.",
         "El panel repite `ventanas` (fuente y fechas reales) y un `aviso`: que series de fechas reales distintas caigan en el mismo día de misión es decisión del escenario, no un hecho observado (§3.4 regla 4).",
         "GOES separa la serie por satélite (`G18 >=10 MeV`) para no mezclar satélites en el mismo paso.",
-        "Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...` y `index.py simular [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.",
-        "`simulacion.py` implementa el protocolo reproducible del informe §5.5 (14 días previos al vuelo + 30 días de misión, 4 tripulantes, semilla principal `2026` y validación `2027`, adaptación `w(d) = 1 - exp(-d / 4)`, anomalías `A1`, `A2` y `A3`, motor de referencia NEWS2 + MAD + CUSUM) y publica `gold/caso_referencia.json` y `gold/kpi.json` con `tipo: \"simulacion\"` en `gold/manifest.json`.",
-        "`escenarios/mision-vigia.json` y `escenarios/tormenta-mayo-2024.json` definen escenarios multi-día reales (5 días continuos de `ALTEA-Survey` / RadLab ISS mayo 2024, 5 días de `EDA RR-1`, 14 eventos `DONKI` SEP de mayo 2024 y serie `GOES-18`)."
+        "Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...`, `index.py simular [n]` e `index.py barrer [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.",
+        "`simulacion.py` implementa el protocolo de §5.5 tal cual: 14 días de prevuelo + 30 de misión, 4 tripulantes, y las anomalías A1 (deriva de sueño, FC y ánimo en trip-1, días 18 a 27), A2 (CO2 de 4,6 mmHg el día 12 con cefalea en trip-2 y trip-3) y A3 (200 pfu los días 22 y 23). El motor de referencia sigue §5.1 y §5.2 (línea base de tierra a vuelo; el detector no conoce los desplazamientos de `SUPUESTOS`, que solo usa el generador). Publica `gold/caso_referencia.json` y `gold/kpi.json` (detección por anomalía, días hasta la alerta, mitad de intensidad, alerta por azar, comparador de 91 lpm y falsas alarmas por tripulante y semana, con segunda semilla). `index.py barrer` publica `gold/barrido.json` (k y h del CUSUM). Las cifras del informe salen de aquí: si cambia una regla, se vuelve a correr y se actualiza el informe; no se ajustan parámetros para recuperar un número.",
+        "Escenarios que usa la app (la API los busca por nombre): `mision-real` es el entorno del modo real, anclado al día 1 de la misión (GOES y DONKI en su fecha real, y RadLab ALTEA-Survey y EDA RR-1 reanclados); `mision-vigia` es el del modo demo (ventanas en los días 18 a 23, con los 14 eventos SEP de mayo de 2024). El servicio de GOES solo guarda 24 horas: hay que reingerir y republicar (`index.py panel`) para que el modo real avance. Una ventana de DONKI ya consultada y sin eventos es un resultado válido (no falla); cualquier otra ventana sin datos sí."
       ],
       "tags": [
         "etl",
@@ -2955,7 +3109,7 @@
       "archivos": [
         {
           "ruta": "pipelines/reanclaje/index.py",
-          "lineas": 36,
+          "lineas": 39,
           "descripcion": "CLI del ETL de reanclaje.",
           "test": false,
           "simbolos": []
@@ -2982,7 +3136,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/reanclaje.py",
-          "lineas": 147,
+          "lineas": 155,
           "descripcion": "ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold.",
           "test": false,
           "simbolos": [
@@ -3026,7 +3180,7 @@
               "nombre": "construir",
               "tipo": "función",
               "firma": "construir(escenario)",
-              "doc": "Genera y guarda el gold del escenario. Si falta curated en una ventana no escribe nada."
+              "doc": "Genera y guarda el gold del escenario. Si falta curated en una ventana no escribe nada (salvo DONKI ya"
             },
             {
               "nombre": "guardar",
@@ -3038,39 +3192,57 @@
         },
         {
           "ruta": "pipelines/reanclaje/simulacion.py",
-          "lineas": 468,
-          "descripcion": "Simulador reproducible y generación de caso de referencia para VIGÍA (§5.5).",
+          "lineas": 538,
+          "descripcion": "Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5).",
           "test": false,
           "simbolos": [
             {
               "nombre": "evaluar_tripulante",
               "tipo": "función",
-              "firma": "evaluar_tripulante(tripulante, entorno_por_dia)",
-              "doc": "Ejecuta el motor híbrido de referencia (Capas A, B, C y contexto) sobre un tripulante."
+              "firma": "evaluar_tripulante(tripulante, entorno_por_dia, cusum_k=CUSUM_K, cusum_h=CUSUM_H)",
+              "doc": "Motor híbrido de referencia sobre un tripulante: alertas de las capas A, B, C y de contexto."
             },
             {
               "nombre": "generar_mision",
               "tipo": "función",
-              "firma": "generar_mision(rng, asignaciones=None, con_tormenta=False)",
-              "doc": "Genera una misión completa (4 tripulantes x 44 días) y calcula sus alertas."
+              "firma": "generar_mision(rng, a1=None, a2=False, a3=False)",
+              "doc": "Genera una misión (entorno y 4 tripulantes x 44 días). `a1` = intensidad de la deriva en trip-1."
+            },
+            {
+              "nombre": "evaluar_mision",
+              "tipo": "función",
+              "firma": "evaluar_mision(entorno, tripulantes, cusum_k=CUSUM_K, cusum_h=CUSUM_H)",
+              "doc": ""
             },
             {
               "nombre": "generar_caso_referencia",
               "tipo": "función",
               "firma": "generar_caso_referencia(semilla=SEMILLA_DEFECTO)",
-              "doc": "Construye el caso de referencia único con trip-1=A1, trip-2=A2, trip-3=A3, trip-4=nominal."
+              "doc": "Caso de referencia: una misión con A1 (trip-1), A2 (trip-2 y trip-3) y A3; trip-4 es nominal."
+            },
+            {
+              "nombre": "barrer",
+              "tipo": "función",
+              "firma": "barrer(n_misiones=200, semilla=SEMILLA_DEFECTO, ks=(0.5, 0.75, 1.0), hs=(4.0, 5.0, 6.0))",
+              "doc": "Barrido de k y h del CUSUM (§5.1): falsas alarmas en control y detección de A1 por combinación."
             },
             {
               "nombre": "ejecutar_simulacion",
               "tipo": "función",
               "firma": "ejecutar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)",
-              "doc": "Ejecuta el protocolo completo: 500 anomalías (por tipo) + 500 control + media intensidad + semilla 2027."
+              "doc": "Protocolo completo: n misiones con anomalías y n de control, mitad de intensidad y segunda semilla."
             },
             {
               "nombre": "publicar_simulacion",
               "tipo": "función",
               "firma": "publicar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)",
               "doc": "Genera y persiste `caso_referencia.json` y `kpi.json` en `gold/` con SHA-256."
+            },
+            {
+              "nombre": "publicar_barrido",
+              "tipo": "función",
+              "firma": "publicar_barrido(n_misiones=200, semilla=SEMILLA_DEFECTO)",
+              "doc": "Persiste el barrido de k y h en `gold/barrido.json`."
             }
           ]
         },
@@ -3102,7 +3274,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/test_reanclaje.py",
-          "lineas": 87,
+          "lineas": 96,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -3128,15 +3300,39 @@
         },
         {
           "ruta": "pipelines/reanclaje/test_simulacion.py",
-          "lineas": 63,
+          "lineas": 170,
           "descripcion": "",
           "test": true,
           "simbolos": [
+            {
+              "nombre": "lectura",
+              "tipo": "función",
+              "firma": "lectura(dia, fc=60.0, pas=118.0, spo2=98.0, temp=36.7, sueno=7.0, animo=8, sintomas=(), glucosa=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "tripulante",
+              "tipo": "función",
+              "firma": "tripulante(cambios=None)",
+              "doc": "44 días estables; `cambios` = {dia: campos que cambian ese día}."
+            },
+            {
+              "nombre": "alertas",
+              "tipo": "función",
+              "firma": "alertas(cambios=None, entorno=None)",
+              "doc": ""
+            },
             {
               "nombre": "Simulacion",
               "tipo": "clase",
               "firma": "Simulacion(unittest.TestCase)",
               "doc": ""
+            },
+            {
+              "nombre": "Reglas",
+              "tipo": "clase",
+              "firma": "Reglas(unittest.TestCase)",
+              "doc": "Cada regla de §5.1, §5.2 y §5.4 que la auditoría encontró distinta del informe."
             },
             {
               "nombre": "FixtureDelMotor",
