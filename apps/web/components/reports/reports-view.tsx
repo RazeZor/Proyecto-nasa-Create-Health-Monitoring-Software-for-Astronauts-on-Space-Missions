@@ -14,6 +14,7 @@ import { S } from "@/lib/strings"
 import { TRIPULANTE } from "@/lib/sincronizacion"
 import type { Report } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { Ayuda } from "@/components/shared/ayuda"
 
 const seccionH = "mb-4 text-2xl font-semibold"
 const pastilla = "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold"
@@ -241,7 +242,7 @@ export function ReportsView() {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <PageHeader title={S.reports.title} subtitle={surgeon ? S.reports.surgeonNote : S.reports.subtitle}>
+      <PageHeader title={S.reports.title} ayuda={<p>{surgeon ? S.reports.surgeonNote : S.reports.subtitle}</p>}>
         {!surgeon && (
           <button type="button" onClick={queue} disabled={encolando || sinRegistroHoy || faltaConfirmar} title={motivoBloqueo}
             className="inline-flex min-h-14 items-center gap-3 rounded-full bg-primary px-7 text-lg font-semibold text-primary-foreground transition-transform hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60">
@@ -292,7 +293,9 @@ export function ReportsView() {
             <span className="eyebrow block">{S.reports.oneWay}</span>
             <span className="block text-4xl font-semibold leading-tight tabular-nums">{formatDelay(profile.delayMinutes)}</span>
           </p>
-          <p className="min-w-0 text-sm leading-snug text-muted-foreground">{(mode === "demo" ? S.reports.oneWayHint : S.reports.oneWayHintReal)(profile.label)}</p>
+          <Ayuda titulo={S.reports.oneWay}>
+            <p>{(mode === "demo" ? S.reports.oneWayHint : S.reports.oneWayHintReal)(profile.label)}</p>
+          </Ayuda>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           {!surgeon && <Dato etiqueta={S.reports.countTransit} valor={reports ? enCamino : "—"}><IconoSobre className="size-7" /></Dato>}

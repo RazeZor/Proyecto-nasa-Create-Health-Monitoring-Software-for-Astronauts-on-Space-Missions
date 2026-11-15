@@ -14,6 +14,7 @@ import { type OrdenReloj, suenoSugerido, ultimoCambioInstrumento } from "@/lib/r
 import { S } from "@/lib/strings"
 import type { DeviceState } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { Ayuda } from "@/components/shared/ayuda"
 
 const tarjeta = "rounded-3xl border border-border bg-card p-5 shadow-sm md:p-6"
 const principal = "flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-primary px-7 text-xl font-semibold text-primary-foreground shadow-sm transition-transform active:scale-[0.98] disabled:opacity-50"
@@ -83,7 +84,7 @@ export function DeviceView() {
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
-      <div className="-mb-4"><PageHeader title={S.device.title} subtitle={S.device.subtitle} /></div>
+      <div className="-mb-4"><PageHeader title={S.device.title} ayuda={<p>{S.device.subtitle}</p>} /></div>
 
       {/* 1. Conexión: el estado se entiende de un vistazo y la acción está al lado */}
       <section aria-labelledby="conexion" className={cn("flex flex-wrap items-center gap-x-6 gap-y-4 rounded-3xl border p-5 shadow-sm transition-colors duration-300 md:p-6", SUPERFICIE[device])}>
@@ -200,8 +201,10 @@ export function DeviceView() {
             <div className="flex items-start gap-4">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-muted"><IconoChequeo className="size-7" /></span>
               <div>
-                <h2 id="chequeo" className="text-xl font-semibold">{S.device.checkTitle}</h2>
-                <p className="mt-0.5 text-base text-muted-foreground">{S.device.checkDesc}</p>
+                <h2 id="chequeo" className="flex items-center gap-1 text-xl font-semibold">
+                  {S.device.checkTitle}
+                  <Ayuda titulo={S.device.checkTitle}><p>{S.device.checkDesc}</p></Ayuda>
+                </h2>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
@@ -257,8 +260,10 @@ export function DeviceView() {
         ) : (
           <section aria-labelledby="aporta" className={cn(tarjeta, "flex flex-col gap-4")}>
             <div>
-              <h2 id="aporta" className="text-xl font-semibold">{S.device.gives}</h2>
-              <p className="mt-0.5 text-base text-muted-foreground">{S.device.givesNote}</p>
+              <h2 id="aporta" className="flex items-center gap-1 text-xl font-semibold">
+                {S.device.gives}
+                <Ayuda titulo={S.device.gives}><p>{S.device.givesNote}</p></Ayuda>
+              </h2>
             </div>
             <ul className="flex flex-col gap-2 text-lg">
               {([
@@ -299,8 +304,10 @@ export function DeviceView() {
       {/* 4. Segundo nivel: lo que no se toca a diario */}
       <section aria-labelledby="avanzado" className="mt-2">
         <div className="mb-3 border-t border-border pt-5">
-          <h2 id="avanzado" className="text-2xl font-semibold">{S.device.advanced}</h2>
-          <p className="text-base text-muted-foreground">{S.device.advancedDesc}</p>
+          <h2 id="avanzado" className="flex items-center gap-1 text-2xl font-semibold">
+            {S.device.advanced}
+            <Ayuda titulo={S.device.advanced}><p>{S.device.advancedDesc}</p></Ayuda>
+          </h2>
         </div>
         <div className={cn("grid gap-4", device !== "disconnected" && "lg:grid-cols-3")}>
           <button

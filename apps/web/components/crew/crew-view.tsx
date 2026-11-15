@@ -11,7 +11,7 @@ const seccionH = "mb-4 text-sm font-semibold uppercase tracking-wide text-muted-
 export function CrewView() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-8">
-      <PageHeader title={S.crew.title} subtitle={S.crew.subtitle} />
+      <PageHeader title={S.crew.title} ayuda={<p>{S.crew.subtitle}</p>} />
       <CrewWatches />
       <section aria-labelledby="inbox-h">
         <h2 id="inbox-h" className={seccionH}>{S.alerts.inbox}</h2>

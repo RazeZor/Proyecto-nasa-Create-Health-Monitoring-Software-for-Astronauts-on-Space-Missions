@@ -14,6 +14,7 @@ import { cargarKpiSimulacion, cargarPanelGold, type KpiSimulacionEtl, type Panel
 import { MOTOR, S } from "@/lib/strings"
 import type { Provenance, Status } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { Ayuda } from "@/components/shared/ayuda"
 
 const REAL = (source: string, date: string) => ({ kind: "real" as const, source, date })
 /** La etiqueta de procedencia, a un tamaño que se lee a un brazo de distancia. */
@@ -120,8 +121,10 @@ function Cabina({ icono: Icono, titulo, valor, unidad, nota }: { icono: Icono; t
 function Panel({ title, note, children, footer }: { title: string; note?: string; children: React.ReactNode; footer?: React.ReactNode }) {
   return (
     <section className="min-w-0 rounded-3xl border border-border bg-card p-4 shadow-sm md:p-5">
-      <h3 className="text-xl font-bold leading-tight">{title}</h3>
-      {note && <p className="mt-0.5 text-base text-muted-foreground">{note}</p>}
+      <h3 className="flex items-center gap-1 text-xl font-bold leading-tight">
+        {title}
+        {note && <Ayuda titulo={title}><p>{note}</p></Ayuda>}
+      </h3>
       <div className="mt-3">{children}</div>
       {footer && <div className="mt-3 flex flex-wrap items-center gap-2">{footer}</div>}
     </section>
@@ -213,9 +216,9 @@ export function EnvironmentView() {
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <div className="flex items-center gap-1">
           <h1 className="text-3xl font-bold leading-tight">{S.env.title}</h1>
-          <p className="text-base text-muted-foreground">{S.env.subtitle}</p>
+          <Ayuda titulo={S.env.title}><p>{S.env.subtitle}</p></Ayuda>
         </div>
         <a href="#procedencia" className={cn(
           "inline-flex min-h-12 items-center gap-2.5 rounded-full border bg-card px-4 text-base font-semibold shadow-sm active:scale-[0.98]",

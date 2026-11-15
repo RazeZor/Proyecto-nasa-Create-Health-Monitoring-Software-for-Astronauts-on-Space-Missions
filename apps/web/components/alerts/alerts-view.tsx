@@ -413,7 +413,7 @@ export function AlertsView() {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <PageHeader title={S.alerts.title} subtitle={astronauta ? S.alerts.subtitle : S.alerts.cmoNote} />
+      <PageHeader title={S.alerts.title} ayuda={<p>{astronauta ? S.alerts.subtitle : S.alerts.cmoNote}</p>} />
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="flex min-w-0 flex-col gap-8">
           {!astronauta && mode === "real" && (

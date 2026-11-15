@@ -13,7 +13,7 @@ const ROLES: Role[] = ["astronaut", "cmo", "surgeon"]
 export function ElegirRol() {
   return (
     <div className="mx-auto max-w-5xl">
-      <PageHeader title={S.start.title} subtitle={S.start.subtitle} />
+      <PageHeader title={S.start.title} ayuda={<p>{S.start.subtitle}</p>} />
       <ul className="grid gap-4 md:grid-cols-3">
         {ROLES.map((r) => (
           <li key={r}>
