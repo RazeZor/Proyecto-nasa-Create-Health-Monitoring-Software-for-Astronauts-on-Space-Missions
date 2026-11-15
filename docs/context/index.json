@@ -853,7 +853,7 @@
       "puntos_clave": [
         "Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + Recharts + componentes UI accesibles (`components/ui/*`).",
         "**La app solo conoce la API**: perfiles (`/perfiles`), fichas (`/fichas`), referencia de entorno (`/entorno/referencia`), historial simulado del tripulante (`/tripulantes/{id}/historial`), recordatorios, mensajes con tierra e informes salen de `apps/api`. `lib/catalogo.ts` los pide al arrancar (`cargarCatalogo`) y los traduce al modelo de la interfaz; `AppProvider` no muestra la app hasta tenerlos y, si la API no responde, muestra un aviso con «Reintentar». No hay datos de ejemplo en el cliente (`lib/mock` ya no existe): los mockups viven en `apps/api/demo/`. Lo único local son los registros del usuario (`lib/storage.ts`, `localStorage`), que se suben a la API.",
-        "Motor híbrido: `packages/engine` (TypeScript puro, port 1:1 del simulador de Python, con test de paridad) evalúa las capas A, B y C y la regla de contexto. `lib/engine.ts` (`analizar(checkIns, historial)`) lo aplica al historial de la API más los registros del usuario; `AppProvider` lo recalcula en `analisis` cada vez que se guarda un check-in, y cuerpo, tendencias, alertas e informes lo leen de ahí. Modo adaptación (días 1 a 14) y modo tormenta (del `entorno_diario` del historial). Tres niveles (`ok`, `watch`, `act`); solo `act` escala al oficial médico (§4.2, §5.1). Importa `packages/engine` por ruta relativa (`experimental.externalDir` en `next.config.mjs`). El pulso de `/device` viene del Galaxy Watch real a través de la API (ver el punto del reloj).",
+        "Motor híbrido: `packages/engine` (TypeScript puro, port 1:1 del simulador de Python, con test de paridad) evalúa las capas A, B y C y la regla de contexto. `lib/engine.ts` (`analizar(checkIns, historial)`) lo aplica al historial de la API más los registros del usuario y lo complementa con `alertasCheckIn` y `lecturasZona` para que las 5 zonas del cuerpo humano (`head`, `heart`, `bone`, `blood`, `mind`) respondan a lecturas reales (FC, PA, SpO2, CO2, síntomas neurovestibulares, pérdida de masa corporal vs. prevuelo, temperatura central, glucosa, síntomas inmunes, sueño y ánimo) y muestren sus valores del día frente a su banda de referencia en el cajón lateral de `components/body/body-view.tsx`. `AppProvider` lo recalcula en `analisis` cada vez que se guarda un check-in, y cuerpo, tendencias, alertas e informes lo leen de ahí. Modo adaptación (días 1 a 14) y modo tormenta (del `entorno_diario` del historial). Tres niveles (`ok`, `watch`, `act`); solo `act` escala al oficial médico (§4.2, §5.1). Importa `packages/engine` por ruta relativa (`experimental.externalDir` en `next.config.mjs`). El pulso de `/device` viene del Galaxy Watch real a través de la API (ver el punto del reloj).",
         "Llamadas a la API: `lib/catalogo.ts`, `lib/etl-client.ts` y `lib/api-registro.ts` usan `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA` (se lee al compilar; por defecto `http://127.0.0.1:8000`). En la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa. La vista de entorno consume `/paneles`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` sin generar series sintéticas.",
         "`lib/api-registro.ts` conecta todas las rutas de `apps/api/rutas_registro.py` (`POST`/`GET` de lecturas, síntomas, alertas y reportes; `PUT`/`GET` de línea base en `tierra` y `vuelo`; `GET` de escalamientos recibidos y propios; `POST` de contexto en escalamientos, avance de cola y respuesta de Tierra) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false`/`null`/`[]` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
         "El registro diario, las líneas base y las alertas del motor se sincronizan con la API mediante `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden, se combinan lecturas/síntomas remotos de SQLite (`cargarRegistrosCombinados`) y se persisten las líneas base y alertas nuevas sin duplicar (`sincronizarMotorConServidor`). Identidad provisional: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (por defecto 1, el astronauta de `python3 -m almacen sembrar`; el rol `cmo`/`surgeon` firma con el actor 2). En `/reports`, el Cirujano de Vuelo puede avanzar la cola (`POST /reportes/avanzar`) y responder informes entregados (`POST /reportes/{id}/respuesta`), actualizando el hilo de mensajes en vivo; en `/alerts`, se consultan los escalamientos reales y el astronauta puede adjuntar contexto una sola vez (`POST /escalamientos/{id}/contexto`); en `/trends`, se lee la línea base guardada en SQLite (`GET /linea-base/...`).",
@@ -1092,7 +1092,7 @@
         },
         {
           "ruta": "apps/web/components/body/body-view.tsx",
-          "lineas": 218,
+          "lineas": 242,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1438,7 +1438,7 @@
         },
         {
           "ruta": "apps/web/lib/api-registro.ts",
-          "lineas": 472,
+          "lineas": 477,
           "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
           "test": false,
           "simbolos": [
@@ -1782,14 +1782,14 @@
         },
         {
           "ruta": "apps/web/lib/engine.test.ts",
-          "lineas": 96,
+          "lineas": 130,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/engine.ts",
-          "lineas": 199,
+          "lineas": 339,
           "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial) más los registros",
           "test": false,
           "simbolos": [
@@ -2205,7 +2205,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 371,
+          "lineas": 383,
           "descripcion": "",
           "test": false,
           "simbolos": [

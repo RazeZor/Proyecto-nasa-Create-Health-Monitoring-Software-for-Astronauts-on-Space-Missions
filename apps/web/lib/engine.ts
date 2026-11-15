@@ -24,7 +24,20 @@ const rank: Record<Status, number> = { ok: 0, watch: 1, act: 2 }
 export const worst = (list: Status[]): Status =>
   list.reduce<Status>((a, b) => (rank[b] > rank[a] ? b : a), "ok")
 
-const ZONA: Record<string, ZoneId> = { fc: "heart", pas: "heart", news2: "heart", sueno: "mind", animo: "mind", conductual: "mind", co2: "head" }
+const ZONA: Record<string, ZoneId> = {
+  fc: "heart",
+  pas: "heart",
+  news2: "heart",
+  sueno: "mind",
+  animo: "mind",
+  conductual: "mind",
+  co2: "head",
+  neuro: "head",
+  temp: "blood",
+  glucosa: "blood",
+  inmune: "blood",
+  masa: "bone",
+}
 const ZONAS: ZoneId[] = ["head", "heart", "bone", "blood", "mind"]
 const SINTOMA = vocabulario.sintomas as Record<Symptom, string>
 
@@ -43,7 +56,7 @@ const enLectura = (e: CheckInEntry, base?: Lectura): Lectura => ({
 function textoAlerta(a: Alerta): Alert {
   const capa = a.capa === "contexto" ? "context" : a.capa
   const unidad = MOTOR.unidad[(a.indicador === "conductual" ? "sueno" : a.indicador) as keyof typeof MOTOR.unidad]
-  const valor = a.valor === null ? "" : a.capa === "C" ? `CUSUM ${a.valor}` : `${a.valor} ${unidad}`
+  const valor = a.valor === null ? "" : a.capa === "C" && a.indicador !== "masa" ? `CUSUM ${a.valor}` : `${a.valor} ${unidad}`
   return {
     id: `al-${a.dia_mision}-${capa}-${a.indicador}`,
     day: a.dia_mision,
@@ -57,6 +70,70 @@ function textoAlerta(a: Alerta): Alert {
     cause: MOTOR.causa[capa],
     action: MOTOR.accion[a.indicador as keyof typeof MOTOR.accion],
   }
+}
+
+/**
+ * Evalúa indicadores fisiológicos, metabólicos, de masa corporal y síntomas reportados en check-ins
+ * que complementan al motor base para cubrir las 5 zonas del cuerpo (head, heart, bone, blood, mind).
+ */
+function alertasCheckIn(
+  checkIns: CheckInEntry[],
+  medMasaPre: number | null,
+  entorno: Record<number, { co2_mmhg_max_horario?: number }>,
+  base: Alerta[],
+): Alerta[] {
+  const porDiaUsuario = new Map<number, CheckInEntry>()
+  for (const e of checkIns) {
+    if (e.day >= 1) porDiaUsuario.set(e.day, e)
+  }
+  const yaEmitida = (dia: number, ind: string) => base.some((a) => a.dia_mision === dia && a.indicador === ind)
+  const extras: Alerta[] = []
+  const mk = (dia: number, capa: Alerta["capa"], nivel: Alerta["nivel"], indicador: string, valor: number | null): Alerta => ({
+    tripulante_id: "yo", dia_mision: dia, capa, nivel, indicador, valor, escalada_auto: nivel === "rojo",
+  })
+
+  for (const [dia, e] of porDiaUsuario) {
+    if (e.tempC != null && !yaEmitida(dia, "temp")) {
+      if (e.tempC <= 35.0 || e.tempC >= 39.1) {
+        extras.push(mk(dia, "A", "rojo", "temp", e.tempC))
+      } else if ((e.tempC > 35.0 && e.tempC <= 35.5) || (e.tempC >= 38.1 && e.tempC < 39.1)) {
+        extras.push(mk(dia, "A", "ambar", "temp", e.tempC))
+      }
+    }
+    if (e.glucose != null && !yaEmitida(dia, "glucosa")) {
+      if (e.glucose < 54 || e.glucose >= 180) {
+        extras.push(mk(dia, "A", "rojo", "glucosa", e.glucose))
+      } else if ((e.glucose >= 54 && e.glucose < 70) || (e.glucose > 126 && e.glucose < 180)) {
+        extras.push(mk(dia, "B", "ambar", "glucosa", e.glucose))
+      }
+    }
+    if (e.massKg != null && medMasaPre != null && medMasaPre > 0 && !yaEmitida(dia, "masa")) {
+      const perdidaPct = ((medMasaPre - e.massKg) / medMasaPre) * 100
+      if (perdidaPct >= 4.4) {
+        extras.push(mk(dia, "C", "rojo", "masa", Math.round(e.massKg * 10) / 10))
+      } else if (perdidaPct >= 2.8) {
+        extras.push(mk(dia, "C", "ambar", "masa", Math.round(e.massKg * 10) / 10))
+      }
+    }
+    const tieneNeuro = e.symptoms.some((s) => s === "headache" || s === "dizziness" || s === "visionChange")
+    if (tieneNeuro && !yaEmitida(dia, "co2") && !yaEmitida(dia, "neuro")) {
+      const co2Alto = (entorno[dia]?.co2_mmhg_max_horario ?? 0) >= 3.0 && e.symptoms.includes("headache")
+      if (!co2Alto) {
+        extras.push(mk(dia, "B", "ambar", "neuro", null))
+      }
+    }
+    const tieneInmune = e.symptoms.some((s) => s === "rash" || s === "nausea")
+    if (tieneInmune && !yaEmitida(dia, "inmune")) {
+      extras.push(mk(dia, "B", "ambar", "inmune", null))
+    }
+    if (e.sleepH != null && e.sleepH < 4 && !yaEmitida(dia, "sueno")) {
+      extras.push(mk(dia, "B", "ambar", "sueno", e.sleepH))
+    }
+    if (e.mood <= 3 && !yaEmitida(dia, "animo")) {
+      extras.push(mk(dia, "B", "ambar", "animo", e.mood))
+    }
+  }
+  return extras
 }
 
 /** Banda personal [bajo, alto] de un indicador con Capa B, desplazada por la adaptación al vuelo. */
@@ -74,7 +151,10 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial) {
   for (const e of checkIns) porDia.set(e.day, enLectura(e, porDia.get(e.day))) // el último registro del día manda
   const lecturas = [...porDia.values()].sort((a, b) => a.dia_mision - b.dia_mision)
   const cambiosInstrumento = cambiosDeInstrumento(checkIns)
-  const alertasMotor = evaluarTripulante({ id: "yo", lecturas }, ENTORNO, { cambiosInstrumento })
+  const masasPre = TRIPULANTE.lecturas.filter((l) => l.dia_mision <= 0).map((l) => l.masa_kg).filter((v): v is number => v != null)
+  const medMasaPre = masasPre.length > 0 ? madBruto(masasPre, 0.1)[0] : null
+  const alertasBase = evaluarTripulante({ id: "yo", lecturas }, ENTORNO, { cambiosInstrumento })
+  const alertasMotor = [...alertasBase, ...alertasCheckIn(checkIns, medMasaPre, ENTORNO, alertasBase)]
   const todas = alertasMotor.map(textoAlerta)
 
   const alerts = (day: number) =>
@@ -96,15 +176,6 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial) {
       if (masa != null) v.massKg = masa
       return v
     })
-
-  const zones = (day: number): ZoneResult[] => {
-    const activas = todas.filter((a) => a.day === day || (a.day === day - 1 && a.layer !== "A"))
-    return ZONAS.map((zone) => {
-      const hit = activas.filter((a) => a.zone === zone).sort((a, b) => rank[b.status] - rank[a.status])[0]
-      if (!hit) return { zone, status: "ok", layer: null, why: MOTOR.estable, deviation: MOTOR.dentroBanda, next: MOTOR.zona[zone] }
-      return { zone, status: hit.status, layer: hit.layer, why: hit.cause, deviation: `${hit.value} (${hit.clinicalBand})`, next: hit.action }
-    })
-  }
 
   const baselines = (id: IndicatorId): Baseline[] => {
     const pre = lecturas.filter((l) => l.dia_mision <= 0)
@@ -143,6 +214,75 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial) {
     ]
   }
 
+  const lecturasZona = (day: number, zone: ZoneId): { label: string; value: string; reference: string }[] => {
+    const serie = vitals(day)
+    const v = serie.find((x) => x.day === day) ?? serie.at(-1)
+    const rangoBanda = (id: IndicatorId, unidad: string) => {
+      const lista = baselines(id)
+      const b = lista.find((x) => day >= x.fromDay && day <= x.toDay) ?? lista[0]
+      return b ? `${b.low.toFixed(1)}–${b.high.toFixed(1)} ${unidad}`.trim() : "—"
+    }
+    if (!v) return []
+    switch (zone) {
+      case "heart":
+        return [
+          { label: MOTOR.indicador.fc, value: `${v.restingHr} lpm`, reference: rangoBanda("restingHr", "lpm") },
+          { label: MOTOR.indicador.pas, value: `${v.systolic}/${v.diastolic} mmHg`, reference: rangoBanda("systolic", "mmHg") },
+        ]
+      case "head":
+        return [
+          { label: "SpO₂", value: `${v.spo2} %`, reference: `≥ 96 % (${rangoBanda("spo2", "%")})` },
+          { label: MOTOR.indicador.co2, value: `${(ENTORNO[day]?.co2_mmhg_max_horario ?? 0).toFixed(1)} mmHg`, reference: "< 3.0 mmHg" },
+        ]
+      case "bone": {
+        const ultMasa = serie.filter((x) => x.massKg != null).at(-1)
+        return [
+          {
+            label: MOTOR.indicador.masa,
+            value: ultMasa?.massKg != null ? `${ultMasa.massKg.toFixed(1)} kg (D${ultMasa.day})` : "—",
+            reference: medMasaPre != null ? `Base ${medMasaPre.toFixed(1)} kg (±2.8 %)` : rangoBanda("massKg", "kg"),
+          },
+        ]
+      }
+      case "blood": {
+        const ultGlucosa = serie.filter((x) => x.glucose != null).at(-1)
+        return [
+          { label: MOTOR.indicador.temp, value: `${v.tempC.toFixed(1)} °C`, reference: `36.1–37.8 °C (${rangoBanda("tempC", "°C")})` },
+          {
+            label: MOTOR.indicador.glucosa,
+            value: ultGlucosa?.glucose != null ? `${ultGlucosa.glucose} mg/dL (D${ultGlucosa.day})` : "—",
+            reference: "70–126 mg/dL",
+          },
+        ]
+      }
+      case "mind":
+        return [
+          { label: MOTOR.indicador.sueno, value: `${v.sleepH} h`, reference: rangoBanda("sleepH", "h") },
+          { label: MOTOR.indicador.animo, value: `${v.mood} /10`, reference: rangoBanda("mood", "/10") },
+        ]
+    }
+  }
+
+  const zones = (day: number): ZoneResult[] => {
+    const activas = todas.filter((a) => a.day === day || (a.day === day - 1 && a.layer !== "A"))
+    return ZONAS.map((zone) => {
+      const hit = activas.filter((a) => a.zone === zone).sort((a, b) => rank[b.status] - rank[a.status])[0]
+      if (!hit) {
+        const resumen = lecturasZona(day, zone).map((r) => `${r.label}: ${r.value}`).join(" · ")
+        return {
+          zone,
+          status: "ok",
+          layer: null,
+          why: MOTOR.estable,
+          deviation: resumen ? `${MOTOR.dentroBanda} · ${resumen}` : MOTOR.dentroBanda,
+          next: MOTOR.zona[zone],
+        }
+      }
+      const detalle = hit.value ? `${hit.value} (${hit.clinicalBand})` : hit.clinicalBand
+      return { zone, status: hit.status, layer: hit.layer, why: hit.cause, deviation: detalle, next: hit.action }
+    })
+  }
+
   const lineasBaseServidor = () => {
     const pre = lecturas.filter((l) => l.dia_mision <= 0)
     const vuelo = lecturas.filter((l) => l.dia_mision >= 1 && l.dia_mision <= ADAPTATION_END_DAY)
@@ -170,7 +310,7 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial) {
 
   const overall = (day: number): Status => worst(zones(day).map((z) => z.status))
   const storm = (day: number) => Boolean(ENTORNO[day]?.modo_tormenta)
-  return { alerts, alertasMotor, lineasBaseServidor, vitals, zones, overall, baselines, storm, missionDays: MISSION_DAYS, cambiosInstrumento }
+  return { alerts, alertasMotor, lineasBaseServidor, vitals, zones, lecturasZona, overall, baselines, storm, missionDays: MISSION_DAYS, cambiosInstrumento }
 }
 
 /**
