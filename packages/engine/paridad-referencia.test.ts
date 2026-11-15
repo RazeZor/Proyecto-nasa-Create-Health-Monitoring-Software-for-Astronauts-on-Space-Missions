@@ -3,6 +3,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import caso from "./fixtures/caso-referencia.json" with { type: "json" }
+import viaje from "./fixtures/caso-viaje.json" with { type: "json" }
 import { analizarTripulante, evaluarTripulante, madBruto, pesoVuelo, puntosNews2, type Lectura } from "./engine.ts"
 
 const entornoPorDia = Object.fromEntries(caso.entorno_diario.map((e) => [e.dia_mision, e]))
@@ -19,6 +20,21 @@ test("las alertas de los 4 tripulantes coinciden con alertas_esperadas", () => {
     const e = caso.alertas_esperadas[i]
     const { valor: va, ...ra } = a
     const { valor: ve, ...re } = e
+    assert.deepEqual(ra, re)
+    assert.ok(Math.abs((va as number) - (ve as number)) < 0.011, `valor ${va} vs ${ve}`)
+  })
+})
+
+test("el viaje a Marte (259 días): las alertas de los 4 tripulantes coinciden con alertas_esperadas", () => {
+  const entorno = Object.fromEntries(viaje.entorno_diario.map((e) => [e.dia_mision, e]))
+  const obtenidas = viaje.tripulantes
+    .flatMap((t) => evaluarTripulante(t, entorno))
+    .sort((a, b) => (clave(a) < clave(b) ? -1 : clave(a) > clave(b) ? 1 : 0))
+  assert.equal(viaje.dias_vuelo, 259)
+  assert.equal(obtenidas.length, viaje.alertas_esperadas.length)
+  obtenidas.forEach((a, i) => {
+    const { valor: va, ...ra } = a
+    const { valor: ve, ...re } = viaje.alertas_esperadas[i]
     assert.deepEqual(ra, re)
     assert.ok(Math.abs((va as number) - (ve as number)) < 0.011, `valor ${va} vs ${ve}`)
   })

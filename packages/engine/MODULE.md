@@ -36,7 +36,7 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 | --- | --- | --- |
 | [engine.ts](engine.ts) | 289 | Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD), |
 | [instrumento.test.ts](instrumento.test.ts) | 41 | — |
-| [paridad-referencia.test.ts](paridad-referencia.test.ts) | 98 | — |
+| [paridad-referencia.test.ts](paridad-referencia.test.ts) | 114 | — |
 | [series.test.ts](series.test.ts) | 45 | — |
 | [series.ts](series.ts) | 85 | Descomposición de una serie diaria en tendencia, ciclo y residuo, para el histórico de la interfaz. No es parte del |
 
@@ -87,7 +87,7 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 
 ### Dependencias
 
-- Internas: `./engine.ts`, `./fixtures/caso-referencia.json`, `./series.ts`
+- Internas: `./engine.ts`, `./fixtures/caso-referencia.json`, `./fixtures/caso-viaje.json`, `./series.ts`
 - Externas: ninguna
 - Biblioteca estándar: `node:assert/strict`, `node:test`
 

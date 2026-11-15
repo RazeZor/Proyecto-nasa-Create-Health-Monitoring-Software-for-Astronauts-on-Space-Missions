@@ -44,7 +44,9 @@
           "dia_mision": { "type": "integer", "minimum": 1 },
           "co2_mmhg_max_horario": { "type": "number", "minimum": 0 },
           "flujo_protones_10mev_pfu": { "type": "number", "minimum": 0 },
-          "modo_tormenta": { "type": "boolean" }
+          "modo_tormenta": { "type": "boolean" },
+          "dosis_msv_dia": { "type": "number", "minimum": 0 },
+          "dosis_acumulada_msv": { "type": "number", "minimum": 0 }
         }
       }
     },
@@ -82,6 +84,24 @@
               }
             }
           }
+        }
+      }
+    },
+    "trayectoria": {
+      "description": "Solo el caso del viaje a Marte: la posición de la nave, la Tierra y Marte cada día de vuelo (pipelines/reanclaje/trayectoria.py).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["dia", "x_ua", "y_ua", "dist_sol_ua", "dist_tierra_ua", "retardo_min", "tierra", "marte"],
+        "properties": {
+          "dia": { "type": "integer", "minimum": 0 },
+          "x_ua": { "type": "number" },
+          "y_ua": { "type": "number" },
+          "dist_sol_ua": { "type": "number" },
+          "dist_tierra_ua": { "type": "number" },
+          "retardo_min": { "type": "number" },
+          "tierra": { "type": "object", "required": ["x_ua", "y_ua"], "properties": { "x_ua": { "type": "number" }, "y_ua": { "type": "number" } } },
+          "marte": { "type": "object", "required": ["x_ua", "y_ua"], "properties": { "x_ua": { "type": "number" }, "y_ua": { "type": "number" } } }
         }
       }
     },

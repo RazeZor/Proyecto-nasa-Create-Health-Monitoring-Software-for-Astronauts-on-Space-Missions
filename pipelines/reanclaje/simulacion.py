@@ -12,11 +12,14 @@ La línea base pasa de tierra a vuelo: el detector NO conoce los desplazamientos
 el generador. `packages/engine/engine.ts` es el port 1:1: si cambias una regla, cámbiala en ambos.
 """
 import datetime as dt
+import json
 import math
 import random
+from pathlib import Path
 from statistics import median
 
 import reanclaje
+import trayectoria
 
 SEMILLA_DEFECTO = 2026
 SEMILLA_SECUNDARIA = 2027
@@ -82,6 +85,13 @@ A2_CO2_MMHG = 4.6
 A2_AFECTADOS = ("trip-2", "trip-3")
 A3_DIAS = (22, 23)
 A3_FLUJO_PFU = 200.0
+# Días de las tres anomalías de cada escenario: el de referencia (§5.5) y el viaje a Marte (docs/superpowers/specs)
+ANOMALIAS_REFERENCIA = {"a1": (A1_DIA_INICIO, A1_DIA_FIN), "a2": A2_DIA, "a3": A3_DIAS}
+ANOMALIAS_VIAJE = {"a1": (100, 109), "a2": 60, "a3": (112, 113)}
+# Dosis del viaje: radiación galáctica de fondo medida por MSL RAD en el tránsito (~1,8 mSv/día; Zeitlin et al. 2013);
+# la tormenta suma una dosis extra por día de evento (supuesto de escenario, detrás del blindaje de la cabina).
+DOSIS_FONDO_MSV_DIA = 1.8
+DOSIS_TORMENTA_EXTRA_MSV = 3.0
 UMBRAL_FIJO_FC_LPM = 91.0  # comparador terrestre: primer tramo de NEWS2 para la frecuencia cardíaca
 
 
@@ -178,15 +188,15 @@ def _puntos_news2(fc, pas, spo2, temp):
     return pts, max_individual
 
 
-def _entorno_sintetico_mision(rng, con_co2=False, con_tormenta=False):
-    """30 días de entorno simulado (CO2 y protones), con las anomalías A2 y A3 si se piden."""
+def _entorno_sintetico_mision(rng, con_co2=False, con_tormenta=False, dias_vuelo=DIAS_VUELO, anomalias=ANOMALIAS_REFERENCIA):
+    """Entorno simulado (CO2 y protones) de `dias_vuelo` días, con las anomalías A2 y A3 si se piden."""
     entorno = []
-    for dia in range(1, DIAS_VUELO + 1):
+    for dia in range(1, dias_vuelo + 1):
         co2 = round(max(1.2, min(2.95, 2.05 + rng.gauss(0.0, 0.25))), 3)
         flujo = round(max(0.15, 0.35 + rng.gauss(0.0, 0.08)), 3)
-        if con_co2 and dia == A2_DIA:
+        if con_co2 and dia == anomalias["a2"]:
             co2 = A2_CO2_MMHG
-        if con_tormenta and dia in A3_DIAS:
+        if con_tormenta and dia in anomalias["a3"]:
             flujo = A3_FLUJO_PFU
         entorno.append({
             "dia_mision": dia,
@@ -205,8 +215,9 @@ def _ruido_fisiologico(rng, sigma):
     return base
 
 
-def _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia, a1=None, cefalea_dias=()):
-    """14 días de prevuelo + 30 de vuelo. `a1` es la intensidad de la deriva A1 (None = sin deriva)."""
+def _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia, a1=None, cefalea_dias=(), dias_vuelo=DIAS_VUELO,
+                        anomalias=ANOMALIAS_REFERENCIA):
+    """14 días de prevuelo + `dias_vuelo` de vuelo. `a1` es la intensidad de la deriva A1 (None = sin deriva)."""
     base_fc = 60.0 + rng.uniform(-6.0, 10.0)
     base_pas = 118.0 + rng.uniform(-8.0, 10.0)
     base_pad = 74.0 + rng.uniform(-5.0, 6.0)
@@ -218,14 +229,14 @@ def _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia, a1=None, cefalea
     base_masa = 72.0 + rng.uniform(-8.0, 12.0)
 
     lecturas = []
-    for dia in range(-DIAS_PREVUELO + 1, DIAS_VUELO + 1):
+    for dia in range(-DIAS_PREVUELO + 1, dias_vuelo + 1):
         w = _factor_adaptacion(dia)
         delta_fc = SUPUESTOS["fc_desplazamiento_lpm"] * w
         delta_sueno = SUPUESTOS["sueno_desplazamiento_h"] * w
         delta_pas = SUPUESTOS["pas_desplazamiento_mmHg"] * w
 
         # A1 (§5.5): deriva lineal dentro de la ventana, proporcional a los días transcurridos
-        pasos = (dia - A1_DIA_INICIO + 1) * a1 if a1 is not None and A1_DIA_INICIO <= dia <= A1_DIA_FIN else 0.0
+        pasos = (dia - anomalias["a1"][0] + 1) * a1 if a1 is not None and anomalias["a1"][0] <= dia <= anomalias["a1"][1] else 0.0
         inj_fc = 1.0 * pasos
         inj_sueno = -0.20 * pasos
         inj_animo = -0.15 * pasos
@@ -363,17 +374,33 @@ def _orden(a):
     return (a["dia_mision"], a["tripulante_id"], a["capa"], a["indicador"])
 
 
-def generar_mision(rng, a1=None, a2=False, a3=False):
-    """Genera una misión (entorno y 4 tripulantes x 44 días). `a1` = intensidad de la deriva en trip-1."""
-    entorno = _entorno_sintetico_mision(rng, con_co2=a2, con_tormenta=a3)
+def generar_mision(rng, a1=None, a2=False, a3=False, dias_vuelo=DIAS_VUELO, anomalias=ANOMALIAS_REFERENCIA):
+    """Genera una misión (entorno y 4 tripulantes x (14 + `dias_vuelo`) días). `a1` = intensidad de la deriva en trip-1."""
+    entorno = _entorno_sintetico_mision(rng, con_co2=a2, con_tormenta=a3, dias_vuelo=dias_vuelo, anomalias=anomalias)
     entorno_por_dia = {e["dia_mision"]: e for e in entorno}
     tripulantes = [
         _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia,
                             a1=a1 if tid == "trip-1" else None,
-                            cefalea_dias=(A2_DIA,) if a2 and tid in A2_AFECTADOS else ())
+                            cefalea_dias=(anomalias["a2"],) if a2 and tid in A2_AFECTADOS else (),
+                            dias_vuelo=dias_vuelo, anomalias=anomalias)
         for tid, nombre, rol in ROLES_TRIPULACION
     ]
     return entorno, tripulantes
+
+
+def _con_dosis_y_posicion(entorno, semilla):
+    """Añade al entorno del viaje la dosis diaria y acumulada (mSv) y la posición de la nave (`trayectoria`)."""
+    rng = random.Random(f"dosis-{semilla}")
+    acumulada = 0.0
+    for e in entorno:
+        dia = e["dia_mision"]
+        dosis = DOSIS_FONDO_MSV_DIA * (1 + 0.08 * math.sin(2 * math.pi * dia / 120)) + max(-0.1, min(0.1, rng.gauss(0.0, 0.04)))
+        if e["modo_tormenta"]:
+            dosis += DOSIS_TORMENTA_EXTRA_MSV
+        acumulada += dosis
+        e["dosis_msv_dia"] = round(dosis, 3)
+        e["dosis_acumulada_msv"] = round(acumulada, 3)
+    return entorno
 
 
 def evaluar_mision(entorno, tripulantes, cusum_k=CUSUM_K, cusum_h=CUSUM_H):
@@ -396,6 +423,38 @@ def generar_caso_referencia(semilla=SEMILLA_DEFECTO):
         "tripulantes": tripulantes,
         "alertas_esperadas": evaluar_mision(entorno, tripulantes),
     }
+
+
+def generar_caso_viaje(semilla=SEMILLA_DEFECTO):
+    """Caso del viaje a Marte: el tránsito completo (`DIAS_TRANSITO` días) con las tres anomalías en su calendario,
+    el entorno con dosis y la posición de la nave cada día (`trayectoria`)."""
+    rng = random.Random(semilla)
+    entorno, tripulantes = generar_mision(rng, a1=1.0, a2=True, a3=True, dias_vuelo=trayectoria.DIAS_TRANSITO,
+                                          anomalias=ANOMALIAS_VIAJE)
+    entorno = _con_dosis_y_posicion(entorno, semilla)
+    return {
+        "semilla": semilla,
+        "dias_prevuelo": DIAS_PREVUELO,
+        "dias_vuelo": trayectoria.DIAS_TRANSITO,
+        "naturaleza": "Simulado",
+        "supuestos": SUPUESTOS,
+        "entorno_diario": entorno,
+        "tripulantes": tripulantes,
+        "alertas_esperadas": evaluar_mision(entorno, tripulantes),
+        "trayectoria": [_redondea(trayectoria.posicion(d)) for d in range(1, trayectoria.DIAS_TRANSITO + 1)],
+    }
+
+
+def publicar_caso_viaje(destino):
+    """Escribe el caso del viaje compacto (el fixture de la demo y de la paridad del motor)."""
+    destino = Path(destino)
+    destino.write_text(json.dumps(generar_caso_viaje(), ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    return {"escrito": str(destino), "bytes": destino.stat().st_size}
+
+
+def _redondea(punto):
+    """Redondea a 5 decimales los reales de la posición (el fixture queda pequeño y estable)."""
+    return {k: _redondea(v) if isinstance(v, dict) else round(v, 5) if isinstance(v, float) else v for k, v in punto.items()}
 
 
 def _es_medica(a):

@@ -40,13 +40,13 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [index.py](index.py) | 39 | CLI del ETL de reanclaje. |
+| [index.py](index.py) | 43 | CLI del ETL de reanclaje. |
 | [panel.py](panel.py) | 83 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
 | [reanclaje.py](reanclaje.py) | 161 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
-| [simulacion.py](simulacion.py) | 538 | Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5). |
+| [simulacion.py](simulacion.py) | 597 | Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5). |
 | [test_panel.py](test_panel.py) | 76 | — |
 | [test_reanclaje.py](test_reanclaje.py) | 106 | — |
-| [test_simulacion.py](test_simulacion.py) | 170 | — |
+| [test_simulacion.py](test_simulacion.py) | 205 | — |
 | [test_trayectoria.py](test_trayectoria.py) | 47 | — |
 | [trayectoria.py](trayectoria.py) | 46 | Trayectoria de la nave en el tránsito Tierra→Marte (diseño: docs/superpowers/specs/2026-11-15-viaje-a-marte-design.md). |
 
@@ -71,9 +71,11 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 **simulacion.py**
 
 - función `evaluar_tripulante(tripulante, entorno_por_dia, cusum_k=CUSUM_K, cusum_h=CUSUM_H)`: Motor híbrido de referencia sobre un tripulante: alertas de las capas A, B, C y de contexto.
-- función `generar_mision(rng, a1=None, a2=False, a3=False)`: Genera una misión (entorno y 4 tripulantes x 44 días). `a1` = intensidad de la deriva en trip-1.
+- función `generar_mision(rng, a1=None, a2=False, a3=False, dias_vuelo=DIAS_VUELO, anomalias=ANOMALIAS_REFERENCIA)`: Genera una misión (entorno y 4 tripulantes x (14 + `dias_vuelo`) días). `a1` = intensidad de la deriva en trip-1.
 - función `evaluar_mision(entorno, tripulantes, cusum_k=CUSUM_K, cusum_h=CUSUM_H)`
 - función `generar_caso_referencia(semilla=SEMILLA_DEFECTO)`: Caso de referencia: una misión con A1 (trip-1), A2 (trip-2 y trip-3) y A3; trip-4 es nominal.
+- función `generar_caso_viaje(semilla=SEMILLA_DEFECTO)`: Caso del viaje a Marte: el tránsito completo (`DIAS_TRANSITO` días) con las tres anomalías en su calendario,
+- función `publicar_caso_viaje(destino)`: Escribe el caso del viaje compacto (el fixture de la demo y de la paridad del motor).
 - función `barrer(n_misiones=200, semilla=SEMILLA_DEFECTO, ks=(0.5, 0.75, 1.0), hs=(4.0, 5.0, 6.0))`: Barrido de k y h del CUSUM (§5.1): falsas alarmas en control y detección de A1 por combinación.
 - función `ejecutar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)`: Protocolo completo: n misiones con anomalías y n de control, mitad de intensidad y segunda semilla.
 - función `publicar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO)`: Genera y persiste `caso_referencia.json` y `kpi.json` en `gold/` con SHA-256.
@@ -91,6 +93,7 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 python3 index.py build <escenario.json>   curated -> gold (ver escenarios/ejemplo.json)
 python3 index.py panel <escenario.json> [destino.json]   gold -> panel de entorno para la app
 python3 index.py simular [n_misiones]     genera caso_referencia.json y kpi.json en gold/
+python3 index.py viaje                    regenera packages/engine/fixtures/caso-viaje.json (viaje a Marte)
 python3 index.py barrer [n_misiones]      barrido de k y h del CUSUM en gold/barrido.json
 python3 index.py manifest                 SHA-256 y tamaños de cada escenario generado
 ```
@@ -105,6 +108,6 @@ python3 index.py manifest                 SHA-256 y tamaños de cada escenario g
 
 - `pipelines/reanclaje/test_panel.py`: 7 pruebas en Panel (6), Publicar (1)
 - `pipelines/reanclaje/test_reanclaje.py`: 10 pruebas en Pasos (6), Construir (4)
-- `pipelines/reanclaje/test_simulacion.py`: 17 pruebas en Simulacion (3), Reglas (13), FixtureDelMotor (1)
+- `pipelines/reanclaje/test_simulacion.py`: 22 pruebas en Simulacion (3), Reglas (13), FixtureDelMotor (1), CasoViaje (5)
 - `pipelines/reanclaje/test_trayectoria.py`: 6 pruebas en TrayectoriaTest (6)
 <!-- CONTEXT:AUTO:END -->

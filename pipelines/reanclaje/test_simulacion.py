@@ -166,5 +166,40 @@ class FixtureDelMotor(unittest.TestCase):
                          json.loads(json.dumps(simulacion.generar_caso_referencia())))
 
 
+class CasoViaje(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.caso = simulacion.generar_caso_viaje()
+
+    def test_caso_viaje_tiene_259_dias_y_cumple_esquema(self):
+        esquema = json.loads((RAIZ_REPO / "packages" / "schemas" / "caso-referencia.schema.json").read_text("utf-8"))
+        self.assertEqual(validador.validar(self.caso, esquema, _raiz=esquema), [])
+        self.assertEqual(self.caso["dias_vuelo"], 259)
+        self.assertEqual(len(self.caso["entorno_diario"]), 259)
+        self.assertEqual(len(self.caso["trayectoria"]), 259)
+        self.assertEqual(len(self.caso["tripulantes"][0]["lecturas"]), 14 + 259)
+
+    def test_caso_viaje_es_determinista(self):
+        self.assertEqual(self.caso, simulacion.generar_caso_viaje())
+
+    def test_anomalias_del_viaje_en_su_dia(self):
+        esperadas = self.caso["alertas_esperadas"]
+        self.assertTrue(any(a["tripulante_id"] == "trip-1" and a["capa"] in ("B", "C") and 100 <= a["dia_mision"] <= 115
+                            for a in esperadas))
+        self.assertEqual(sorted(a["tripulante_id"] for a in esperadas if a["dia_mision"] == 60 and a["indicador"] == "co2"),
+                         ["trip-2", "trip-3"])
+        self.assertTrue(any(a["indicador"] == "protones" and a["dia_mision"] == 112 for a in esperadas))
+
+    def test_dosis_acumulada_crece_y_cuadra(self):
+        acumuladas = [e["dosis_acumulada_msv"] for e in self.caso["entorno_diario"]]
+        self.assertTrue(all(b > a for a, b in zip(acumuladas, acumuladas[1:])))
+        self.assertTrue(259 * 1.6 < acumuladas[-1] < 259 * 2.1 + 6)
+
+    def test_el_fixture_de_caso_viaje_es_el_generado(self):
+        ruta = Path(__file__).resolve().parents[2] / "packages" / "engine" / "fixtures" / "caso-viaje.json"
+        self.assertEqual(json.loads(ruta.read_text(encoding="utf-8")), json.loads(json.dumps(self.caso)))
+        self.assertLess(ruta.stat().st_size, 600 * 1024)
+
+
 if __name__ == "__main__":
     unittest.main()

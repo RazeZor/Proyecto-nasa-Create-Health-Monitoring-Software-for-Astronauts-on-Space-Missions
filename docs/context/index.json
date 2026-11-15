@@ -3903,7 +3903,7 @@
         },
         {
           "ruta": "packages/engine/paridad-referencia.test.ts",
-          "lineas": 98,
+          "lineas": 114,
           "descripcion": "",
           "test": true,
           "simbolos": []
@@ -4353,7 +4353,7 @@
       "archivos": [
         {
           "ruta": "pipelines/reanclaje/index.py",
-          "lineas": 39,
+          "lineas": 43,
           "descripcion": "CLI del ETL de reanclaje.",
           "test": false,
           "simbolos": []
@@ -4436,7 +4436,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/simulacion.py",
-          "lineas": 538,
+          "lineas": 597,
           "descripcion": "Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5).",
           "test": false,
           "simbolos": [
@@ -4449,8 +4449,8 @@
             {
               "nombre": "generar_mision",
               "tipo": "función",
-              "firma": "generar_mision(rng, a1=None, a2=False, a3=False)",
-              "doc": "Genera una misión (entorno y 4 tripulantes x 44 días). `a1` = intensidad de la deriva en trip-1."
+              "firma": "generar_mision(rng, a1=None, a2=False, a3=False, dias_vuelo=DIAS_VUELO, anomalias=ANOMALIAS_REFERENCIA)",
+              "doc": "Genera una misión (entorno y 4 tripulantes x (14 + `dias_vuelo`) días). `a1` = intensidad de la deriva en trip-1."
             },
             {
               "nombre": "evaluar_mision",
@@ -4463,6 +4463,18 @@
               "tipo": "función",
               "firma": "generar_caso_referencia(semilla=SEMILLA_DEFECTO)",
               "doc": "Caso de referencia: una misión con A1 (trip-1), A2 (trip-2 y trip-3) y A3; trip-4 es nominal."
+            },
+            {
+              "nombre": "generar_caso_viaje",
+              "tipo": "función",
+              "firma": "generar_caso_viaje(semilla=SEMILLA_DEFECTO)",
+              "doc": "Caso del viaje a Marte: el tránsito completo (`DIAS_TRANSITO` días) con las tres anomalías en su calendario,"
+            },
+            {
+              "nombre": "publicar_caso_viaje",
+              "tipo": "función",
+              "firma": "publicar_caso_viaje(destino)",
+              "doc": "Escribe el caso del viaje compacto (el fixture de la demo y de la paridad del motor)."
             },
             {
               "nombre": "barrer",
@@ -4544,7 +4556,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/test_simulacion.py",
-          "lineas": 170,
+          "lineas": 205,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -4582,6 +4594,12 @@
               "nombre": "FixtureDelMotor",
               "tipo": "clase",
               "firma": "FixtureDelMotor(unittest.TestCase)",
+              "doc": ""
+            },
+            {
+              "nombre": "CasoViaje",
+              "tipo": "clase",
+              "firma": "CasoViaje(unittest.TestCase)",
               "doc": ""
             }
           ]
