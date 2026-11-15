@@ -8,7 +8,8 @@ import { Trayecto } from "@/components/reports/trayecto"
 import { formatDelay, useReportState } from "@/components/shared/delay-countdown"
 import { EmptyState, PageHeader } from "@/components/shared/states"
 import { encolarReporte, listarReportes, reporteDeServidor, responderReporte, retardoEnvio } from "@/lib/api-registro"
-import { estadoReporte, type ReporteServidor } from "@/lib/cola"
+import { estadoReporte, type AccionHecha, type ReporteServidor } from "@/lib/cola"
+import { balanceLectura, lecturaHumana } from "@/lib/lectura-humana"
 import { S } from "@/lib/strings"
 import { TRIPULANTE } from "@/lib/sincronizacion"
 import type { Report } from "@/lib/types"
@@ -17,6 +18,13 @@ import { cn } from "@/lib/utils"
 const seccionH = "mb-4 text-2xl font-semibold"
 const pastilla = "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-semibold"
 const CAMPOS = ["reading", "baseline", "environment", "actionTaken"] as const
+/** Qué hizo el tripulante con la acción sugerida, con su etiqueta visible. Se guarda el código, no el texto. */
+const OPCIONES_HECHO: { codigo: AccionHecha; etiqueta: () => string }[] = [
+  { codigo: "hecha", etiqueta: () => S.reports.didDone },
+  { codigo: "no_pude", etiqueta: () => S.reports.didNot },
+  { codigo: "remedi", etiqueta: () => S.reports.didRemeasured },
+]
+const NOTA_MAX = 140
 
 /** Si ya hay respuesta de Tierra o el informe sigue esperándola. Solo tiene sentido cuando ya llegó. */
 function Respuesta({ servidor }: { servidor?: ReporteServidor }) {
@@ -94,9 +102,16 @@ function ReportRow({ r, surgeon, servidor, destacado, onReply }: { r: Report; su
             </div>
           )}
 
-          {campos.length > 0 && (
+          {(campos.length > 0 || r.plainReading) && (
             <div>
               <h3 className="eyebrow mb-2">{S.reports.content}</h3>
+              {/* la lectura en lenguaje llano va primero y destacada: es lo que relee el tripulante, que no es médico */}
+              {r.plainReading && (
+                <div className="mb-3 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                  <p className="text-sm font-semibold text-primary">{S.reports.plainReading}</p>
+                  <p className="mt-1 text-lg leading-relaxed">{r.plainReading}</p>
+                </div>
+              )}
               <dl className="grid gap-3 sm:grid-cols-2">
                 {campos.map((k) => (
                   <div key={k} className={cn("rounded-2xl border border-border p-4", k === "actionTaken" && "bg-muted/50")}>
@@ -161,6 +176,13 @@ export function ReportsView() {
 
   // en modo real no se envía a tierra un informe de un día sin registro: no habría nada que informar
   const sinRegistroHoy = mode === "real" && !analisis.vitals(day).some((x) => x.day === day)
+  // la alerta activa del día: su acción sugerida es la que el tripulante confirma antes de encolar
+  const alertaHoy = analisis.alerts(day).find((a) => a.day === day && !a.informative)
+  const [hecho, setHecho] = useState<AccionHecha | null>(null)
+  const [nota, setNota] = useState("")
+  // en modo real la confirmación es obligatoria si hay alerta; en demo se puede encolar sin elegir
+  const faltaConfirmar = mode === "real" && Boolean(alertaHoy) && hecho === null
+  const motivoBloqueo = sinRegistroHoy ? S.reports.needCheckIn : faltaConfirmar ? S.reports.didRequired : undefined
 
   async function queue() {
     setEncolando(true)
@@ -181,18 +203,36 @@ export function ReportsView() {
       co2 ? `CO2 ${co2.mmHg.toFixed(2)} mmHg @ ${profile.cabinPressureMmHg} mmHg (${co2.source})` : null,
       tormenta ? `${S.reports.stormOn} (${tormenta.source})` : null,
     ].filter(Boolean).join(" · ") || S.reports.noEnvironment
-    const alerta = analisis.alerts(day).find((a) => a.day === day && !a.informative)
+    // la misma lectura, en lenguaje llano y con el balance que resume el informe
+    const lecturaLlana = lecturaHumana(v, banda) || S.reports.noReading
+    const balance = balanceLectura(v, banda)
+    // «Sugerido: … Hecho: …» solo si el tripulante confirmó; si no (demo sin elegir), la acción sugerida tal cual
+    const notaLimpia = nota.trim().slice(0, NOTA_MAX)
+    const etiquetaHecho = alertaHoy && hecho ? OPCIONES_HECHO.find((o) => o.codigo === hecho)?.etiqueta() : undefined
+    const accion = !alertaHoy
+      ? S.reports.noAction
+      : etiquetaHecho
+        ? `${S.reports.suggested(alertaHoy.action.replace(/\.$/, ""))}. ${S.reports.done(etiquetaHecho)}${notaLimpia ? `. ${notaLimpia}` : ""}`
+        : alertaHoy.action
     // modo real: el retardo del perfil; demo: se acorta a 1 min para ver la cola avanzar
     const id = await encolarReporte(profile.id, new Date().toISOString(), tripulante, retardoEnvio(mode, profile.id), {
       titulo: S.reports.dailyTitle(day),
-      resumen: (mode === "demo" ? S.reports.summary : S.reports.summaryReal)(S.status[analisis.overall(day)], profile.label, formatDelay(profile.delayMinutes)),
+      resumen: S.reports.summary(S.status[analisis.overall(day)], balance.revisados, balance.fuera),
       lectura,
+      lectura_humana: lecturaLlana,
       linea_base: lineaBase,
       entorno,
-      accion: alerta ? alerta.action : S.reports.noAction,
+      accion,
+      ...(alertaHoy ? { accion_sugerida: alertaHoy.action } : {}),
+      ...(alertaHoy && hecho ? { accion_hecha: hecho } : {}),
+      ...(alertaHoy && hecho && notaLimpia ? { accion_nota: notaLimpia } : {}),
       ...(mode === "demo" ? { demo: true } : {}),
     })
     setFallo(id === null)
+    if (id !== null) {
+      setHecho(null)
+      setNota("")
+    }
     await leer()
     setEncolando(false)
   }
@@ -203,13 +243,39 @@ export function ReportsView() {
     <div className="mx-auto max-w-7xl">
       <PageHeader title={S.reports.title} subtitle={surgeon ? S.reports.surgeonNote : S.reports.subtitle}>
         {!surgeon && (
-          <button type="button" onClick={queue} disabled={encolando || sinRegistroHoy} title={sinRegistroHoy ? S.reports.needCheckIn : undefined}
+          <button type="button" onClick={queue} disabled={encolando || sinRegistroHoy || faltaConfirmar} title={motivoBloqueo}
             className="inline-flex min-h-14 items-center gap-3 rounded-full bg-primary px-7 text-lg font-semibold text-primary-foreground transition-transform hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60">
             <IconoSobre className="size-6" />
             {encolando ? S.reports.sending : S.reports.send}
           </button>
         )}
       </PageHeader>
+
+      {/* Qué hizo el tripulante con la acción sugerida: se confirma antes de encolar, sin modal y con botones táctiles */}
+      {!surgeon && alertaHoy && !sinRegistroHoy && (
+        <fieldset className="mb-5 flex flex-col gap-3 rounded-3xl border border-border bg-card p-5 shadow-sm">
+          <legend className="sr-only">{S.reports.didTitle}</legend>
+          <p className="text-lg font-semibold">{S.reports.didTitle}</p>
+          <p className="text-base leading-relaxed text-muted-foreground">{S.reports.suggested(alertaHoy.action)}</p>
+          <div role="radiogroup" aria-label={S.reports.didTitle} className="grid gap-3 sm:grid-cols-3">
+            {OPCIONES_HECHO.map((o) => {
+              const activa = hecho === o.codigo
+              return (
+                <button key={o.codigo} type="button" role="radio" aria-checked={activa} onClick={() => setHecho(o.codigo)}
+                  className={cn(
+                    "min-h-14 rounded-2xl border px-4 text-left text-lg font-semibold leading-tight shadow-sm transition-all active:scale-[0.98]",
+                    activa ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-accent/60",
+                  )}>
+                  {o.etiqueta()}
+                </button>
+              )
+            })}
+          </div>
+          <label htmlFor="nota-hecho" className="text-sm font-semibold text-muted-foreground">{S.reports.didNote}</label>
+          <input id="nota-hecho" type="text" maxLength={NOTA_MAX} value={nota} onChange={(e) => setNota(e.target.value)} placeholder={S.reports.didNotePlaceholder}
+            className="min-h-12 rounded-2xl border border-input bg-background px-4 text-lg" />
+        </fieldset>
+      )}
       {fallo && <p role="alert" className="mb-5 rounded-2xl border border-status-act/40 bg-status-act/12 p-4 text-base font-medium">{S.reports.sendFailed}</p>}
       {sinEnlace && <p role="status" className="mb-5 rounded-2xl border border-border bg-muted p-4 text-base font-medium">{S.reports.offline}</p>}
       {sinRegistroHoy && !surgeon && <p role="status" className="mb-5 rounded-2xl border border-border bg-muted p-4 text-base">{S.reports.needCheckIn}</p>}

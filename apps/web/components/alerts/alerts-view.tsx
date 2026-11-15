@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { type ReactNode, useCallback, useEffect, useId, useState } from "react"
 import { ArrowRight, ChevronDown } from "lucide-react"
 import {
   type Icono, IconoCalma, IconoCandado, IconoCompartida, IconoEscalada, IconoInfo, IconoMatraz, IconoReloj, IconoTripulacion, IconoVisto,
@@ -107,6 +107,30 @@ function SentDialog({ esc, onContexto }: { esc: Escalamiento; onContexto: () => 
   )
 }
 
+/**
+ * Jerga del motor (NEWS2, CUSUM, tramos, pfu, MeV…) plegada bajo «Ver detalle técnico».
+ * Arriba solo queda lenguaje llano; el botón es táctil (≥ 48 px), cerrado por defecto y sin depender de hover.
+ */
+function DetalleTecnico({ children }: { children: ReactNode }) {
+  const [abierto, setAbierto] = useState(false)
+  const id = useId()
+  return (
+    <div className="border-t border-border">
+      <button type="button" onClick={() => setAbierto((v) => !v)} aria-expanded={abierto} aria-controls={id}
+        className="flex min-h-12 w-full items-center gap-3 px-5 py-2 text-left text-base font-semibold text-muted-foreground hover:bg-accent/60 active:bg-accent">
+        <span className="min-w-0 flex-1">{abierto ? S.alerts.techHide : S.alerts.techShow}</span>
+        <ChevronDown aria-hidden className={cn("size-6 shrink-0 transition-transform duration-200", abierto && "rotate-180")} />
+      </button>
+      {abierto && (
+        <div id={id} className="px-5 pb-4">
+          <p className="mb-3 text-sm text-muted-foreground">{S.alerts.techHint}</p>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** Bandeja real del oficial médico: solo el dato mínimo de cada aviso escalado (§5.4). */
 function Bandeja() {
   const [avisos, setAvisos] = useState<Escalamiento[] | null>(null)
@@ -145,7 +169,6 @@ function Bandeja() {
             <div className="min-w-0">
               <p className="eyebrow">{S.alerts.indicator}</p>
               <p className="mt-1 text-2xl font-semibold leading-tight">{e.contenido.indicador}</p>
-              <p className="mt-2 text-base text-muted-foreground">{S.alerts.band}: <span className="text-foreground">{e.contenido.tramo}</span></p>
             </div>
             <div className="sm:text-right">
               <p className="eyebrow">{S.alerts.value}</p>
@@ -153,9 +176,17 @@ function Bandeja() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 border-t border-border bg-muted/40 px-5 py-3">
-            <LayerChip layer="A" className="text-sm" />
+            <span className="eyebrow">{S.alerts.why}</span>
             <span className="text-base text-muted-foreground">{S.alerts.layerPlain.A}</span>
           </div>
+          <DetalleTecnico>
+            <dl className="grid gap-x-6 gap-y-3 text-base md:grid-cols-[9rem_minmax(0,1fr)]">
+              <dt className="eyebrow md:pt-1.5">{S.alerts.why}</dt>
+              <dd><LayerChip layer="A" className="text-sm" /></dd>
+              <dt className="eyebrow md:pt-1.5">{S.alerts.band}</dt>
+              <dd>{e.contenido.tramo}</dd>
+            </dl>
+          </DetalleTecnico>
           {e.contexto_astronauta && (
             <p className="border-t border-border px-5 py-4 text-base"><span className="eyebrow mb-1 block">{S.alerts.contextSaved}</span>{e.contexto_astronauta}</p>
           )}
@@ -188,7 +219,6 @@ function Cuerpo({ a, astronauta, compartida, vista, salida, onCompartir, onEnten
           <p className="eyebrow">{a.zone ? S.zones[a.zone] : S.alerts.environment}</p>
           <h3 className="mt-1 text-balance text-2xl font-semibold leading-tight">{a.indicator}</h3>
           <p className={cn("mt-2 break-words font-semibold leading-none tabular-nums", valor.length > 10 ? "text-3xl" : "text-5xl", !a.informative && statusText[a.status])}>{valor}</p>
-          {a.clinicalBand && <p className="mt-3 text-base text-muted-foreground">{S.alerts.band}: <span className="text-foreground">{a.clinicalBand}</span></p>}
         </div>
         <div className="flex flex-col justify-center rounded-2xl bg-primary p-5 text-primary-foreground">
           <p className="flex items-center gap-2 font-mono text-xs font-medium uppercase tracking-[0.12em] opacity-80">
@@ -199,21 +229,32 @@ function Cuerpo({ a, astronauta, compartida, vista, salida, onCompartir, onEnten
         </div>
       </div>
 
+      {/* arriba solo lo llano: por qué saltó, sin chip de capa ni umbrales */}
       <dl className="grid gap-x-6 gap-y-3 border-t border-border px-5 py-4 text-base md:grid-cols-[9rem_minmax(0,1fr)]">
         <dt className="eyebrow md:pt-1.5">{S.alerts.why}</dt>
-        <dd className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <LayerChip layer={a.layer} className="text-sm" />
-          <span>{S.alerts.layerPlain[a.layer]}</span>
-        </dd>
-        <dt className="eyebrow md:pt-1.5">{S.alerts.cause}</dt>
-        <dd>{a.cause}</dd>
-        {a.source && (
-          <>
-            <dt className="eyebrow md:pt-1.5">{S.alerts.source}</dt>
-            <dd className="font-mono text-sm text-muted-foreground">{a.source}</dd>
-          </>
-        )}
+        <dd>{S.alerts.layerPlain[a.layer]}</dd>
       </dl>
+
+      <DetalleTecnico>
+        <dl className="grid gap-x-6 gap-y-3 text-base md:grid-cols-[9rem_minmax(0,1fr)]">
+          <dt className="eyebrow md:pt-1.5">{S.alerts.why}</dt>
+          <dd><LayerChip layer={a.layer} className="text-sm" /></dd>
+          {a.clinicalBand && (
+            <>
+              <dt className="eyebrow md:pt-1.5">{S.alerts.band}</dt>
+              <dd>{a.clinicalBand}</dd>
+            </>
+          )}
+          <dt className="eyebrow md:pt-1.5">{S.alerts.cause}</dt>
+          <dd>{a.cause}</dd>
+          {a.source && (
+            <>
+              <dt className="eyebrow md:pt-1.5">{S.alerts.source}</dt>
+              <dd className="font-mono text-sm text-muted-foreground">{a.source}</dd>
+            </>
+          )}
+        </dl>
+      </DetalleTecnico>
 
       {recomienda && (
         <p className="mx-5 mb-4 flex items-start gap-3 rounded-2xl border border-status-watch/40 bg-status-watch/12 p-4 text-base">
