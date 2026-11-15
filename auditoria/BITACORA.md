@@ -38,3 +38,5 @@ Reglas: no inflar la nota, no relajar la rúbrica (`RUBRICA.md`), no desactivar 
 - **Tester 3 (08:10, sobre a5e40ee):** T2-01/02/03 corregidos; T2-04/05 a medias (quedaban el aviso del escenario en Entorno y el informe sembrado de demo en español); regresión móvil en la banda «sin registros» (ya corregida en `669baf9`); /device con los cuatro pasos correcto; 0 errores de consola y red en 41 cargas. (`TESTER-iteracion-3.md`)
 - **Correcciones (08:30):** aviso del escenario traducido en Entorno; informe de ejemplo y su respuesta en inglés con `lang=en` (`9f32249`, `c99506c`); no se encola un informe real sin registro del día. Verificación propia con Chrome (`scratchpad/tester/capturas-finales.js`): informes y entorno en inglés sin texto en español, banda móvil legible, 0 avisos sobre el dial del registro.
 - **main:** la fusión en avance rápido la denegó el clasificador de permisos de Claude Code; queda para el usuario (o PR en GitHub).
+
+- **09:50:** por indicación del usuario, `main` avanzó en fast-forward hasta `7c59212` (presentaciones e informe en inglés y español, pitch con diferenciadores, cinco peligros y reloj) y se subió a origin.

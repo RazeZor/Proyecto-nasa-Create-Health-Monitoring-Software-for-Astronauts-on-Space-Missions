@@ -3,7 +3,7 @@
 **Última actualización:** 2026-11-15 08:30 (UTC-3). Ciclo cerrado por parte de Claude; quedan los pasos del usuario (ver INFORME_FINAL.md §4).
 
 ## Dónde estamos
-- `fix/auditoria-final` = `c99506c` (5 commits de auditoría), subida a origin. **La fusión en `main` la denegó el clasificador de permisos**: la hace el usuario (`git checkout main && git merge --ff-only fix/auditoria-final && git push origin main`) o abre el PR en GitHub. Tests, tsc, ruff, contextgen en verde. API local :8000 con el código actual.
+- `main` = `fix/auditoria-final` = `7c59212`, ambas en origin (fusión hecha a las 09:50 por indicación del usuario).
 - Evaluador it. 2: 84/100. Tester 3: sin regresiones en escritorio; móvil corregido.
 - Presentaciones: `scratchpad/deck/deck.js` ya apunta a las capturas definitivas (`t3-deck-*`, `t4-deck-*`); regenerar y copiar a `auditoria/`. Word: `auditoria/VIGIA-Final-Project-Report.docx` (regenerado con §9.3; falta pasar `validate.ps1` para actualizar el índice).
 

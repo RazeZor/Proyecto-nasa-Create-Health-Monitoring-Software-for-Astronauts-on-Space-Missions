@@ -1,6 +1,6 @@
 # Informe final del ciclo de auditoría — VIGÍA (NASA Space Apps 2026)
 
-Ciclo ejecutado el 2026-11-15 entre las 01:35 y las 08:30 (UTC-3), con una pausa de cuota de la API entre las 03:00 y las 05:40. Corte previsto 21:59; envío 23:59 (lo hace el equipo). Rama de trabajo `fix/auditoria-final` (8 commits), subida a origin. Nada se infla: cada nota viene de un evaluador independiente y cada corrección tiene test o captura.
+Ciclo ejecutado el 2026-11-15 entre las 01:35 y las 08:30 (UTC-3), con una pausa de cuota de la API entre las 03:00 y las 05:40. Corte previsto 21:59; envío 23:59 (lo hace el equipo). Rama de trabajo `fix/auditoria-final`, fusionada en `main` (avance rápido, `7c59212`) y subida a origin el 15-11 a las 09:50 por indicación del usuario. Nada se infla: cada nota viene de un evaluador independiente y cada corrección tiene test o captura.
 
 ## 1. Nota por criterio (rúbrica `RUBRICA.md`, 20 por criterio)
 
@@ -46,7 +46,6 @@ Verificación final (08:25): 8 suites Python (212 tests) y 59 tests de Node en v
 
 | Pendiente | Impacto | Motivo / quién |
 | --- | --- | --- |
-| Fusionar `fix/auditoria-final` en `main` y subir | Estabilidad de la rama principal | El clasificador de permisos de Claude Code denegó el merge y el push a `main`. Comando: `git checkout main && git merge --ff-only fix/auditoria-final && git push origin main` (o PR en GitHub). Usuario. |
 | Redesplegar el sitio público | E4, E5, Presentation, Validity (el sitio sirve la versión anterior y su modo real es un tripulante compartido) | Permiso `ssh` denegado. Procedimiento en `PULSO.md`: `git archive` + gold por tar, build con `NEXT_PUBLIC_VIGIA_MODO=demo NEXT_PUBLIC_VIGIA_PUBLICO=1 VIGIA_API_INTERNA=http://127.0.0.1:8000`, resembrar la base, reiniciar `vigia-api vigia-web`, probar en ventana privada. Usuario (o añadir la regla de permiso). |
 | Nombre del equipo, integrantes y evento | E2, E3, P1 | Marcadores `[TEAM NAME]` en `ENVIO.md`, diapositiva 1 (`node tools/presentacion/deck.js … "Equipo" "Integrantes" "Evento"`) y portada del Word. Usuario. |
 | Enlace público de la demo | E2, E3, P1 | Exportar el `.pptx` a PDF, subir a Drive/GitHub con acceso público y pegar el enlace. Usuario. |
