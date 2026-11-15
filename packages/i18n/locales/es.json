@@ -143,7 +143,9 @@
         "figureLabel": "Mapa corporal. Selecciona una zona para ver detalles.",
         "zones": "Zonas",
         "triggeredBy": "Activado por",
-        "noTrigger": "Ninguna capa activada"
+        "noTrigger": "Ninguna capa activada",
+        "readings": "Lecturas de la zona",
+        "reference": "Referencia"
       },
       "checkin": {
         "title": "Registro diario",

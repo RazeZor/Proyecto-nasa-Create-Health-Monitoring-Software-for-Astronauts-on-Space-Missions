@@ -151,6 +151,8 @@ export const S = {
     zones: tx("web.S.body.zones"),
     triggeredBy: tx("web.S.body.triggeredBy"),
     noTrigger: tx("web.S.body.noTrigger"),
+    readings: tx("web.S.body.readings"),
+    reference: tx("web.S.body.reference"),
   },
   checkin: {
     title: tx("web.S.checkin.title"),

@@ -51,7 +51,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/alerts/alerts-view.tsx](components/alerts/alerts-view.tsx) | 204 | — |
 | [components/app-context.tsx](components/app-context.tsx) | 218 | — |
 | [components/body/body-figure.tsx](components/body/body-figure.tsx) | 298 | — |
-| [components/body/body-view.tsx](components/body/body-view.tsx) | 218 | — |
+| [components/body/body-view.tsx](components/body/body-view.tsx) | 271 | — |
 | [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 315 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 160 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 46 | — |
@@ -92,7 +92,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 577 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/strings.ts](lib/strings.ts) | 579 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
 | [lib/types.ts](lib/types.ts) | 186 | — |
 | [lib/utils.ts](lib/utils.ts) | 10 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |

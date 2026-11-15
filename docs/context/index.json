@@ -1157,7 +1157,7 @@
         },
         {
           "ruta": "apps/web/components/body/body-view.tsx",
-          "lineas": 218,
+          "lineas": 271,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2269,7 +2269,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 577,
+          "lineas": 579,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [

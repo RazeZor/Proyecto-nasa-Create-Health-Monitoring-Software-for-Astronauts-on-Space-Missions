@@ -143,7 +143,9 @@
         "figureLabel": "Body map. Select a zone to see details.",
         "zones": "Zones",
         "triggeredBy": "Triggered by",
-        "noTrigger": "No layer triggered"
+        "noTrigger": "No layer triggered",
+        "readings": "Zone readings",
+        "reference": "Reference"
       },
       "checkin": {
         "title": "Daily check-in",
