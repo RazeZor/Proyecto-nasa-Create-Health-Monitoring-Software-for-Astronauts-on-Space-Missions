@@ -1,7 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useApp, VerComo } from "@/components/app-context"
 import { BodyView } from "@/components/body/body-view"
 import { Historico } from "@/components/crew/historico"
@@ -13,12 +12,34 @@ import { TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
 import { cn } from "@/lib/utils"
 
+const DURACION_MS = 220
+
 type Miembro = { id: number; alias: string; rol: string }
 
 /** Cuerpo de cada tripulante, para el oficial médico y el cirujano de vuelo: solo lectura y auditado en el servidor.
  * `real`: su cuerpo hoy; `historico`: el día de misión que se elija, con minimapa y tendencias. */
-export function CuerpoTripulacion({ modo = "real" }: { modo?: "real" | "historico" }) {
+export function CuerpoTripulacion({ modo: inicial = "real" }: { modo?: "real" | "historico" }) {
   const { mode, role } = useApp()
+  // El modo es estado (no una navegación): así la elección de tripulante y su historial se conservan y la vista puede animarse.
+  const [modo, setModo] = useState(inicial)
+  const [fase, setFase] = useState<"quieta" | "saliendo" | "entrando">("quieta")
+  const plazos = useRef<number[]>([])
+  useEffect(() => () => plazos.current.forEach(clearTimeout), [])
+  const cambiarModo = (nuevo: "real" | "historico", seccion: "body" | "ficha") => {
+    if (nuevo === modo || fase !== "quieta") return
+    const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    // la ruta sigue al modo (recargar o compartir el enlace abre el mismo modo)
+    if (role) window.history.replaceState(null, "", rutaDe(role, seccion))
+    if (quieto) return setModo(nuevo)
+    setFase("saliendo")
+    plazos.current.push(
+      window.setTimeout(() => {
+        setModo(nuevo)
+        setFase("entrando")
+        plazos.current.push(window.setTimeout(() => setFase("quieta"), 30))
+      }, DURACION_MS),
+    )
+  }
   const [miembros, setMiembros] = useState<Miembro[] | null>(null)
   const [actor, setActor] = useState<number | null>(null)
   const [elegido, setElegido] = useState<number | null>(null)
@@ -53,14 +74,15 @@ export function CuerpoTripulacion({ modo = "real" }: { modo?: "real" | "historic
       {role && (
         <nav aria-label={S.crew.modo} className="flex w-fit rounded-full border border-border bg-card p-1">
           {([["real", S.crew.modoReal, "body"], ["historico", S.crew.modoHistorico, "ficha"]] as const).map(([m, etiqueta, seccion]) => (
-            <Link
+            <button
               key={m}
-              href={rutaDe(role, seccion)}
-              aria-current={modo === m ? "page" : undefined}
-              className={cn("min-h-10 rounded-full px-4 py-2 text-sm font-semibold", modo === m ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
+              type="button"
+              aria-pressed={modo === m}
+              onClick={() => cambiarModo(m, seccion)}
+              className={cn("min-h-10 rounded-full px-4 py-2 text-sm font-semibold transition-colors", modo === m ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
             >
               {etiqueta}
-            </Link>
+            </button>
           ))}
         </nav>
       )}
@@ -84,9 +106,18 @@ export function CuerpoTripulacion({ modo = "real" }: { modo?: "real" | "historic
         </div>
       )}
       {historial === undefined ? (miembros?.length ? <LoadingState /> : null) : historial === null ? <EmptyState message={S.crew.bodyError} /> : (
-        <VerComo key={elegido} historial={historial}>
-          {modo === "real" ? <HoyDelTripulante /> : <Historico />}
-        </VerComo>
+        <div
+          className={cn(
+            "origin-top transition-[opacity,transform] ease-out motion-reduce:transition-none",
+            fase === "saliendo" && "scale-95 opacity-0", // el cuerpo se aleja…
+            fase === "entrando" && "scale-105 opacity-0 !duration-0", // …y la otra vista llega desde un poco más cerca
+          )}
+          style={{ transitionDuration: `${DURACION_MS}ms` }}
+        >
+          <VerComo key={elegido} historial={historial}>
+            {modo === "real" ? <HoyDelTripulante /> : <Historico />}
+          </VerComo>
+        </div>
       )}
     </div>
   )
