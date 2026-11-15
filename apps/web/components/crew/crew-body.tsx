@@ -70,7 +70,7 @@ export function CuerpoTripulacion({ modo: inicial = "real" }: { modo?: "real" | 
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
-      <PageHeader title={modo === "real" ? S.crew.bodyTitle : S.crew.fichaTitle} subtitle={modo === "real" ? S.crew.bodySubtitle : S.crew.fichaSubtitle} />
+      <PageHeader title={modo === "real" ? S.crew.bodyTitle : S.crew.fichaTitle} ayuda={<p>{modo === "real" ? S.crew.bodySubtitle : S.crew.fichaSubtitle}</p>} />
       {role && (
         <nav aria-label={S.crew.modo} className="flex w-fit rounded-full border border-border bg-card p-1">
           {([["real", S.crew.modoReal, "body"], ["historico", S.crew.modoHistorico, "ficha"]] as const).map(([m, etiqueta, seccion]) => (

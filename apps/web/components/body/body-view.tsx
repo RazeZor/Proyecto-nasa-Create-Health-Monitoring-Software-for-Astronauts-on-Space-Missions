@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, ChevronRight, ListChecks, Rotate3d } from "lucide-react"
+import { ArrowLeft, ArrowRight, ChevronRight, ListChecks } from "lucide-react"
 import { useApp } from "@/components/app-context"
 import type { AnclaId } from "@/components/body/anatomia"
+import { Ayuda } from "@/components/shared/ayuda"
 import { GiroBotones } from "@/components/shared/giro-botones"
 import { BodyStage, type Marcador } from "@/components/body/body-stage"
 import { Ecg } from "@/components/body/ecg"
@@ -154,7 +155,6 @@ function Tarjeta({ lectura, unidad, hoy, compacta, activa, onClick, refCb }: {
         </span>
         <span className="min-w-0">
           <span className={cn("block font-semibold leading-tight", compacta ? "text-sm" : "truncate text-base")}>{S.body.short[lectura.id]}</span>
-          {!compacta && <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{S.body.hint[lectura.id]}</span>}
         </span>
       </span>
       {compacta ? (
@@ -310,7 +310,7 @@ export function BodyView({ ajeno = false, tripulante = TRIPULANTE, actor = tripu
             <OverallIcon aria-hidden className="size-9" />
           </span>
           <div className="min-w-0">
-            <p className="eyebrow">{S.body.overall} · {S.common.day} {day} · <span className="normal-case">{S.body.flow}</span></p>
+            <p className="eyebrow">{S.body.overall} · {S.common.day} {day}</p>
             <h1 id="overall" className={cn("text-3xl font-bold leading-tight md:text-4xl", sinDatos ? "text-muted-foreground" : statusText[overall])}>{sinDatos ? S.body.never : S.body.headline[overall]}</h1>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-pretty text-sm md:text-base">
               {sinDatos ? S.banners.realEmptyDetail : S.statusLong[overall]}
@@ -378,10 +378,12 @@ export function BodyView({ ajeno = false, tripulante = TRIPULANTE, actor = tripu
               <Segmented label={S.body.sexLabel} value={sex} onChange={setSex} options={[{ value: "female", label: S.body.female }, { value: "male", label: S.body.male }]} />
             </div>
           )}
-          <span title={S.body.drag} className="pointer-events-none absolute right-3 top-3 flex size-10 items-center justify-center rounded-full border border-border bg-card/80 text-muted-foreground shadow-sm">
-            <Rotate3d aria-hidden className="size-5" />
-            <span className="sr-only">{S.body.drag}</span>
-          </span>
+          {/* cómo se usa el cuerpo: detrás del [?], no escrito sobre el lienzo */}
+          <Ayuda titulo={S.body.howToUse} className="absolute right-2 top-2 border border-border bg-card/90 shadow-sm">
+            <p>{S.body.flow}</p>
+            <p>{S.body.tapHint}</p>
+            {!ajeno && <p>{S.body.drag}</p>}
+          </Ayuda>
           <p className="pointer-events-none absolute bottom-2 left-3 flex items-center gap-2 text-[10px] leading-none text-muted-foreground/80">
             {procedencia}
             {modeloReal && <span>{S.body.modelCredit}</span>}
@@ -394,9 +396,7 @@ export function BodyView({ ajeno = false, tripulante = TRIPULANTE, actor = tripu
             </p>
           )}
           {ajeno && <GiroBotones grados={grados} onChange={setGrados} className="absolute bottom-3 right-3" />}
-          {general ? (
-            <p className="pointer-events-none absolute inset-x-0 bottom-7 text-center text-sm font-medium text-muted-foreground">{S.body.tapHint}</p>
-          ) : (
+          {!general && (
             <div className="absolute inset-x-0 bottom-4 flex justify-center">
               <button type="button" onClick={() => setSel(null)} className="inline-flex min-h-14 items-center gap-2 rounded-full border border-border bg-card px-6 text-lg font-semibold shadow-lg active:scale-[0.98]">
                 <ArrowLeft aria-hidden className="size-5" /> {S.body.backToBody}
@@ -544,7 +544,13 @@ export function BodyView({ ajeno = false, tripulante = TRIPULANTE, actor = tripu
             <Icono className="size-9" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-2xl font-bold leading-tight">{S.body.short[id]}</h2>
+            <h2 className="flex items-center gap-1 text-2xl font-bold leading-tight">
+              {S.body.short[id]}
+              <Ayuda titulo={S.body.short[id]}>
+                <p>{S.body.hint[id]}</p>
+                <p>{info.whatItIs}</p>
+              </Ayuda>
+            </h2>
             <p className="text-sm text-muted-foreground">{S.body.organLabel}: <span className="font-semibold text-foreground">{S.body.organ[id]}</span></p>
           </div>
         </div>
@@ -556,11 +562,13 @@ export function BodyView({ ajeno = false, tripulante = TRIPULANTE, actor = tripu
           </p>
           {lectura.valor ? <StatusBadge status={lectura.estado} size="lg" /> : <span className="text-sm font-medium text-muted-foreground">{S.body.notMeasured}</span>}
         </div>
-        <p className="-mt-2 text-sm text-muted-foreground">
-          {S.body.hint[id]}
-          {lectura.diaMedida != null && <> · {S.body.measuredOn(lectura.diaMedida)}</>}
-          {ref && <> · <span className="font-medium text-foreground">{banda.length ? S.body.yourRange : S.body.safeRange}: {ref}</span></>}
-        </p>
+        {(lectura.diaMedida != null || ref) && (
+          <p className="-mt-2 text-sm text-muted-foreground">
+            {lectura.diaMedida != null && S.body.measuredOn(lectura.diaMedida)}
+            {lectura.diaMedida != null && ref && " · "}
+            {ref && <span className="font-medium text-foreground">{banda.length ? S.body.yourRange : S.body.safeRange}: {ref}</span>}
+          </p>
+        )}
 
         {id === "restingHr" && (
           <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/40 px-3 py-2">
@@ -594,7 +602,6 @@ export function BodyView({ ajeno = false, tripulante = TRIPULANTE, actor = tripu
           </div>
         </Bloque>
         <Siguiente estado={z.status} texto={z.next} />
-        <Bloque titulo={S.trends.whatItIs}><p className="text-sm leading-relaxed text-muted-foreground">{info.whatItIs}</p></Bloque>
         <div className="flex flex-wrap items-center justify-between gap-2">
           {!ajeno && (
             <Link href={rutaDe("astronaut", "trends")} className="inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-5 text-base font-semibold hover:bg-accent">

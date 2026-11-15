@@ -1,4 +1,5 @@
 import { Inbox, Loader2, ServerCrash } from "lucide-react"
+import { Ayuda } from "@/components/shared/ayuda"
 import { Button } from "@/components/ui/button"
 import { S } from "@/lib/strings"
 
@@ -37,11 +38,15 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
   )
 }
 
-export function PageHeader({ title, subtitle, children }: { title: string; subtitle?: string; children?: React.ReactNode }) {
+/** `ayuda`: la explicación va detrás de un [?] junto al título en vez de un subtítulo a la vista. */
+export function PageHeader({ title, subtitle, ayuda, children }: { title: string; subtitle?: string; ayuda?: React.ReactNode; children?: React.ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
       <div>
-        <h1 className="text-balance text-3xl font-semibold md:text-4xl">{title}</h1>
+        <div className="flex items-center gap-1">
+          <h1 className="text-balance text-3xl font-semibold md:text-4xl">{title}</h1>
+          {ayuda && <Ayuda titulo={title}>{ayuda}</Ayuda>}
+        </div>
         {subtitle && <p className="mt-1.5 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">{subtitle}</p>}
       </div>
       {children}

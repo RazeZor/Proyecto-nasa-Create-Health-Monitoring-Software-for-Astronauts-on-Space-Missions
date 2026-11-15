@@ -7,6 +7,7 @@ import { ICONO_INDICADOR } from "@/components/shared/iconos"
 import { LineChart } from "@/components/shared/line-chart"
 import { EmptyState } from "@/components/shared/states"
 import { LayerChip, ProvenanceTag, StatusBadge, STATUS_ICON, statusText } from "@/components/shared/status"
+import { Ayuda } from "@/components/shared/ayuda"
 import { Descomposicion } from "@/components/trends/descomposicion"
 import { resumir, type Resumen } from "@/components/trends/resumen"
 import { BASELINE_SWITCH_DAY } from "@/lib/engine"
@@ -83,9 +84,14 @@ export function TrendsView() {
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
-      <header className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+      <header className="flex items-center gap-1">
         <h1 className="text-3xl font-bold leading-tight">{S.trends.title}</h1>
-        <p className="text-base text-muted-foreground">{S.trends.subtitle}</p>
+        {/* cómo leer la pantalla: detrás del [?], no a la vista */}
+        <Ayuda titulo={S.trends.title}>
+          <p>{S.trends.subtitle}</p>
+          <p>{S.trends.explore}</p>
+          <p>{S.trends.bandHelp}</p>
+        </Ayuda>
       </header>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(250px,300px)_minmax(0,1fr)] lg:items-start">
@@ -193,8 +199,7 @@ export function TrendsView() {
                   selectedDay={explorado} onSelectDay={setExplorado}
                   className="h-[clamp(300px,calc(100dvh-43rem),560px)]"
                 />
-                <div className="mt-3 flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                  <p className="text-base text-muted-foreground">{S.trends.explore}</p>
+                <div className="mt-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-2 empty:hidden">
                   {fueraDeHoy && (
                     <button type="button" onClick={() => setExplorado(null)} className="inline-flex min-h-12 items-center rounded-full border border-border px-5 text-base font-semibold hover:bg-accent active:scale-[0.98]">
                       {S.trends.backToToday}
@@ -258,7 +263,6 @@ export function TrendsView() {
             )}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <ProvenanceTag provenance={{ kind: mode === "real" ? "measured" : "simulated" }} className="gap-1.5 px-2.5 py-1.5 text-sm" />
-              {banda.length > 0 && <p className="min-w-0 flex-1 basis-80 text-pretty text-sm leading-relaxed text-muted-foreground">{S.trends.bandHelp}</p>}
             </div>
           </div>
         </section>

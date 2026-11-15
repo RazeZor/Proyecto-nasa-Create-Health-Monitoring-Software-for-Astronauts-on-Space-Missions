@@ -31,7 +31,7 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-50"
+        className="isolate z-[70]" // por encima de los avisos emergentes (z-50): una ayuda abierta no queda tapada
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
