@@ -507,6 +507,9 @@
         "historyHide": "Hide history",
         "detailShow": "View details",
         "detailHide": "Hide details",
+        "techShow": "View technical details",
+        "techHide": "Hide technical details",
+        "techHint": "Thresholds and scale the engine used. You do not need to understand them to follow the action.",
         "whatToDo": "What to do now",
         "why": "Why it triggered",
         "whoSees": "Who sees it",
@@ -553,7 +556,7 @@
         "replySend": "Send reply",
         "replyFailed": "Could not send the reply.",
         "dailyTitle": "Daily report · Day {dia}",
-        "summary": "Overall status {estado}. Sent from {perfil} (one-way delay {retardo}; in this demo the queue shortens it to 1 min).",
+        "summary": "Overall status {estado}. {revisados} indicators reviewed, {fuera} outside your range.",
         "noReading": "No check-in for this day",
         "noBaseline": "Personal baseline still being established",
         "bandText": "Personal resting HR band {bajo} to {alto} bpm ({fase})",
@@ -584,10 +587,38 @@
         "sending": "Queueing…",
         "threadEmpty": "No messages yet.",
         "surgeonEmpty": "No report has arrived yet.",
-        "summaryReal": "Overall status {estado}. Sent from {perfil} with the profile one-way delay ({retardo}).",
         "offline": "No link with the API: showing the last queue read. New reports need a link.",
         "oneWayHintReal": "How long a message takes to reach Earth from {perfil}. The report is delivered once that time has passed.",
-        "needCheckIn": "No check-in today: complete your daily check-in before queuing a report to Earth."
+        "needCheckIn": "No check-in today: complete your daily check-in before queuing a report to Earth.",
+        "plainReading": "What the data says",
+        "plain": {
+          "hrInBand": "Resting pulse {valor} bpm: within your range of the last few days ({bajo} to {alto}).",
+          "hrAboveBand": "Resting pulse {valor} bpm: above your usual range ({bajo} to {alto}).",
+          "hrBelowBand": "Resting pulse {valor} bpm: below your usual range ({bajo} to {alto}).",
+          "hrNormal": "Resting pulse {valor} bpm: normal ({bajo} to {alto}).",
+          "hrHigh": "Resting pulse {valor} bpm: high, above {alto}.",
+          "hrLow": "Resting pulse {valor} bpm: low, below {bajo}.",
+          "bpNormal": "Blood pressure {valor} mmHg: normal.",
+          "bpHigh": "Blood pressure {valor} mmHg: high, above {alto}.",
+          "bpLow": "Blood pressure {valor} mmHg: low, below {bajo}.",
+          "spo2Normal": "Oxygen {valor} %: normal.",
+          "spo2Low": "Oxygen {valor} %: low, below {minimo}.",
+          "tempNormal": "Temperature {valor} °C: normal.",
+          "tempHigh": "Temperature {valor} °C: high, above {alto}.",
+          "tempLow": "Temperature {valor} °C: low, below {bajo}.",
+          "sleepOk": "You slept {valor} h: enough.",
+          "sleepShort": "You slept {valor} h: little, less than {minimo} h.",
+          "mood": "Mood {valor} out of 10."
+        },
+        "didTitle": "What you did with the suggested action",
+        "didDone": "I did it",
+        "didNot": "I could not do it",
+        "didRemeasured": "I measured again and got this",
+        "didNote": "Short note (optional)",
+        "didNotePlaceholder": "For example: repeated it after resting 10 min",
+        "didRequired": "Before queuing, say what you did with the suggested action.",
+        "suggested": "Suggested: {accion}",
+        "done": "Done: {hecho}"
       },
       "device": {
         "title": "Device",
@@ -1003,17 +1034,18 @@
         "protones": "A solar particle event is in progress: storm mode is activated for the whole crew."
       },
       "accion": {
-        "fc": "Rest, hydrate and measure again early tomorrow.",
-        "pas": "Sit down, measure again in 5 min and notify the Crew Medical Officer if it happens again.",
-        "sueno": "Dim the lights 1 h before sleep and set aside a full sleep window.",
-        "animo": "Schedule time with the crew and describe how you feel in your report.",
-        "news2": "Measure again in 5 min and call the Crew Medical Officer.",
-        "co2": "Check the ventilation and the scrubber, move closer to the air outlet and repeat the check-in.",
-        "protones": "Go to the shielded area and watch for nausea, vomiting or fatigue. Today's readings are flagged.",
-        "glucosa": "Repeat the measurement with another strip, containing biological waste, and mention it in your report."
+        "fc": "Sit down for 5 minutes without talking and take your pulse again. If it is still above 100 bpm at rest, or it is high again tomorrow when you wake up, share it today with the Crew Medical Officer.",
+        "pas": "Sit with your back supported, rest for 5 minutes and take your blood pressure again. If the first number is still 140 or higher, or you notice a headache or blurred vision, tell the Crew Medical Officer today.",
+        "sueno": "Tonight, turn off screens 1 hour before bed and set aside 8 hours in a row for sleep. Log how long you slept tomorrow: if you sleep less than 6 hours for a third night, or you feel drowsy during critical tasks, mention it to the Crew Medical Officer.",
+        "animo": "Today, set aside 30 minutes to talk with a crewmate or your family and do something you enjoy. Log your mood again tomorrow: if it stays low for 3 days in a row, or you find it hard to sleep, eat or concentrate, mention it to the Crew Medical Officer.",
+        "news2": "Sit down now, do not stay alone and find the Crew Medical Officer right away. Repeat the measurements in 5 minutes with them at your side, even if you already feel better.",
+        "co2": "Turn up the ventilation or check the CO2 scrubber and move closer to an air outlet. Repeat the check-in in 30 minutes: if the headache continues, or dizziness or shortness of breath appear, alert the whole crew to check the cabin air.",
+        "protones": "Alert the whole crew and go to the shielded area now; stay there until the solar storm warning ends. If in the next few hours you notice nausea, vomiting or heavy tiredness, tell the Crew Medical Officer; today's readings are flagged because of the storm.",
+        "glucosa": "Wash your hands and repeat the measurement with a new strip (the used one goes in the biological waste container). If it reads below 70, have something sugary and measure again in 15 minutes; if it reads above 126 while fasting, drink water and measure again tomorrow before breakfast. If it is out of that range again, tell the Crew Medical Officer today."
       },
       "tramoExtremo": "Extreme range (3 points)",
       "tramoSuma": "{puntos} points; NEWS2 total {suma}",
+      "cusum": "CUSUM {valor}",
       "eventoSep": "SEP event {id}",
       "real": "Real",
       "simulado": "Simulated",
@@ -1021,19 +1053,19 @@
       "sinDatos": "No readings for this day yet. Complete your check-in to evaluate it.",
       "dentroBanda": "Within band",
       "zona": {
-        "head": "Report any vision change or headache in your check-in.",
-        "heart": "Keep to your exercise protocol and hydration target.",
-        "bone": "Complete today's resistance exercise session.",
-        "blood": "Maintain hand hygiene; log your temperature every morning.",
-        "mind": "Protect your sleep window; schedule time with the crew."
+        "head": "Carry on with today's routine. If you notice blurred vision, a headache or dizziness, note it in today's check-in; if it happens two days in a row, mention it to the Crew Medical Officer.",
+        "heart": "Complete today's exercise session and drink at least 2 liters of water. Take your pulse tomorrow when you wake up, before getting up: if it is over 100 bpm, or you notice palpitations or shortness of breath, note it in the check-in and mention it to the Crew Medical Officer.",
+        "bone": "Complete today's strength exercise session. If during or after the session you notice pain in your back, hips or heels, note it in the check-in; if it lasts more than 2 days, mention it to the Crew Medical Officer.",
+        "blood": "Wash your hands before eating and take your temperature tomorrow when you wake up. If it reaches 38 °C, or you notice a sore throat or unusual tiredness, note it in the check-in and tell the Crew Medical Officer.",
+        "mind": "Tonight, turn off screens 1 hour before bed and set aside 8 hours for sleep. Log tomorrow how long you slept and how you feel: if you sleep less than 6 hours or your mood drops two days in a row, mention it to the Crew Medical Officer."
       },
       "escenarioDemo": "Demonstration scenario",
       "sintoma": "Reported symptom",
       "bandaSintoma": "Symptom with no measured environmental cause",
       "causaSintoma": "You reported a symptom and the measured environment (cabin CO2) does not explain it.",
       "accionSintoma": {
-        "head": "Rest, hydrate and watch for vision changes or worsening dizziness. If it persists tomorrow, share it with the Crew Medical Officer.",
-        "blood": "Keep up hygiene, take your temperature and log how it evolves. If it persists, share it with the Crew Medical Officer."
+        "head": "Rest, drink water and stay off screens for 1 hour. Log the symptom again in 2 hours: if it is still the same tomorrow, or sooner if your vision blurs, you get dizzy when moving or the pain is the worst you remember, find the Crew Medical Officer.",
+        "blood": "Take your temperature now, wash your hands well and do not share cutlery or towels. Take it again tomorrow morning and at night: if it reaches 38 °C, or the symptom is still there the day after tomorrow, tell the Crew Medical Officer."
       }
     }
   }

@@ -18,10 +18,19 @@ export interface ContenidoReporte {
   demo?: boolean
   resumen: string
   lectura: string
+  /** Lectura en lenguaje llano para el tripulante (lib/lectura-humana.ts). */
+  lectura_humana?: string
   linea_base: string
   entorno: string
+  /** Texto completo: «Sugerido: … Hecho: …» cuando el tripulante confirmó qué hizo; si no, la acción sugerida. */
   accion: string
+  accion_sugerida?: string
+  accion_hecha?: AccionHecha
+  accion_nota?: string
 }
+
+/** Qué hizo el tripulante con la acción que sugirió el motor. */
+export type AccionHecha = "hecha" | "no_pude" | "remedi"
 
 const ESPERA_ENVIO_MS = 3000 // el reporte sale tras 3 s en la demo local
 

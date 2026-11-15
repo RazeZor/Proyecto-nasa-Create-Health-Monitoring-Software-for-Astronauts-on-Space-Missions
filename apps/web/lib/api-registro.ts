@@ -108,8 +108,9 @@ export function reporteDeServidor(s: ReporteServidor): Report {
   const c = s.contenido
   return {
     id: String(s.id), serverId: s.id, createdAt: Date.parse(s.creado_t_real), delayMinutes: s.retardo_min,
-    title: c?.titulo ?? `#${s.id}`, summary: c?.resumen ?? "", reading: c?.lectura ?? "", baseline: c?.linea_base ?? "",
-    environment: c?.entorno ?? "", actionTaken: c?.accion ?? "",
+    title: c?.titulo ?? `#${s.id}`, summary: c?.resumen ?? "", reading: c?.lectura ?? "", plainReading: c?.lectura_humana ?? "",
+    baseline: c?.linea_base ?? "", environment: c?.entorno ?? "", actionTaken: c?.accion ?? "",
+    ...(c?.accion_hecha ? { actionDone: c.accion_hecha } : {}), ...(c?.accion_nota ? { actionNote: c.accion_nota } : {}),
   }
 }
 

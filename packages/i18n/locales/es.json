@@ -507,6 +507,9 @@
         "historyHide": "Ocultar historial",
         "detailShow": "Ver detalle",
         "detailHide": "Ocultar detalle",
+        "techShow": "Ver detalle técnico",
+        "techHide": "Ocultar detalle técnico",
+        "techHint": "Umbrales y escala que usó el motor. No hace falta entenderlos para seguir la acción.",
         "whatToDo": "Qué hacer ahora",
         "why": "Por qué saltó",
         "whoSees": "Quién lo ve",
@@ -553,7 +556,7 @@
         "replySend": "Enviar respuesta",
         "replyFailed": "No se pudo enviar la respuesta.",
         "dailyTitle": "Informe diario · Día {dia}",
-        "summary": "Estado general {estado}. Enviado desde {perfil} (retardo de ida {retardo}; en esta demostración la cola lo acorta a 1 min).",
+        "summary": "Estado general {estado}. {revisados} indicadores revisados, {fuera} fuera de tu rango.",
         "noReading": "Sin registro este día",
         "noBaseline": "Línea base personal aún en formación",
         "bandText": "Banda personal de FC en reposo {bajo} a {alto} lpm ({fase})",
@@ -584,10 +587,38 @@
         "sending": "Encolando…",
         "threadEmpty": "Aún no hay mensajes.",
         "surgeonEmpty": "Aún no ha llegado ningún informe.",
-        "summaryReal": "Estado general {estado}. Enviado desde {perfil} con el retardo de ida del perfil ({retardo}).",
         "offline": "Sin enlace con la API: se muestra la última cola leída. Los informes nuevos necesitan enlace.",
         "oneWayHintReal": "Lo que tarda un mensaje en llegar a Tierra desde {perfil}. El informe se entrega cuando pasa ese tiempo.",
-        "needCheckIn": "Hoy no hay registro: haz tu registro diario antes de encolar un informe a Tierra."
+        "needCheckIn": "Hoy no hay registro: haz tu registro diario antes de encolar un informe a Tierra.",
+        "plainReading": "Lo que dicen los datos",
+        "plain": {
+          "hrInBand": "Pulso en reposo {valor} lpm: dentro de tu rango de los últimos días ({bajo} a {alto}).",
+          "hrAboveBand": "Pulso en reposo {valor} lpm: por encima de tu rango habitual ({bajo} a {alto}).",
+          "hrBelowBand": "Pulso en reposo {valor} lpm: por debajo de tu rango habitual ({bajo} a {alto}).",
+          "hrNormal": "Pulso en reposo {valor} lpm: normal ({bajo} a {alto}).",
+          "hrHigh": "Pulso en reposo {valor} lpm: alto, por encima de {alto}.",
+          "hrLow": "Pulso en reposo {valor} lpm: bajo, por debajo de {bajo}.",
+          "bpNormal": "Presión {valor} mmHg: normal.",
+          "bpHigh": "Presión {valor} mmHg: alta, por encima de {alto}.",
+          "bpLow": "Presión {valor} mmHg: baja, por debajo de {bajo}.",
+          "spo2Normal": "Oxígeno {valor} %: normal.",
+          "spo2Low": "Oxígeno {valor} %: bajo, por debajo de {minimo}.",
+          "tempNormal": "Temperatura {valor} °C: normal.",
+          "tempHigh": "Temperatura {valor} °C: alta, por encima de {alto}.",
+          "tempLow": "Temperatura {valor} °C: baja, por debajo de {bajo}.",
+          "sleepOk": "Dormiste {valor} h: suficiente.",
+          "sleepShort": "Dormiste {valor} h: poco, menos de {minimo} h.",
+          "mood": "Ánimo {valor} de 10."
+        },
+        "didTitle": "Qué hiciste con la acción sugerida",
+        "didDone": "La hice",
+        "didNot": "No pude hacerla",
+        "didRemeasured": "Medí de nuevo y salió así",
+        "didNote": "Nota corta (opcional)",
+        "didNotePlaceholder": "Por ejemplo: la repetí tras descansar 10 min",
+        "didRequired": "Antes de encolar, indica qué hiciste con la acción sugerida.",
+        "suggested": "Sugerido: {accion}",
+        "done": "Hecho: {hecho}"
       },
       "device": {
         "title": "Dispositivo",
@@ -1003,17 +1034,19 @@
         "protones": "Hay un evento de partículas solares: se activa el modo tormenta para toda la tripulación."
       },
       "accion": {
-        "fc": "Descansa, hidrátate y vuelve a medir mañana temprano.",
-        "pas": "Siéntate, mide de nuevo en 5 min y avisa al Oficial Médico si se repite.",
-        "sueno": "Atenúa las luces 1 h antes de dormir y reserva una ventana de sueño completa.",
-        "animo": "Programa tiempo con la tripulación y comenta cómo te sientes en tu informe.",
-        "news2": "Vuelve a medir en 5 min y llama al Oficial Médico.",
-        "co2": "Revisa la ventilación y el depurador, acércate a la salida de aire y repite el registro.",
-        "protones": "Ve a la zona blindada y vigila náusea, vómito o fatiga. Las lecturas de hoy quedan marcadas.",
-        "glucosa": "Repite la medida con otra tira, con contención de residuos biológicos, y coméntalo en tu informe."
+        "fc": "Siéntate 5 minutos sin hablar y mide el pulso otra vez. Si sigue por encima de 100 lpm en reposo, o mañana al despertar vuelve a estar alto, compártelo hoy con el Oficial Médico.",
+        "pas": "Siéntate con la espalda apoyada, descansa 5 minutos y mide la presión otra vez. Si el primer número sigue en 140 o más, o notas dolor de cabeza o visión borrosa, avisa hoy al Oficial Médico.",
+        "sueno": "Esta noche apaga las pantallas 1 hora antes y reserva 8 horas seguidas para dormir. Anota mañana cuánto dormiste: si por tercera noche duermes menos de 6 horas, o te notas somnoliento en tareas críticas, coméntalo con el Oficial Médico.",
+        "animo": "Hoy reserva 30 minutos para hablar con un compañero o con tu familia y haz algo que te guste. Vuelve a registrar tu ánimo mañana: si sigue bajo 3 días seguidos, o te cuesta dormir, comer o concentrarte, coméntalo con el Oficial Médico.",
+        "news2": "Siéntate ahora, no te quedes solo y busca al Oficial Médico de inmediato. Repite las medidas en 5 minutos con él al lado, aunque ya te encuentres mejor.",
+        "co2": "Sube la ventilación o revisa el depurador de CO2 y acércate a una salida de aire. Repite el registro en 30 minutos: si el dolor de cabeza sigue, o aparecen mareo o falta de aire, avisa a toda la tripulación para revisar el aire de la cabina.",
+        "protones": "Avisa a toda la tripulación y ve ahora a la zona blindada; quédate allí hasta que termine el aviso de tormenta solar. Si en las próximas horas notas náusea, vómito o un cansancio fuerte, díselo al Oficial Médico; las medidas de hoy quedan marcadas por la tormenta.",
+        "glucosa": "Lávate las manos y repite la medida con una tira nueva (la usada va al contenedor de residuos biológicos). Si sale por debajo de 70, toma algo con azúcar y mide otra vez en 15 minutos; si sale por encima de 126 en ayunas, bebe agua y mídela mañana antes de desayunar. Si se repite fuera de ese rango, avisa hoy al Oficial Médico."
       },
       "tramoExtremo": "Tramo extremo (3 puntos)",
       "tramoSuma": "{puntos} puntos; suma NEWS2 {suma}",
+      "cusum": "CUSUM {valor}",
+      "cusum": "CUSUM {valor}",
       "eventoSep": "Evento SEP {id}",
       "real": "Real",
       "simulado": "Simulado",
@@ -1021,19 +1054,19 @@
       "sinDatos": "Aún no hay lecturas de este día. Completa tu registro para evaluarlo.",
       "dentroBanda": "Dentro de la banda",
       "zona": {
-        "head": "Reporta cualquier cambio de visión o dolor de cabeza en tu registro.",
-        "heart": "Mantén tu protocolo de ejercicio y objetivo de hidratación.",
-        "bone": "Completa la sesión de ejercicio de resistencia de hoy.",
-        "blood": "Mantén la higiene de manos; registra la temperatura cada mañana.",
-        "mind": "Protege tu ventana de sueño; programa tiempo con la tripulación."
+        "head": "Sigue con tu rutina de hoy. Si notas visión borrosa, dolor de cabeza o mareo, anótalo en el registro de hoy; si se repite dos días seguidos, coméntalo con el Oficial Médico.",
+        "heart": "Completa hoy tu sesión de ejercicio y bebe al menos 2 litros de agua. Mide el pulso mañana al despertar, antes de levantarte: si pasa de 100 lpm, o notas palpitaciones o falta de aire, anótalo en el registro y coméntalo con el Oficial Médico.",
+        "bone": "Completa hoy la sesión de ejercicio de fuerza. Si durante la sesión o después notas dolor en la espalda, las caderas o los talones, anótalo en el registro; si dura más de 2 días, coméntalo con el Oficial Médico.",
+        "blood": "Lávate las manos antes de comer y mide tu temperatura mañana al despertar. Si llega a 38 °C, o notas la garganta irritada o un cansancio raro, anótalo en el registro y díselo al Oficial Médico.",
+        "mind": "Esta noche apaga las pantallas 1 hora antes y reserva 8 horas para dormir. Anota mañana cuánto dormiste y cómo te sientes: si duermes menos de 6 horas o el ánimo baja dos días seguidos, coméntalo con el Oficial Médico."
       },
       "escenarioDemo": "Escenario de demostración",
       "sintoma": "Síntoma reportado",
       "bandaSintoma": "Síntoma sin causa ambiental medida",
       "causaSintoma": "Reportaste un síntoma y el entorno medido (CO2 de cabina) no lo explica.",
       "accionSintoma": {
-        "head": "Descansa, hidrátate y vigila si cambia la visión o aumenta el mareo. Si persiste mañana, compártelo con el Oficial Médico.",
-        "blood": "Mantén la higiene, mide tu temperatura y registra la evolución. Si persiste, compártelo con el Oficial Médico."
+        "head": "Descansa, bebe agua y deja las pantallas durante 1 hora. Vuelve a registrar el síntoma en 2 horas: si sigue igual mañana, o antes si ves borroso, te mareas al moverte o el dolor es el peor que recuerdas, busca al Oficial Médico.",
+        "blood": "Mide tu temperatura ahora, lávate bien las manos y no compartas cubiertos ni toallas. Vuelve a medirla mañana y por la noche: si llega a 38 °C, o el síntoma sigue pasado mañana, avisa al Oficial Médico."
       }
     }
   }
