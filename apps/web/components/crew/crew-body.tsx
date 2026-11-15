@@ -54,26 +54,36 @@ export function CuerpoTripulacion({ modo: inicial = "real" }: { modo?: Modo }) {
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
       <PageHeader title={modo === "real" ? S.crew.bodyTitle : S.crew.fichaTitle} ayuda={<p>{modo === "real" ? S.crew.bodySubtitle : S.crew.fichaSubtitle}</p>} />
-      {role && <SelectorModo modo={modo} onCambiar={cambiarModo} />}
-      {miembros === null ? <LoadingState /> : miembros.length === 0 ? <EmptyState message={S.crew.bodyError} /> : (
-        <div role="radiogroup" aria-label={S.crew.pick} className="flex flex-wrap gap-2">
-          {miembros.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              role="radio"
-              aria-checked={elegido === m.id}
-              onClick={() => setElegido(m.id)}
-              className={cn(
-                "min-h-11 rounded-full border px-4 text-sm font-semibold capitalize transition-colors",
-                elegido === m.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-muted",
-              )}
-            >
-              {m.alias.replace("_", " ")}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        {role && <SelectorModo modo={modo} onCambiar={cambiarModo} />}
+        {miembros === null ? <LoadingState /> : miembros.length === 0 ? <EmptyState message={S.crew.bodyError} /> : (
+          <div role="radiogroup" aria-label={S.crew.pick} className="flex flex-wrap items-center gap-2">
+            <span aria-hidden className="eyebrow">{S.crew.pick}</span>
+            {miembros.map((m) => {
+              const nombre = m.alias.replace("_", " ")
+              const activo = elegido === m.id
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={activo}
+                  onClick={() => setElegido(m.id)}
+                  className={cn(
+                    "flex min-h-11 items-center gap-2 rounded-full border py-1 pl-1 pr-4 text-sm font-semibold capitalize transition-colors active:scale-[0.98]",
+                    activo ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-muted",
+                  )}
+                >
+                  <span aria-hidden className={cn("flex size-8 items-center justify-center rounded-full text-sm", activo ? "bg-primary-foreground/20" : "bg-muted")}>
+                    {nombre.charAt(0)}
+                  </span>
+                  {nombre}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
       {historial === undefined ? (miembros?.length ? <LoadingState /> : null) : historial === null ? <EmptyState message={S.crew.bodyError} /> : (
         <div {...animacion}>
           <VerComo key={elegido} historial={historial}>

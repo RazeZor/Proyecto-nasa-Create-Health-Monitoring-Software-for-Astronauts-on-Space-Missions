@@ -1,5 +1,6 @@
 "use client"
 
+import { History, Radio } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { S } from "@/lib/strings"
 import { cn } from "@/lib/utils"
@@ -37,20 +38,30 @@ export function useModoAnimado(inicial: Modo = "real") {
   return { modo, cambiar, animacion }
 }
 
+const ICONO_MODO = { real: Radio, historico: History } as const
+
+/** Selector segmentado: el modo activo es una pastilla clara sobre fondo hundido; el icono distingue en vivo de archivo. */
 export function SelectorModo({ modo, onCambiar }: { modo: Modo; onCambiar: (m: Modo) => void }) {
   return (
-    <nav aria-label={S.crew.modo} className="flex w-fit rounded-full border border-border bg-card p-1">
-      {([["real", S.crew.modoReal], ["historico", S.crew.modoHistorico]] as const).map(([m, etiqueta]) => (
-        <button
-          key={m}
-          type="button"
-          aria-pressed={modo === m}
-          onClick={() => onCambiar(m)}
-          className={cn("min-h-10 rounded-full px-4 py-2 text-sm font-semibold transition-colors", modo === m ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
-        >
-          {etiqueta}
-        </button>
-      ))}
+    <nav aria-label={S.crew.modo} className="flex w-fit gap-1 rounded-2xl bg-muted p-1">
+      {([["real", S.crew.modoReal], ["historico", S.crew.modoHistorico]] as const).map(([m, etiqueta]) => {
+        const Icono = ICONO_MODO[m]
+        return (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={modo === m}
+            onClick={() => onCambiar(m)}
+            className={cn(
+              "flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition-all active:scale-[0.98]",
+              modo === m ? "bg-card text-foreground shadow-sm ring-1 ring-border" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Icono aria-hidden className={cn("size-4", modo === m && m === "real" && "text-status-ok")} />
+            {etiqueta}
+          </button>
+        )
+      })}
     </nav>
   )
 }

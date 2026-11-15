@@ -1773,7 +1773,7 @@
         },
         {
           "ruta": "apps/web/components/crew/crew-body.tsx",
-          "lineas": 112,
+          "lineas": 122,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1821,7 +1821,7 @@
         },
         {
           "ruta": "apps/web/components/crew/modo-animado.tsx",
-          "lineas": 56,
+          "lineas": 67,
           "descripcion": "",
           "test": false,
           "simbolos": [
