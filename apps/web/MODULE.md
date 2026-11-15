@@ -26,6 +26,7 @@ Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva p
 - **Tiempo real vs. histórico de datos:** en el cuerpo (tiempo real) el pulso, la SpO2, la temperatura y la presión se ven del día por hora (`/intradia`, refresco cada minuto; `shared/grafico-intradia.tsx` y la mini curva de las tarjetas); sueño, ánimo, glucosa y masa no tienen intervalo menor y remiten al histórico. Tendencias (histórico) añade la descomposición en tendencia, ciclo semanal y residuo (`trends/descomposicion.tsx`, `descomponer` de `packages/engine/series.ts`), que solo dibuja el ciclo si existe.
 - **Ayuda [?]** (`shared/ayuda.tsx`): la explicación (qué es, cómo leerlo, por qué) va detrás de un botón de 44 px que se abre con un toque (popover; pantallas táctiles, sin hover) y queda a la vista solo lo que se lee o se toca: valores, estados y acciones. Aplicado a todas las pantallas: títulos de página (`PageHeader ayuda` en vez de `subtitle`), lienzo y detalle del cuerpo, Tendencias y su descomposición, notas de los paneles de Entorno, secciones de Dispositivo y el retardo de Informes. A la vista quedan los avisos, aclaraciones legales, estados vacíos e instrucciones del registro diario (que ya tiene su propio botón de información); «Acerca de» es la explicación en sí. El popover va en `z-[70]`, por encima de los avisos emergentes (`z-50`).
 - **Rutas por rol** (`lib/roles.ts`, `app/[rol]/`): `/` solo elige el rol; cada uno entra a su tablero: `/astronauta` (cuerpo, `/body` es el mismo, `/check-in`, `/trends`, `/environment`, `/alerts`, `/reports`, `/device`, `/about`), `/oficial` (tripulación: relojes y bandeja de avisos escalados; `/body`, `/ficha`, `/alerts`, `/environment`, `/device`, `/about`) y `/medico` (informes en Tierra; `/body`, `/ficha`, `/alerts`, `/environment`, `/about`). El conmutador (`modo-animado.tsx`: `useModoAnimado` y `SelectorModo`) es común: el astronauta también tiene los dos modos sobre su propio cuerpo (`CuerpoPropio`, en `/astronauta` y `/astronauta/body`; sin selector de tripulante y sin cambiar de ruta). Oficial y médico tienen los dos modos sobre el mismo selector de tripulantes (`crew-body.tsx`): «Tiempo real» (`/body`, su cuerpo de hoy con botones táctiles de giro (`shared/giro-botones.tsx`: izquierda y derecha mientras se mantienen pulsados, y «de frente») como único modo de girarlo, una vuelta completa (`giroExtra`; sin balanceo ni arrastre: `sinBalanceo`, `sinArrastre`; la rueda anterior está en el commit 3c895f8); vuelve el día al actual) e «Histórico» (`/ficha`; el cambio entre los dos es estado, no navegación: conserva el tripulante elegido, anima 220 ms —`prefers-reduced-motion` lo omite— y deja la ruta con `history.replaceState`; `historico.tsx`: elige el día de misión, minicuerpo (miniatura quieta del cuerpo de tiempo real: el mismo modelo 3D en pequeño, con los órganos teñidos según el estado de ese día; no gira) y `TrendsView`). El encabezado solo muestra el día de misión; cambiarlo es cosa del modo Histórico (el astronauta lo mueve desde su modo Histórico). Este conmutador es aparte de Demo/Real (de dónde salen los datos). `/body` es el cuerpo de cada tripulante en solo lectura: `crew-body.tsx` (`CuerpoTripulacion`, con la vista como parámetro) pide `historial` ajeno (`cargarHistorialAjeno`, queda auditado como `lectura_ajena`) y lo muestra con `VerComo`; el astronauta ve el suyo (`CuerpoPropio`), sin selector. shortcut: el médico actúa con el id del oficial médico hasta tener autenticación. El rol sale de la ruta (`role` en `useApp()`, sin selector); una pantalla que el rol no tiene da 404 (`lib/guardia.ts`; en export estático el estado HTTP es 200 con la página 404). Menú, avisos emergentes (salen plegados, solo el título; tocarlo despliega el detalle) y banners de registro son del astronauta: el estado personal (logo, «Vigilar», toasts) no se muestra a los otros roles. Enlaces entre pantallas con `rutaDe(rol, seccion)`. Si cambias las rutas, actualiza `PANTALLAS` en `public/sw.js` (lo comprueba `lib/roles.test.ts`). shortcut: la ruta solo cambia la vista; el servidor no comprueba el rol hasta la autenticación (#46).
+- **Viaje a Marte** (demo): `lib/trayecto.ts` (`lecturaDeTrayecto`, `posicionesDelViaje`) y `components/environment/trayectoria-marte.tsx` dibujan en SVG el Sol, las órbitas de la Tierra y Marte, el arco de la nave (continuo lo recorrido) y el día elegido, con distancia a la Tierra, retardo y dosis acumulada; sale en Entorno (tarjeta grande) y, en miniatura, en el Histórico. Solo aparece si el historial trae `posicion` (el modo real no). En Entorno la dosis del demo es la del modelo del viaje (`Simulado`), no la ventana RadLab. El retardo del perfil de tránsito (`perfilesUi`) es el de hoy. Con 259 días el Histórico añade saltos de 7 días y un deslizador (`historico.tsx`) y los ejes de las gráficas rotulan unas 5 marcas (`lib/ejes.ts`, `marcasDeDia`).
 
 ## Relación con el informe
 
@@ -72,7 +73,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/checkin/iconos.tsx](components/checkin/iconos.tsx) | 95 | Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/crew/crew-body.tsx](components/crew/crew-body.tsx) | 122 | — |
 | [components/crew/crew-view.tsx](components/crew/crew-view.tsx) | 22 | — |
-| [components/crew/historico.tsx](components/crew/historico.tsx) | 54 | — |
+| [components/crew/historico.tsx](components/crew/historico.tsx) | 67 | — |
 | [components/crew/modo-animado.tsx](components/crew/modo-animado.tsx) | 67 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 345 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 62 | — |
@@ -80,8 +81,9 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/device/pasos-conexion.tsx](components/device/pasos-conexion.tsx) | 98 | — |
 | [components/device/reloj-extras.tsx](components/device/reloj-extras.tsx) | 144 | — |
 | [components/device/switch.tsx](components/device/switch.tsx) | 10 | — |
-| [components/environment/environment-view.tsx](components/environment/environment-view.tsx) | 469 | — |
+| [components/environment/environment-view.tsx](components/environment/environment-view.tsx) | 478 | — |
 | [components/environment/iconos.tsx](components/environment/iconos.tsx) | 65 | Iconos de la pantalla Entorno, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
+| [components/environment/trayectoria-marte.tsx](components/environment/trayectoria-marte.tsx) | 80 | — |
 | [components/reports/iconos.tsx](components/reports/iconos.tsx) | 51 | Iconos de los informes: los dos extremos del enlace (nave y Tierra) y el mensaje que viaja entre ellos. Mismo |
 | [components/reports/reports-view.tsx](components/reports/reports-view.tsx) | 341 | — |
 | [components/reports/trayecto.tsx](components/reports/trayecto.tsx) | 74 | — |
@@ -91,7 +93,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/shared/grafico-intradia.tsx](components/shared/grafico-intradia.tsx) | 59 | — |
 | [components/shared/iconos.tsx](components/shared/iconos.tsx) | 140 | Iconos propios de VIGÍA, dibujados para esta aplicación (no vienen de una librería). Mismo lenguaje en todos: |
 | [components/shared/indicator-card.tsx](components/shared/indicator-card.tsx) | 66 | — |
-| [components/shared/line-chart.tsx](components/shared/line-chart.tsx) | 262 | — |
+| [components/shared/line-chart.tsx](components/shared/line-chart.tsx) | 263 | — |
 | [components/shared/logo.tsx](components/shared/logo.tsx) | 42 | Marca VIGÍA («Centinela»), tal como la define docs/brand: el casco, la V con su cabeza y el punto de estado. |
 | [components/shared/states.tsx](components/shared/states.tsx) | 55 | — |
 | [components/shared/status.tsx](components/shared/status.tsx) | 73 | — |
@@ -110,10 +112,12 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/alertas-sync.ts](lib/alertas-sync.ts) | 35 | Núcleo puro del escalamiento de alertas rojas (§5.4): sin red ni almacenamiento, que se inyectan. |
 | [lib/api-registro.test.ts](lib/api-registro.test.ts) | 69 | — |
 | [lib/api-registro.ts](lib/api-registro.ts) | 161 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
-| [lib/catalogo.test.ts](lib/catalogo.test.ts) | 35 | — |
-| [lib/catalogo.ts](lib/catalogo.ts) | 218 | Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de |
+| [lib/catalogo.test.ts](lib/catalogo.test.ts) | 42 | — |
+| [lib/catalogo.ts](lib/catalogo.ts) | 234 | Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de |
 | [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
 | [lib/cola.ts](lib/cola.ts) | 50 | Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local. |
+| [lib/ejes.test.ts](lib/ejes.test.ts) | 7 | — |
+| [lib/ejes.ts](lib/ejes.ts) | 7 | Días que rotula el eje de una gráfica: el 1 y los múltiplos de un paso redondo, para que quepan unas 6 marcas. |
 | [lib/engine.test.ts](lib/engine.test.ts) | 172 | — |
 | [lib/engine.ts](lib/engine.ts) | 294 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más |
 | [lib/etl-client.ts](lib/etl-client.ts) | 126 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
@@ -128,7 +132,9 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 966 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/strings.ts](lib/strings.ts) | 986 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/trayecto.test.ts](lib/trayecto.test.ts) | 32 | — |
+| [lib/trayecto.ts](lib/trayecto.ts) | 28 | — |
 | [lib/types.ts](lib/types.ts) | 174 | — |
 | [lib/utils.ts](lib/utils.ts) | 6 | — |
 | [next.config.mjs](next.config.mjs) | 25 | @type {import('next').NextConfig} |
@@ -369,6 +375,10 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - constante `IconoPresion`
 - constante `IconoDatos`
 
+**components/environment/trayectoria-marte.tsx**
+
+- función `TrayectoriaMarte`
+
 **components/reports/iconos.tsx**
 
 - tipo `Icono`
@@ -524,6 +534,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - interfaz `OrigenDato`
 - interfaz `EventoSep`
 - interfaz `EntornoHistorial`
+- interfaz `PosicionViaje`
 - interfaz `Historial`
 - interfaz `ReferenciaEntorno`
 - interfaz `Catalogo`
@@ -544,6 +555,10 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - interfaz `ContenidoReporte`
 - tipo `AccionHecha`
 - función `estadoReporte`
+
+**lib/ejes.ts**
+
+- función `marcasDeDia`
 
 **lib/engine.ts**
 
@@ -659,6 +674,12 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - constante `S`
 - constante `MOTOR`
 
+**lib/trayecto.ts**
+
+- interfaz `LecturaTrayecto`
+- función `lecturaDeTrayecto`
+- constante `posicionesDelViaje`
+
 **lib/types.ts**
 
 - tipo `Status`
@@ -692,8 +713,8 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 ### Dependencias
 
-- Internas: `../../../packages/engine/engine.ts`, `../../../packages/engine/fixtures/caso-referencia.json`, `../../../packages/i18n/i18n.ts`, `./alertas-sync`, `./alertas-sync.ts`, `./api-registro`, `./api-registro.ts`, `./catalogo.ts`, `./cola.ts`, `./engine.ts`, `./globals.css`, `./lectura-humana.ts`, `./reloj.ts`, `./roles.ts`, `./sincronizar`, `./sincronizar.ts`, `./storage`, `./storage.ts`, `./strings`, `./strings.ts`, `./types`, `./types.ts`, `./vocabulario.json`
-- Externas: `@/components/about/about-view`, `@/components/about/iconos`, `@/components/alerts/alerts-view`, `@/components/alerts/iconos`, `@/components/app-context`, `@/components/body/anatomia`, `@/components/body/body-stage`, `@/components/body/body-view`, `@/components/body/ecg`, `@/components/body/escena`, `@/components/checkin/checkin-form`, `@/components/checkin/controles`, `@/components/checkin/iconos`, `@/components/crew/crew-body`, `@/components/crew/crew-view`, `@/components/crew/historico`, `@/components/crew/modo-animado`, `@/components/device/device-view`, `@/components/device/fc-chart`, `@/components/device/iconos`, `@/components/device/pasos-conexion`, `@/components/device/reloj-extras`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/environment/iconos`, `@/components/reports/iconos`, `@/components/reports/reports-view`, `@/components/reports/trayecto`, `@/components/shared/ayuda`, `@/components/shared/delay-countdown`, `@/components/shared/giro-botones`, `@/components/shared/grafico-intradia`, `@/components/shared/iconos`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/logo`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/shell/sw-register`, `@/components/start/elegir-rol`, `@/components/trends/descomposicion`, `@/components/trends/iconos`, `@/components/trends/resumen`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/lib/alertas-sync`, `@/lib/api-registro`, `@/lib/catalogo`, `@/lib/cola`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/guardia`, `@/lib/lectura-humana`, `@/lib/reloj`, `@/lib/roles`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/types`, `@/lib/utils`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/popover`, `@fontsource-variable/space-grotesk`, `@fontsource/ibm-plex-mono/400.css`, `@fontsource/ibm-plex-mono/500.css`, `@fontsource/ibm-plex-mono/600.css`, `class-variance-authority`, `clsx`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`, `three`, `three/examples/jsm/loaders/GLTFLoader.js`, `three/examples/jsm/utils/BufferGeometryUtils.js`
+- Internas: `../../../packages/engine/engine.ts`, `../../../packages/engine/fixtures/caso-referencia.json`, `../../../packages/i18n/i18n.ts`, `./alertas-sync`, `./alertas-sync.ts`, `./api-registro`, `./api-registro.ts`, `./catalogo.ts`, `./cola.ts`, `./ejes.ts`, `./engine.ts`, `./globals.css`, `./lectura-humana.ts`, `./reloj.ts`, `./roles.ts`, `./sincronizar`, `./sincronizar.ts`, `./storage`, `./storage.ts`, `./strings`, `./strings.ts`, `./trayecto.ts`, `./types`, `./types.ts`, `./vocabulario.json`
+- Externas: `@/components/about/about-view`, `@/components/about/iconos`, `@/components/alerts/alerts-view`, `@/components/alerts/iconos`, `@/components/app-context`, `@/components/body/anatomia`, `@/components/body/body-stage`, `@/components/body/body-view`, `@/components/body/ecg`, `@/components/body/escena`, `@/components/checkin/checkin-form`, `@/components/checkin/controles`, `@/components/checkin/iconos`, `@/components/crew/crew-body`, `@/components/crew/crew-view`, `@/components/crew/historico`, `@/components/crew/modo-animado`, `@/components/device/device-view`, `@/components/device/fc-chart`, `@/components/device/iconos`, `@/components/device/pasos-conexion`, `@/components/device/reloj-extras`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/environment/iconos`, `@/components/environment/trayectoria-marte`, `@/components/reports/iconos`, `@/components/reports/reports-view`, `@/components/reports/trayecto`, `@/components/shared/ayuda`, `@/components/shared/delay-countdown`, `@/components/shared/giro-botones`, `@/components/shared/grafico-intradia`, `@/components/shared/iconos`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/logo`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/shell/sw-register`, `@/components/start/elegir-rol`, `@/components/trends/descomposicion`, `@/components/trends/iconos`, `@/components/trends/resumen`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/lib/alertas-sync`, `@/lib/api-registro`, `@/lib/catalogo`, `@/lib/cola`, `@/lib/ejes`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/guardia`, `@/lib/lectura-humana`, `@/lib/reloj`, `@/lib/roles`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/trayecto`, `@/lib/types`, `@/lib/utils`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/popover`, `@fontsource-variable/space-grotesk`, `@fontsource/ibm-plex-mono/400.css`, `@fontsource/ibm-plex-mono/500.css`, `@fontsource/ibm-plex-mono/600.css`, `class-variance-authority`, `clsx`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`, `three`, `three/examples/jsm/loaders/GLTFLoader.js`, `three/examples/jsm/utils/BufferGeometryUtils.js`
 - Biblioteca estándar: `node:assert/strict`, `node:fs`, `node:test`
 
 ### Tests
@@ -702,9 +723,11 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - `apps/web/lib/api-registro.test.ts`: 0 pruebas
 - `apps/web/lib/catalogo.test.ts`: 0 pruebas
 - `apps/web/lib/cola.test.ts`: 0 pruebas
+- `apps/web/lib/ejes.test.ts`: 0 pruebas
 - `apps/web/lib/engine.test.ts`: 0 pruebas
 - `apps/web/lib/lectura-humana.test.ts`: 0 pruebas
 - `apps/web/lib/reloj.test.ts`: 0 pruebas
 - `apps/web/lib/roles.test.ts`: 0 pruebas
 - `apps/web/lib/sincronizar.test.ts`: 0 pruebas
+- `apps/web/lib/trayecto.test.ts`: 0 pruebas
 <!-- CONTEXT:AUTO:END -->

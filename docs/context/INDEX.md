@@ -7,7 +7,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 24 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 91 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 96 |
 | [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 5 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
@@ -204,6 +204,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Lectura` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `LecturaHistorial` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `LecturaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `LecturaTrayecto` | interfaz | [apps/web/lib/trayecto.ts](../../apps/web/lib/trayecto.ts) |
 | `Lecturas` | clase | [apps/api/test_almacen_lecturas.py](../../apps/api/test_almacen_lecturas.py) |
 | `Limpieza` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
 | `LineChart` | función | [apps/web/components/shared/line-chart.tsx](../../apps/web/components/shared/line-chart.tsx) |
@@ -251,6 +252,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Pasos` | clase | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
 | `PasosConexion` | función | [apps/web/components/device/pasos-conexion.tsx](../../apps/web/components/device/pasos-conexion.tsx) |
 | `Persistencia` | clase | [apps/api/test_puente_reloj.py](../../apps/api/test_puente_reloj.py) |
+| `PosicionViaje` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `PresetTolerancia` | tipo | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `ProfileId` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `ProtonesPanelEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
@@ -306,6 +308,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ToleranciaIn` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `Traduccion` | clase | [packages/i18n/test_i18n.py](../../packages/i18n/test_i18n.py) |
 | `Trayecto` | función | [apps/web/components/reports/trayecto.tsx](../../apps/web/components/reports/trayecto.tsx) |
+| `TrayectoriaMarte` | función | [apps/web/components/environment/trayectoria-marte.tsx](../../apps/web/components/environment/trayectoria-marte.tsx) |
 | `TrayectoriaTest` | clase | [pipelines/reanclaje/test_trayectoria.py](../../pipelines/reanclaje/test_trayectoria.py) |
 | `TrendsView` | función | [apps/web/components/trends/trends-view.tsx](../../apps/web/components/trends/trends-view.tsx) |
 | `Tripulacion` | clase | [apps/api/test_almacen_tripulacion.py](../../apps/api/test_almacen_tripulacion.py) |
@@ -460,6 +463,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ip_lan` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `isAdaptation` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `lectura` | función | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
+| `lecturaDeTrayecto` | función | [apps/web/lib/trayecto.ts](../../apps/web/lib/trayecto.ts) |
 | `lecturaHumana` | función | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `lecturaVigente` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `lecturasDeCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
@@ -507,6 +511,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `manifiesto` | función | [apps/api/gold.py](../../apps/api/gold.py) |
 | `mapa_completo` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `mapa_tripulantes` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
+| `marcasDeDia` | función | [apps/web/lib/ejes.ts](../../apps/web/lib/ejes.ts) |
 | `mediana` | función | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `medidas` | función | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `medidas` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
@@ -541,6 +546,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `pesoVuelo` | función | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `por_nombre` | función | [tools/modelo-anatomico/construir.py](../../tools/modelo-anatomico/construir.py) |
 | `posicion` | función | [pipelines/reanclaje/trayectoria.py](../../pipelines/reanclaje/trayectoria.py) |
+| `posicionesDelViaje` | constante | [apps/web/lib/trayecto.ts](../../apps/web/lib/trayecto.ts) |
 | `propio` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `propio_o_clinico` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `propio_o_clinico_intradia` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |

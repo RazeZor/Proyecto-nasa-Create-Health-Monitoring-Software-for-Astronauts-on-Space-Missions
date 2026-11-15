@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { marcasDeDia } from "@/lib/ejes"
 import { S } from "@/lib/strings"
 import type { BandPoint } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -180,7 +181,7 @@ export function LineChart({
                 <text x={P.l - 10} y={yT(t)} dy="0.35em" textAnchor="end" className={cn("fill-muted-foreground tabular-nums", texto)}>{rotulo(t)}</text>
               </g>
             ))}
-            {[1, 7, 14, 21, 28].filter((d) => d <= days).map((d) => (
+            {marcasDeDia(days).map((d) => (
               <text key={d} x={x(d)} y={h - 10} textAnchor="middle" className={cn("fill-muted-foreground tabular-nums", texto)}>D{d}</text>
             ))}
             {banda.length > 1 && (

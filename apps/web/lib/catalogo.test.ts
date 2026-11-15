@@ -16,6 +16,13 @@ test("los 5 perfiles de la interfaz salen de /perfiles con su presión y retardo
   assert.deepEqual(p.map((x) => [x.cabinPressureMmHg, x.delayMinutes]), [[760, 0], [760, 12], [527, 0.03], [424, 0.02], [424, 22]])
 })
 
+test("en el tránsito, si el historial trae la posición de la nave, el retardo es el de hoy", () => {
+  const posicion = { dia: 130, x_ua: 0, y_ua: 0, dist_sol_ua: 1.2, dist_tierra_ua: 0.43, retardo_min: 3.5866, tierra: { x_ua: 1, y_ua: 0 }, marte: { x_ua: 1.5, y_ua: 0 } }
+  const historial = { naturaleza: "Simulado", dias_prevuelo: 14, dias_vuelo: 259, dia_actual: 130, entorno_diario: [{ dia_mision: 130, posicion }], lecturas: [] }
+  const p = perfilesUi(perfiles, historial)
+  assert.deepEqual(p.map((x) => x.delayMinutes), [0, 3.6, 0.03, 0.02, 22])
+})
+
 test("los 8 indicadores y la radiación salen de /fichas", () => {
   const { indicadores, comoMedir, radiacion } = indicadoresUi(fichas)
   assert.equal(Object.keys(indicadores).length, 8)

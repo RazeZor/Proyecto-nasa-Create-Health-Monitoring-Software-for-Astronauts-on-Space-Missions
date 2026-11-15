@@ -21,11 +21,12 @@
         "El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.",
         "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests.",
         "`GET /tripulantes/{id}/intradia?modo=real|demo` es el tiempo real (mismos permisos que `historial`): pulso, SpO2, temperatura y sistólica de un día por hora UTC. `real`: lecturas `Real` de ese día sin agrupar. `demo`: simuladas cada 15 min hasta `hasta` (por defecto ahora) alrededor del valor diario del caso de referencia, con semilla (tripulante, día, campo): siempre las mismas. La lectura de un clínico se audita como `lectura_ajena` de `intradia` una sola vez por hora y por (clínico, tripulante) (`propio_o_clinico_intradia`), porque la app la pide cada minuto; el `historial` se sigue auditando en cada consulta.",
-        "`GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del caso de referencia (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 27`) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).",
+        "`GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del viaje a Marte (`packages/engine/fixtures/caso-viaje.json`, 259 días de tránsito; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 130`, a mitad del tránsito, con las tres anomalías ya visibles) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).",
         "`mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta. `/fichas`, `/fichas/{id}` y `recordatorios` aceptan `lang=en`: las fichas toman los textos de `packages/schemas/fichas_en/<id>.json` (solo campos de texto y títulos de fuente; si falta la traducción se sirve en español).",
         "Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Los astronautas de prueba de la misión demo enlazan cada uno a su manera: Sebastián por alias (su reloj se llama «Sebastián») y Fernando por vínculo en `reloj_vinculo` (su reloj se llama «Galaxy Fernando»); los tests del puente no usan esos nombres. Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`; `SMART_IP_LAN` fuerza esa IP cuando el equipo tiene varias redes, por ejemplo el hotspot `umbra` para el reloj: ver `docs/SETUP.md` §8). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).",
         "`.env` de la raíz: `main.cargar_env` lo lee al arrancar (lifespan) con la biblioteca estándar, sin pisar variables ya definidas ni definir las vacías, y lo deshace al apagar. Así `.env.example` describe lo que la API realmente lee.",
-        "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
+        "Los mensajes de error salen de `packages/i18n` (`api.error.*`).",
+        "En demo, cada día de `entorno_diario` trae además `posicion` (nave, Tierra, Marte, distancias y `retardo_min`), `dosis_msv_dia` y `dosis_acumulada_msv` del caso del viaje; la app dibuja la trayectoria y el perfil de tránsito toma de ahí el retardo de hoy. En modo real esos campos no existen."
       ],
       "tags": [
         "api",
@@ -1011,7 +1012,8 @@
         "i18n: ningún texto visible es literal. `lib/strings.ts` da forma y tipos a las claves `web.*` de `packages/i18n` (español e inglés); el idioma se resuelve en el navegador (preferencia guardada o idioma del navegador) y cambiarlo recarga la página. Las fichas y los recordatorios se piden a la API con `?lang=` (traducciones en `packages/schemas/fichas_en`); los nombres de perfil salen de `web.S.profiles`. Los mensajes de tierra y los errores de la API siguen en español.",
         "**Tiempo real vs. histórico de datos:** en el cuerpo (tiempo real) el pulso, la SpO2, la temperatura y la presión se ven del día por hora (`/intradia`, refresco cada minuto; `shared/grafico-intradia.tsx` y la mini curva de las tarjetas); sueño, ánimo, glucosa y masa no tienen intervalo menor y remiten al histórico. Tendencias (histórico) añade la descomposición en tendencia, ciclo semanal y residuo (`trends/descomposicion.tsx`, `descomponer` de `packages/engine/series.ts`), que solo dibuja el ciclo si existe.",
         "**Ayuda [?]** (`shared/ayuda.tsx`): la explicación (qué es, cómo leerlo, por qué) va detrás de un botón de 44 px que se abre con un toque (popover; pantallas táctiles, sin hover) y queda a la vista solo lo que se lee o se toca: valores, estados y acciones. Aplicado a todas las pantallas: títulos de página (`PageHeader ayuda` en vez de `subtitle`), lienzo y detalle del cuerpo, Tendencias y su descomposición, notas de los paneles de Entorno, secciones de Dispositivo y el retardo de Informes. A la vista quedan los avisos, aclaraciones legales, estados vacíos e instrucciones del registro diario (que ya tiene su propio botón de información); «Acerca de» es la explicación en sí. El popover va en `z-[70]`, por encima de los avisos emergentes (`z-50`).",
-        "**Rutas por rol** (`lib/roles.ts`, `app/[rol]/`): `/` solo elige el rol; cada uno entra a su tablero: `/astronauta` (cuerpo, `/body` es el mismo, `/check-in`, `/trends`, `/environment`, `/alerts`, `/reports`, `/device`, `/about`), `/oficial` (tripulación: relojes y bandeja de avisos escalados; `/body`, `/ficha`, `/alerts`, `/environment`, `/device`, `/about`) y `/medico` (informes en Tierra; `/body`, `/ficha`, `/alerts`, `/environment`, `/about`). El conmutador (`modo-animado.tsx`: `useModoAnimado` y `SelectorModo`) es común: el astronauta también tiene los dos modos sobre su propio cuerpo (`CuerpoPropio`, en `/astronauta` y `/astronauta/body`; sin selector de tripulante y sin cambiar de ruta). Oficial y médico tienen los dos modos sobre el mismo selector de tripulantes (`crew-body.tsx`): «Tiempo real» (`/body`, su cuerpo de hoy con botones táctiles de giro (`shared/giro-botones.tsx`: izquierda y derecha mientras se mantienen pulsados, y «de frente») como único modo de girarlo, una vuelta completa (`giroExtra`; sin balanceo ni arrastre: `sinBalanceo`, `sinArrastre`; la rueda anterior está en el commit 3c895f8); vuelve el día al actual) e «Histórico» (`/ficha`; el cambio entre los dos es estado, no navegación: conserva el tripulante elegido, anima 220 ms —`prefers-reduced-motion` lo omite— y deja la ruta con `history.replaceState`; `historico.tsx`: elige el día de misión, minicuerpo (miniatura quieta del cuerpo de tiempo real: el mismo modelo 3D en pequeño, con los órganos teñidos según el estado de ese día; no gira) y `TrendsView`). El encabezado solo muestra el día de misión; cambiarlo es cosa del modo Histórico (el astronauta lo mueve desde su modo Histórico). Este conmutador es aparte de Demo/Real (de dónde salen los datos). `/body` es el cuerpo de cada tripulante en solo lectura: `crew-body.tsx` (`CuerpoTripulacion`, con la vista como parámetro) pide `historial` ajeno (`cargarHistorialAjeno`, queda auditado como `lectura_ajena`) y lo muestra con `VerComo`; el astronauta ve el suyo (`CuerpoPropio`), sin selector. shortcut: el médico actúa con el id del oficial médico hasta tener autenticación. El rol sale de la ruta (`role` en `useApp()`, sin selector); una pantalla que el rol no tiene da 404 (`lib/guardia.ts`; en export estático el estado HTTP es 200 con la página 404). Menú, avisos emergentes (salen plegados, solo el título; tocarlo despliega el detalle) y banners de registro son del astronauta: el estado personal (logo, «Vigilar», toasts) no se muestra a los otros roles. Enlaces entre pantallas con `rutaDe(rol, seccion)`. Si cambias las rutas, actualiza `PANTALLAS` en `public/sw.js` (lo comprueba `lib/roles.test.ts`). shortcut: la ruta solo cambia la vista; el servidor no comprueba el rol hasta la autenticación (#46)."
+        "**Rutas por rol** (`lib/roles.ts`, `app/[rol]/`): `/` solo elige el rol; cada uno entra a su tablero: `/astronauta` (cuerpo, `/body` es el mismo, `/check-in`, `/trends`, `/environment`, `/alerts`, `/reports`, `/device`, `/about`), `/oficial` (tripulación: relojes y bandeja de avisos escalados; `/body`, `/ficha`, `/alerts`, `/environment`, `/device`, `/about`) y `/medico` (informes en Tierra; `/body`, `/ficha`, `/alerts`, `/environment`, `/about`). El conmutador (`modo-animado.tsx`: `useModoAnimado` y `SelectorModo`) es común: el astronauta también tiene los dos modos sobre su propio cuerpo (`CuerpoPropio`, en `/astronauta` y `/astronauta/body`; sin selector de tripulante y sin cambiar de ruta). Oficial y médico tienen los dos modos sobre el mismo selector de tripulantes (`crew-body.tsx`): «Tiempo real» (`/body`, su cuerpo de hoy con botones táctiles de giro (`shared/giro-botones.tsx`: izquierda y derecha mientras se mantienen pulsados, y «de frente») como único modo de girarlo, una vuelta completa (`giroExtra`; sin balanceo ni arrastre: `sinBalanceo`, `sinArrastre`; la rueda anterior está en el commit 3c895f8); vuelve el día al actual) e «Histórico» (`/ficha`; el cambio entre los dos es estado, no navegación: conserva el tripulante elegido, anima 220 ms —`prefers-reduced-motion` lo omite— y deja la ruta con `history.replaceState`; `historico.tsx`: elige el día de misión, minicuerpo (miniatura quieta del cuerpo de tiempo real: el mismo modelo 3D en pequeño, con los órganos teñidos según el estado de ese día; no gira) y `TrendsView`). El encabezado solo muestra el día de misión; cambiarlo es cosa del modo Histórico (el astronauta lo mueve desde su modo Histórico). Este conmutador es aparte de Demo/Real (de dónde salen los datos). `/body` es el cuerpo de cada tripulante en solo lectura: `crew-body.tsx` (`CuerpoTripulacion`, con la vista como parámetro) pide `historial` ajeno (`cargarHistorialAjeno`, queda auditado como `lectura_ajena`) y lo muestra con `VerComo`; el astronauta ve el suyo (`CuerpoPropio`), sin selector. shortcut: el médico actúa con el id del oficial médico hasta tener autenticación. El rol sale de la ruta (`role` en `useApp()`, sin selector); una pantalla que el rol no tiene da 404 (`lib/guardia.ts`; en export estático el estado HTTP es 200 con la página 404). Menú, avisos emergentes (salen plegados, solo el título; tocarlo despliega el detalle) y banners de registro son del astronauta: el estado personal (logo, «Vigilar», toasts) no se muestra a los otros roles. Enlaces entre pantallas con `rutaDe(rol, seccion)`. Si cambias las rutas, actualiza `PANTALLAS` en `public/sw.js` (lo comprueba `lib/roles.test.ts`). shortcut: la ruta solo cambia la vista; el servidor no comprueba el rol hasta la autenticación (#46).",
+        "**Viaje a Marte** (demo): `lib/trayecto.ts` (`lecturaDeTrayecto`, `posicionesDelViaje`) y `components/environment/trayectoria-marte.tsx` dibujan en SVG el Sol, las órbitas de la Tierra y Marte, el arco de la nave (continuo lo recorrido) y el día elegido, con distancia a la Tierra, retardo y dosis acumulada; sale en Entorno (tarjeta grande) y, en miniatura, en el Histórico. Solo aparece si el historial trae `posicion` (el modo real no). En Entorno la dosis del demo es la del modelo del viaje (`Simulado`), no la ventana RadLab. El retardo del perfil de tránsito (`perfilesUi`) es el de hoy. Con 259 días el Histórico añade saltos de 7 días y un deslizador (`historico.tsx`) y los ejes de las gráficas rotulan unas 5 marcas (`lib/ejes.ts`, `marcasDeDia`)."
       ],
       "tags": [
         "frontend",
@@ -1807,7 +1809,7 @@
         },
         {
           "ruta": "apps/web/components/crew/historico.tsx",
-          "lineas": 54,
+          "lineas": 67,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1979,7 +1981,7 @@
         },
         {
           "ruta": "apps/web/components/environment/environment-view.tsx",
-          "lineas": 469,
+          "lineas": 478,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2031,6 +2033,20 @@
               "nombre": "IconoDatos",
               "tipo": "constante",
               "firma": "IconoDatos",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/environment/trayectoria-marte.tsx",
+          "lineas": 80,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "TrayectoriaMarte",
+              "tipo": "función",
+              "firma": "TrayectoriaMarte",
               "doc": ""
             }
           ]
@@ -2265,7 +2281,7 @@
         },
         {
           "ruta": "apps/web/components/shared/line-chart.tsx",
-          "lineas": 262,
+          "lineas": 263,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2730,14 +2746,14 @@
         },
         {
           "ruta": "apps/web/lib/catalogo.test.ts",
-          "lineas": 35,
+          "lineas": 42,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/catalogo.ts",
-          "lineas": 218,
+          "lineas": 234,
           "descripcion": "Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de",
           "test": false,
           "simbolos": [
@@ -2769,6 +2785,12 @@
               "nombre": "EntornoHistorial",
               "tipo": "interfaz",
               "firma": "EntornoHistorial",
+              "doc": ""
+            },
+            {
+              "nombre": "PosicionViaje",
+              "tipo": "interfaz",
+              "firma": "PosicionViaje",
               "doc": ""
             },
             {
@@ -2886,6 +2908,27 @@
               "nombre": "estadoReporte",
               "tipo": "función",
               "firma": "estadoReporte",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/ejes.test.ts",
+          "lineas": 7,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/ejes.ts",
+          "lineas": 7,
+          "descripcion": "Días que rotula el eje de una gráfica: el 1 y los múltiplos de un paso redondo, para que quepan unas 6 marcas.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "marcasDeDia",
+              "tipo": "función",
+              "firma": "marcasDeDia",
               "doc": ""
             }
           ]
@@ -3479,7 +3522,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 966,
+          "lineas": 986,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
@@ -3505,6 +3548,39 @@
               "nombre": "MOTOR",
               "tipo": "constante",
               "firma": "MOTOR",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/trayecto.test.ts",
+          "lineas": 32,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/trayecto.ts",
+          "lineas": 28,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "LecturaTrayecto",
+              "tipo": "interfaz",
+              "firma": "LecturaTrayecto",
+              "doc": ""
+            },
+            {
+              "nombre": "lecturaDeTrayecto",
+              "tipo": "función",
+              "firma": "lecturaDeTrayecto",
+              "doc": ""
+            },
+            {
+              "nombre": "posicionesDelViaje",
+              "tipo": "constante",
+              "firma": "posicionesDelViaje",
               "doc": ""
             }
           ]
@@ -3680,6 +3756,7 @@
       "puntos_clave": [
         "Es el port 1:1 de `evaluar_tripulante` en `pipelines/reanclaje/simulacion.py`. Si cambias una regla o una constante, cámbiala en los dos lados.",
         "`paridad-referencia.test.ts` compara el motor con `fixtures/caso-referencia.json` (4 tripulantes; anomalías A1, A2 y A3 de §5.5). `test_simulacion.py` exige que ese fixture sea idéntico a `generar_caso_referencia()`: si el simulador cambia, regenera el fixture con `json.dumps(simulacion.generar_caso_referencia(), indent=1, ensure_ascii=False)`.",
+        "`paridad-referencia.test.ts` también compara el motor con `fixtures/caso-viaje.json` (259 días): el motor no cambia, solo la duración y el calendario de las anomalías.",
         "Sin dependencias ni IO. Los tests corren con `node --test packages/engine/*.test.ts` (Node 22.18 o más, que ejecuta TypeScript sin compilar).",
         "Línea base de tierra a vuelo (§5.2): la referencia de cada indicador mezcla la mediana y el MAD del prevuelo (días <= 0) con los de la ventana en vuelo (hasta 14 lecturas desde el día 8, con 3 días de rezago y sin los días que superaron el umbral o tuvieron alerta), con peso `w = min(1, (d - 14) / 7)`. **El motor no usa los desplazamientos de `SUPUESTOS`**: son del generador; aquí solo valen los pisos `mad_min`.",
         "Reglas (§5.1 y §5.4): capa A roja (un parámetro en tramo extremo o suma >= 5) con `escalada_auto: true` siempre; capa A ámbar con suma 3 o 4. Capa B siempre ámbar; en adaptación (días 1 a 14) sale con `informativa: true` (se muestra, no alerta). Capa C desde el día 21, solo FC al alza y sueño y ánimo a la baja, ámbar, y la suma vuelve a cero al emitir. Contexto: CO2 **mayor** que 3 mmHg con `cefalea` y tormenta (flujo >= 10 pfu o `modo_tormenta` por evento SEP); ambas con `ambito: \"tripulacion\"`, ámbar y sin escalar.",
@@ -4333,7 +4410,8 @@
         "GOES separa la serie por satélite (`G18 >=10 MeV`) para no mezclar satélites en el mismo paso.",
         "Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...`, `index.py simular [n]` e `index.py barrer [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.",
         "`simulacion.py` implementa el protocolo de §5.5 tal cual: 14 días de prevuelo + 30 de misión, 4 tripulantes, y las anomalías A1 (deriva de sueño, FC y ánimo en trip-1, días 18 a 27), A2 (CO2 de 4,6 mmHg el día 12 con cefalea en trip-2 y trip-3) y A3 (200 pfu los días 22 y 23). El motor de referencia sigue §5.1 y §5.2 (línea base de tierra a vuelo; el detector no conoce los desplazamientos de `SUPUESTOS`, que solo usa el generador). Publica `gold/caso_referencia.json` y `gold/kpi.json` (detección por anomalía, días hasta la alerta, mitad de intensidad, alerta por azar, comparador de 91 lpm y falsas alarmas por tripulante y semana, con segunda semilla). `index.py barrer` publica `gold/barrido.json` (k y h del CUSUM). Las cifras del informe salen de aquí: si cambia una regla, se vuelve a correr y se actualiza el informe; no se ajustan parámetros para recuperar un número.",
-        "Escenarios que usa la app (la API los busca por nombre): `mision-real` es el entorno del modo real, anclado al día 1 de la misión (GOES y DONKI en su fecha real, y RadLab ALTEA-Survey y EDA RR-1 reanclados); `mision-vigia` es el del modo demo (ventanas en los días 18 a 23, con los 14 eventos SEP de mayo de 2024). El servicio de GOES solo guarda 24 horas: hay que reingerir y republicar (`index.py panel`) para que el modo real avance. Una ventana de DONKI ya consultada y sin eventos es un resultado válido (no va a `faltan`); cualquier otra ventana sin datos sí."
+        "Escenarios que usa la app (la API los busca por nombre): `mision-real` es el entorno del modo real, anclado al día 1 de la misión (GOES y DONKI en su fecha real, y RadLab ALTEA-Survey y EDA RR-1 reanclados); `mision-vigia` es el del modo demo del viaje a Marte (RadLab en el día 40, EDA en el 60 —el pico de CO2 simulado—, DONKI en el 110 con los 14 eventos SEP de mayo de 2024, justo antes de la tormenta simulada de los días 112 y 113, y GOES en el 128, cerca del día actual 130). El servicio de GOES solo guarda 24 horas: hay que reingerir y republicar (`index.py panel`) para que el modo real avance. Una ventana de DONKI ya consultada y sin eventos es un resultado válido (no va a `faltan`); cualquier otra ventana sin datos sí.",
+        "Viaje a Marte (`trayectoria.py` + `generar_caso_viaje`): `posicion(dia)` calcula una transferencia de Hohmann Tierra→Marte (órbitas circulares coplanares, semieje 1,262 UA, 259 días; Kepler por Newton) y da la posición de la nave, la Tierra y Marte, la distancia a la Tierra y el retardo (distancia × 499 s/UA; 13 min al llegar). El caso (`python3 index.py viaje` → `packages/engine/fixtures/caso-viaje.json`, ~330 KB compacto) usa el mismo generador con `dias_vuelo = 259` y `ANOMALIAS_VIAJE` (A2 día 60; A1 días 100–109; A3 días 112–113), más `dosis_msv_dia` y `dosis_acumulada_msv` por día (fondo ≈ 1,8 mSv/día de MSL RAD y +3 mSv por día de tormenta, supuesto de escenario) y la `trayectoria` completa. El caso de 30 días sigue siendo el fixture de paridad; el de 259 también lo pasa el motor TS. shortcut: sin efemérides reales."
       ],
       "tags": [
         "etl",

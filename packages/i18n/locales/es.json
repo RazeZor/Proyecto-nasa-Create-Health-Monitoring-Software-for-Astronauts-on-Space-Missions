@@ -967,7 +967,27 @@
         "girar": "Girar el cuerpo",
         "girarIzquierda": "Girar a la izquierda (mantén pulsado)",
         "girarDerecha": "Girar a la derecha (mantén pulsado)",
-        "deFrente": "Volver de frente"
+        "deFrente": "Volver de frente",
+        "back7": "7 días atrás",
+        "forward7": "7 días adelante"
+      },
+      "trayecto": {
+        "title": "Trayecto a Marte",
+        "sun": "Sol",
+        "earth": "Tierra",
+        "mars": "Marte",
+        "ship": "Nave",
+        "day": "Día {dia} de {total}",
+        "distEarth": "Distancia a la Tierra",
+        "distSun": "Distancia al Sol",
+        "delay": "Retardo de comunicación",
+        "dose": "Dosis acumulada",
+        "progress": "Recorrido",
+        "label": "Trayecto a Marte, día {dia}: la nave está a {dist} de la Tierra y el retardo de comunicación es de {retardo}",
+        "help": "La nave sigue una órbita de transferencia de Hohmann: sale de la Tierra y llega a Marte tras 259 días. Cada día de misión tiene una posición, y de ella salen el retardo de comunicación y la dosis acumulada. Es un escenario simulado, no efemérides reales.",
+        "doseNote": "Modelo de escenario: radiación de fondo de unos 1,8 mSv al día más las tormentas solares. No es una medición.",
+        "ua": "UA",
+        "mkm": "millones de km"
       }
     },
     "MOTOR": {

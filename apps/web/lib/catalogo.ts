@@ -50,6 +50,20 @@ export interface EntornoHistorial {
   /** Eventos SEP reales de DONKI reanclados a ese día: activan el modo tormenta. */
   eventos_sep?: EventoSep[]
   modo_tormenta?: boolean
+  /** Solo el demo del viaje a Marte: dónde está la nave, la Tierra y Marte ese día (unidades astronómicas, Sol en el origen). */
+  posicion?: PosicionViaje | null
+  dosis_msv_dia?: number | null
+  dosis_acumulada_msv?: number | null
+}
+export interface PosicionViaje {
+  dia: number
+  x_ua: number
+  y_ua: number
+  dist_sol_ua: number
+  dist_tierra_ua: number
+  retardo_min: number
+  tierra: { x_ua: number; y_ua: number }
+  marte: { x_ua: number; y_ua: number }
 }
 export interface Historial {
   modo?: Mode
@@ -119,12 +133,14 @@ function desdeFicha(id: IndicatorId, f: FichaJson, zona: ZoneId, prevencion: str
   }
 }
 
-export function perfilesUi(api: Record<string, PerfilApi>): MissionProfile[] {
+/** Perfiles de la interfaz. En el tránsito, si el historial trae la posición de la nave (demo), el retardo es el de hoy. */
+export function perfilesUi(api: Record<string, PerfilApi>, historial?: Historial): MissionProfile[] {
+  const hoy = historial?.entorno_diario.find((e) => e.dia_mision === historial.dia_actual)?.posicion
   return (Object.keys(PERFIL_API) as ProfileId[]).map((id) => {
     const p = api[PERFIL_API[id]]
     return {
       id, label: S.profiles[id] ?? p.nombre, cabinPressureMmHg: p.presion_cabina_mmHg as MissionProfile["cabinPressureMmHg"],
-      delayMinutes: p.retardo_demo_min, gravity: S.gravity[p.gravedad_etiqueta] ?? p.gravedad_etiqueta,
+      delayMinutes: id === "transit" && hoy ? Number(hoy.retardo_min.toFixed(1)) : p.retardo_demo_min, gravity: S.gravity[p.gravedad_etiqueta] ?? p.gravedad_etiqueta,
     }
   })
 }
@@ -170,7 +186,7 @@ type CatalogoCrudo = {
 }
 
 const armar = (c: CatalogoCrudo, sinEnlace: boolean): Catalogo => ({
-  perfiles: perfilesUi(c.perfiles), ...indicadoresUi(c.fichas), historial: c.historial, recordatorios: c.recordatorios,
+  perfiles: perfilesUi(c.perfiles, c.historial), ...indicadoresUi(c.fichas), historial: c.historial, recordatorios: c.recordatorios,
   mensajes: mensajesUi(c.mensajes), entorno: c.entorno, fuentes: fuentesUi(c.entorno.fuentes), sinEnlace,
 })
 

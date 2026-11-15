@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { ArrowDown, ExternalLink } from "lucide-react"
 import { useApp } from "@/components/app-context"
 import { IconoCo2, IconoDatos, IconoDosis, IconoHumedad, IconoPresion, IconoTormenta } from "@/components/environment/iconos"
+import { TrayectoriaMarte } from "@/components/environment/trayectoria-marte"
 import { IndicatorCard } from "@/components/shared/indicator-card"
 import { ICONO_INDICADOR, type Icono } from "@/components/shared/iconos"
 import { LineChart } from "@/components/shared/line-chart"
@@ -161,8 +162,12 @@ export function EnvironmentView() {
   }, [escenario])
 
   // Dosis: del panel gold (RadLab). CO2 y protones: lo mismo que evalúa el motor, día por día, con su procedencia.
-  const dosisPoints = (gold?.dosis?.por_dia ?? []).map((d) => ({ day: d.dia_mision, value: Number((d.acumulada / 1000).toFixed(4)) }))
   const entorno = [...catalogo.historial.entorno_diario].sort((a, b) => a.dia_mision - b.dia_mision)
+  // En el demo del viaje a Marte la dosis sale del modelo del viaje (fondo + tormentas), no de la ventana RadLab reanclada.
+  const dosisViaje = entorno.some((e) => e.dosis_acumulada_msv != null)
+  const dosisPoints = dosisViaje
+    ? entorno.flatMap((e) => (e.dosis_acumulada_msv != null ? [{ day: e.dia_mision, value: Number(e.dosis_acumulada_msv.toFixed(1)) }] : []))
+    : (gold?.dosis?.por_dia ?? []).map((d) => ({ day: d.dia_mision, value: Number((d.acumulada / 1000).toFixed(4)) }))
   const co2Points = entorno.flatMap((e) => {
     const c = analisis.co2(e.dia_mision)
     return c ? [{ day: e.dia_mision, value: Number(c.mmHg.toFixed(2)) }] : []
@@ -173,8 +178,10 @@ export function EnvironmentView() {
   const soloAnomalias = (dias: number[], limite: (d: number) => boolean) => dias.filter(limite)
 
   const dosisDia = gold?.dosis?.por_dia.findLast((d) => d.dia_mision <= day) ?? gold?.dosis?.por_dia[0]
-  const dosisMSv = dosisDia ? Number((dosisDia.acumulada / 1000).toFixed(3)) : null
-  const pctCarrera = gold?.dosis?.porcentaje_limite_carrera ?? 0
+  const dosisViajeDia = entorno.find((e) => e.dia_mision === day)?.dosis_acumulada_msv ?? null
+  const dosisMSv = dosisViaje ? (dosisViajeDia !== null ? Number(dosisViajeDia.toFixed(1)) : null) : dosisDia ? Number((dosisDia.acumulada / 1000).toFixed(3)) : null
+  const pctCarrera = dosisViaje ? Number((((dosisMSv ?? 0) / CAREER_LIMIT_MSV) * 100).toFixed(1)) : gold?.dosis?.porcentaje_limite_carrera ?? 0
+  const hayDosis = dosisViaje || !!gold?.dosis
   const cabinaDia = gold?.cabina.find((c) => c.dia_mision === day)
   const co2Dia = analisis.co2(day)
   const co2Status: Status = !co2Dia ? "ok" : co2Dia.mmHg > CO2_LIMIT_MMHG ? "act" : co2Dia.mmHg >= CO2_LIMIT_MMHG * 0.8 ? "watch" : "ok"
@@ -211,7 +218,7 @@ export function EnvironmentView() {
   const co2Real = entorno.some((e) => analisis.co2(e.dia_mision) !== null && esReal(e.co2_origen))
   const co2Simulado = entorno.some((e) => analisis.co2(e.dia_mision) !== null && !esReal(e.co2_origen))
   const escalaCo2 = Math.max(CO2_LIMIT_MMHG * 1.5, (co2Dia?.mmHg ?? 0) * 1.1)
-  const notaDosis = gold?.dosis?.tipo === "equivalente" ? S.env.doseEquivalent : S.env.doseNote
+  const notaDosis = dosisViaje ? S.trayecto.doseNote : gold?.dosis?.tipo === "equivalente" ? S.env.doseEquivalent : S.env.doseNote
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
@@ -256,6 +263,8 @@ export function EnvironmentView() {
         )}
       </section>
 
+      <TrayectoriaMarte dia={day} />
+
       <div className="grid gap-4 lg:grid-cols-3">
         <Respuesta icono={IconoTormenta} titulo={S.env.stormCard} estado={estadoTormenta}
           veredicto={tormenta ? S.env.stormOn : hayProtones ? S.env.stormOff : S.env.stormUnknown}>
@@ -286,20 +295,20 @@ export function EnvironmentView() {
           </div>
         </Respuesta>
 
-        <Respuesta icono={IconoDosis} titulo={S.env.dose} estado={null} veredicto={gold?.dosis ? notaDosis : S.env.noDose}>
+        <Respuesta icono={IconoDosis} titulo={S.env.dose} estado={null} veredicto={hayDosis ? notaDosis : S.env.noDose}>
           <Cifra valor={dosisMSv !== null ? String(dosisMSv) : "—"} unidad={dosisMSv !== null ? "mSv" : undefined} />
-          {gold?.dosis && (
+          {hayDosis && (
             <div>
               <Medidor fraccion={pctCarrera / 100} clase="bg-primary" etiqueta={`${pctCarrera}% · ${S.env.careerLimit}`} />
               <p className="mt-1.5 text-base text-muted-foreground">
                 <span className="font-mono font-semibold tabular-nums text-foreground">{pctCarrera}%</span> · {S.env.careerLimit}
                 <span className="font-mono tabular-nums"> · {dosisMSv} / {CAREER_LIMIT_MSV} mSv</span>
               </p>
-              <p className="text-base text-muted-foreground">{gold.dosis.orientativa ? S.env.indicative : gold.dosis.series.join(", ")}</p>
+              {!dosisViaje && gold?.dosis && <p className="text-base text-muted-foreground">{gold.dosis.orientativa ? S.env.indicative : gold.dosis.series.join(", ")}</p>}
             </div>
           )}
           <div className="mt-auto flex flex-wrap items-center gap-2">
-            {gold?.dosis && <ProvenanceTag provenance={REAL("RadLab · NASA OSDR", fechaVentana(gold, "radlab"))} className={PROV} />}
+            {dosisViaje ? <ProvenanceTag provenance={SIMULADO} className={PROV} /> : gold?.dosis && <ProvenanceTag provenance={REAL("RadLab · NASA OSDR", fechaVentana(gold, "radlab"))} className={PROV} />}
           </div>
         </Respuesta>
       </div>
@@ -349,7 +358,7 @@ export function EnvironmentView() {
           </Panel>
 
           <Panel title={S.env.dose} note={notaDosis}
-            footer={dosisPoints.length > 0 && <ProvenanceTag provenance={REAL("RadLab · NASA OSDR", fechaVentana(gold, "radlab"))} className={PROV} />}>
+            footer={dosisPoints.length > 0 && <ProvenanceTag provenance={dosisViaje ? SIMULADO : REAL("RadLab · NASA OSDR", fechaVentana(gold, "radlab"))} className={PROV} />}>
             {dosisPoints.length === 0 ? (
               <EmptyState message={S.env.emptyDose} />
             ) : (

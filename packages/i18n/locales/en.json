@@ -967,7 +967,27 @@
         "girar": "Rotate the body",
         "girarIzquierda": "Rotate left (hold)",
         "girarDerecha": "Rotate right (hold)",
-        "deFrente": "Face front"
+        "deFrente": "Face front",
+        "back7": "7 days back",
+        "forward7": "7 days forward"
+      },
+      "trayecto": {
+        "title": "Trajectory to Mars",
+        "sun": "Sun",
+        "earth": "Earth",
+        "mars": "Mars",
+        "ship": "Ship",
+        "day": "Day {dia} of {total}",
+        "distEarth": "Distance to Earth",
+        "distSun": "Distance to the Sun",
+        "delay": "Communication delay",
+        "dose": "Accumulated dose",
+        "progress": "Progress",
+        "label": "Trajectory to Mars, day {dia}: the ship is {dist} from Earth and the communication delay is {retardo}",
+        "help": "The ship follows a Hohmann transfer orbit: it leaves Earth and reaches Mars after 259 days. Each mission day has a position, which gives the communication delay and the accumulated dose. It is a simulated scenario, not real ephemerides.",
+        "doseNote": "Scenario model: background radiation of about 1.8 mSv per day plus solar storms. Not a measurement.",
+        "ua": "AU",
+        "mkm": "million km"
       }
     },
     "MOTOR": {
