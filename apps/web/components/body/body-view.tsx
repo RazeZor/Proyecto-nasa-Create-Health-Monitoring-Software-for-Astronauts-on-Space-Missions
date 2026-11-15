@@ -129,22 +129,32 @@ export function BodyView() {
           <section aria-labelledby="zones-h" className="rounded-xl border border-border bg-card p-2">
             <h2 id="zones-h" className="sr-only">{S.body.zones}</h2>
             <ul>
-              {zones.map((z) => (
-                <li key={z.zone}>
-                  <button
-                    type="button"
-                    onClick={() => setSelected(z.zone)}
-                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 text-left hover:bg-accent"
-                  >
-                    <span className="font-medium">{S.zones[z.zone]}</span>
-                    <span className="flex items-center gap-2">
-                      {z.layer && <LayerChip layer={z.layer} className="hidden sm:inline-flex" />}
-                      <StatusBadge status={z.status} size="sm" />
-                      <ArrowRight aria-hidden className="size-4 text-muted-foreground" />
-                    </span>
-                  </button>
-                </li>
-              ))}
+              {zones.map((z) => {
+                const lecturas = analisis.lecturasZona(day, z.zone)
+                return (
+                  <li key={z.zone}>
+                    <button
+                      type="button"
+                      onClick={() => setSelected(z.zone)}
+                      className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left hover:bg-accent"
+                    >
+                      <span className="flex flex-col">
+                        <span className="font-medium">{S.zones[z.zone]}</span>
+                        {lecturas.length > 0 && (
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {lecturas.map((r) => `${r.label}: ${r.value}`).join(" · ")}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        {z.layer && <LayerChip layer={z.layer} className="hidden sm:inline-flex" />}
+                        <StatusBadge status={z.status} size="sm" />
+                        <ArrowRight aria-hidden className="size-4 text-muted-foreground" />
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           </section>
 
@@ -201,7 +211,21 @@ export function BodyView() {
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{S.body.deviation}</dt>
-                  <dd className="mt-1 font-mono text-lg">{current.deviation}</dd>
+                  <dd className="mt-1 font-mono text-sm leading-relaxed">{current.deviation}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{S.body.readings}</dt>
+                  <dd className="mt-2 flex flex-col gap-2">
+                    {analisis.lecturasZona(day, current.zone).map((r) => (
+                      <div key={r.label} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-foreground">{r.label}</span>
+                          <span className="text-muted-foreground">{S.body.reference}: {r.reference}</span>
+                        </div>
+                        <span className="font-mono text-sm font-semibold tabular-nums">{r.value}</span>
+                      </div>
+                    ))}
+                  </dd>
                 </div>
                 <div className={cn("rounded-lg border p-4", statusSurface[current.status])}>
                   <dt className="text-xs font-medium uppercase tracking-wide">{S.body.next}</dt>

@@ -92,6 +92,11 @@ const INDICADOR_MOTOR: Record<string, string> = {
   conductual: "sueno",
   news2: "frecuencia_cardiaca_reposo",
   co2: "spo2",
+  temp: "temperatura_central",
+  glucosa: "glucosa",
+  masa: "masa_corporal",
+  neuro: "spo2",
+  inmune: "temperatura_central",
 }
 
 export const indicadorApi = (id: IndicatorId): string => IDS[id]

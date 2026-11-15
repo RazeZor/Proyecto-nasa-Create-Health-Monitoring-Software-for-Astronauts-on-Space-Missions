@@ -94,3 +94,37 @@ test("lineasBaseServidor expone mediana y MAD de tierra y vuelo para SQLite", ()
   assert.equal(fcVuelo.n, 14)
   assert.ok(a.alertasMotor.length > 0)
 })
+
+test("las 5 zonas del cuerpo responden a lecturas reales (blood, bone, head, mind, heart) y exponen lecturasZona", () => {
+  // blood: fiebre >= 39.1 °C (act, capa A) y glucosa en vigilancia (watch, capa B)
+  const aBlood = analizar([entrada(10, { tempC: 39.2, glucose: 145 })])
+  const zBlood = aBlood.zones(10).find((z) => z.zone === "blood")
+  assert.equal(zBlood?.status, "act")
+  assert.equal(zBlood?.layer, "A")
+
+  // bone: pérdida de masa corporal >= 2.8 % respecto a mediana prevuelo (~73.1 kg -> 70.5 kg = -3.5 %)
+  const aBone = analizar([entrada(12, { massKg: 70.5 })])
+  const zBone = aBone.zones(12).find((z) => z.zone === "bone")
+  assert.equal(zBone?.status, "watch")
+  assert.equal(zBone?.layer, "C")
+
+  // head: mareo / cambio visual en día sin CO2 alto -> vigilancia neurovestibular
+  const aHead = analizar([entrada(10, { symptoms: ["dizziness"] })])
+  const zHead = aHead.zones(10).find((z) => z.zone === "head")
+  assert.equal(zHead?.status, "watch")
+  assert.equal(zHead?.layer, "B")
+
+  // mind: sueño < 4 h en un día -> vigilancia conductual inmediata
+  const aMind = analizar([entrada(10, { sleepH: 3.5 })])
+  const zMind = aMind.zones(10).find((z) => z.zone === "mind")
+  assert.equal(zMind?.status, "watch")
+  assert.equal(zMind?.layer, "B")
+
+  // lecturasZona devuelve los valores reales y rangos de referencia de las 5 zonas
+  for (const zone of ["head", "heart", "bone", "blood", "mind"] as const) {
+    const filas = aBone.lecturasZona(12, zone)
+    assert.ok(filas.length >= 1)
+    assert.ok(filas[0].value.length > 0)
+    assert.ok(filas[0].reference.length > 0)
+  }
+})

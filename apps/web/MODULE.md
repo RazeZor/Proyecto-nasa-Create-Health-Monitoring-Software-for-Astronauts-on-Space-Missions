@@ -9,7 +9,7 @@ Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva p
 
 - Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + Recharts + componentes UI accesibles (`components/ui/*`).
 - **La app solo conoce la API**: perfiles (`/perfiles`), fichas (`/fichas`), referencia de entorno (`/entorno/referencia`), historial simulado del tripulante (`/tripulantes/{id}/historial`), recordatorios, mensajes con tierra e informes salen de `apps/api`. `lib/catalogo.ts` los pide al arrancar (`cargarCatalogo`) y los traduce al modelo de la interfaz; `AppProvider` no muestra la app hasta tenerlos y, si la API no responde, muestra un aviso con «Reintentar». No hay datos de ejemplo en el cliente (`lib/mock` ya no existe): los mockups viven en `apps/api/demo/`. Lo único local son los registros del usuario (`lib/storage.ts`, `localStorage`), que se suben a la API.
-- Motor híbrido: `packages/engine` (TypeScript puro, port 1:1 del simulador de Python, con test de paridad) evalúa las capas A, B y C y la regla de contexto. `lib/engine.ts` (`analizar(checkIns, historial)`) lo aplica al historial de la API más los registros del usuario; `AppProvider` lo recalcula en `analisis` cada vez que se guarda un check-in, y cuerpo, tendencias, alertas e informes lo leen de ahí. Modo adaptación (días 1 a 14) y modo tormenta (del `entorno_diario` del historial). Tres niveles (`ok`, `watch`, `act`); solo `act` escala al oficial médico (§4.2, §5.1). Importa `packages/engine` por ruta relativa (`experimental.externalDir` en `next.config.mjs`). El pulso de `/device` viene del Galaxy Watch real a través de la API (ver el punto del reloj).
+- Motor híbrido: `packages/engine` (TypeScript puro, port 1:1 del simulador de Python, con test de paridad) evalúa las capas A, B y C y la regla de contexto. `lib/engine.ts` (`analizar(checkIns, historial)`) lo aplica al historial de la API más los registros del usuario y lo complementa con `alertasCheckIn` y `lecturasZona` para que las 5 zonas del cuerpo humano (`head`, `heart`, `bone`, `blood`, `mind`) respondan a lecturas reales (FC, PA, SpO2, CO2, síntomas neurovestibulares, pérdida de masa corporal vs. prevuelo, temperatura central, glucosa, síntomas inmunes, sueño y ánimo) y muestren sus valores del día frente a su banda de referencia en el cajón lateral de `components/body/body-view.tsx`. `AppProvider` lo recalcula en `analisis` cada vez que se guarda un check-in, y cuerpo, tendencias, alertas e informes lo leen de ahí. Modo adaptación (días 1 a 14) y modo tormenta (del `entorno_diario` del historial). Tres niveles (`ok`, `watch`, `act`); solo `act` escala al oficial médico (§4.2, §5.1). Importa `packages/engine` por ruta relativa (`experimental.externalDir` en `next.config.mjs`). El pulso de `/device` viene del Galaxy Watch real a través de la API (ver el punto del reloj).
 - Llamadas a la API: `lib/catalogo.ts`, `lib/etl-client.ts` y `lib/api-registro.ts` usan `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA` (se lee al compilar; por defecto `http://127.0.0.1:8000`). En la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa. La vista de entorno consume `/paneles`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` sin generar series sintéticas.
 - `lib/api-registro.ts` conecta todas las rutas de `apps/api/rutas_registro.py` (`POST`/`GET` de lecturas, síntomas, alertas y reportes; `PUT`/`GET` de línea base en `tierra` y `vuelo`; `GET` de escalamientos recibidos y propios; `POST` de contexto en escalamientos, avance de cola y respuesta de Tierra) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false`/`null`/`[]` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).
 - El registro diario, las líneas base y las alertas del motor se sincronizan con la API mediante `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`): al guardar un registro y al abrir la app se envían los pendientes en orden, se combinan lecturas/síntomas remotos de SQLite (`cargarRegistrosCombinados`) y se persisten las líneas base y alertas nuevas sin duplicar (`sincronizarMotorConServidor`). Identidad provisional: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (por defecto 1, el astronauta de `python3 -m almacen sembrar`; el rol `cmo`/`surgeon` firma con el actor 2). En `/reports`, el Cirujano de Vuelo puede avanzar la cola (`POST /reportes/avanzar`) y responder informes entregados (`POST /reportes/{id}/respuesta`), actualizando el hilo de mensajes en vivo; en `/alerts`, se consultan los escalamientos reales y el astronauta puede adjuntar contexto una sola vez (`POST /escalamientos/{id}/contexto`); en `/trends`, se lee la línea base guardada en SQLite (`GET /linea-base/...`).
@@ -46,7 +46,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/alerts/alerts-view.tsx](components/alerts/alerts-view.tsx) | 213 | — |
 | [components/app-context.tsx](components/app-context.tsx) | 162 | — |
 | [components/body/body-figure.tsx](components/body/body-figure.tsx) | 298 | — |
-| [components/body/body-view.tsx](components/body/body-view.tsx) | 218 | — |
+| [components/body/body-view.tsx](components/body/body-view.tsx) | 242 | — |
 | [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 312 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 160 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 46 | — |
@@ -70,13 +70,13 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/ui/sheet.tsx](components/ui/sheet.tsx) | 138 | — |
 | [components/ui/slider.tsx](components/ui/slider.tsx) | 51 | — |
 | [lib/api-registro.test.ts](lib/api-registro.test.ts) | 104 | — |
-| [lib/api-registro.ts](lib/api-registro.ts) | 472 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
+| [lib/api-registro.ts](lib/api-registro.ts) | 477 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
 | [lib/catalogo.test.ts](lib/catalogo.test.ts) | 35 | — |
 | [lib/catalogo.ts](lib/catalogo.ts) | 170 | Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de |
 | [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
 | [lib/cola.ts](lib/cola.ts) | 39 | Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local. |
-| [lib/engine.test.ts](lib/engine.test.ts) | 96 | — |
-| [lib/engine.ts](lib/engine.ts) | 199 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial) más los registros |
+| [lib/engine.test.ts](lib/engine.test.ts) | 130 | — |
+| [lib/engine.ts](lib/engine.ts) | 339 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial) más los registros |
 | [lib/etl-client.ts](lib/etl-client.ts) | 161 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
 | [lib/reloj.test.ts](lib/reloj.test.ts) | 56 | — |
 | [lib/reloj.ts](lib/reloj.ts) | 206 | Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con |
@@ -84,7 +84,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 42 | — |
-| [lib/strings.ts](lib/strings.ts) | 371 | — |
+| [lib/strings.ts](lib/strings.ts) | 383 | — |
 | [lib/types.ts](lib/types.ts) | 167 | — |
 | [lib/utils.ts](lib/utils.ts) | 10 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |
