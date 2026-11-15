@@ -20,6 +20,8 @@ import puente_reloj  # noqa: E402
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
+from gold import DATALAKE_DEFECTO  # noqa: E402, F401
+from gold import carpeta as _gold  # noqa: E402, F401
 from gold import leer_verificado as _leer_gold_verificado  # noqa: E402
 from gold import manifiesto as _manifiesto  # noqa: E402
 from rutas_dashboard import router as rutas_dashboard  # noqa: E402

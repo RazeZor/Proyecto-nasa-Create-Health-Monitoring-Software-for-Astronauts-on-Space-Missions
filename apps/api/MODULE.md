@@ -53,7 +53,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 96 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [almacen/vocabulario.py](almacen/vocabulario.py) | 7 | Vocabulario compartido con la interfaz: lee el contrato packages/schemas/vocabulario.json. |
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
-| [main.py](main.py) | 194 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [main.py](main.py) | 196 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 383 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
 | [rutas_dashboard.py](rutas_dashboard.py) | 212 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
 | [rutas_registro.py](rutas_registro.py) | 214 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
@@ -63,7 +63,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_db.py](test_almacen_db.py) | 97 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
-| [test_api.py](test_api.py) | 112 | — |
+| [test_api.py](test_api.py) | 116 | — |
 | [test_api_dashboard.py](test_api_dashboard.py) | 202 | — |
 | [test_api_registro.py](test_api_registro.py) | 208 | — |
 | [test_puente_reloj.py](test_puente_reloj.py) | 215 | — |
@@ -221,7 +221,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_almacen_db.py`: 8 pruebas en Esquema (8)
 - `apps/api/test_almacen_lecturas.py`: 9 pruebas en Lecturas (9)
 - `apps/api/test_almacen_tripulacion.py`: 8 pruebas en Tripulacion (8)
-- `apps/api/test_api.py`: 10 pruebas en Api (10)
+- `apps/api/test_api.py`: 11 pruebas en Api (11)
 - `apps/api/test_api_dashboard.py`: 15 pruebas en Dashboard (12), Entorno (3)
 - `apps/api/test_api_registro.py`: 19 pruebas en Registro (19)
 - `apps/api/test_puente_reloj.py`: 13 pruebas en Estado (5), Persistencia (3), Rutas (4), ExtremoAExtremo (1)

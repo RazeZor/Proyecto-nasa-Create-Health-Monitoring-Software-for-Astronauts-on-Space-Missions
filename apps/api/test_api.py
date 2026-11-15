@@ -81,6 +81,10 @@ class Api(unittest.TestCase):
                 self.assertTrue(op.get("summary") and op.get("description"), ruta)
             self.assertIn(ruta.split("{seccion}")[0].rstrip("/"), guia, ruta)  # la guía cubre cada ruta
 
+    def test_datalake_dir_vacio_usa_el_de_por_defecto(self):
+        os.environ["DATALAKE_DIR"] = ""  # así viene en .env.example; setUp/tearDown restauran la variable
+        self.assertEqual(main._gold(), main.DATALAKE_DEFECTO / "gold")
+
     def test_sin_gold_lista_vacia(self):
         (self.gold / "manifest.json").unlink()
         self.assertEqual(self.cliente.get("/escenarios").json(), [])
