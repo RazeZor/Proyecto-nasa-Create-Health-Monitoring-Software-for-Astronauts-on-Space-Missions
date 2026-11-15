@@ -16,6 +16,11 @@ async function abrir(browser, ruta) {
   const page = await ctx.newPage()
   await page.setViewport({ width: 1280, height: 800 })
   await page.goto(`${BASE}${ruta}${ruta.includes("?") ? "&" : "?"}modo=demo&lang=${LANG}`, { waitUntil: "networkidle2", timeout: 90000 })
+  // la pantalla de carga solo muestra el logotipo: esperar a la interfaz real (next dev tarda hasta 25 s la primera vez)
+  await page.waitForFunction(
+    () => document.querySelector("header") && (document.querySelector("main#main")?.textContent || "").trim().length > 50,
+    { timeout: 90000 },
+  )
   await esperar(4000)
   // sin avisos emergentes ni el indicador de next dev
   await page.addStyleTag({ content: "section.fixed.bottom-3.right-3{display:none!important} nextjs-portal{display:none!important}" })

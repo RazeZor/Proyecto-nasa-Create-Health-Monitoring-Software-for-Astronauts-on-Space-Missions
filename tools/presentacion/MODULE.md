@@ -9,10 +9,11 @@ Genera las presentaciones de VIGÍA para NASA Space Apps (la demo oficial de 7 d
 
 - `deck.js` (pptxgenjs): `node deck.js <carpeta_capturas> <carpeta_marca> <salida> "[equipo]" "[integrantes]" "[evento]"`. Sin los tres últimos argumentos deja los marcadores `[TEAM NAME]`, `[Team members]` y `[Local Event]` en la portada. Los textos y cifras salen de `auditoria/DEMO.md`, `GUIONES.md` y `packages/engine/fixtures/kpi.json`: si cambian los KPI, cámbialos aquí a mano.
 - La demo oficial debe tener **como máximo 7 diapositivas** (regla de la guía de envío 2026): `demo()` crea exactamente 7; no añadas más sin quitar otra.
-- El pitch (`pitch()`, 15 diapositivas) añade tres que no caben en la demo: «Lo que nos diferencia», «Cinco peligros, cinco respuestas, cinco entornos» (tabla peligro → medida → regla → acción y los cinco perfiles) y «Un reloj en la muñeca» (app Wear OS + smart-monitor). `deck-es.js` es la misma presentación en español con las capturas `-es`; cualquier cambio de contenido se hace en los dos archivos.
+- El pitch (`pitch()`, 15 diapositivas) termina con las dos de «Demo en vivo» (sección propia, después del cierre): el equipo hace la demo con la app en local al final y esas dos quedan de respaldo. El guion hablado por diapositiva está en `auditoria/GUION-PRESENTACION-LOCAL.md`. Añade tres que no caben en la demo: «Lo que nos diferencia», «Cinco peligros, cinco respuestas, cinco entornos» (tabla peligro → medida → regla → acción y los cinco perfiles) y «Un reloj en la muñeca» (app Wear OS + smart-monitor). `deck-es.js` es la misma presentación en español con las capturas `-es`; cualquier cambio de contenido se hace en los dos archivos.
 - Formas con `pres.ShapeType.roundRect` / `ellipse`, nunca el nombre como cadena: PowerPoint no abre el archivo si `prstGeom` lleva un valor inválido, aunque `validate.py` lo dé por bueno.
 - pptxgenjs en Windows escribe entradas de carpeta en el zip; `sin_carpetas.py <pptx…>` las quita (sin eso algunos servicios en la nube no abren el archivo).
 - `exportar.ps1 -Carpeta <dir> -Nombres "a,b"` exporta cada diapositiva a PNG con PowerPoint (COM) para revisarlas; necesita PowerPoint instalado. Es la revisión visual obligatoria antes de entregar.
+- `capturas-deck.js <es|en>` toma las siete capturas que usan los decks (`docs/capturas/<pantalla>-<idioma>.png`). Espera a que exista `header` y `main#main` con contenido antes de capturar: la pantalla de carga de `next dev` solo muestra el logotipo y puede durar más de 20 s (antes salían capturas en blanco de 6 KB). Para regenerar los decks: `NODE_PATH=tools/presentacion/node_modules PPTX_SKILL=<skill pptx> node deck.js …` (apply_theme.js busca jszip por NODE_PATH).
 - `capturas-finales.js` (puppeteer-core + Chrome) toma las capturas de la app en `http://localhost:3000` (demo, inglés, día 27) ocultando los avisos emergentes y el indicador de next dev, y comprueba de paso que no quede español con `lang=en` ni avisos sobre el dial del registro. Las capturas publicadas viven en `docs/capturas/`.
 - Marca: colores y logotipos de `docs/brand` (Noche `0B1020`, Casco `F2F5FA`, estados ok/atención/alerta del tema claro). Fuente Calibri (segura para la revisión); sin logotipos de la NASA.
 - Dependencias en `package.json` (`npm install` en esta carpeta); `apply_theme.js` viene de la skill `pptx` de Claude Code (`PPTX_SKILL`), opcional: sin ella el tema de colores queda en el de Office.
@@ -33,10 +34,10 @@ tags: herramientas, presentacion, pptx, pptxgenjs, capturas, puppeteer, demo
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [capturas-deck.js](capturas-deck.js) | 66 | — |
+| [capturas-deck.js](capturas-deck.js) | 71 | — |
 | [capturas-finales.js](capturas-finales.js) | 76 | — |
-| [deck-es.js](deck-es.js) | 393 | — |
-| [deck.js](deck.js) | 391 | — |
+| [deck-es.js](deck-es.js) | 394 | — |
+| [deck.js](deck.js) | 392 | — |
 | [sin_carpetas.py](sin_carpetas.py) | 14 | — |
 
 ### Configuración y fuentes externas
