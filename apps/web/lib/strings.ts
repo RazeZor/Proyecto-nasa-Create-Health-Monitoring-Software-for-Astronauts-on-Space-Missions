@@ -198,6 +198,7 @@ export const S = {
     systems: tx("web.S.body.systems"),
     pains: tx("web.S.body.pains"),
     loading3d: tx("web.S.body.loading3d"),
+  sinWebgl: tx("web.S.body.sinWebgl"),
     stageLabel: tx("web.S.body.stageLabel"),
     yourRange: tx("web.S.body.yourRange"),
     safeRange: tx("web.S.body.safeRange"),

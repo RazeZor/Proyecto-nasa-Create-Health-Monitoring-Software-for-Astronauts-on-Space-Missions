@@ -21,11 +21,11 @@ const ARO: Record<Status, string> = { ok: "border-status-ok", watch: "border-sta
 
 /**
  * Lienzo 3D del cuerpo con sus marcadores táctiles. La escena (three.js) se carga aparte y solo en el navegador;
- * si el equipo no tiene WebGL se muestra `respaldo` (la figura 2D). En cada cuadro avisa a `onCuadro` de dónde cae
+ * si el equipo no tiene WebGL se avisa con un texto (el estado sigue en las tarjetas). En cada cuadro avisa a `onCuadro` de dónde cae
  * cada ancla, en coordenadas de la ventana, para las líneas guía de las tarjetas.
  */
 export function BodyStage({
-  estado, marcadores, onMarcador, onCuadro, onModelo, respaldo, children, className,
+  estado, marcadores, onMarcador, onCuadro, onModelo, children, className,
 }: {
   /** Se llama con `true` cuando el modelo anatómico real ya está en pantalla. */
   onModelo?: (real: boolean) => void
@@ -33,7 +33,6 @@ export function BodyStage({
   marcadores: Marcador[]
   onMarcador: (id: AnclaId) => void
   onCuadro?: (p: Proyeccion, lienzo: DOMRect) => void
-  respaldo: React.ReactNode
   children?: React.ReactNode
   className?: string
 }) {
@@ -85,7 +84,7 @@ export function BodyStage({
   return (
     <div className={cn("escenario relative overflow-hidden rounded-3xl border border-border", className)}>
       {fase === "sin-webgl" ? (
-        <div className="flex h-full items-center justify-center p-6">{respaldo}</div>
+        <div className="flex h-full items-center justify-center p-6 text-center text-muted-foreground">{S.body.sinWebgl}</div>
       ) : (
         <>
           <canvas ref={canvas} role="img" aria-label={S.body.stageLabel} className="absolute inset-0 size-full cursor-grab touch-pan-y active:cursor-grabbing" />

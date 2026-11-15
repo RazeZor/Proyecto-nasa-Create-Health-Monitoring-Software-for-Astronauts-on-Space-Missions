@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, ChevronRight, ListChecks, Rotate3d } from "lucide-react"
 import { useApp } from "@/components/app-context"
 import type { AnclaId } from "@/components/body/anatomia"
-import { BodyFigure } from "@/components/body/body-figure"
 import { BodyStage, type Marcador } from "@/components/body/body-stage"
 import { Ecg } from "@/components/body/ecg"
 import type { Proyeccion, Vista, ZonaCaliente } from "@/components/body/escena"
@@ -345,7 +344,6 @@ export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
           onMarcador={alMarcador}
           onCuadro={alCuadro}
           onModelo={setModeloReal}
-          respaldo={<BodyFigure zones={zones} selected={sel?.tipo === "zona" ? sel.id : null} onSelect={(id) => elegir({ tipo: "zona", id })} sex={sex} side="front" />}
         >
           {/* El cuerpo es el protagonista: sobre el lienzo solo va lo imprescindible, pequeño y en las esquinas */}
           {modeloReal === false && (

@@ -176,6 +176,7 @@
         "systems": "Body systems",
         "pains": "Today's symptoms",
         "loading3d": "Preparing the 3D model…",
+        "sinWebgl": "This device cannot show the 3D model. Each zone's status is still in the cards.",
         "stageLabel": "3D body model. Tap an indicator to zoom into the organ.",
         "yourRange": "Your range",
         "safeRange": "Safe range",

@@ -176,6 +176,7 @@
         "systems": "Sistemas del cuerpo",
         "pains": "Molestias de hoy",
         "loading3d": "Preparando el modelo 3D…",
+        "sinWebgl": "Este equipo no puede mostrar el modelo 3D. El estado de cada zona sigue en las tarjetas.",
         "stageLabel": "Modelo 3D del cuerpo. Toca un indicador para acercarte al órgano.",
         "yourRange": "Tu rango",
         "safeRange": "Rango seguro",

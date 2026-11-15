@@ -2,13 +2,17 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useApp } from "@/components/app-context"
-import { BodyFigure } from "@/components/body/body-figure"
 import { TrendsView } from "@/components/trends/trends-view"
+import { statusText } from "@/components/shared/status"
 import { S } from "@/lib/strings"
+import type { Status } from "@/lib/types"
+import { cn } from "@/lib/utils"
+
+const PUNTO: Record<Status, string> = { ok: "bg-status-ok", watch: "bg-status-watch", act: "bg-status-act" }
 
 /** Modo histórico de un tripulante: elige el día de misión, ve su cuerpo ese día en pequeño (minimapa) y sus tendencias. */
 export function Historico() {
-  const { day, setDay, analisis, sex } = useApp()
+  const { day, setDay, analisis } = useApp()
   const dias = analisis.missionDays
   const boton = "flex size-10 items-center justify-center hover:bg-accent disabled:opacity-40"
   return (
@@ -31,11 +35,16 @@ export function Historico() {
           </div>
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[8rem_1fr] lg:items-start">
-        <figure aria-label={S.crew.minicuerpo} className="mx-auto w-28 rounded-3xl border border-border bg-card p-3 lg:sticky lg:top-4">
-          <BodyFigure zones={analisis.zones(day)} selected={null} onSelect={() => {}} sex={sex} side="front" />
-          <figcaption className="mt-2 text-center text-xs text-muted-foreground">{S.crew.minicuerpo}</figcaption>
-        </figure>
+      <div className="grid gap-4 lg:grid-cols-[13rem_1fr] lg:items-start">
+        <ul aria-label={S.crew.minicuerpo} className="grid grid-cols-2 gap-2 rounded-3xl border border-border bg-card p-3 lg:sticky lg:top-4 lg:grid-cols-1">
+          {analisis.zones(day).map((z) => (
+            <li key={z.zone} className="flex items-center gap-2 text-sm font-semibold">
+              <span aria-hidden className={cn("size-3 shrink-0 rounded-full", PUNTO[z.status])} />
+              <span className="sr-only">{statusText[z.status]}: </span>
+              {S.zones[z.zone]}
+            </li>
+          ))}
+        </ul>
         <TrendsView />
       </div>
     </div>
