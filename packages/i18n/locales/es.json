@@ -391,6 +391,7 @@
         "noDose": "Sin dosimetría en este escenario",
         "noCabin": "Sin telemetría de cabina este día",
         "noEda": "Sin lectura EDA este día",
+        "sourceUnused": "No se usa en este escenario",
         "doseEquivalent": "dosis equivalente real",
         "emptyDose": "Sin serie diaria de dosimetría RadLab en este escenario.",
         "emptyFlux": "Sin serie diaria de protones GOES en este escenario.",
@@ -753,7 +754,7 @@
         "radiationHazard": "Radiación espacial (GCR y eventos de partículas solares)"
       },
       "about": {
-        "lead": "A mitad de camino a Marte, un mensaje al cirujano de vuelo tarda hasta 22 minutos por trayecto y la evacuación no es posible. VIGÍA permite que cada astronauta evalúe su propia salud y decida el siguiente paso a bordo, sin esperar a la Tierra.",
+        "lead": "En una misión a Marte, un mensaje al cirujano de vuelo puede tardar hasta 22 minutos por trayecto y la evacuación no es posible. VIGÍA permite que cada astronauta evalúe su propia salud y decida el siguiente paso a bordo, sin esperar a la Tierra.",
         "challenge": "NASA Space Apps Challenge 2026 · Reto «Create Health Monitoring Software for Astronauts on Space Missions»",
         "notDevice": "No es un dispositivo médico",
         "facts": {
@@ -811,8 +812,8 @@
         "environment": "Entorno",
         "realPhys": "Solo lo que el tripulante registra o el reloj mide. Nada es simulado.",
         "realEnv": "Mediciones: flujo de protones GOES (NOAA SWPC) y eventos de partículas solares DONKI (NASA CCMC) en sus fechas reales; dosis RadLab (ALTEA-Survey, ISS) y CO₂, temperatura y humedad de cabina EDA (Rodent Research-1, ISS) reancladas a la línea de tiempo de la misión.",
-        "demoPhys": "Un tripulante simulado de 30 días con tres anomalías inyectadas: deriva lenta, pico de CO₂ con dolor de cabeza y tormenta de 200 pfu. Rotulado «Simulado».",
-        "demoEnv": "Las mismas mediciones reales, más las anomalías inyectadas rotuladas «Simulado».",
+        "demoPhys": "Una tripulación simulada en un tránsito Tierra–Marte de 259 días (parte el 15-sep-2011), con tres anomalías inyectadas: pico de CO₂ con dolor de cabeza (día 60), deriva lenta (días 100 a 109) y tormenta de 200 pfu (días 131 y 132). Rotulado «Simulado».",
+        "demoEnv": "Los eventos de partículas solares son reales (DONKI, NASA CCMC) y caen en su fecha verdadera de 2011–2012, incluida la tormenta del 23-ene-2012. La trayectoria, el retardo, la dosis de tránsito (fondo de unos 1,8 mSv al día, la cifra publicada de MSL RAD), el CO₂ y el flujo de protones son del escenario y van rotulados «Simulado».",
         "scenarioNote": "Las series de años distintos se colocan en una misma línea de tiempo mediante un escenario explícito; la aplicación nunca presenta esa coincidencia como un hecho observado.",
         "privacy": "Privacidad por defecto",
         "privacyLead": "La privacidad es la regla; la seguridad de la tripulación es la excepción acotada.",
@@ -948,6 +949,9 @@
         "Microgravedad": "Microgravedad"
       },
       "start": {
+        "tagline": "Sabe cómo estás y qué hacer, sin esperar a la Tierra.",
+        "lead": "En una misión a Marte la respuesta del médico puede tardar hasta 44 minutos y no hay evacuación. VIGÍA convierte un registro diario de 90 segundos en un estado claro por sistema del cuerpo, con el motivo y el siguiente paso, a bordo y sin conexión.",
+        "diff": "Te compara contigo, no con un paciente promedio: detecta cambios lentos que un umbral fijo no ve y usa las mediciones de cabina y de clima espacial de la NASA y la NOAA para explicarlos.",
         "title": "¿Quién eres?",
         "subtitle": "Cada rol ve su propio tablero. Elige el tuyo para entrar.",
         "astronaut": "Tu salud, tu registro diario y tus alertas. Lo privado no sale de aquí.",

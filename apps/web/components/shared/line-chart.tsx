@@ -250,7 +250,9 @@ export function LineChart({
         )}
       </figcaption>
 
-      <table className="sr-only">
+      {/* La tabla va dentro de un bloque: una <table> con sr-only no recorta su alto y alarga la página. */}
+      <div className="sr-only">
+      <table>
         <caption>{label} ({unit})</caption>
         <tbody>
           {points.map((p) => (
@@ -258,6 +260,7 @@ export function LineChart({
           ))}
         </tbody>
       </table>
+      </div>
     </figure>
   )
 }

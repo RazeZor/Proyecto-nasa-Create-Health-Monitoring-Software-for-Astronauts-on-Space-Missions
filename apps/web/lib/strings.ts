@@ -110,6 +110,9 @@ export const S = {
     context: tx("web.S.layerLong.context"),
   } satisfies Record<Layer, string>,
   start: {
+    tagline: tx("web.S.start.tagline"),
+    lead: tx("web.S.start.lead"),
+    diff: tx("web.S.start.diff"),
     title: tx("web.S.start.title"),
     subtitle: tx("web.S.start.subtitle"),
     astronaut: tx("web.S.start.astronaut"),
@@ -402,6 +405,7 @@ export const S = {
     temp: tx("web.S.env.temp"),
     humidity: tx("web.S.env.humidity"),
     sources: tx("web.S.env.sources"),
+    sourceUnused: tx("web.S.env.sourceUnused"),
     noEvents: tx("web.S.env.noEvents"),
     noWindow: tx("web.S.env.noWindow"),
     simulatedDays: (dias: string | number) => tx("web.S.env.simulatedDays", { dias }),

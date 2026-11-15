@@ -185,7 +185,8 @@ export function EnvironmentView() {
   const cabinaDia = gold?.cabina.find((c) => c.dia_mision === day)
   const co2Dia = analisis.co2(day)
   const co2Status: Status = !co2Dia ? "ok" : co2Dia.mmHg > CO2_LIMIT_MMHG ? "act" : co2Dia.mmHg >= CO2_LIMIT_MMHG * 0.8 ? "watch" : "ok"
-  const eventosDonki = gold?.eventos ?? []
+  // Solo los eventos ocurridos hasta el día que se mira: la tripulación no conoce las tormentas futuras.
+  const eventosDonki = (gold?.eventos ?? []).filter((e) => parseInt(e.t_mision.slice(1), 10) <= day)
   const co2Anomalias = soloAnomalias(co2Simulados, (d) => (analisis.co2(d)?.mmHg ?? 0) > CO2_LIMIT_MMHG)
   const protonAnomalias = soloAnomalias(protonSimulados, (d) => (entorno.find((e) => e.dia_mision === d)?.flujo_protones_10mev_pfu ?? 0) >= PFU_THRESHOLD)
 
@@ -216,6 +217,13 @@ export function EnvironmentView() {
   const protonesReales = entorno.some((e) => e.flujo_protones_10mev_pfu != null && esReal(e.flujo_origen))
   const protonesSimulados = entorno.some((e) => e.flujo_protones_10mev_pfu != null && !esReal(e.flujo_origen))
   const co2Real = entorno.some((e) => analisis.co2(e.dia_mision) !== null && esReal(e.co2_origen))
+  // Qué fuentes aportan de verdad una medición a este escenario: las demás no se rotulan «Real» en la lista.
+  const fuenteEnUso: Record<string, boolean> = {
+    donki: (gold?.eventos.length ?? 0) > 0,
+    goes: protonesReales,
+    eda: co2Real || (gold?.cabina.length ?? 0) > 0,
+    radlab: !dosisViaje && !!gold?.dosis,
+  }
   const co2Simulado = entorno.some((e) => analisis.co2(e.dia_mision) !== null && !esReal(e.co2_origen))
   const escalaCo2 = Math.max(CO2_LIMIT_MMHG * 1.5, (co2Dia?.mmHg ?? 0) * 1.1)
   const notaDosis = dosisViaje ? S.trayecto.doseNote : gold?.dosis?.tipo === "equivalente" ? S.env.doseEquivalent : S.env.doseNote
@@ -464,7 +472,11 @@ export function EnvironmentView() {
                   <span className="min-w-0">
                     <span className="font-semibold">{s.label}</span> <span className="text-muted-foreground">· {s.feeds}</span>
                   </span>
-                  <ProvenanceTag provenance={s.provenance} className={cn(PROV, "h-auto whitespace-normal leading-snug")} />
+                  {fuenteEnUso[s.id] === false ? (
+                    <span className="rounded border border-border bg-background px-2.5 py-1.5 text-sm text-muted-foreground">{S.env.sourceUnused}</span>
+                  ) : (
+                    <ProvenanceTag provenance={s.provenance} className={cn(PROV, "h-auto whitespace-normal leading-snug")} />
+                  )}
                 </li>
               ))}
             </ul>

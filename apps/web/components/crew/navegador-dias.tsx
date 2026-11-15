@@ -8,7 +8,7 @@ const pos = (d: number, dias: number) => `${((d - 1) / Math.max(dias - 1, 1)) * 
 
 /**
  * Navegador de días de misión para pantalla táctil: el día grande con saltos de 1 y 7, y debajo la línea del viaje con lo
- * recorrido, la marca de «hoy» (el día actual del viaje, al que se vuelve con un toque) y los días con alerta, en ámbar o rojo según su gravedad (todo lo demás, en verde).
+ * recorrido (no se puede pasar de hoy: los días futuros aún no existen para la tripulación), la marca de «hoy» (el día actual del viaje, al que se vuelve con un toque) y los días con alerta, en ámbar o rojo según su gravedad (todo lo demás, en verde).
  */
 export function NavegadorDias({ dia, dias, hoy, fecha, alertas, onCambiar }: {
   dia: number
@@ -31,8 +31,8 @@ export function NavegadorDias({ dia, dias, hoy, fecha, alertas, onCambiar }: {
             <span className="text-sm text-muted-foreground">/{dias}</span>
             {fecha && <span className="block text-xs text-muted-foreground">{fecha}</span>}
           </p>
-          <button type="button" className={boton} onClick={() => onCambiar(dia + 1)} disabled={dia >= dias} aria-label={S.top.nextDay}><ChevronRight aria-hidden className="size-5" /></button>
-          <button type="button" className={boton} onClick={() => onCambiar(dia + 7)} disabled={dia >= dias} aria-label={S.crew.forward7}><ChevronsRight aria-hidden className="size-5" /></button>
+          <button type="button" className={boton} onClick={() => onCambiar(Math.min(hoy, dia + 1))} disabled={dia >= hoy} aria-label={S.top.nextDay}><ChevronRight aria-hidden className="size-5" /></button>
+          <button type="button" className={boton} onClick={() => onCambiar(Math.min(hoy, dia + 7))} disabled={dia >= hoy} aria-label={S.crew.forward7}><ChevronsRight aria-hidden className="size-5" /></button>
         </div>
         <button
           type="button" onClick={() => onCambiar(hoy)} disabled={dia === hoy}
@@ -56,7 +56,7 @@ export function NavegadorDias({ dia, dias, hoy, fecha, alertas, onCambiar }: {
           <span className="absolute top-1/2 h-6 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-status-ok" style={{ left: pos(hoy, dias) }} />
         </div>
         <input
-          type="range" min={1} max={dias} step={1} value={dia} onChange={(e) => onCambiar(Number(e.target.value))}
+          type="range" min={1} max={dias} step={1} value={dia} onChange={(e) => onCambiar(Math.min(hoy, Number(e.target.value)))}
           aria-label={S.top.missionDay} className="slider-dias relative z-10 block h-11 w-full cursor-pointer"
         />
         <div aria-hidden className="relative mt-1 h-5 font-mono text-xs text-muted-foreground">

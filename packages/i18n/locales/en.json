@@ -391,6 +391,7 @@
         "noDose": "No dosimetry in this scenario",
         "noCabin": "No cabin telemetry for this day",
         "noEda": "No EDA reading for this day",
+        "sourceUnused": "Not used in this scenario",
         "doseEquivalent": "real dose equivalent",
         "emptyDose": "No daily RadLab dosimetry series in this scenario.",
         "emptyFlux": "No daily GOES proton series in this scenario.",
@@ -753,7 +754,7 @@
         "radiationHazard": "Space radiation (GCR and solar particle events)"
       },
       "about": {
-        "lead": "Halfway to Mars a message to the flight surgeon takes up to 22 minutes each way and evacuation is not possible. VIGÍA lets each astronaut evaluate their own health and decide the next step on board, without waiting for Earth.",
+        "lead": "On a mission to Mars a message to the flight surgeon can take up to 22 minutes each way and evacuation is not possible. VIGÍA lets each astronaut evaluate their own health and decide the next step on board, without waiting for Earth.",
         "challenge": "NASA Space Apps Challenge 2026 · Challenge “Create Health Monitoring Software for Astronauts on Space Missions”",
         "notDevice": "Not a medical device",
         "facts": {
@@ -811,8 +812,8 @@
         "environment": "Environment",
         "realPhys": "Only what the crew member enters or the watch measures. Nothing is simulated.",
         "realEnv": "Measurements: GOES proton flux (NOAA SWPC) and DONKI solar particle events (NASA CCMC) on their real dates; RadLab dose (ALTEA-Survey, ISS) and EDA cabin CO₂, temperature and humidity (Rodent Research-1, ISS) re-anchored to the mission timeline.",
-        "demoPhys": "A simulated 30-day crew member with three injected anomalies: slow drift, CO₂ spike with headache and a 200 pfu storm. Labeled “Simulated”.",
-        "demoEnv": "The same real measurements, plus the injected anomalies labeled “Simulated”.",
+        "demoPhys": "A simulated crew on a 259-day Earth–Mars transit (departing 15 Sep 2011) with three injected anomalies: CO₂ spike with headache (day 60), slow drift (days 100 to 109) and a 200 pfu storm (days 131 and 132). Labeled “Simulated”.",
+        "demoEnv": "Solar particle events are real (DONKI, NASA CCMC) and fall on their true 2011–2012 dates, including the storm of 23 Jan 2012. The trajectory, the delay, the transit dose (background of about 1.8 mSv per day, the figure published from MSL RAD), CO₂ and proton flux belong to the scenario and are labeled “Simulated”.",
         "scenarioNote": "Series from different years are placed on one mission timeline by an explicit scenario; the app never presents that coincidence as an observed fact.",
         "privacy": "Privacy by default",
         "privacyLead": "Privacy is the rule; crew safety is the bounded exception.",
@@ -948,6 +949,9 @@
         "Microgravedad": "Microgravity"
       },
       "start": {
+        "tagline": "Know how you are and what to do next, without waiting for Earth.",
+        "lead": "On a mission to Mars the doctor's answer can take up to 44 minutes and there is no evacuation. VIGÍA turns a 90-second daily check-in into a clear status for each body system, with the reason and the next step, on board and offline.",
+        "diff": "It compares you with yourself, not with an average patient: it catches slow changes that a fixed threshold never sees, and uses cabin and space-weather measurements from NASA and NOAA to explain them.",
         "title": "Who are you?",
         "subtitle": "Each role sees its own dashboard. Pick yours to enter.",
         "astronaut": "Your health, your daily log and your alerts. Private data stays here.",
