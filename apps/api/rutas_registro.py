@@ -174,11 +174,14 @@ def listar_reportes(id: int = Depends(propio), lang: Literal["es", "en"] = "es",
     reportes = cola.leer_reportes(conn, id)
     if lang == "en":
         ruta = Path(__file__).resolve().parent / "demo" / "informes.json"
-        traducidos = {i["contenido"]["titulo"]: i.get("contenido_en") for i in json.loads(ruta.read_text(encoding="utf-8"))}
+        sembrados = {i["contenido"]["titulo"]: i for i in json.loads(ruta.read_text(encoding="utf-8"))}
         for r in reportes:
             c = r.get("contenido") or {}
-            if c.get("demo") and traducidos.get(c.get("titulo")):
-                r["contenido"] = {**c, **traducidos[c["titulo"]]}
+            origen = sembrados.get(c.get("titulo")) if c.get("demo") else None
+            if origen and origen.get("contenido_en"):
+                r["contenido"] = {**c, **origen["contenido_en"]}
+                if r.get("respuesta") and origen.get("respuesta_en"):
+                    r["respuesta"] = origen["respuesta_en"]
     return reportes
 
 

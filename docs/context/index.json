@@ -623,7 +623,7 @@
         },
         {
           "ruta": "apps/api/rutas_registro.py",
-          "lineas": 227,
+          "lineas": 230,
           "descripcion": "Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md).",
           "test": false,
           "simbolos": [
@@ -891,7 +891,7 @@
         },
         {
           "ruta": "apps/api/test_api_dashboard.py",
-          "lineas": 250,
+          "lineas": 251,
           "descripcion": "",
           "test": true,
           "simbolos": [

@@ -144,6 +144,7 @@ class Dashboard(unittest.TestCase):
         self.assertEqual(es["contenido"]["titulo"], "Informe diario · Día 23")
         self.assertEqual(en["contenido"]["titulo"], "Daily report · Day 23")
         self.assertTrue(en["contenido"]["demo"])
+        self.assertEqual(en["respuesta"], "Copy. Keep the extended sleep window and measure your HR again tomorrow.")
 
     def test_referencia_y_aviso_del_entorno_en_ingles(self):
         en = self.c.get("/entorno/referencia?lang=en").json()

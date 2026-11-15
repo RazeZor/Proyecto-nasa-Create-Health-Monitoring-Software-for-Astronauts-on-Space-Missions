@@ -57,7 +57,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [main.py](main.py) | 224 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 587 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
 | [rutas_dashboard.py](rutas_dashboard.py) | 242 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
-| [rutas_registro.py](rutas_registro.py) | 227 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
+| [rutas_registro.py](rutas_registro.py) | 230 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
 | [test_almacen_cola.py](test_almacen_cola.py) | 53 | — |
@@ -65,7 +65,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
 | [test_api.py](test_api.py) | 138 | — |
-| [test_api_dashboard.py](test_api_dashboard.py) | 250 | — |
+| [test_api_dashboard.py](test_api_dashboard.py) | 251 | — |
 | [test_api_registro.py](test_api_registro.py) | 208 | — |
 | [test_puente_reloj.py](test_puente_reloj.py) | 441 | — |
 
