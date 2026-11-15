@@ -11,6 +11,7 @@ Halfway to Mars a message to the flight surgeon takes up to 22 minutes each way 
 
 - **Live app:** https://vigia.smoraleslo.dev — demo scenario in English: https://vigia.smoraleslo.dev/?modo=demo&lang=en
 - **Final project report (English):** [auditoria/FINAL-PROJECT-REPORT.md](auditoria/FINAL-PROJECT-REPORT.md) · glossary: [auditoria/GLOSARIO.md](auditoria/GLOSARIO.md)
+- **Informe final del proyecto (Spanish):** [auditoria/INFORME-FINAL-DEL-PROYECTO.md](auditoria/INFORME-FINAL-DEL-PROYECTO.md) · decks in English and Spanish in [auditoria/](auditoria/)
 - **Technical report (Spanish, supplementary):** [documentacion/](documentacion/)
 - VIGÍA is a decision-support prototype, **not a medical device**.
 
