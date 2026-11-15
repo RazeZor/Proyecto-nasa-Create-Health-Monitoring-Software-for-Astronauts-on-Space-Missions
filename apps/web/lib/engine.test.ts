@@ -82,3 +82,15 @@ test("cambios de instrumento de la FC: manual -> reloj -> otro reloj, en orden d
     [{ dia_mision: 5, indicador: "fc" }, { dia_mision: 8, indicador: "fc" }])
   assert.deepEqual(cambiosDeInstrumento([e(2), e(3, "manual")]), [])
 })
+
+test("lineasBaseServidor expone mediana y MAD de tierra y vuelo para SQLite", () => {
+  const a = analizar([])
+  const lb = a.lineasBaseServidor()
+  assert.equal(lb.length, 8)
+  const fcTierra = lb.find((x) => x.indicador === "restingHr" && x.origen === "tierra")
+  const fcVuelo = lb.find((x) => x.indicador === "restingHr" && x.origen === "vuelo")
+  assert.ok(fcTierra && fcVuelo)
+  assert.equal(fcTierra.n, 14)
+  assert.equal(fcVuelo.n, 14)
+  assert.ok(a.alertasMotor.length > 0)
+})

@@ -29,6 +29,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `AlertCenter` | función | [apps/web/components/shell/alert-center.tsx](../../apps/web/components/shell/alert-center.tsx) |
 | `Alerta` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `AlertaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `AlertaInServidor` | interfaz | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `AlertaServidor` | interfaz | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `Alertas` | clase | [apps/api/test_almacen_alertas.py](../../apps/api/test_almacen_alertas.py) |
 | `AlertsView` | función | [apps/web/components/alerts/alerts-view.tsx](../../apps/web/components/alerts/alerts-view.tsx) |
 | `Almacen` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
@@ -81,6 +83,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `EnvDay` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `EnvironmentView` | función | [apps/web/components/environment/environment-view.tsx](../../apps/web/components/environment/environment-view.tsx) |
 | `ErrorState` | función | [apps/web/components/shared/states.tsx](../../apps/web/components/shared/states.tsx) |
+| `EscalamientoServidor` | interfaz | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `Esquema` | clase | [apps/api/test_almacen_db.py](../../apps/api/test_almacen_db.py) |
 | `Estado` | clase | [apps/api/test_puente_reloj.py](../../apps/api/test_puente_reloj.py) |
 | `EstadoReloj` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
@@ -109,11 +112,13 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Lectura` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `LecturaHistorial` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `LecturaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `LecturaServidor` | interfaz | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `Lecturas` | clase | [apps/api/test_almacen_lecturas.py](../../apps/api/test_almacen_lecturas.py) |
 | `Limpieza` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
 | `LineChart` | función | [apps/web/components/shared/line-chart.tsx](../../apps/web/components/shared/line-chart.tsx) |
 | `LineaBase` | clase | [apps/api/test_almacen_base.py](../../apps/api/test_almacen_base.py) |
 | `LineaBaseIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `LineaBaseServidor` | interfaz | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `LoadingState` | función | [apps/web/components/shared/states.tsx](../../apps/web/components/shared/states.tsx) |
 | `MOTOR` | constante | [apps/web/lib/strings.ts](../../apps/web/lib/strings.ts) |
 | `MiembroReloj` | interfaz | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
@@ -121,6 +126,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `OpcionesMotor` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `OrdenIn` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `OrdenReloj` | tipo | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
+| `OrigenLineaBase` | tipo | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `PRINCIPAL` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `Page` | función | [apps/web/app/about/page.tsx](../../apps/web/app/about/page.tsx) |
 | `Page` | función | [apps/web/app/alerts/page.tsx](../../apps/web/app/alerts/page.tsx) |
@@ -162,6 +168,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Sex` | tipo | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
 | `Simulacion` | clase | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
 | `SintomaIn` | clase | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `SintomaServidor` | interfaz | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `SolarEvent` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `Status` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `StatusBadge` | función | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
@@ -186,9 +193,12 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ZoneId` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `ZoneResult` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `actor` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `actorDeRol` | constante | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `agregar` | función | [tools/sincro-smart/sincro_smart.py](../../tools/sincro-smart/sincro_smart.py) |
+| `agregarContextoEscalamiento` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `agregar_contexto` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `agregar_contexto` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `alertaInDeMotor` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `alertas_visibles` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `analizar` | función | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `analizar` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
@@ -197,6 +207,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `anotar` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `archivos` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `avanzar` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `avanzarCola` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `avanzar_cola` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `bloque` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `bloque` | función | [tools/sincro-smart/sincro_smart.py](../../tools/sincro-smart/sincro_smart.py) |
@@ -209,7 +220,9 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `cargarEscenarioDiario` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarKpiSimulacion` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarPanelGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
+| `cargarRegistrosCombinados` | función | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `catalogo` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
+| `checkInsDeServidor` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `check_sql` | función | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
 | `ciclo_de_vida` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `clean_donki` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
@@ -225,6 +238,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `construir` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `construir_panel` | función | [pipelines/reanclaje/panel.py](../../pipelines/reanclaje/panel.py) |
 | `corrimiento` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
+| `crearAlerta` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `crear_alerta` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `crear_lectura` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `crear_mision` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
@@ -237,6 +251,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `dato_invalido` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `descargarCsvReloj` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `detectarIdioma` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
+| `diaDeTMision` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `dia_de_vuelo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `diario` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
 | `dir_smart` | función | [tools/sincro-smart/sincro_smart.py](../../tools/sincro-smart/sincro_smart.py) |
@@ -268,11 +283,13 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `generar_caso_referencia` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `generar_mision` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `guardar` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
+| `guardarLineaBase` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `guardar_linea_base` | función | [apps/api/almacen/base.py](../../apps/api/almacen/base.py) |
 | `guardar_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `historial` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `idioma_actual` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `indicadorApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `indicadorMotorApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `indicadoresUi` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `ingest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `isAdaptation` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
@@ -280,6 +297,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `lecturasDeCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `leer` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `leerConfigReloj` | constante | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
+| `leerLineaBase` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `leerMensajes` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `leerReloj` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `leerTripulacionReloj` | constante | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `leer_caso_referencia` | función | [apps/api/main.py](../../apps/api/main.py) |
@@ -297,8 +316,13 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `leer_serie` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_sintomas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `lint` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
+| `listarAlertas` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `listarEscalamientosPropios` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `listarEscalamientosRecibidos` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `listarLecturas` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `listarPanelesGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `listarReportes` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `listarSintomas` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `listar_alertas` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `listar_escalamientos` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `listar_escenarios` | función | [apps/api/main.py](../../apps/api/main.py) |
@@ -353,6 +377,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `reporteDeServidor` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `resolver_id` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `responder` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
+| `responderReporte` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `responder_reporte` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `retardoMin` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `ruta_por_defecto` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
@@ -361,6 +386,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `sembrar_informes_demo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `siguienteEstado` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `sincronizar` | función | [apps/web/lib/sincronizar.ts](../../apps/web/lib/sincronizar.ts) |
+| `sincronizarMotorConServidor` | función | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `sincronizarRegistros` | función | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `sintomasDeCheckIn` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `spo2Sugerida` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
@@ -371,6 +397,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `t` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `t` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `tReal` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `tRealDeDia` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `t_canonico` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `t_mision` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `texto_completo` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |

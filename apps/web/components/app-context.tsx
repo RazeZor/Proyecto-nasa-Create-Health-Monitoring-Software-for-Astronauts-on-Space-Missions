@@ -4,8 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { cargarCatalogo, type Catalogo } from "@/lib/catalogo"
 import { type Analisis, analizar } from "@/lib/engine"
 import { enviarOrdenReloj, INTERVALO_SONDEO_MS, leerReloj, type OrdenReloj, type RespuestaReloj, siguienteEstado } from "@/lib/reloj"
-import { store } from "@/lib/storage"
-import { sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
+import { cargarRegistrosCombinados, sincronizarMotorConServidor, sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
 import type { CheckInEntry, DeviceState, MissionProfile, ProfileId, Role } from "@/lib/types"
 
@@ -85,7 +84,10 @@ function Sesion({ catalogo, children }: { catalogo: Catalogo; children: React.Re
   const [sex, setSex] = useState<Sex>("female")
   const [voice, setVoice] = useState(false)
   const [checkIns, setCheckIns] = useState<CheckInEntry[]>([])
-  const recargarRegistros = useCallback(async () => setCheckIns(await store.listCheckIns()), [])
+  const recargarRegistros = useCallback(
+    async () => setCheckIns(await cargarRegistrosCombinados(catalogo.historial.dia_actual)),
+    [catalogo.historial.dia_actual],
+  )
   const analisis = useMemo(() => analizar(checkIns, catalogo.historial), [checkIns, catalogo])
 
   const dias = catalogo.historial.dias_vuelo
@@ -93,9 +95,12 @@ function Sesion({ catalogo, children }: { catalogo: Catalogo; children: React.Re
   const toggleTheme = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), [])
 
   useEffect(() => {
-    void sincronizarRegistros() // reintenta lo que quedó pendiente sin red
-    void recargarRegistros()
+    void sincronizarRegistros().then(() => recargarRegistros())
   }, [recargarRegistros])
+
+  useEffect(() => {
+    void sincronizarMotorConServidor(analisis)
+  }, [analisis])
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark")

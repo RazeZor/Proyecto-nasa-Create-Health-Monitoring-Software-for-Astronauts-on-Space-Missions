@@ -140,6 +140,15 @@ async function pedir<T>(ruta: string, tripulante?: number): Promise<T> {
   return (await res.json()) as T
 }
 
+/** Lee el hilo de mensajes con Tierra desde la API (`GET /tripulantes/{id}/mensajes`). */
+export async function leerMensajes(tripulante: number): Promise<ThreadMessage[] | null> {
+  try {
+    return mensajesUi(await pedir<MensajeApi[]>(`/tripulantes/${tripulante}/mensajes`, tripulante))
+  } catch {
+    return null
+  }
+}
+
 /** Pide todo el catálogo; null si la API no responde o falta algo (la app muestra el aviso y reintenta). */
 export async function cargarCatalogo(tripulante: number): Promise<Catalogo | null> {
   try {
