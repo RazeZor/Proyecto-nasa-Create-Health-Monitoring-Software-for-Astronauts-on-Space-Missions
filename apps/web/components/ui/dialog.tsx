@@ -5,6 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
+import { S } from "@/lib/strings"
 import { XIcon } from "lucide-react"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -72,7 +73,7 @@ function DialogContent({
           >
             <XIcon
             />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{S.common.close}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
@@ -110,7 +111,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close render={<Button variant="outline" />}>
-          Close
+          {S.common.close}
         </DialogPrimitive.Close>
       )}
     </div>

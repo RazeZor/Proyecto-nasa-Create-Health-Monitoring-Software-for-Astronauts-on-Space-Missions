@@ -1,9 +1,11 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
-import { cargarCatalogo, type Catalogo } from "@/lib/catalogo"
+import { cargarCatalogo, type Catalogo, type Historial } from "@/lib/catalogo"
 import { type Analisis, analizar } from "@/lib/engine"
 import { enviarOrdenReloj, INTERVALO_SONDEO_MS, leerReloj, type OrdenReloj, type RespuestaReloj, siguienteEstado } from "@/lib/reloj"
+import { rolDeRuta } from "@/lib/roles"
 import { leerModo, store, usarModo } from "@/lib/storage"
 import { sincronizarAlertasRojas, sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
@@ -15,7 +17,6 @@ interface AppState {
   profile: MissionProfile
   setProfileId: (id: ProfileId) => void
   role: Role
-  setRole: (r: Role) => void
   theme: "dark" | "light"
   toggleTheme: () => void
   device: DeviceState
@@ -83,9 +84,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 function Estado({ mensaje, detalle, reintentar }: { mensaje: string; detalle?: string; reintentar?: () => void }) {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center" role={reintentar ? "alert" : "status"}>
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center" role={reintentar ? "alert" : "status"} aria-busy={!reintentar}>
+      {!reintentar && (
+        <span className="flex items-center gap-3 font-semibold tracking-wide" aria-hidden>
+          <span className="size-3 animate-pulse rounded-full bg-primary" />
+          VIGÍA
+        </span>
+      )}
       <p className="text-lg font-semibold">{mensaje}</p>
       {detalle && <p className="max-w-md text-sm text-muted-foreground">{detalle}</p>}
+      {reintentar && <p className="max-w-md text-xs text-muted-foreground">{S.app.disclaimer}</p>}
       {reintentar && (
         <button type="button" onClick={reintentar} className="min-h-11 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground">
           {S.common.retry}
@@ -95,18 +103,34 @@ function Estado({ mensaje, detalle, reintentar }: { mensaje: string; detalle?: s
   )
 }
 
+const CLAVE_RELOJ = "vigia:reloj"
+
 function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Catalogo; mode: Mode; setMode: (m: Mode) => void; recargar: () => void; children: React.ReactNode }) {
   const [day, setDayRaw] = useState(catalogo.historial.dia_actual)
   const [profileId, setProfileId] = useState<ProfileId>("transit")
-  const [role, setRole] = useState<Role>("astronaut")
+  // el rol sale de la ruta (/astronauta, /oficial, /medico); en el inicio, sin rol, rige el del astronauta
+  const role: Role = rolDeRuta(usePathname() ?? "") ?? "astronaut"
   const [theme, setTheme] = useState<"dark" | "light">("light")
   const [device, setDeviceRaw] = useState<DeviceState>("disconnected")
   const [reloj, setReloj] = useState<RespuestaReloj | null>(null)
   const conectandoDesde = useRef(0)
   const setDevice = useCallback((s: DeviceState) => {
     if (s === "connecting") conectandoDesde.current = Date.now()
+    // se recuerda si el usuario dejó el reloj conectado, para no pedir «Conectar» en cada apertura
+    try {
+      window.localStorage.setItem(CLAVE_RELOJ, s === "disconnected" ? "off" : "on")
+    } catch {
+      // sin almacenamiento (ventana privada): se pide conectar cada vez
+    }
     setDeviceRaw(s)
   }, [])
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(CLAVE_RELOJ) === "on") setDevice("connecting")
+    } catch {
+      // ídem
+    }
+  }, [setDevice])
   const [simulator, setSimulator] = useState(false)
   const [liveHr, setLiveHr] = useState<number | null>(null)
   const [sex, setSex] = useState<Sex>("female")
@@ -191,8 +215,9 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
     [],
   )
 
-  // Simulador: solo cuando no hay reloj real transmitiendo.
-  const simulando = simulator && device !== "connected"
+  // Simulador: solo en modo demo y cuando no hay reloj real transmitiendo. En modo real nunca se inventa un pulso
+  // («nothing is simulated», readme): el interruptor de /device no tiene efecto ahí.
+  const simulando = mode === "demo" && simulator && device !== "connected"
   useEffect(() => {
     if (!simulando) {
       setLiveHr(null)
@@ -205,10 +230,24 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   const hrEnVivo = device === "connected" ? (reloj?.reloj?.fc_lpm ?? null) : liveHr
 
   const value = useMemo(
-    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo, mode, setMode, online, pending, escalations }),
+    () => ({ day, setDay, profile, setProfileId, role, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo, mode, setMode, online, pending, escalations }),
     [mode, setMode, online, pending, escalations, day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, hrEnVivo, reloj, ordenReloj, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
+}
+
+/**
+ * Muestra `children` con los datos de otro tripulante, en solo lectura: su historial analizado por el motor, sin los
+ * registros locales ni el pulso del reloj del que mira. Lo usan el oficial médico y el cirujano de vuelo.
+ */
+export function VerComo({ historial, children }: { historial: Historial; children: React.ReactNode }) {
+  const app = useApp()
+  const analisis = useMemo(() => analizar([], historial, app.profile.cabinPressureMmHg), [historial, app.profile.cabinPressureMmHg])
+  const valor = useMemo(
+    () => ({ ...app, analisis, catalogo: { ...app.catalogo, historial }, checkIns: [], liveHr: null, reloj: null, pending: 0, escalations: {} }),
+    [app, analisis, historial],
+  )
+  return <Ctx.Provider value={valor}>{children}</Ctx.Provider>
 }
 
 export function useApp() {

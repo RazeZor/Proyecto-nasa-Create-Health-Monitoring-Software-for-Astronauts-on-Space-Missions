@@ -13,6 +13,7 @@ import { ICONO_INDICADOR, IconoPulso, IconoRegistro } from "@/components/shared/
 import { LineChart } from "@/components/shared/line-chart"
 import { LayerChip, ProvenanceTag, StatusBadge, STATUS_ICON, statusSurface, statusText } from "@/components/shared/status"
 import { BASELINE_SWITCH_DAY } from "@/lib/engine"
+import { rutaDe } from "@/lib/roles"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import type { DailyVitals, IndicatorId, Status, Symptom, ZoneId } from "@/lib/types"
@@ -188,7 +189,8 @@ function Tarjeta({ lectura, unidad, compacta, activa, onClick, refCb }: {
   )
 }
 
-export function BodyView() {
+/** `ajeno`: el cuerpo de otro tripulante, en solo lectura (sin registro diario ni enlace a sus tendencias). */
+export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
   const { day, sex, setSex, analisis, catalogo, mode, theme, liveHr } = useApp()
   const lecturas = useLecturas()
   const zones = analisis.zones(day)
@@ -197,6 +199,8 @@ export function BodyView() {
   /** true cuando el lienzo ya muestra el modelo anatómico real (uno solo: no hay selector de modelo corporal). */
   const [modeloReal, setModeloReal] = useState<boolean | null>(null) // null: aún cargando
   const since = useSinceLastCheckIn()
+  /** Modo real sin un solo registro: no se afirma «todo en orden» de lo que nadie midió. */
+  const sinDatos = mode === "real" && (ajeno || since === null) && catalogo.historial.lecturas.length === 0
   const OverallIcon = STATUS_ICON[overall]
   const driver = zones.find((z) => z.status === overall && z.layer)
   const hoy = analisis.vitals(day).find((v) => v.day === day)
@@ -268,7 +272,7 @@ export function BodyView() {
       }}
     />
   )
-  const procedencia = <ProvenanceTag provenance={{ kind: mode === "real" ? "measured" : "simulated" }} />
+  const procedencia = sinDatos ? null : <ProvenanceTag provenance={{ kind: mode === "real" ? "measured" : "simulated" }} />
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
@@ -280,10 +284,10 @@ export function BodyView() {
             <OverallIcon aria-hidden className="size-9" />
           </span>
           <div className="min-w-0">
-            <p className="eyebrow">{S.body.overall} · {S.common.day} {day}</p>
-            <h1 id="overall" className={cn("text-3xl font-bold leading-tight md:text-4xl", statusText[overall])}>{S.body.headline[overall]}</h1>
+            <p className="eyebrow">{S.body.overall} · {S.common.day} {day} · <span className="normal-case">{S.body.flow}</span></p>
+            <h1 id="overall" className={cn("text-3xl font-bold leading-tight md:text-4xl", sinDatos ? "text-muted-foreground" : statusText[overall])}>{sinDatos ? S.body.never : S.body.headline[overall]}</h1>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-pretty text-sm md:text-base">
-              {S.statusLong[overall]}
+              {sinDatos ? S.banners.realEmptyDetail : S.statusLong[overall]}
               {driver?.layer && (
                 <button type="button" onClick={() => elegir({ tipo: "zona", id: driver.zone })} className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-current/30 bg-card/70 px-3 text-sm font-semibold">
                   {S.zones[driver.zone]} <ArrowRight aria-hidden className="size-4" />
@@ -310,14 +314,16 @@ export function BodyView() {
           </span>
           <Ecg lpm={lpm} className="hidden h-14 w-40 text-[#e5484d] sm:block xl:w-56" />
         </button>
-        <div className="flex flex-col items-stretch gap-1">
-          <Link href="/check-in" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-md hover:bg-primary/90 active:scale-[0.98]">
-            <IconoRegistro className="size-7" /> {S.body.startCheckIn}
-          </Link>
-          <p className="text-center text-xs text-muted-foreground">
-            {since === undefined ? " " : since === null ? S.body.never : S.body.sinceLast(since)}
-          </p>
-        </div>
+        {!ajeno && (
+          <div className="flex flex-col items-stretch gap-1">
+            <Link href={rutaDe("astronaut", "check-in")} className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-lg font-semibold text-primary-foreground shadow-md hover:bg-primary/90 active:scale-[0.98]">
+              <IconoRegistro className="size-7" /> {S.body.startCheckIn}
+            </Link>
+            <p className="text-center text-xs text-muted-foreground">
+              {since === undefined ? " " : since === null ? S.body.never : S.body.sinceLast(since)}
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Indicadores a los lados, cuerpo al centro */}
@@ -411,9 +417,9 @@ export function BodyView() {
                 activa ? "border-primary ring-2 ring-primary/40" : "border-border",
               )}
             >
-              <Icono aria-hidden className={cn("size-6 shrink-0", statusText[z.status], z.status !== "ok" && "animate-pulse")} />
+              <Icono aria-hidden className={cn("size-6 shrink-0", sinDatos ? "text-muted-foreground" : statusText[z.status], !sinDatos && z.status !== "ok" && "animate-pulse")} />
               <span className="min-w-0 flex-1 leading-tight">{S.zones[z.zone]}</span>
-              <span className={cn("hidden font-mono text-xs uppercase xl:inline", statusText[z.status])}>{S.status[z.status]}</span>
+              <span className={cn("hidden font-mono text-xs uppercase xl:inline", sinDatos ? "text-muted-foreground" : statusText[z.status])}>{sinDatos ? S.body.notMeasured : S.status[z.status]}</span>
             </button>
           )
         })}
@@ -423,6 +429,7 @@ export function BodyView() {
         <h2 id="rem-h" className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <ListChecks aria-hidden className="size-4" /> {S.body.reminders}
         </h2>
+        <p className="mt-1 text-xs text-muted-foreground">{S.body.remindersExample}</p>
         <ul className="mt-2 grid gap-x-8 gap-y-1.5 text-sm md:grid-cols-2">
           {catalogo.recordatorios.map((r) => (
             <li key={r} className="flex gap-2">
@@ -556,9 +563,11 @@ export function BodyView() {
         <Siguiente estado={z.status} texto={z.next} />
         <Bloque titulo={S.trends.whatItIs}><p className="text-sm leading-relaxed text-muted-foreground">{info.whatItIs}</p></Bloque>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href="/trends" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-5 text-base font-semibold hover:bg-accent">
-            {S.body.seeTrend} <ArrowRight aria-hidden className="size-5" />
-          </Link>
+          {!ajeno && (
+            <Link href={rutaDe("astronaut", "trends")} className="inline-flex min-h-12 items-center gap-2 rounded-full border border-border px-5 text-base font-semibold hover:bg-accent">
+              {S.body.seeTrend} <ArrowRight aria-hidden className="size-5" />
+            </Link>
+          )}
           {procedencia}
         </div>
       </aside>

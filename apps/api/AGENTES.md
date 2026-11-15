@@ -146,7 +146,7 @@ La app solo conoce esta API. Lo que todavía no sale de una fuente real lo sirve
 | `GET /fichas` | todas las fichas de indicadores (`packages/schemas/fichas`), en el orden de `index.json` |
 | `GET /fichas/{id}` | una ficha; id fuera del índice: 404 |
 | `GET /entorno/referencia` | `limite_carrera_msv`, `co2_limite_mmhg`, `umbral_protones_pfu`, `fuentes`, `dosis_previa_carrera_msv` (simulada) |
-| `GET /tripulantes/{id}/historial?modo=real\|demo` | lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`, con `modo`, `dia_actual`, `dias_vuelo`, `escenario_entorno` y `aviso_entorno`. `real` (por defecto): lo que el tripulante ingresó (`naturaleza: Real`; `null` en lo no medido) y el entorno del panel `mision-real`. `demo`: tripulante simulado con anomalías inyectadas (`Simulado`) y el panel `mision-vigia`. En `entorno_diario`: `co2_ppm_max_horario` (real, en ppm: se convierte con la presión del perfil) o `co2_mmhg_max_horario` (simulado), `flujo_protones_10mev_pfu`, `co2_origen` y `flujo_origen` (`naturaleza`, `fuente`, `fecha_real`), `eventos_sep` (DONKI, reales) y `modo_tormenta` |
+| `GET /tripulantes/{id}/historial?modo=real\|demo` | (propio; el oficial médico lo lee de cualquier tripulante de su misión y queda en la auditoría como `lectura_ajena`; otro, 403) lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`, con `modo`, `dia_actual`, `dias_vuelo`, `escenario_entorno` y `aviso_entorno`. `real` (por defecto): lo que el tripulante ingresó (`naturaleza: Real`; `null` en lo no medido) y el entorno del panel `mision-real`. `demo`: tripulante simulado con anomalías inyectadas (`Simulado`) y el panel `mision-vigia`. En `entorno_diario`: `co2_ppm_max_horario` (real, en ppm: se convierte con la presión del perfil) o `co2_mmhg_max_horario` (simulado), `flujo_protones_10mev_pfu`, `co2_origen` y `flujo_origen` (`naturaleza`, `fuente`, `fecha_real`), `eventos_sep` (DONKI, reales) y `modo_tormenta` |
 | `GET /tripulacion` | `[{id, alias, rol}]` de la misión de quien pregunta (para saber quién es el oficial médico). Pide `X-Tripulante` |
 | `GET /tripulantes/{id}/recordatorios` | lista de textos del día (simulada) |
 | `GET /tripulantes/{id}/mensajes` | hilo con tierra `{id, de, autor, dia, hora, texto}`: ejemplo más las respuestas reales a tus reportes |
@@ -155,24 +155,38 @@ Las tres de `/tripulantes/{id}/...` siguen la regla de privacidad del registro (
 
 ## Reloj en vivo (Galaxy Watch4, vía smart-monitor)
 
-El reloj no habla con esta API: habla con el servidor de [smart-monitor](https://github.com/smoraleslo/smart-monitor) (otra unidad desplegable, puerto 8765). Con `SMART_URL=ws://<host>:8765/live` la API se conecta a ese `/live` como un panel más (`puente_reloj.py`), guarda en memoria el último estado de cada tripulante y persiste cada **chequeo guiado válido** como lecturas `frecuencia_cardiaca_reposo` y `spo2` con `origen: sensor`, `metodo: galaxy_watch4`, `naturaleza: Real`. Sin `SMART_URL` el puente no arranca y las rutas responden igual, sin datos.
+El reloj no habla con esta API: habla con el servidor de [smart-monitor](https://github.com/smoraleslo/smart-monitor) (otra unidad desplegable, puerto 8765). La API se conecta a su `/live` como un panel más (`puente_reloj.py`), guarda en memoria el último estado de cada tripulante y persiste cada **chequeo guiado válido de un reloj vinculado** como lecturas `frecuencia_cardiaca_reposo` y `spo2` con `origen: sensor`, `metodo: galaxy_watch4:<dispositivo>`, `naturaleza: Real`.
+
+Configuración (variables de entorno; la API carga el `.env` de la raíz del repo al arrancar sin pisar lo ya definido):
+
+| Variable | Efecto |
+| --- | --- |
+| `SMART_URL` | `/live` de smart-monitor. Si falta, `ws://127.0.0.1:8765/live`: el puente intenta conectar con reintentos (1, 2, 4… 30 s) y expone `configurado: true, conectado: false, error` |
+| `SMART_DESACTIVADO=1` | apaga el puente (`configurado: false, desactivado: true`) |
+| `SMART_TRIPULANTES` | `"Sebastián=1,Ana=2"`: nombre del reloj → id. Se suma a los vínculos hechos por la API (tabla `reloj_vinculo`) |
+| `SMART_AUTOREGISTRO=1` | crea un tripulante nuevo (astronauta, primera misión) por cada nombre desconocido. Apagado por defecto: sin él un reloj sin vincular no escribe nada |
 
 | Endpoint | Devuelve |
 | --- | --- |
-| `GET /reloj/estado` | `{configurado, conectado, ultima_vez, error}` del puente; sin datos de nadie |
-| `GET /tripulantes/{id}/reloj` | `{puente, vinculado, reloj}`; `reloj` trae `fc_lpm`, `ultima_lectura`, `serie` (120 puntos), `resumen`, `chequeos` (14), `chequeo_estado`, `chequeo_progreso`, `notas`, `avisos` |
+| `GET /reloj/estado` | `{configurado, desactivado, conectado, ultima_vez, error, url_live, ip_lan, url_reloj_sugerida, avisos}` del puente; sin datos de nadie. `url_reloj_sugerida` = lo que va en el campo «Servidor» del reloj (`ws://<ip_lan>:8765/watch`, o el host de `SMART_URL` si no es local; null sin IP). `avisos` = avisos del servidor sin tripulante (p. ej. tolerancia rechazada) |
+| `GET /tripulantes/{id}/reloj` | `{puente, nombres, vinculado, reloj}`; `nombres` = nombres de reloj que la API asocia al tripulante; `reloj` trae `fc_lpm`, `ultima_lectura`, `recibido_hace_s` (segundos desde que el puente recibió la última lectura, con el reloj del servidor: úsalo para la vigencia, no el `t` del reloj), `serie` (360 puntos), `resumen`, `chequeos` (14), `chequeo_estado` y `chequeo_progreso` (null tras 120 s sin novedades o al desconectarse), `notas` (en vivo + `resumen.notas`, sin repetir), `avisos` |
+| `POST /tripulantes/{id}/reloj/vinculo` | `{nombre}` → 201 `{nombre, tripulante_id, t_real}`: «este es mi reloj». 422 si es un nombre por defecto; 409 si otro tripulante ya lo tiene. Repetirlo actualiza la fecha |
+| `DELETE /tripulantes/{id}/reloj/vinculo` | quita los vínculos del tripulante (`?nombre=` para uno solo) → `{eliminados}`. No borra lecturas ni toca `SMART_TRIPULANTES` |
 | `POST /tripulantes/{id}/reloj/ordenes` | `{tipo: medir_spo2 \| iniciar_chequeo}` → 202; 503 si el puente no está conectado; 422 si el servidor del reloj no conoce al tripulante |
 
-- **Identidad:** el reloj identifica a la persona por su nombre (campo «Tripulante» del reloj). `SMART_TRIPULANTES="Sebastián=1,Ana=2"` lo traduce a ids; si un nombre no está, se compara con el `alias` del tripulante, sin distinguir mayúsculas.
-- **Privacidad:** las dos rutas `/tripulantes/{id}/reloj...` siguen la regla del registro (otro tripulante: 403; sin cabecera: 401).
+- **Identidad y vínculo:** el reloj identifica a la persona por su nombre (campo «Tripulante» del reloj). Un nombre está vinculado si aparece en `SMART_TRIPULANTES`, en `reloj_vinculo` (ruta de vínculo) o coincide exactamente (sin distinguir mayúsculas) con el `alias` de un tripulante. Solo los relojes vinculados se persisten y se ven en `/tripulantes/{id}/reloj`; los demás solo aparecen en `/reloj/tripulacion` con `vinculado: false`.
+- **Nunca se guardan:** los nombres por defecto (`Tripulante XXXX`, patrón `^Tripulante \w{4}$`; `Tripulante previo`; `Sin nombre`) ni los chequeos de un nombre con `relojes_conectados > 1` (dos relojes mezclan instrumentos): en ese caso queda un aviso `{tipo: "puente", codigo: "relojes_duplicados"}` en `avisos` del tripulante.
+- **`metodo`:** `galaxy_watch4:<dispositivo>` (`dispositivo` = `gw-` + 8 caracteres del ANDROID_ID, el instrumento según A.6); si el chequeo no trae `dispositivo`, `galaxy_watch4`. Es el mismo formato que usa la app al precargar la FC del reloj, así que un cambio de instrumento solo aparece cuando cambia el reloj de verdad.
+- **Privacidad:** las rutas `/tripulantes/{id}/reloj...` siguen la regla del registro (otro tripulante: 403; sin cabecera: 401).
 - **Qué llega al motor:** solo la FC en reposo y el SpO₂ del chequeo, nunca una lectura suelta de 1 Hz (anexo A.6: el ejercicio no debe disparar la capa A). El resto (`serie`, `resumen`, sueño) es para mostrar, y el sueño es experimental.
 - Un 202 en una orden solo dice que salió hacia el servidor del reloj: si el reloj no está conectado, el aviso llega después en `avisos`.
+- El estado en memoria se pierde al reiniciar la API; al reconectar, `history` reemplaza la serie (sin duplicados por `t`). Las escrituras en SQLite van en un hilo aparte (`asyncio.to_thread`) para no frenar el bucle del WebSocket.
 
 Más rutas del reloj:
 
 | Endpoint | Devuelve |
 | --- | --- |
-| `GET /reloj/tripulacion` | `[{nombre, conectado, relojes_conectados, ultima_lectura, chequeo_hoy}]`: dato mínimo para coordinar, sin valores fisiológicos. `chequeo_hoy`: `true` válido, `false` fallido, `null` sin hacer. Pide `X-Tripulante` |
+| `GET /reloj/tripulacion` | `[{nombre, conectado, relojes_conectados, ultima_lectura, chequeo_hoy, nombre_por_defecto, vinculado, tripulante_id}]`: dato mínimo para coordinar, sin valores fisiológicos. `chequeo_hoy`: `true` válido, `false` fallido, `null` sin hacer. `vinculado`/`tripulante_id`: a qué tripulante va cada nombre (null = a nadie). Pide `X-Tripulante` |
 | `GET /reloj/config` | `{tolerancia, presets}` de movimiento del chequeo (estricta, normal, flexible, personalizada) |
 | `PUT /reloj/config` | `{preset, mov_quieto?, mov_inquieto?, mov_sacudida?, max_inquietos_pct?}` → 202 y se aplica a todos los relojes; confirma con el `GET`. Pide `X-Tripulante` |
 | `GET /tripulantes/{id}/reloj/export.csv` | lecturas por segundo del reloj del tripulante (CSV de smart-monitor); `desde=YYYY-MM-DD` opcional |

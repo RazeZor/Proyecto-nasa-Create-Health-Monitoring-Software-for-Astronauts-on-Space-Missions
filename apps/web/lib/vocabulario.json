@@ -75,7 +75,7 @@
   "retardo_min": {
     "station": 0,
     "transit": 12,
-    "transit-docked": 12,
+    "transit-docked": 0,
     "lunar": 0,
     "mars": 22
   },

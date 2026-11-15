@@ -4,7 +4,10 @@ shortcut: el tripulante se declara en la cabecera X-Tripulante sin autenticació
 sesión firmada antes de uso fuera de localhost. Los datos personales solo los lee su dueño; las alertas
 las ve el dueño y, si son rojas, su destinatario (privacidad §5.4).
 """
+import json
 import sqlite3
+from pathlib import Path
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, StrictFloat, StrictInt
@@ -164,9 +167,22 @@ def crear_reporte(cuerpo: ReporteIn, id: int = Depends(propio), conn=Depends(con
 
 
 @router.get("/tripulantes/{id}/reportes", responses=ERRORES, summary="Lista los reportes propios")
-def listar_reportes(id: int = Depends(propio), conn=Depends(conexion)):
-    """Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null)."""
-    return cola.leer_reportes(conn, id)
+def listar_reportes(id: int = Depends(propio), lang: Literal["es", "en"] = "es", conn=Depends(conexion)):
+    """Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null). Con `lang=en`
+    los informes de ejemplo (`contenido.demo`) salen con el `contenido_en` del sembrado; los reales se guardan en el
+    idioma en que se escribieron."""
+    reportes = cola.leer_reportes(conn, id)
+    if lang == "en":
+        ruta = Path(__file__).resolve().parent / "demo" / "informes.json"
+        sembrados = {i["contenido"]["titulo"]: i for i in json.loads(ruta.read_text(encoding="utf-8"))}
+        for r in reportes:
+            c = r.get("contenido") or {}
+            origen = sembrados.get(c.get("titulo")) if c.get("demo") else None
+            if origen and origen.get("contenido_en"):
+                r["contenido"] = {**c, **origen["contenido_en"]}
+                if r.get("respuesta") and origen.get("respuesta_en"):
+                    r["respuesta"] = origen["respuesta_en"]
+    return reportes
 
 
 @router.post("/reportes/avanzar", responses={401: ERRORES[401], 422: ERRORES[422]},

@@ -120,7 +120,9 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
     const unidad = MOTOR.unidad[indicador]
     const env = entornoApi.get(a.dia_mision)
     const sep = env?.eventos_sep?.[0]
-    const valor = a.valor === null ? (sep ? MOTOR.eventoSep(sep.sepID) : "") : a.capa === "C" ? `CUSUM ${a.valor}` : `${a.valor} ${unidad}`
+    // una tormenta disparada por un evento SEP de DONKI con el flujo medido bajo el umbral se nombra por el evento, no por el flujo
+    const porEvento = a.indicador === "protones" && sep && (a.valor === null || a.valor < PROTONES_TORMENTA_PFU)
+    const valor = porEvento ? MOTOR.eventoSep(sep.sepID) : a.valor === null ? "" : a.capa === "C" ? `CUSUM ${a.valor}` : `${a.valor} ${unidad}`
     const origen = a.indicador === "co2" ? textoOrigen(env?.co2_origen)
       : a.indicador === "protones" ? (sep ? `${MOTOR.real} · ${sep.fuente} · ${sep.t_real.slice(0, 10)}` : textoOrigen(env?.flujo_origen))
       : ""

@@ -1,3 +1,6 @@
+"use client"
+
+// Cliente: los textos salen de `S`, que resuelve el idioma en el navegador; en el servidor saldría siempre en español.
 import { ArrowRight } from "lucide-react"
 import { IconoCapas, IconoDatos, IconoLimites, IconoPrivacidad, IconoResultados, IconoSinConexion } from "@/components/about/iconos"
 import { ICONO_INDICADOR, IconoAlertas, IconoCuerpo, IconoEntorno, IconoInformes, IconoRegistro, IconoTendencias, type Icono } from "@/components/shared/iconos"
@@ -166,6 +169,19 @@ export function AboutView() {
           <p className="mt-5 text-lg leading-relaxed">{S.about.offlineBody}</p>
         </section>
       </div>
+
+      {/* 5b. En la Tierra: el mismo patrón donde el médico está lejos */}
+      <section aria-labelledby="tierra" className={tarjeta}>
+        <Titulo id="tierra" icono={IconoEntorno} titulo={S.about.earth} entrada={S.about.earthLead} />
+        <dl className="mt-5 grid gap-3 md:grid-cols-2">
+          {S.about.earthList.map(([k, v]) => (
+            <div key={k} className="rounded-2xl bg-muted/60 p-4">
+              <dt className="text-lg font-semibold leading-tight">{k}</dt>
+              <dd className="mt-1 text-base leading-snug text-muted-foreground">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
       {/* 5. Marco de riesgos */}
       <section aria-labelledby="riesgos" className={tarjeta}>

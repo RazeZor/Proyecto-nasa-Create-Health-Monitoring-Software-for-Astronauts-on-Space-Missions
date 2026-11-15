@@ -2,6 +2,7 @@
   "id": "sueno",
   "nombre": "Sleep (total duration)",
   "que_es": "Hours slept per night.",
+  "unidad": "h",
   "como_se_mide_en_vuelo": {
     "estacion": "Bedtime and wake-up time in the check-in; actigraphy as a cross-check. Total duration only.",
     "transito": "Bedtime and wake-up time in the check-in; actigraphy as a cross-check. Total duration only.",

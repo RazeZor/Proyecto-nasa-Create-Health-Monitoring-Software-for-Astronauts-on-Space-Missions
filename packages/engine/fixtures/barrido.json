@@ -1,0 +1,82 @@
+{
+ "misiones_por_combinacion": 200,
+ "semilla": 2026,
+ "elegidos": {
+  "k": 0.75,
+  "h": 5.0
+ },
+ "barrido": [
+  {
+   "k": 0.5,
+   "h": 4.0,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0016,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "A1_deriva_deteccion_pct": 100.0,
+   "A1_dias_hasta_alerta_mediana": 7.0
+  },
+  {
+   "k": 0.5,
+   "h": 5.0,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "A1_deriva_deteccion_pct": 100.0,
+   "A1_dias_hasta_alerta_mediana": 7.0
+  },
+  {
+   "k": 0.5,
+   "h": 6.0,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "A1_deriva_deteccion_pct": 100.0,
+   "A1_dias_hasta_alerta_mediana": 8.0
+  },
+  {
+   "k": 0.75,
+   "h": 4.0,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "A1_deriva_deteccion_pct": 100.0,
+   "A1_dias_hasta_alerta_mediana": 7.0
+  },
+  {
+   "k": 0.75,
+   "h": 5.0,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "A1_deriva_deteccion_pct": 100.0,
+   "A1_dias_hasta_alerta_mediana": 8.0
+  },
+  {
+   "k": 0.75,
+   "h": 6.0,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "A1_deriva_deteccion_pct": 98.5,
+   "A1_dias_hasta_alerta_mediana": 8.0
+  },
+  {
+   "k": 1.0,
+   "h": 4.0,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "A1_deriva_deteccion_pct": 100.0,
+   "A1_dias_hasta_alerta_mediana": 8.0
+  },
+  {
+   "k": 1.0,
+   "h": 5.0,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "A1_deriva_deteccion_pct": 96.0,
+   "A1_dias_hasta_alerta_mediana": 9.0
+  },
+  {
+   "k": 1.0,
+   "h": 6.0,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "A1_deriva_deteccion_pct": 87.5,
+   "A1_dias_hasta_alerta_mediana": 9.0
+  }
+ ]
+}

@@ -7,7 +7,7 @@ import { IconoEspera, IconoNave, IconoRespuesta, IconoSobre, IconoTierra, IconoV
 import { Trayecto } from "@/components/reports/trayecto"
 import { formatDelay, useReportState } from "@/components/shared/delay-countdown"
 import { EmptyState, PageHeader } from "@/components/shared/states"
-import { encolarReporte, listarReportes, reporteDeServidor, responderReporte, retardoMin } from "@/lib/api-registro"
+import { encolarReporte, listarReportes, reporteDeServidor, responderReporte, retardoEnvio } from "@/lib/api-registro"
 import { estadoReporte, type ReporteServidor } from "@/lib/cola"
 import { S } from "@/lib/strings"
 import { TRIPULANTE } from "@/lib/sincronizacion"
@@ -131,15 +131,18 @@ export function ReportsView() {
   const tripulante = TRIPULANTE ?? 1
   const [cola, setCola] = useState<ReporteServidor[] | null>(null)
   const [fallo, setFallo] = useState(false)
+  const [sinEnlace, setSinEnlace] = useState(false)
   const [encolando, setEncolando] = useState(false)
-  const leer = useCallback(() => listarReportes(tripulante).then(setCola), [tripulante])
+  // sin red la API no responde: se avisa y se conserva lo último leído, nunca se muestra una cola vacía falsa
+  const leer = useCallback(() => listarReportes(tripulante).then((c) => { setSinEnlace(c === null); if (c !== null) setCola(c) }), [tripulante])
   useEffect(() => {
     leer()
     const id = window.setInterval(leer, 3000)
     return () => window.clearInterval(id)
   }, [leer])
   // los informes de ejemplo sembrados para la demo (o fechados en el futuro) no son del tripulante real
-  const visibles = cola && cola.filter((x) => mode === "demo" || !(x.contenido?.demo || Date.parse(x.creado_t_real) > Date.now() + 86_400_000))
+  // cada modo ve solo lo suyo: en demo los informes de ejemplo; en real los propios (ni los de demo ni los fechados en el futuro)
+  const visibles = cola && cola.filter((x) => (mode === "demo" ? Boolean(x.contenido?.demo) : !(x.contenido?.demo || Date.parse(x.creado_t_real) > Date.now() + 86_400_000)))
   const reports: Report[] | null = visibles && visibles.map(reporteDeServidor)
   const porId = new Map((cola ?? []).map((x) => [x.id, x]))
   const surgeon = role === "surgeon"
@@ -156,13 +159,16 @@ export function ReportsView() {
   // lo que aún viaja va arriba: es lo que el tripulante está esperando ver avanzar
   const listado = surgeon ? llegados : [...recientes.filter((r) => !haLlegado(r)), ...llegados]
 
+  // en modo real no se envía a tierra un informe de un día sin registro: no habría nada que informar
+  const sinRegistroHoy = mode === "real" && !analisis.vitals(day).some((x) => x.day === day)
+
   async function queue() {
     setEncolando(true)
     // el informe lleva lo que pide §6.1: lectura, línea base, entorno y acción, todo del día y con su procedencia
     const v = analisis.vitals(day).find((x) => x.day === day)
     const medida = (valor: number | null | undefined, unidad: string) => (valor == null ? null : `${valor} ${unidad}`)
     const lectura = v
-      ? [medida(v.restingHr, "lpm"), medida(v.systolic, "mmHg"), medida(v.spo2, "% SpO2"), medida(v.tempC, "°C"),
+      ? [medida(v.restingHr, catalogo.indicadores.restingHr.unit), medida(v.systolic, "mmHg"), medida(v.spo2, "% SpO2"), medida(v.tempC, "°C"),
           v.sleepH == null ? null : `${S.reports.sleep} ${v.sleepH} h`, v.mood == null ? null : `${S.reports.mood} ${v.mood}/10`].filter(Boolean).join(" · ")
       : S.reports.noReading
     const banda = analisis.band("restingHr").findLast((b) => b.day <= day)
@@ -176,10 +182,10 @@ export function ReportsView() {
       tormenta ? `${S.reports.stormOn} (${tormenta.source})` : null,
     ].filter(Boolean).join(" · ") || S.reports.noEnvironment
     const alerta = analisis.alerts(day).find((a) => a.day === day && !a.informative)
-    // demo: el retardo real del perfil se acorta a 1 min
-    const id = await encolarReporte(profile.id, new Date().toISOString(), tripulante, Math.min(retardoMin(profile.id), 1), {
+    // modo real: el retardo del perfil; demo: se acorta a 1 min para ver la cola avanzar
+    const id = await encolarReporte(profile.id, new Date().toISOString(), tripulante, retardoEnvio(mode, profile.id), {
       titulo: S.reports.dailyTitle(day),
-      resumen: S.reports.summary(S.status[analisis.overall(day)], profile.label, formatDelay(profile.delayMinutes)),
+      resumen: (mode === "demo" ? S.reports.summary : S.reports.summaryReal)(S.status[analisis.overall(day)], profile.label, formatDelay(profile.delayMinutes)),
       lectura,
       linea_base: lineaBase,
       entorno,
@@ -197,7 +203,7 @@ export function ReportsView() {
     <div className="mx-auto max-w-7xl">
       <PageHeader title={S.reports.title} subtitle={surgeon ? S.reports.surgeonNote : S.reports.subtitle}>
         {!surgeon && (
-          <button type="button" onClick={queue} disabled={encolando}
+          <button type="button" onClick={queue} disabled={encolando || sinRegistroHoy} title={sinRegistroHoy ? S.reports.needCheckIn : undefined}
             className="inline-flex min-h-14 items-center gap-3 rounded-full bg-primary px-7 text-lg font-semibold text-primary-foreground transition-transform hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60">
             <IconoSobre className="size-6" />
             {encolando ? S.reports.sending : S.reports.send}
@@ -205,6 +211,8 @@ export function ReportsView() {
         )}
       </PageHeader>
       {fallo && <p role="alert" className="mb-5 rounded-2xl border border-status-act/40 bg-status-act/12 p-4 text-base font-medium">{S.reports.sendFailed}</p>}
+      {sinEnlace && <p role="status" className="mb-5 rounded-2xl border border-border bg-muted p-4 text-base font-medium">{S.reports.offline}</p>}
+      {sinRegistroHoy && !surgeon && <p role="status" className="mb-5 rounded-2xl border border-border bg-muted p-4 text-base">{S.reports.needCheckIn}</p>}
 
       {/* El enlace de un vistazo: cuánto tarda un mensaje, qué viaja y qué espera respuesta */}
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-4 rounded-3xl border border-border bg-card px-5 py-4 shadow-sm">
@@ -218,7 +226,7 @@ export function ReportsView() {
             <span className="eyebrow block">{S.reports.oneWay}</span>
             <span className="block text-4xl font-semibold leading-tight tabular-nums">{formatDelay(profile.delayMinutes)}</span>
           </p>
-          <p className="min-w-0 text-sm leading-snug text-muted-foreground">{S.reports.oneWayHint(profile.label)}</p>
+          <p className="min-w-0 text-sm leading-snug text-muted-foreground">{(mode === "demo" ? S.reports.oneWayHint : S.reports.oneWayHintReal)(profile.label)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           {!surgeon && <Dato etiqueta={S.reports.countTransit} valor={reports ? enCamino : "—"}><IconoSobre className="size-7" /></Dato>}

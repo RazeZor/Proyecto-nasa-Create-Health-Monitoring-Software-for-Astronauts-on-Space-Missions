@@ -2,6 +2,7 @@
   "id": "frecuencia_cardiaca_reposo",
   "nombre": "Resting heart rate",
   "que_es": "Beats per minute with the body at rest.",
+  "unidad": "bpm",
   "como_se_mide_en_vuelo": {
     "estacion": "Wrist or garment sensor. The day's resting value, never a single isolated reading.",
     "transito": "Wrist or garment sensor. The day's resting value, never a single isolated reading.",

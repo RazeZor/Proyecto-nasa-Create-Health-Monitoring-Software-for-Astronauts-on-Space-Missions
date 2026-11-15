@@ -319,7 +319,7 @@ export function EnvironmentView() {
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title={S.env.flux}
             footer={<>
-              {(protonesReales || protonPoints.length === 0) && <ProvenanceTag provenance={REAL("GOES · NOAA SWPC", fechaVentana(gold, "goes"))} className={PROV} />}
+              {protonesReales && <ProvenanceTag provenance={REAL("GOES · NOAA SWPC", fechaVentana(gold, "goes"))} className={PROV} />}
               {protonesSimulados && <ProvenanceTag provenance={SIMULADO} className={PROV} />}
               <Simulados dias={protonAnomalias} />
             </>}>
@@ -333,7 +333,7 @@ export function EnvironmentView() {
 
           <Panel title={`${S.env.co2} (mmHg @ ${profile.cabinPressureMmHg} mmHg)`}
             footer={<>
-              {(co2Real || co2Points.length === 0) && <ProvenanceTag provenance={REAL("EDA · NASA OSDR", fechaVentana(gold, "eda"))} className={PROV} />}
+              {co2Real && <ProvenanceTag provenance={REAL("EDA · NASA OSDR", fechaVentana(gold, "eda"))} className={PROV} />}
               {co2Simulado && <ProvenanceTag provenance={SIMULADO} className={PROV} />}
               <Simulados dias={co2Anomalias} />
             </>}>
@@ -346,7 +346,7 @@ export function EnvironmentView() {
           </Panel>
 
           <Panel title={S.env.dose} note={notaDosis}
-            footer={<ProvenanceTag provenance={REAL("RadLab · NASA OSDR", fechaVentana(gold, "radlab"))} className={PROV} />}>
+            footer={dosisPoints.length > 0 && <ProvenanceTag provenance={REAL("RadLab · NASA OSDR", fechaVentana(gold, "radlab"))} className={PROV} />}>
             {dosisPoints.length === 0 ? (
               <EmptyState message={S.env.emptyDose} />
             ) : (
@@ -355,7 +355,7 @@ export function EnvironmentView() {
           </Panel>
 
           <Panel title={S.env.spe}
-            footer={<ProvenanceTag provenance={REAL("DONKI SEP · NASA CCMC", fechaVentana(gold, "donki"))} className={PROV} />}>
+            footer={eventosDonki.length > 0 && <ProvenanceTag provenance={REAL("DONKI SEP · NASA CCMC", fechaVentana(gold, "donki"))} className={PROV} />}>
             {eventosDonki.length === 0 ? (
               <EmptyState message={S.env.noEvents} />
             ) : (
@@ -418,7 +418,7 @@ export function EnvironmentView() {
           {gold && (
             <div className="min-w-0">
               <h3 className="text-lg font-semibold">{S.env.scenario} · <span className="font-mono">{gold.escenario}</span></h3>
-              <p className="mt-1.5 text-pretty text-base leading-relaxed text-muted-foreground">{gold.aviso}</p>
+              <p className="mt-1.5 text-pretty text-base leading-relaxed text-muted-foreground">{catalogo.historial.aviso_entorno ?? gold.aviso}</p>
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full min-w-[30rem] text-left text-base">
                   <caption className="eyebrow pb-2 text-left">{S.env.windows}</caption>

@@ -184,10 +184,10 @@ export async function cargarCatalogo(tripulante: number, modo: Mode = "real"): P
     const [perfiles, fichas, entorno, historial, recordatorios, mensajes] = await Promise.all([
       pedir<Record<string, PerfilApi>>("/perfiles"),
       pedir<FichaJson[]>(`/fichas?lang=${IDIOMA}`),
-      pedir<ReferenciaEntorno>("/entorno/referencia"),
-      pedir<Historial>(`/tripulantes/${tripulante}/historial?modo=${modo}`, tripulante),
+      pedir<ReferenciaEntorno>(`/entorno/referencia?lang=${IDIOMA}`),
+      pedir<Historial>(`/tripulantes/${tripulante}/historial?modo=${modo}&lang=${IDIOMA}`, tripulante),
       pedir<string[]>(`/tripulantes/${tripulante}/recordatorios?lang=${IDIOMA}`, tripulante),
-      pedir<MensajeApi[]>(`/tripulantes/${tripulante}/mensajes?modo=${modo}`, tripulante),
+      pedir<MensajeApi[]>(`/tripulantes/${tripulante}/mensajes?modo=${modo}&lang=${IDIOMA}`, tripulante),
     ])
     const crudo: CatalogoCrudo = { perfiles, fichas, entorno, historial, recordatorios, mensajes }
     const catalogo = armar(crudo, false)
@@ -202,3 +202,7 @@ export async function cargarCatalogo(tripulante: number, modo: Mode = "real"): P
     }
   }
 }
+
+/** Historial de otro tripulante de la misión: solo lo concede el servidor al oficial médico (queda auditado). */
+export const cargarHistorialAjeno = (tripulante: number, actor: number, modo: Mode): Promise<Historial | null> =>
+  pedir<Historial>(`/tripulantes/${tripulante}/historial?modo=${modo}&lang=${IDIOMA}`, actor).catch(() => null)

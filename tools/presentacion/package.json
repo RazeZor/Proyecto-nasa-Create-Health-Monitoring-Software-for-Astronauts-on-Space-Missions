@@ -1,0 +1,14 @@
+{
+  "name": "vigia-presentacion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Genera las presentaciones de VIGÍA (demo oficial de 7 diapositivas y pitch) y las capturas limpias de la app.",
+  "scripts": {
+    "capturas": "node capturas-finales.js",
+    "decks": "node deck.js ../../docs/capturas ../../docs/brand/png ../../auditoria"
+  },
+  "dependencies": {
+    "pptxgenjs": "^3.12.0",
+    "puppeteer-core": "^25.0.0"
+  }
+}

@@ -120,3 +120,25 @@ class Api(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Entorno(unittest.TestCase):
+    """`cargar_env`: el .env de la raíz se carga con la biblioteca estándar, sin pisar el entorno."""
+
+    def test_cargar_env_no_pisa_ni_define_vacias(self):
+        os.environ["VIGIA_PRUEBA_FIJA"] = "shell"
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                ruta = Path(d) / ".env"
+                ruta.write_text("# comentario\nVIGIA_PRUEBA_FIJA=archivo\nVIGIA_PRUEBA_A=\"Sebastián=1\"\n"
+                                "export VIGIA_PRUEBA_B = ws://127.0.0.1:8765/live \nVIGIA_PRUEBA_VACIA=\nsin_igual\n",
+                                encoding="utf-8")
+                definidas = main.cargar_env(ruta)
+            self.assertEqual(definidas, {"VIGIA_PRUEBA_A": "Sebastián=1", "VIGIA_PRUEBA_B": "ws://127.0.0.1:8765/live"})
+            self.assertEqual(os.environ["VIGIA_PRUEBA_FIJA"], "shell")
+            self.assertEqual(os.environ["VIGIA_PRUEBA_A"], "Sebastián=1")
+            self.assertNotIn("VIGIA_PRUEBA_VACIA", os.environ)
+            self.assertEqual(main.cargar_env(Path(d) / "no-existe"), {})
+        finally:
+            for clave in ("VIGIA_PRUEBA_FIJA", "VIGIA_PRUEBA_A", "VIGIA_PRUEBA_B"):
+                os.environ.pop(clave, None)

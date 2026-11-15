@@ -1,8 +1,8 @@
 /**
  * Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje).
- * Si la API (vía el proxy /vigia-api) está activa, consume el gold verificado por SHA-256;
- * si está sin conexión, recurre al resumen embebido de los escenarios gold para que la
- * interfaz funcione 100 % offline.
+ * Si la API (vía el proxy /vigia-api) está activa, consume el gold verificado por SHA-256 y
+ * guarda una copia local de cada respuesta; sin conexión devuelve esa última copia (caché
+ * local, rotulada en la interfaz) y, si no la hay, null. No hay datos embebidos.
  */
 
 // Por defecto, el proxy del mismo origen (next.config.mjs); NEXT_PUBLIC_VIGIA_API_URL lo salta con una URL directa.

@@ -2,6 +2,7 @@
   "id": "glucosa",
   "nombre": "Blood glucose",
   "que_es": "Concentration of glucose in the blood.",
+  "unidad": "mg/dL",
   "como_se_mide_en_vuelo": {
     "estacion": "Wearing gloves; prick with a lancet; the drop stays attached to the finger and is brought up to the strip so that it fills by capillary action. Gauze and biological waste bag at hand. Note the strip's enzyme.",
     "transito": "Wearing gloves; prick with a lancet; the drop stays attached to the finger and is brought up to the strip so that it fills by capillary action. Gauze and biological waste bag at hand. Note the strip's enzyme.",

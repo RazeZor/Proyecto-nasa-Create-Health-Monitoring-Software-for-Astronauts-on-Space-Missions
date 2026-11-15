@@ -19,11 +19,11 @@ class Esquema(unittest.TestCase):
     def test_migrar_crea_todas_las_tablas(self):
         nombres = {f[0] for f in self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         self.assertTrue(TABLAS <= nombres)
-        self.assertEqual(migrar(conectar(":memory:")), 3)
+        self.assertEqual(migrar(conectar(":memory:")), 4)
 
     def test_migrar_es_idempotente(self):
-        self.assertEqual(migrar(self.conn), 3)
-        self.assertEqual(migrar(self.conn), 3)
+        self.assertEqual(migrar(self.conn), 4)
+        self.assertEqual(migrar(self.conn), 4)
 
     def test_llaves_foraneas_activas(self):
         with self.assertRaises(sqlite3.IntegrityError):
@@ -73,7 +73,7 @@ class Esquema(unittest.TestCase):
             [h.join() for h in hilos]
             self.assertEqual(errores, [])
             conn = conectar(ruta)
-            self.assertEqual(migrar(conn), 3)
+            self.assertEqual(migrar(conn), 4)
             conn.close()
 
     def test_migracion_fallida_no_deja_esquema_parcial(self):

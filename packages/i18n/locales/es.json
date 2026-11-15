@@ -24,7 +24,18 @@
       "dato_invalido": "dato inválido: {detalle}",
       "linea_base_no_existe": "no hay línea base para ese indicador y origen",
       "reloj_sin_conexion": "el servidor del reloj no está conectado (revisa SMART_URL y que smart-monitor esté encendido)",
-      "reloj_sin_tripulante": "el servidor del reloj no conoce a este tripulante (revisa SMART_TRIPULANTES o el nombre en el reloj)"
+      "reloj_sin_tripulante": "el servidor del reloj no conoce a este tripulante (revisa SMART_TRIPULANTES o el nombre en el reloj)",
+      "reloj_nombre_por_defecto": "«{nombre}» es el nombre de fábrica del reloj: cambia el campo Tripulante en el reloj antes de vincularlo.",
+      "reloj_nombre_ocupado": "El nombre «{nombre}» ya está vinculado a otro tripulante."
+    },
+    "autor": {
+      "cirujano": "Cirujano de Vuelo"
+    },
+    "reloj": {
+      "aviso_relojes_duplicados": "Hay más de un reloj conectado como «{nombre}»: el chequeo no se guardó para no mezclar instrumentos."
+    },
+    "aviso": {
+      "entorno_reanclado": "Cada serie es una medición real reanclada a la línea de tiempo de misión. Que series de fechas reales distintas coincidan en un día de misión es una decisión del escenario, no un hecho observado (informe §3.4)."
     }
   },
   "web": {
@@ -32,7 +43,7 @@
       "app": {
         "name": "VIGÍA",
         "tagline": "Monitor de autosalud de la tripulación",
-        "disclaimer": "Prototipo de apoyo a la decisión. No es un dispositivo médico. Los datos ambientales rotulados «Real» son mediciones de NASA y NOAA; en modo demo la fisiología de la tripulación es simulada.",
+        "disclaimer": "Prototipo de apoyo a la decisión. No es un dispositivo médico. Los umbrales son reglas de prototipo con fuente citada, no límites clínicos validados para vuelo. Los datos ambientales rotulados «Real» son mediciones de NASA y NOAA; en modo demo la fisiología de la tripulación es simulada.",
         "skip": "Saltar al contenido principal"
       },
       "nav": {
@@ -74,7 +85,9 @@
         "realEmptyCta": "Hacer mi registro",
         "realEmptyDemo": "Ver modo demo",
         "offline": "Sin enlace con la API: trabajando con la copia local",
-        "offlineDetail": "Puedes registrar, ver tu estado y tus alertas. Los registros y avisos pendientes se envían solos al volver el enlace."
+        "offlineDetail": "Puedes registrar, ver tu estado y tus alertas. Los registros y avisos pendientes se envían solos al volver el enlace.",
+        "publicShared": "Sitio público de demostración.",
+        "publicSharedDetail": "En este sitio el modo real usa un tripulante de prueba compartido por todos los visitantes: lo que registres lo verán otros y puede haber registros de otras personas. No introduzcas datos personales."
       },
       "status": {
         "ok": "OK",
@@ -205,7 +218,9 @@
           "mood": "Cómo te sientes hoy, del 1 al 10.",
           "glucose": "Azúcar disponible en la sangre.",
           "massKg": "Tu peso: refleja músculo y hueso."
-        }
+        },
+        "remindersExample": "Recordatorios de ejemplo: aún no hay un plan de actividades de a bordo conectado.",
+        "flow": "Registras → VIGÍA compara → Sabes qué hacer"
       },
       "checkin": {
         "title": "Registro diario",
@@ -550,7 +565,11 @@
         "journey": "Trayecto del informe de la nave a Tierra",
         "sending": "Encolando…",
         "threadEmpty": "Aún no hay mensajes.",
-        "surgeonEmpty": "Aún no ha llegado ningún informe."
+        "surgeonEmpty": "Aún no ha llegado ningún informe.",
+        "summaryReal": "Estado general {estado}. Enviado desde {perfil} con el retardo de ida del perfil ({retardo}).",
+        "offline": "Sin enlace con la API: se muestra la última cola leída. Los informes nuevos necesitan enlace.",
+        "oneWayHintReal": "Lo que tarda un mensaje en llegar a Tierra desde {perfil}. El informe se entrega cuando pasa ese tiempo.",
+        "needCheckIn": "Hoy no hay registro: haz tu registro diario antes de encolar un informe a Tierra."
       },
       "device": {
         "title": "Dispositivo",
@@ -570,7 +589,7 @@
           "lost": "Conexión perdida"
         },
         "lostDetail": "Señal perdida. Comprueba que el reloj esté en tu muñeca, con el monitoreo activo y en la misma red.",
-        "bridgeOff": "La API no tiene configurado el servidor del reloj (SMART_URL). Mientras tanto puedes usar el simulador.",
+        "bridgeOff": "El puente del reloj está desactivado en la API (SMART_DESACTIVADO=1). Quítalo del .env y reinicia la API para usar el reloj.",
         "bridgeDown": "La API no logra conectarse con el servidor del reloj (smart-monitor). Se reintenta sola.",
         "notLinked": "El servidor del reloj aún no conoce a este tripulante: revisa el nombre configurado en el reloj o SMART_TRIPULANTES.",
         "model": "Modelo",
@@ -603,7 +622,7 @@
         "hrv5": "HRV últimos 5 min (RMSSD)",
         "sleepEst": "Sueño de anoche (estimado)",
         "experimental": "experimental",
-        "instrumentChange": "Cambio de instrumento ({detalle}): la FC en reposo de antes y de después no es comparable. VIGÍA reinicia su línea base en vuelo: durante 7 días registrados la FC solo se evalúa con los límites clínicos (A.6).",
+        "instrumentChange": "Cambio de instrumento ({detalle}): la FC en reposo de antes y de después no es comparable. VIGÍA reinicia su línea base en vuelo: durante 8 días registrados la FC solo se evalúa con los límites clínicos (A.6).",
         "crew": "Relojes de la tripulación",
         "crewDesc": "Solo el estado de cada reloj y si hubo chequeo hoy. Los valores fisiológicos los ve su dueño.",
         "crewEmpty": "El servidor del reloj aún no informa tripulantes.",
@@ -654,7 +673,28 @@
         "off": "Desactivado",
         "export": "Exportar datos",
         "exportDesc": "Las lecturas del reloj en un archivo CSV.",
-        "instrumentTitle": "Cambio de instrumento"
+        "instrumentTitle": "Cambio de instrumento",
+        "bpm": "lpm",
+        "simulatorRealHint": "Solo en modo demo. En modo real VIGÍA no inventa ningún pulso.",
+        "steps": {
+          "api": "La API de VIGÍA responde",
+          "server": "La API habla con el servidor del reloj (smart-monitor)",
+          "watch": "Tu reloj está vinculado y transmite al servidor",
+          "wrist": "Hay pulso reciente en la muñeca"
+        },
+        "stepFix": {
+          "api": "La API no responde. Comprueba que esté en marcha (uvicorn, puerto 8000) y que haya enlace; se reintenta sola.",
+          "server": "Arranca smart-monitor en la máquina de la API: en su carpeta server, «SMART_HOST=0.0.0.0 python server.py». La API lo busca en {urlLive} y se reconecta sola.",
+          "watchUnlinked": "En la app del reloj escribe Servidor = {urlReloj} y, en Tripulante, un nombre tuyo (no el de fábrica); pulsa Iniciar monitoreo. Después elige tu reloj aquí.",
+          "watchOffline": "Tu reloj («{nombres}») no está transmitiendo. Abre la app del reloj, comprueba Servidor = {urlReloj} y pulsa Iniciar monitoreo.",
+          "wrist": "Ponte el reloj y espera unos segundos: la primera lectura llega en menos de 10 s."
+        },
+        "linkTitle": "Relojes que ve el servidor sin vincular",
+        "linkThis": "Este es mi reloj: «{nombre}»",
+        "linkNone": "El servidor aún no ve ningún reloj con nombre propio.",
+        "linkDefaultNames": "Con nombre de fábrica (no se pueden vincular hasta cambiarlo en el reloj): {nombres}.",
+        "linkDone": "Reloj vinculado. En unos segundos aparecerá tu pulso.",
+        "linkFailed": "No se pudo vincular: {motivo}"
       },
       "catalog": {
         "hazards": {
@@ -682,17 +722,38 @@
         "challenge": "NASA Space Apps Challenge 2026 · Reto «Create Health Monitoring Software for Astronauts on Space Missions»",
         "notDevice": "No es un dispositivo médico",
         "facts": {
-          "checkin": { "v": "< 90 s", "l": "registro diario" },
-          "delay": { "v": "22 min", "l": "retardo máximo por trayecto" },
-          "layers": { "v": "3 capas", "l": "de detección, más el entorno" },
-          "offline": { "v": "Sin conexión", "l": "todo funciona a bordo" }
+          "checkin": {
+            "v": "< 90 s",
+            "l": "registro diario"
+          },
+          "delay": {
+            "v": "22 min",
+            "l": "retardo máximo por trayecto"
+          },
+          "layers": {
+            "v": "3 capas",
+            "l": "de detección, más el entorno"
+          },
+          "offline": {
+            "v": "Sin conexión",
+            "l": "todo funciona a bordo"
+          }
         },
         "how": "Cómo decide",
         "howLead": "Tres preguntas sobre cada registro, de la más urgente a la más sutil, con el entorno como contexto.",
         "steps": {
-          "log": { "t": "Registras", "d": "Pulso, presión, SpO₂, temperatura, sueño, ánimo y síntomas, en menos de 90 segundos." },
-          "compare": { "t": "VIGÍA compara", "d": "Con límites clínicos, con tu propia línea base y con el entorno medido." },
-          "act": { "t": "Sabes qué hacer", "d": "Estado en verde, ámbar o rojo, el motivo y el siguiente paso." }
+          "log": {
+            "t": "Registras",
+            "d": "Pulso, presión, SpO₂, temperatura, sueño, ánimo y síntomas, en menos de 90 segundos."
+          },
+          "compare": {
+            "t": "VIGÍA compara",
+            "d": "Con límites clínicos, con tu propia línea base y con el entorno medido."
+          },
+          "act": {
+            "t": "Sabes qué hacer",
+            "d": "Estado en verde, ámbar o rojo, el motivo y el siguiente paso."
+          }
         },
         "layerQ": {
           "A": "¿Hay algún valor en zona de peligro?",
@@ -701,7 +762,7 @@
           "context": "¿Lo explica el entorno?"
         },
         "layerHow": {
-          "A": "Bandas clínicas NEWS2, un estándar clínico terrestre. Rojo con una banda extrema o un total de 5 o más; ámbar con 3 o 4.",
+          "A": "Tramos por parámetro de NEWS2 (Royal College of Physicians), un estándar terrestre, con cortes de agregación propios y más conservadores que los del RCP: rojo con una banda extrema o un total de 5 o más; ámbar con 3 o 4. Reglas de prototipo pendientes de revisión por un cirujano de vuelo.",
           "B": "Compara cada lectura con tu propia línea base mediante una puntuación z modificada (mediana y MAD, una medida robusta de cuánto sueles variar). Avisa si ocurre dos días seguidos.",
           "C": "Acumula los cambios pequeños de cada día (CUSUM unilateral) para ver una tendencia que ningún día suelto delata. Activa desde el día 21.",
           "context": "Un dolor de cabeza con CO₂ de cabina por encima de 3 mmHg es una alerta de entorno para la tripulación, no una alerta médica. Un evento de partículas solares activa el modo tormenta."
@@ -734,30 +795,60 @@
         "results": "Resultados de la simulación",
         "resultsLead": "500 misiones simuladas con anomalías y 500 de control (semilla 2026). No es rendimiento clínico.",
         "kpis": {
-          "drift": { "v": "99,8 %", "l": "Deriva lenta detectada (sueño −0,2 h/día, FC +1 bpm/día, ánimo −0,15/día), mediana de 8 días tras el inicio" },
-          "half": { "v": "17,8 %", "l": "La misma deriva a la mitad de intensidad" },
-          "fixed": { "v": "Nunca", "l": "Se disparó un umbral fijo terrestre (FC ≥ 91 bpm)" },
-          "rules": { "v": "100 %", "l": "Reglas de CO₂ con dolor de cabeza y de tormenta solar (deterministas)" },
-          "false": { "v": "< 0,001", "l": "Falsas alarmas por tripulante y semana" }
+          "drift": {
+            "v": "99,8 %",
+            "l": "Deriva lenta detectada (sueño −0,2 h/día, FC +1 bpm/día, ánimo −0,15/día), mediana de 8 días tras el inicio"
+          },
+          "half": {
+            "v": "17,8 %",
+            "l": "La misma deriva a la mitad de intensidad"
+          },
+          "fixed": {
+            "v": "Nunca",
+            "l": "Se disparó un umbral fijo terrestre (FC ≥ 91 bpm)"
+          },
+          "rules": {
+            "v": "100 %",
+            "l": "Reglas de CO₂ con dolor de cabeza y de tormenta solar (deterministas)"
+          },
+          "false": {
+            "v": "< 0,001",
+            "l": "Falsas alarmas por tripulante y semana"
+          }
         },
         "resultsCaveat": "Estas cifras son optimistas: el ruido simulado es gaussiano y el generador lo escribió el mismo equipo. Muestran que el motor ve una deriva que un umbral fijo no ve, no cómo rendiría con tripulaciones reales.",
         "limits": "Límites declarados",
         "limitsList": {
-          "phys": "La fisiología de la tripulación en modo demo es simulada; no se usan datos de astronautas reales. Los umbrales clínicos vienen de NEWS2, un estándar terrestre, y necesitan la revisión de un cirujano de vuelo.",
+          "phys": "La fisiología de la tripulación en modo demo es simulada; no se usan datos de astronautas reales. Los tramos clínicos vienen de NEWS2, un estándar terrestre, y los cortes de agregación son nuestros; ambos necesitan la revisión de un cirujano de vuelo.",
           "rad": "La radiación es dosis ambiental de un detector de área, no dosis personal. GOES mide en órbita geoestacionaria: indica severidad y momento, no la dosis de la tripulación.",
           "todo": "Aún sin implementar: masa corporal en la capa C, la corrección metrológica en vuelo de la capa A, la prueba de vigilancia PVT-B, la entrada por cámara, el cifrado del almacenamiento y la autenticación de la tripulación."
         },
         "sources": "Fuentes",
         "sourcesList": {
-          "goes": { "t": "GOES · NOAA SWPC", "d": "Flujo de protones" },
-          "donki": { "t": "DONKI · NASA CCMC", "d": "Eventos de partículas solares" },
-          "radlab": { "t": "RadLab · ALTEA-Survey (ISS)", "d": "Dosis de radiación ambiental" },
-          "eda": { "t": "EDA · Rodent Research-1 (ISS)", "d": "CO₂, temperatura y humedad de cabina" },
-          "news2": { "t": "NEWS2", "d": "Bandas clínicas de la capa A" }
+          "goes": {
+            "t": "GOES · NOAA SWPC",
+            "d": "Flujo de protones"
+          },
+          "donki": {
+            "t": "DONKI · NASA CCMC",
+            "d": "Eventos de partículas solares"
+          },
+          "radlab": {
+            "t": "RadLab · ALTEA-Survey (ISS)",
+            "d": "Dosis de radiación ambiental"
+          },
+          "eda": {
+            "t": "EDA · Rodent Research-1 (ISS)",
+            "d": "CO₂, temperatura y humedad de cabina"
+          },
+          "news2": {
+            "t": "NEWS2",
+            "d": "Bandas clínicas de la capa A"
+          }
         },
         "sourcesNote": "Las referencias completas están en el informe técnico del repositorio.",
         "ai": "Uso de IA",
-        "aiBody": "Usamos un asistente de IA (Claude, de Anthropic) para investigar fuentes públicas de NASA, CSA y NOAA, redactar documentación y ayudar a escribir y revisar código. El equipo comprobó las fuentes, que se citan en el informe. No se usan imágenes ni vídeos generados por IA.",
+        "aiBody": "Usamos asistentes de IA (Claude, de Anthropic, mediante Claude Code; OpenAI Codex como revisor independiente) para investigar fuentes públicas de NASA, CSA y NOAA, redactar y revisar documentación y ayudar a escribir, revisar y probar código. Las decisiones, los indicadores, las reglas y las fuentes son del equipo. No hay imágenes, vídeo ni audio generados por IA.",
         "provMeasured": "Introducido por el astronauta o transmitido desde un dispositivo vinculado.",
         "provSimulated": "Fisiología sintética y anomalías inyectadas del modo demo.",
         "provScenario": "Calendario de misión: el día en que cae cada ventana real es una decisión del escenario.",
@@ -789,7 +880,19 @@
         "scopeBody": "VIGÍA ayuda a un astronauta a evaluar su propia salud en menos de 90 segundos al día y decidir qué hacer sin esperar a la Tierra. Combina tres capas de detección: límites clínicos de seguridad (A), desviación de una línea base personal (B) y deriva lenta durante varios días (C), además del contexto ambiental.",
         "provenance": "Leyenda de procedencia de datos",
         "hazards": "Marco de riesgos",
-        "disclaimer": "Aviso"
+        "disclaimer": "Aviso",
+        "earth": "En la Tierra",
+        "earthLead": "El mismo patrón sirve donde el médico está lejos y la evacuación no es inmediata: autoevaluación diaria contra la propia línea base, con el entorno como contexto.",
+        "earthList": {
+          "0": {
+            "0": "Estación Concordia (Antártida, ESA)",
+            "1": "Un solo médico para la tripulación y nueve meses de invierno sin posibilidad de evacuación; la ESA la usa como análogo de misiones de larga duración. VIGÍA daría a cada persona su estado y su siguiente paso antes de consultar."
+          },
+          "1": {
+            "0": "Comunidades remotas y salud rural",
+            "1": "La CSA explora llevar la monitorización portátil del Bio-Monitor a regiones alejadas de un hospital. Un registro diario con línea base personal cambia la decisión de cuándo pedir un traslado."
+          }
+        }
       },
       "common": {
         "loading": "Cargando...",
@@ -809,6 +912,23 @@
       },
       "gravity": {
         "Microgravedad": "Microgravedad"
+      },
+      "start": {
+        "title": "¿Quién eres?",
+        "subtitle": "Cada rol ve su propio tablero. Elige el tuyo para entrar.",
+        "astronaut": "Tu salud, tu registro diario y tus alertas. Lo privado no sale de aquí.",
+        "cmo": "La tripulación de un vistazo: relojes y avisos rojos escalados, con el dato mínimo.",
+        "surgeon": "Desde Tierra: los informes que llegan tras el retardo y tus respuestas.",
+        "enter": "Entrar"
+      },
+      "crew": {
+        "title": "Tripulación",
+        "subtitle": "Estado de los relojes y avisos escalados a ti como oficial médico.",
+        "bodyTitle": "Cuerpos de la tripulación",
+        "bodySubtitle": "El cuerpo de cada tripulante con sus propias lecturas. Es de solo lectura y cada consulta queda en la auditoría.",
+        "pick": "Tripulante",
+        "bodyError": "No se pudo leer el historial de este tripulante.",
+        "navBody": "Cuerpos"
       }
     },
     "MOTOR": {
@@ -833,12 +953,12 @@
         "glucosa": "mg/dL"
       },
       "banda": {
-        "A": "NEWS2 de 5 o más, o un parámetro en su tramo extremo",
+        "A": "Suma de tramos NEWS2 de 5 o más, o un parámetro en su tramo extremo (cortes propios de VIGÍA)",
         "B": "Fuera de tu banda personal dos días seguidos",
         "C": "Deriva acumulada de varios días (CUSUM de 5 o más)",
         "context": "Regla de entorno"
       },
-      "bandaAAmbar": "NEWS2 de 3 o 4",
+      "bandaAAmbar": "Suma de tramos NEWS2 de 3 o 4 (corte propio de VIGÍA)",
       "bandaContexto": {
         "co2": "CO2 sobre 3 mmHg (promedio de 1 h) con cefalea",
         "protones": "Flujo de 10 pfu o más en ≥10 MeV, o evento SEP"

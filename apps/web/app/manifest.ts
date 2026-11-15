@@ -10,7 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#0B1020",
     theme_color: "#0B1020",
-    lang: "es",
+    lang: "es", // el manifiesto es estático; el idioma real de la interfaz se resuelve en el navegador (sw-register.tsx)
     icons: [
       { src: "/favicon.svg", sizes: "any", type: "image/svg+xml" },
       { src: "/icono-app-192.png", sizes: "192x192", type: "image/png" },

@@ -15,7 +15,7 @@
     "gravedad_alterada",
     "entorno_cerrado"
   ],
-  "referencia_en_vuelo": "El mareo espacial suele ceder en 2 o 3 días.",
+  "referencia_en_vuelo": "El mareo espacial suele ceder en 1 o 2 días (Williams 2009, CMAJ).",
   "cuando_avisar": "Regla con contexto: cefalea con CO2 de cabina por encima de 3 mmHg (promedio de una hora) genera una alerta de entorno.",
   "prevencion": "Ventilación y depuración del CO2 de la cabina: mantener su promedio de 7 días bajo 2,5 mmHg y evitar picos sobre 3 mmHg.",
   "capa_motor": "Reglas con contexto",

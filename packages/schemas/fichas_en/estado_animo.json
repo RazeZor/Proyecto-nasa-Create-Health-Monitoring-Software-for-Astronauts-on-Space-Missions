@@ -2,6 +2,7 @@
   "id": "estado_animo",
   "nombre": "Mood",
   "que_es": "Self-rating of the day's mood, on a scale from 1 to 10.",
+  "unidad": "points (1 to 10)",
   "como_se_mide_en_vuelo": {
     "estacion": "Scale from 1 to 10 at the same time every day.",
     "transito": "Scale from 1 to 10 at the same time every day.",

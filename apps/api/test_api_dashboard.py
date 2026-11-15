@@ -90,10 +90,40 @@ class Dashboard(unittest.TestCase):
         self.assertEqual({x["rol"] for x in t}, {"astronauta", "oficial_medico", "comandante"})
         self.assertEqual(self.c.get("/tripulacion").status_code, 401)
 
-    def test_historial_y_demo_ajenos_dan_403(self):
+    def test_recordatorios_y_mensajes_ajenos_dan_403_y_sin_identidad_401(self):
         for ruta in ("historial", "recordatorios", "mensajes"):
-            self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/{ruta}", headers={"X-Tripulante": str(self.med)}).status_code, 403, ruta)
+            self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/{ruta}", headers={"X-Tripulante": str(self.ids["comandante"])}).status_code, 403, ruta)
             self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/{ruta}").status_code, 401, ruta)
+        for ruta in ("recordatorios", "mensajes"):  # lo demás del tablero sigue siendo del dueño, también para el oficial
+            self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/{ruta}", headers={"X-Tripulante": str(self.med)}).status_code, 403, ruta)
+
+    def test_el_oficial_medico_lee_el_historial_de_la_tripulacion_y_queda_auditado(self):
+        # el cuerpo de cada tripulante lo ven los clínicos (oficial médico y, desde Tierra, el cirujano de vuelo); los demás, solo el suyo
+        r = self.c.get(f"/tripulantes/{self.ana}/historial", params={"modo": "demo"}, headers={"X-Tripulante": str(self.med)})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()["lecturas"]), 44)
+        conn = conectar()
+        (fila,) = conn.execute("SELECT actor_id, entidad, entidad_id FROM auditoria WHERE accion = 'lectura_ajena'").fetchall()
+        conn.close()
+        self.assertEqual(tuple(fila), (self.med, "historial", self.ana))
+
+    def test_el_astronauta_y_el_comandante_no_leen_el_historial_de_otro(self):
+        for quien in (self.ana, self.ids["comandante"]):
+            otro = self.med if quien == self.ana else self.ana
+            r = self.c.get(f"/tripulantes/{otro}/historial", headers={"X-Tripulante": str(quien)})
+            self.assertEqual(r.status_code, 403, quien)
+        conn = conectar()
+        n = conn.execute("SELECT COUNT(*) FROM auditoria WHERE accion = 'lectura_ajena'").fetchone()[0]
+        conn.close()
+        self.assertEqual(n, 0)  # un intento denegado no es una lectura
+
+    def test_el_oficial_no_lee_el_historial_de_otra_mision(self):
+        conn = conectar()
+        otra = tr.crear_mision(conn, "otra", "estacion", T)
+        ajeno = tr.crear_tripulante(conn, "ajeno", otra, "astronauta")
+        conn.close()
+        r = self.c.get(f"/tripulantes/{ajeno}/historial", headers={"X-Tripulante": str(self.med)})
+        self.assertEqual(r.status_code, 403)
 
     def test_recordatorios_y_mensajes(self):
         rec = self.c.get(f"/tripulantes/{self.ana}/recordatorios", headers=self.h).json()
@@ -112,6 +142,46 @@ class Dashboard(unittest.TestCase):
         conn.close()
         textos = [m["texto"] for m in self.c.get(f"/tripulantes/{self.ana}/mensajes", headers=self.h).json()]
         self.assertIn("Recibido, sigue el protocolo.", textos)
+
+    def test_el_hilo_real_no_mezcla_respuestas_de_demo_ni_al_reves(self):
+        conn = conectar()
+        tr.sembrar_informes_demo(conn, self.ids)  # lo que siembra `sembrar`: un informe demo ya respondido
+        rid = cola.encolar_reporte(conn, self.ana, T, 0, {"titulo": "Informe real", "demo": True})
+        cola.avanzar_cola(conn, T)
+        cola.responder_reporte(conn, rid, "Respuesta a un informe de demo.", T)
+        rid2 = cola.encolar_reporte(conn, self.ana, T, 0, {"titulo": "Informe real"})
+        cola.avanzar_cola(conn, T)
+        cola.responder_reporte(conn, rid2, "Respuesta a un informe real.", T)
+        conn.close()
+        real = self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=real", headers=self.h).json()
+        self.assertEqual([m["texto"] for m in real], ["Respuesta a un informe real."])
+        demo = [m["texto"] for m in self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=demo", headers=self.h).json()]
+        self.assertIn("Respuesta a un informe de demo.", demo)
+        self.assertNotIn("Respuesta a un informe real.", demo)
+        en = self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=real&lang=en", headers=self.h).json()
+        self.assertEqual([m["autor"] for m in en], ["Flight Surgeon"])
+        self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=demo&lang=en", headers=self.h).json()[0]["autor"], "You")
+        demo_en = [m["texto"] for m in self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=demo&lang=en", headers=self.h).json()]
+        self.assertIn("Copy. Keep the extended sleep window and measure your HR again tomorrow.", demo_en)
+        self.assertNotIn("Recibido. Sigue con la ventana de sueño ampliada y vuelve a medir la FC mañana.", demo_en)
+
+    def test_informe_de_ejemplo_en_ingles(self):
+        conn = conectar()
+        tr.sembrar_informes_demo(conn, self.ids)
+        conn.close()
+        (es,) = self.c.get(f"/tripulantes/{self.ana}/reportes", headers=self.h).json()
+        (en,) = self.c.get(f"/tripulantes/{self.ana}/reportes?lang=en", headers=self.h).json()
+        self.assertEqual(es["contenido"]["titulo"], "Informe diario · Día 23")
+        self.assertEqual(en["contenido"]["titulo"], "Daily report · Day 23")
+        self.assertTrue(en["contenido"]["demo"])
+        self.assertEqual(en["respuesta"], "Copy. Keep the extended sleep window and measure your HR again tomorrow.")
+
+    def test_referencia_y_aviso_del_entorno_en_ingles(self):
+        en = self.c.get("/entorno/referencia?lang=en").json()
+        es = self.c.get("/entorno/referencia").json()
+        self.assertEqual([f["id"] for f in en["fuentes"]], [f["id"] for f in es["fuentes"]])
+        self.assertEqual(en["fuentes"][1]["alimenta"], "Cabin CO2, temperature and humidity")
+        self.assertEqual(en["limite_carrera_msv"], es["limite_carrera_msv"])
 
     def test_reporte_guarda_y_devuelve_su_contenido(self):
         contenido = {"titulo": "Informe diario · Día 24", "resumen": "Ámbar", "lectura": "FC 70 lpm"}
@@ -178,7 +248,10 @@ class Entorno(unittest.TestCase):
 
     def test_modo_real_solo_trae_mediciones_reales_con_fuente_y_fecha(self):
         h, e = self.entorno("real")
-        self.assertEqual((h["escenario_entorno"], h["aviso_entorno"]), ("mision-real", "aviso"))
+        # el aviso del panel no se copia tal cual: sale del catálogo i18n en el idioma pedido
+        self.assertEqual(h["escenario_entorno"], "mision-real")
+        self.assertIn("reanclada", h["aviso_entorno"])
+        self.assertIn("re-anchored", self.c.get(f"/tripulantes/{self.ana}/historial?modo=real&lang=en", headers=self.h).json()["aviso_entorno"])
         self.assertEqual(sorted(e), [12, 18, 19, 22])
         self.assertEqual(e[19]["co2_ppm_max_horario"], 2950.5)
         self.assertIsNone(e[19]["co2_mmhg_max_horario"])  # la conversión depende del perfil: la hace la app

@@ -2,6 +2,7 @@
   "id": "dosis_radiacion",
   "nombre": "Radiation dose",
   "que_es": "Accumulated radiation received by the crew, measured by the area dosimeter of the mission profile.",
+  "unidad": "mSv",
   "como_se_mide_en_vuelo": {
     "estacion": "Area dosimeter of the profile.",
     "transito": "Area dosimeter of the profile.",

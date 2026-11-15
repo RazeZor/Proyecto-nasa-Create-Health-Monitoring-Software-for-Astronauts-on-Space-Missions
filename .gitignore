@@ -15,3 +15,9 @@ out/
 # Secretos
 .env
 .superpowers/
+
+# Registros de Codex (delegación)
+.claude/codex-logs/
+
+# Archivos de bloqueo de Office
+~$*

@@ -2,6 +2,7 @@
   "id": "presion_arterial_sistolica",
   "nombre": "Systolic blood pressure",
   "que_es": "Peak pressure of the blood in the arteries with each heartbeat.",
+  "unidad": "mmHg",
   "como_se_mide_en_vuelo": {
     "estacion": "Feet in the restraints. Arm still and relaxed. Two readings; record the second.",
     "transito": "Same as on station.",

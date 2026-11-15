@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { ESPERA_CONEXION_MS, VIGENCIA_SPO2_MS, fcReposoSugerida, spo2Sugerida, lecturaVigente, siguienteEstado, suenoSugerido, tramosSerie, ultimoCambioInstrumento, type RespuestaReloj } from "./reloj.ts"
+import { ESPERA_CONEXION_MS, VIGENCIA_SPO2_MS, fcReposoSugerida, pasosConexion, spo2Sugerida, lecturaVigente, siguienteEstado, suenoSugerido, tramosSerie, ultimoCambioInstrumento, type RespuestaReloj } from "./reloj.ts"
 
 const T = Date.parse("2026-11-14T18:00:00Z")
 const respuesta = (segundosAtras: number, conectado = true): RespuestaReloj => ({
@@ -53,4 +53,27 @@ test("la SpO2 del reloj se sugiere solo si es reciente", () => {
   r.reloj!.resumen = { spo2: { valor: 97.6, t: new Date(T - 3600_000).toISOString() } }
   assert.equal(spo2Sugerida(r, T), 98)
   assert.equal(spo2Sugerida(r, T + VIGENCIA_SPO2_MS), null)
+})
+
+test("la vigencia usa la antigüedad medida por la API aunque el reloj tenga la hora desfasada", () => {
+  const desfasado = respuesta(600) // el t del reloj dice «hace 10 min»
+  assert.equal(lecturaVigente(desfasado, T), false)
+  desfasado.reloj!.recibido_hace_s = 1.2
+  assert.equal(lecturaVigente(desfasado, T), true)
+  desfasado.reloj!.recibido_hace_s = 11
+  assert.equal(lecturaVigente(desfasado, T), false)
+})
+
+test("los cuatro pasos de la conexión marcan el primero que falla", () => {
+  const ids = (r: RespuestaReloj | null) => pasosConexion(r, T).filter((p) => p.ok).map((p) => p.id)
+  assert.deepEqual(ids(null), [])
+  const sinServidor = respuesta(1)
+  sinServidor.puente.conectado = false
+  assert.deepEqual(ids(sinServidor), ["api"])
+  const sinVinculo = respuesta(1)
+  sinVinculo.vinculado = false
+  assert.deepEqual(ids(sinVinculo), ["api", "server"])
+  assert.deepEqual(ids(respuesta(1, false)), ["api", "server"])
+  assert.deepEqual(ids(respuesta(30)), ["api", "server", "watch"])
+  assert.deepEqual(ids(respuesta(1)), ["api", "server", "watch", "wrist"])
 })

@@ -40,8 +40,10 @@ export interface DatosReloj {
   chequeos: ChequeoReloj[]
   chequeo_estado: string | null
   chequeo_progreso: { quietos: number; ventana: number; transcurridos: number; maximo: number } | null
-  avisos: { t: string; tipo: string; detalle: string | null }[]
+  avisos: { t: string; tipo: string; detalle: string | null; codigo?: string }[]
   notas: { t: string; tipo: string; detalle: string | null }[]
+  /** Segundos desde que la API recibió la última lectura (reloj del servidor): la vigencia no depende de la hora del reloj. */
+  recibido_hace_s?: number | null
 }
 
 export interface MiembroReloj {
@@ -51,6 +53,10 @@ export interface MiembroReloj {
   ultima_lectura: string | null
   /** true = chequeo válido hoy; false = solo fallidos; null = sin chequeo */
   chequeo_hoy: boolean | null
+  /** Nombre de fábrica («Tripulante XXXX»): no se puede vincular hasta cambiarlo en el reloj. */
+  nombre_por_defecto?: boolean
+  vinculado?: boolean
+  tripulante_id?: number | null
 }
 
 export type PresetTolerancia = "estricta" | "normal" | "flexible" | "personalizada"
@@ -67,8 +73,21 @@ export interface ConfigReloj {
 }
 
 export interface RespuestaReloj {
-  puente: { configurado: boolean; conectado: boolean; ultima_vez: string | null; error: string | null }
+  puente: {
+    configurado: boolean
+    conectado: boolean
+    ultima_vez: string | null
+    error: string | null
+    desactivado?: boolean
+    url_live?: string | null
+    ip_lan?: string | null
+    /** Lo que hay que escribir en el campo Servidor de la app del reloj. */
+    url_reloj_sugerida?: string | null
+    avisos?: { t: string; tipo: string; detalle: string | null }[]
+  }
   vinculado: boolean
+  /** Nombres de reloj que la API asocia a este tripulante (alias y vínculos). */
+  nombres?: string[]
   reloj: DatosReloj | null
 }
 
@@ -78,7 +97,25 @@ export type OrdenReloj = "medir_spo2" | "iniciar_chequeo"
 export function lecturaVigente(r: RespuestaReloj | null, ahoraMs: number): boolean {
   const l = r?.reloj?.ultima_lectura
   if (!r?.puente.conectado || !r.reloj?.conectado || !l || l.fc_lpm == null) return false
+  // preferimos la antigüedad medida por la API: un reloj con la hora desfasada no debe parecer «sin señal»
+  const recibido = r.reloj.recibido_hace_s
+  if (recibido != null) return recibido * 1000 <= VIGENCIA_LECTURA_MS
   return ahoraMs - Date.parse(l.t) <= VIGENCIA_LECTURA_MS
+}
+
+export type PasoConexionId = "api" | "server" | "watch" | "wrist"
+export interface PasoConexion { id: PasoConexionId; ok: boolean }
+
+/**
+ * Diagnóstico de la conexión en cuatro pasos encadenados, para mostrar cuál falla y qué hacer:
+ * la API responde → la API habla con smart-monitor → el reloj está vinculado y transmite → hay pulso reciente.
+ */
+export function pasosConexion(r: RespuestaReloj | null, ahoraMs: number): PasoConexion[] {
+  const api = r !== null
+  const server = api && r.puente.conectado
+  const watch = server && r.vinculado && Boolean(r.reloj?.conectado)
+  const wrist = watch && lecturaVigente(r, ahoraMs)
+  return [{ id: "api", ok: api }, { id: "server", ok: server }, { id: "watch", ok: watch }, { id: "wrist", ok: wrist }]
 }
 
 /**
@@ -179,6 +216,22 @@ export const leerTripulacionReloj = (actor: number) =>
   pedirJson<MiembroReloj[]>("/reloj/tripulacion", { headers: cabeceras(actor) })
 
 export const leerConfigReloj = () => pedirJson<ConfigReloj>("/reloj/config")
+
+/** «Este es mi reloj»: asocia el nombre configurado en el reloj con el tripulante. Devuelve el motivo si la API lo rechaza. */
+export async function vincularReloj(tripulante: number, nombre: string): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reloj/vinculo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...cabeceras(tripulante) },
+      body: JSON.stringify({ nombre }),
+    })
+    if (res.ok) return { ok: true }
+    const cuerpo = (await res.json().catch(() => null)) as { detail?: unknown } | null
+    return { ok: false, motivo: typeof cuerpo?.detail === "string" ? cuerpo.detail : String(res.status) }
+  } catch {
+    return { ok: false, motivo: "offline" }
+  }
+}
 
 export async function cambiarTolerancia(actor: number, tolerancia: Tolerancia): Promise<boolean> {
   const r = await pedirJson("/reloj/config", {

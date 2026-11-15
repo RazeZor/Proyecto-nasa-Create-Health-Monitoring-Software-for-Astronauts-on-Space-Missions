@@ -11,19 +11,19 @@
         "Escenario, panel o simulación se distinguen por el resumen del manifiesto del ETL (`serie5min` = escenario, `dosis` = panel, `tipo == \"simulacion\"` = simulación), no por el nombre: un escenario puede llamarse `panel-demo` y los archivos de simulación no aparecen en `/paneles` ni `/escenarios`. La API agrega `panel-` por dentro: el panel del escenario `x` es `/paneles/x` (archivo `panel-x.json`). Pedir un tipo como otro da 404.",
         "La clave se valida contra el manifiesto, así que no se sirven rutas arbitrarias. Antes de responder se comprueba el SHA-256 del archivo contra el manifiesto: si no coincide, 500 (falla cerrado).",
         "Si `index.py panel` se corre con `destino`, el archivo no queda en `gold/` y la API no lo ve.",
-        "Al arrancar imprime por stderr qué paneles y escenarios hay en el gold, o `gold: vacío` con el puntero a `docs/SETUP.md` para restaurar el respaldo (#27). `/salud` no cambia.",
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
         "Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.",
         "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez. Reenviar la misma alerta (tripulante, indicador, capa, `t_real` y valor) devuelve el id que ya tenía: la app reintenta sin duplicar avisos.",
         "Reloj de la cola: al arrancar, `ciclo_de_vida` en `main.py` lanza una tarea que cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 la apaga) pasa a `entregado` los reportes cuyo retardo ya pasó, con la hora real del servidor. Ya no hace falta llamar a `POST /reportes/avanzar` (queda para pruebas y para forzar una hora). Con varios procesos, cada uno corre su reloj: es idempotente.",
-        "CORS abierto a `GET`, `POST` y `PUT` desde cualquier origen (atajo, sin autenticación real; acotar `allow_origins` al desplegar) Acepta también el preflight de red privada (`allow_private_network`): sin él Chrome bloquea la llamada desde otra máquina de la LAN.",
+        "CORS abierto a `GET`, `POST` y `PUT` desde cualquier origen (atajo, sin autenticación real; acotar `allow_origins` al desplegar). Acepta también el preflight de red privada (`allow_private_network`): sin él Chrome bloquea la llamada desde otra máquina de la LAN.",
         "Vocabulario: los códigos de síntoma salen de `packages/schemas/vocabulario.json` (`almacen/vocabulario.py` lo lee); el retardo de reporte es 0 a 22 min (migración 002) y existe el indicador `presion_arterial_diastolica` (sin reglas ni ficha).",
         "La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).",
         "El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.",
-        "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Incluye CORS de solo lectura (`GET`) para que `apps/web` consulte la API desde el navegador en entorno local.",
+        "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests.",
         "`GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del caso de referencia (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 27`) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).",
         "`mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta. `/fichas`, `/fichas/{id}` y `recordatorios` aceptan `lang=en`: las fichas toman los textos de `packages/schemas/fichas_en/<id>.json` (solo campos de texto y títulos de fuente; si falta la traducción se sirve en español).",
-        "Reloj (`puente_reloj.py`): con `SMART_URL` (`ws://<host>:8765/live` de smart-monitor) se conecta como un panel, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). El nombre del reloj se traduce a id con `SMART_TRIPULANTES` o, si falta, por `alias`. Rutas `GET /reloj/estado`, `GET /tripulantes/{id}/reloj` y `POST /tripulantes/{id}/reloj/ordenes` (privacidad del registro). `websockets` solo se importa con `SMART_URL`. Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).",
+        "Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).",
+        "`.env` de la raíz: `main.cargar_env` lo lee al arrancar (lifespan) con la biblioteca estándar, sin pisar variables ya definidas ni definir las vacías, y lo deshace al apagar. Así `.env.example` describe lo que la API realmente lee.",
         "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
       ],
       "tags": [
@@ -36,9 +36,13 @@
       ],
       "env": [
         "DATALAKE_DIR",
+        "SMART_AUTOREGISTRO",
+        "SMART_DESACTIVADO",
         "SMART_TRIPULANTES",
         "SMART_URL",
         "VIGIA_DB",
+        "VIGIA_PRUEBA_A",
+        "VIGIA_PRUEBA_FIJA",
         "VIGIA_RELOJ_SEG"
       ],
       "archivos": [
@@ -307,15 +311,21 @@
         },
         {
           "ruta": "apps/api/main.py",
-          "lineas": 205,
+          "lineas": 233,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
             {
+              "nombre": "cargar_env",
+              "tipo": "función",
+              "firma": "cargar_env(ruta=None)",
+              "doc": "Carga el `.env` de la raíz del repo (plantilla: `.env.example`) en `os.environ` con la biblioteca estándar:"
+            },
+            {
               "nombre": "ciclo_de_vida",
               "tipo": "función",
               "firma": "ciclo_de_vida(_app)",
-              "doc": "Reloj de la cola de reportes: cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 lo apaga). Con `SMART_URL`, además,"
+              "doc": "Carga el `.env` de la raíz (sin pisar el entorno) y arranca el reloj de la cola de reportes: cada"
             },
             {
               "nombre": "dato_invalido",
@@ -393,7 +403,7 @@
         },
         {
           "ruta": "apps/api/puente_reloj.py",
-          "lineas": 383,
+          "lineas": 587,
           "descripcion": "Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A).",
           "test": false,
           "simbolos": [
@@ -410,28 +420,52 @@
               "doc": "`\"Sebastián=1, Ana=2\"` -> `{\"sebastián\": 1, \"ana\": 2}`. Ignora las entradas mal formadas."
             },
             {
+              "nombre": "nombre_por_defecto",
+              "tipo": "función",
+              "firma": "nombre_por_defecto(nombre)",
+              "doc": "True si el nombre no identifica a nadie: vacío, `Sin nombre`, `Tripulante previo` o el `Tripulante XXXX` de fábrica."
+            },
+            {
+              "nombre": "metodo_de",
+              "tipo": "función",
+              "firma": "metodo_de(chequeo)",
+              "doc": "`galaxy_watch4:<dispositivo>` (el instrumento, A.6); sin `dispositivo`, `galaxy_watch4` a secas."
+            },
+            {
               "nombre": "EstadoReloj",
               "tipo": "clase",
               "firma": "EstadoReloj",
               "doc": "Último estado conocido de cada tripulante según el servidor del reloj. Puro: no hace IO."
             },
             {
+              "nombre": "vinculos_bd",
+              "tipo": "función",
+              "firma": "vinculos_bd(conn)",
+              "doc": "`{nombre en minúsculas: tripulante_id}` de la tabla `reloj_vinculo` (vínculos hechos desde la app)."
+            },
+            {
+              "nombre": "mapa_completo",
+              "tipo": "función",
+              "firma": "mapa_completo(conn, mapa)",
+              "doc": "`SMART_TRIPULANTES` ∪ vínculos de la base (el vínculo explícito, más reciente, manda)."
+            },
+            {
               "nombre": "resolver_id",
               "tipo": "función",
               "firma": "resolver_id(conn, nombre, mapa, registrar=False)",
-              "doc": "Id de tripulante para un nombre del reloj: `SMART_TRIPULANTES`, luego el alias en la base y, con"
+              "doc": "Id de tripulante para un nombre del reloj: `SMART_TRIPULANTES` o vínculo de la base, luego el alias"
             },
             {
               "nombre": "nombres_de",
               "tipo": "función",
               "firma": "nombres_de(conn, tripulante_id, mapa)",
-              "doc": "Nombres con que el reloj puede conocer a un tripulante: los del mapa y su alias."
+              "doc": "Nombres con que el reloj puede conocer a un tripulante: los del mapa, sus vínculos y su alias."
             },
             {
               "nombre": "persistir_chequeos",
               "tipo": "función",
-              "firma": "persistir_chequeos(conn, chequeos, mapa)",
-              "doc": "Guarda la FC en reposo y el SpO2 de los chequeos válidos. Idempotente (clave única de `lectura`)."
+              "firma": "persistir_chequeos(conn, chequeos, mapa, registrar=False)",
+              "doc": "Guarda la FC en reposo y el SpO2 de los chequeos válidos de relojes vinculados (`resolver_id`), con"
             },
             {
               "nombre": "Puente",
@@ -446,22 +480,52 @@
               "doc": "`ws://h:8765/live` -> `http://h:8765/<ruta>` (y wss -> https): el HTTP del mismo servidor del reloj."
             },
             {
+              "nombre": "ip_lan",
+              "tipo": "función",
+              "firma": "ip_lan()",
+              "doc": "IP de esta máquina en la red local, sin tocar la red: un socket UDP «conectado» solo elige la interfaz de"
+            },
+            {
+              "nombre": "url_reloj_sugerida",
+              "tipo": "función",
+              "firma": "url_reloj_sugerida(url_live, ip)",
+              "doc": "URL que hay que escribir en el campo «Servidor» del reloj (`/watch` del mismo smart-monitor). Si `SMART_URL`"
+            },
+            {
               "nombre": "crear_puente",
               "tipo": "función",
               "firma": "crear_puente()",
-              "doc": "El puente configurado por entorno, o None si falta `SMART_URL`."
+              "doc": "El puente configurado por entorno (`SMART_URL` o su valor por defecto), o None con `SMART_DESACTIVADO=1`."
             },
             {
               "nombre": "estado_puente",
               "tipo": "función",
               "firma": "estado_puente()",
-              "doc": "`{configurado, conectado, ultima_vez, error}`. `configurado` es false sin `SMART_URL`. No lleva datos de"
+              "doc": "`{configurado, desactivado, conectado, ultima_vez, error, url_live, ip_lan, url_reloj_sugerida, avisos}`."
             },
             {
               "nombre": "reloj_tripulante",
               "tipo": "función",
               "firma": "reloj_tripulante(id: int=Depends(propio), conn=Depends(conexion))",
-              "doc": "`{puente, vinculado, reloj}`. `reloj` (null si el servidor del reloj no conoce al tripulante): `nombre`,"
+              "doc": "`{puente, nombres, vinculado, reloj}`. `nombres` son los nombres de reloj que la API asocia al tripulante"
+            },
+            {
+              "nombre": "VinculoIn",
+              "tipo": "clase",
+              "firma": "VinculoIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "vincular_reloj",
+              "tipo": "función",
+              "firma": "vincular_reloj(cuerpo: VinculoIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "`{nombre}` = el campo «Tripulante» configurado en el reloj. Desde entonces sus chequeos válidos se guardan"
+            },
+            {
+              "nombre": "desvincular_reloj",
+              "tipo": "función",
+              "firma": "desvincular_reloj(nombre: str | None=None, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Quita los vínculos del tripulante hechos por la API (`nombre` opcional para quitar solo uno). No toca"
             },
             {
               "nombre": "OrdenIn",
@@ -478,8 +542,8 @@
             {
               "nombre": "tripulacion_reloj",
               "tipo": "función",
-              "firma": "tripulacion_reloj(_quien: int=Depends(actor))",
-              "doc": "Lista de `{nombre, conectado, relojes_conectados, ultima_lectura, chequeo_hoy}`. Dato mínimo para coordinar"
+              "firma": "tripulacion_reloj(_quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Lista de `{nombre, conectado, relojes_conectados, ultima_lectura, chequeo_hoy, nombre_por_defecto, vinculado,"
             },
             {
               "nombre": "config_reloj",
@@ -509,10 +573,16 @@
         },
         {
           "ruta": "apps/api/rutas_dashboard.py",
-          "lineas": 230,
+          "lineas": 258,
           "descripcion": "Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante,",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "propio_o_clinico",
+              "tipo": "función",
+              "firma": "propio_o_clinico(id: int, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "El dueño, o el oficial médico de su misión: los clínicos ven el cuerpo completo de la tripulación y cada"
+            },
             {
               "nombre": "listar_fichas",
               "tipo": "función",
@@ -528,14 +598,14 @@
             {
               "nombre": "referencia_entorno",
               "tipo": "función",
-              "firma": "referencia_entorno()",
-              "doc": "Límites de radiación y CO2, umbral de tormenta y fuentes del panel. `dosis_previa_carrera_msv` es simulada."
+              "firma": "referencia_entorno(lang: Literal['es', 'en']='es')",
+              "doc": "Límites de radiación y CO2, umbral de tormenta y fuentes del panel (`lang=en` en inglés)."
             },
             {
               "nombre": "historial",
               "tipo": "función",
-              "firma": "historial(id: int=Depends(propio), modo: Literal['real', 'demo']='real', conn=Depends(conexion))",
-              "doc": "Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`."
+              "firma": "historial(id: int=Depends(propio_o_clinico), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))",
+              "doc": "Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`. Con tu id, o con el"
             },
             {
               "nombre": "tripulacion_de_la_mision",
@@ -552,14 +622,14 @@
             {
               "nombre": "mensajes",
               "tipo": "función",
-              "firma": "mensajes(id: int=Depends(propio), modo: Literal['real', 'demo']='real', conn=Depends(conexion))",
-              "doc": "`{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas reales de tierra a los reportes del"
+              "firma": "mensajes(id: int=Depends(propio), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))",
+              "doc": "`{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas de tierra a los reportes del tripulante."
             }
           ]
         },
         {
           "ruta": "apps/api/rutas_registro.py",
-          "lineas": 214,
+          "lineas": 230,
           "descripcion": "Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md).",
           "test": false,
           "simbolos": [
@@ -686,8 +756,8 @@
             {
               "nombre": "listar_reportes",
               "tipo": "función",
-              "firma": "listar_reportes(id: int=Depends(propio), conn=Depends(conexion))",
-              "doc": "Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null)."
+              "firma": "listar_reportes(id: int=Depends(propio), lang: Literal['es', 'en']='es', conn=Depends(conexion))",
+              "doc": "Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null). Con `lang=en`"
             },
             {
               "nombre": "avanzar",
@@ -807,7 +877,7 @@
         },
         {
           "ruta": "apps/api/test_api.py",
-          "lineas": 122,
+          "lineas": 144,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -816,12 +886,18 @@
               "tipo": "clase",
               "firma": "Api(unittest.TestCase)",
               "doc": ""
+            },
+            {
+              "nombre": "Entorno",
+              "tipo": "clase",
+              "firma": "Entorno(unittest.TestCase)",
+              "doc": "`cargar_env`: el .env de la raíz se carga con la biblioteca estándar, sin pisar el entorno."
             }
           ]
         },
         {
           "ruta": "apps/api/test_api_dashboard.py",
-          "lineas": 208,
+          "lineas": 281,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -855,10 +931,16 @@
         },
         {
           "ruta": "apps/api/test_puente_reloj.py",
-          "lineas": 215,
+          "lineas": 441,
           "descripcion": "",
           "test": true,
           "simbolos": [
+            {
+              "nombre": "RelojFalso",
+              "tipo": "clase",
+              "firma": "RelojFalso",
+              "doc": "Fuente de tiempo monótona que se avanza a mano."
+            },
             {
               "nombre": "Base",
               "tipo": "clase",
@@ -901,7 +983,7 @@
         "**Marca y sistema visual** (`docs/brand`, logotipo «Centinela»): tokens en `app/globals.css` (tinta Noche `#0B1020`, fondo Casco `#F2F5FA`, estados Normal/Atención/Alerta; tema claro por defecto), Space Grotesk e IBM Plex Mono empaquetadas con `@fontsource` (sin red). `components/shared/logo.tsx` dibuja el símbolo con el punto en el color del estado del sistema. Iconos propios en `components/shared/iconos.tsx` (y un `iconos.tsx` por pantalla); `lucide-react` solo para flechas y cierres. La navegación es una barra superior no fija (`components/shell/app-shell.tsx`), pensada para pantalla táctil de 19\": objetivos de 48–56 px o más y nada depende de `hover`.",
         "**Cuerpo 3D** (`/`, `components/body/`): `escena.ts` (three.js, sin React) dibuja la piel translúcida y los órganos, late a los lpm del dato (`liveHr` del reloj o la FC en reposo del día; sin dato late tenue), y lleva la cámara al órgano de la vista elegida (un indicador o una zona). Carga `public/modelos/cuerpo.glb` (BodyParts3D, CC BY 4.0, varón adulto; atribución en `public/modelos/ATRIBUCION.md` y visible en el lienzo); si el archivo falta, genera una anatomía procedural (`anatomia.ts`: campos de distancia + «surface nets») con selector de modelo corporal. Sin WebGL se muestra la figura 2D (`body-figure.tsx`). `body-stage.tsx` pone los marcadores táctiles y avisa en cada cuadro de dónde cae cada ancla; `body-view.tsx` dibuja con eso las líneas guía de las tarjetas. El estado por indicador sale de `analisis.indicatorStatus(day)` (`lib/engine.ts`): B, C y glucosa señalan su indicador y la capa A (NEWS2) los parámetros que puntúan. Las zonas con indicadores fuera de rango y los síntomas del día tiñen la piel en su ancla.",
         "**Registro guiado** (`components/checkin/`): una medida por paso con dial +/− y deslizador, sin teclado; cada dial arranca en el último valor conocido pero solo se guarda lo confirmado o ajustado (lo demás, `null`).",
-        "**Dos modos de datos** (selector «Datos» de la barra superior; `lib/storage.ts`: `leerModo`, `usarModo`). `real` (por defecto; `NEXT_PUBLIC_VIGIA_MODO=demo` lo cambia): solo lo que el tripulante registra y el entorno medido; el registro se guarda en el día de misión de hoy y se sube a la API con `naturaleza: Real`. `demo`: tripulante simulado de 30 días con las anomalías de §5.5, todo rotulado; lo registrado en demo usa otro almacén (prefijo `vigia:` frente a `vigia:real:`) y **nunca** se sube ni escala. La API recibe el modo en `?modo=`.",
+        "**Dos modos de datos** (selector «Datos» de la barra superior; `lib/storage.ts`: `leerModo`, `usarModo`). `real` (por defecto; `NEXT_PUBLIC_VIGIA_MODO=demo` lo cambia): solo lo que el tripulante registra y el entorno medido; el registro se guarda en el día de misión de hoy y se sube a la API con `naturaleza: Real`. `demo`: tripulante simulado de 30 días con las anomalías de §5.5, todo rotulado; lo registrado en demo usa otro almacén (prefijo `vigia:` frente a `vigia:real:`) y **nunca** se sube ni escala. La API recibe el modo en `?modo=`. **Nada se inventa en modo real** (auditoría 2026-11-15): el simulador de pulso solo actúa en demo (`simulando` en `app-context.tsx`; la tarjeta de `/device` queda deshabilitada), el ánimo del registro solo se guarda si se confirma (`SIN_OMITIR` ya no lo incluye), los informes viajan con el retardo del perfil (`retardoEnvio`: solo demo lo acorta a 1 min), sin red `listarReportes` devuelve `null` y la pantalla avisa, las etiquetas «Real» de Entorno solo aparecen con datos y sin ningún registro el cuerpo dice «Aún no hay registro» en vez de «Todo en orden». El hilo con tierra se pide con `?modo=&lang=` y la API filtra los reportes de demo (`contenido.demo`). `NEXT_PUBLIC_VIGIA_PUBLICO=1` (al compilar) muestra en modo real el aviso de tripulante de prueba compartido del sitio público.",
         "**La app solo conoce la API, pero abre sin ella**: perfiles, fichas, referencia de entorno, historial, recordatorios, mensajes e informes salen de `apps/api`. `lib/catalogo.ts` (`cargarCatalogo(tripulante, modo)`) los pide al arrancar y guarda una copia local; si la API no responde, abre con esa copia (`catalogo.sinEnlace`), muestra «sin enlace» y reintenta cada 30 s y al volver la red. Solo la primera apertura en un dispositivo necesita enlace. `lib/etl-client.ts` hace lo mismo con el panel de entorno. No hay datos de ejemplo en el cliente: los mockups viven en `apps/api/demo/`.",
         "Sin conexión (§4.2): `public/sw.js` (escrito a mano, sin dependencias) guarda la carcasa (el HTML de las 8 pantallas, sus recursos de `/_next/static` y el modelo `/modelos/cuerpo.glb`) al instalarse; navegación con red primero y copia como respaldo; no intercepta `/vigia-api`. Se registra solo en producción (`components/shell/sw-register.tsx`). `app/manifest.ts` es el manifiesto. Si cambias las rutas, actualiza `PANTALLAS` en `sw.js`; si cambias la estrategia, sube la versión de `CACHE`.",
         "Motor híbrido: `packages/engine` evalúa las capas A, B y C y las reglas de contexto. `lib/engine.ts` (`analizar(checkIns, historial, presionCabinaMmHg)`) lo aplica al historial de la API más los registros locales; `AppProvider` lo recalcula en `analisis` al guardar un registro o cambiar de perfil. **El entorno entra al motor**: el CO2 real llega en ppm y se convierte con la presión de cabina del perfil activo (cambiar de perfil puede cambiar la alerta, §3.3); la tormenta sale del flujo (>= 10 pfu) o de un evento SEP real de DONKI. Cada alerta de entorno lleva su procedencia (`source`: Real o Simulado, fuente y fecha real). Una medida no tomada es `null`, nunca 0. Las alertas `informative` (capa B en adaptación) se muestran pero no cambian el estado ni avisan. La banda personal de las tendencias es la referencia del motor día a día (`analisis.band`).",
@@ -909,10 +991,10 @@
         "Llamadas a la API: `lib/catalogo.ts`, `lib/etl-client.ts` y `lib/api-registro.ts` usan `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA` (se lee al compilar; por defecto `http://127.0.0.1:8000`). En la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa. La vista de entorno consume `/paneles`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` sin generar series sintéticas.",
         "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
         "El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`), solo en modo real: `AppProvider` envía los pendientes en orden al cambiar el análisis, al volver la red y cada 30 s si queda algo; la barra muestra cuántos faltan. Identidad provisional: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (por defecto 1, el astronauta de `python3 -m almacen sembrar`). Los informes viven en la API con su `contenido` (lectura, línea base, entorno con procedencia y acción del día): `/reports` los lee cada 3 s; como cirujano de vuelo se puede responder un informe entregado. `t_real` es la hora real del envío.",
-        "Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), la SpO2 del reloj de las últimas 12 h (`spo2Sugerida`, sitio «Muñeca (reloj)», sube como `sensor`/`galaxy_watch4`; contrato `spo2_sitio: muneca`), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. Ante un cambio de instrumento el motor descarta la línea base y la ventana de la FC y pausa sus capas B y C 8 días (A.6); `cambiosDeInstrumento` lo detecta con `hrInstrument` de los registros y `fc_instrumento` del historial.",
+        "Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), la SpO2 del reloj de las últimas 12 h (`spo2Sugerida`, sitio «Muñeca (reloj)», sube como `sensor`/`galaxy_watch4`; contrato `spo2_sitio: muneca`), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. Ante un cambio de instrumento el motor descarta la línea base y la ventana de la FC y pausa sus capas B y C 8 días (A.6); `cambiosDeInstrumento` lo detecta con `hrInstrument` de los registros y `fc_instrumento` del historial. **Conexión guiada** (auditoría 2026-11-15): `components/device/pasos-conexion.tsx` muestra cuatro pasos (API → smart-monitor → reloj vinculado y transmitiendo → pulso en la muñeca) con `pasosConexion` (pura, `lib/reloj.ts`), marca el que falla y dice qué hacer con la URL real de smart-monitor (`puente.url_live`) y la que hay que escribir en el reloj (`puente.url_reloj_sugerida`); si el reloj no está vinculado lista los nombres que ve el servidor (`GET /reloj/tripulacion`) y «Este es mi reloj» llama a `POST /tripulantes/{id}/reloj/vinculo`. La vigencia de la lectura usa `recibido_hace_s` de la API (no la hora del reloj). El estado «Conectar» se recuerda en `localStorage` (`vigia:reloj`) y se reconecta solo al abrir.",
         "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.",
         "i18n: ningún texto visible es literal. `lib/strings.ts` da forma y tipos a las claves `web.*` de `packages/i18n` (español e inglés); el idioma se resuelve en el navegador (preferencia guardada o idioma del navegador) y cambiarlo recarga la página. Las fichas y los recordatorios se piden a la API con `?lang=` (traducciones en `packages/schemas/fichas_en`); los nombres de perfil salen de `web.S.profiles`. Los mensajes de tierra y los errores de la API siguen en español.",
-        "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
+        "**Rutas por rol** (`lib/roles.ts`, `app/[rol]/`): `/` solo elige el rol; cada uno entra a su tablero: `/astronauta` (cuerpo, `/check-in`, `/trends`, `/environment`, `/alerts`, `/reports`, `/device`, `/about`), `/oficial` (tripulación: relojes y bandeja de avisos escalados; `/body`, `/alerts`, `/environment`, `/device`, `/about`) y `/medico` (informes en Tierra; `/body`, `/alerts`, `/environment`, `/about`). `/body` (solo oficial y médico) es el cuerpo de cada tripulante en solo lectura: `crew-body.tsx` pide `historial` ajeno (`cargarHistorialAjeno`, queda auditado como `lectura_ajena`) y lo muestra con `VerComo`; el astronauta solo ve el suyo, sin selector. shortcut: el médico actúa con el id del oficial médico hasta tener autenticación. El rol sale de la ruta (`role` en `useApp()`, sin selector); una pantalla que el rol no tiene da 404 (`lib/guardia.ts`; en export estático el estado HTTP es 200 con la página 404). Menú, avisos emergentes y banners de registro son del astronauta: el estado personal (logo, «Vigilar», toasts) no se muestra a los otros roles. Enlaces entre pantallas con `rutaDe(rol, seccion)`. Si cambias las rutas, actualiza `PANTALLAS` en `public/sw.js` (lo comprueba `lib/roles.test.ts`). shortcut: la ruta solo cambia la vista; el servidor no comprueba el rol hasta la autenticación (#46)."
       ],
       "tags": [
         "frontend",
@@ -928,14 +1010,15 @@
       "env": [
         "NEXT_PUBLIC_VIGIA_API_URL",
         "NEXT_PUBLIC_VIGIA_MODO",
+        "NEXT_PUBLIC_VIGIA_PUBLICO",
         "NEXT_PUBLIC_VIGIA_TRIPULANTE",
         "NODE_ENV",
         "VIGIA_API_INTERNA"
       ],
       "archivos": [
         {
-          "ruta": "apps/web/app/about/page.tsx",
-          "lineas": 5,
+          "ruta": "apps/web/app/[rol]/about/page.tsx",
+          "lineas": 7,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -948,8 +1031,8 @@
           ]
         },
         {
-          "ruta": "apps/web/app/alerts/page.tsx",
-          "lineas": 5,
+          "ruta": "apps/web/app/[rol]/alerts/page.tsx",
+          "lineas": 7,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -962,8 +1045,8 @@
           ]
         },
         {
-          "ruta": "apps/web/app/check-in/page.tsx",
-          "lineas": 5,
+          "ruta": "apps/web/app/[rol]/body/page.tsx",
+          "lineas": 7,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -976,8 +1059,8 @@
           ]
         },
         {
-          "ruta": "apps/web/app/device/page.tsx",
-          "lineas": 5,
+          "ruta": "apps/web/app/[rol]/check-in/page.tsx",
+          "lineas": 7,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -990,8 +1073,90 @@
           ]
         },
         {
-          "ruta": "apps/web/app/environment/page.tsx",
-          "lineas": 5,
+          "ruta": "apps/web/app/[rol]/device/page.tsx",
+          "lineas": 7,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/[rol]/environment/page.tsx",
+          "lineas": 7,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/[rol]/layout.tsx",
+          "lineas": 9,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "dynamicParams",
+              "tipo": "constante",
+              "firma": "dynamicParams",
+              "doc": ""
+            },
+            {
+              "nombre": "generateStaticParams",
+              "tipo": "constante",
+              "firma": "generateStaticParams",
+              "doc": ""
+            },
+            {
+              "nombre": "Layout",
+              "tipo": "función",
+              "firma": "Layout",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/[rol]/page.tsx",
+          "lineas": 10,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/[rol]/reports/page.tsx",
+          "lineas": 7,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Page",
+              "tipo": "función",
+              "firma": "Page",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/app/[rol]/trends/page.tsx",
+          "lineas": 7,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1005,7 +1170,7 @@
         },
         {
           "ruta": "apps/web/app/layout.tsx",
-          "lineas": 42,
+          "lineas": 43,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1058,36 +1223,8 @@
           ]
         },
         {
-          "ruta": "apps/web/app/reports/page.tsx",
-          "lineas": 5,
-          "descripcion": "",
-          "test": false,
-          "simbolos": [
-            {
-              "nombre": "Page",
-              "tipo": "función",
-              "firma": "Page",
-              "doc": ""
-            }
-          ]
-        },
-        {
-          "ruta": "apps/web/app/trends/page.tsx",
-          "lineas": 5,
-          "descripcion": "",
-          "test": false,
-          "simbolos": [
-            {
-              "nombre": "Page",
-              "tipo": "función",
-              "firma": "Page",
-              "doc": ""
-            }
-          ]
-        },
-        {
           "ruta": "apps/web/components/about/about-view.tsx",
-          "lineas": 231,
+          "lineas": 247,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1149,6 +1286,12 @@
           "descripcion": "",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "Bandeja",
+              "tipo": "función",
+              "firma": "Bandeja",
+              "doc": ""
+            },
             {
               "nombre": "AlertsView",
               "tipo": "función",
@@ -1239,7 +1382,7 @@
         },
         {
           "ruta": "apps/web/components/app-context.tsx",
-          "lineas": 218,
+          "lineas": 257,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1253,6 +1396,12 @@
               "nombre": "AppProvider",
               "tipo": "función",
               "firma": "AppProvider",
+              "doc": ""
+            },
+            {
+              "nombre": "VerComo",
+              "tipo": "función",
+              "firma": "VerComo",
               "doc": ""
             },
             {
@@ -1451,7 +1600,7 @@
         },
         {
           "ruta": "apps/web/components/body/body-view.tsx",
-          "lineas": 585,
+          "lineas": 594,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1523,7 +1672,7 @@
         },
         {
           "ruta": "apps/web/components/checkin/checkin-form.tsx",
-          "lineas": 760,
+          "lineas": 762,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1612,8 +1761,36 @@
           ]
         },
         {
+          "ruta": "apps/web/components/crew/crew-body.tsx",
+          "lineas": 72,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "CuerpoTripulacion",
+              "tipo": "función",
+              "firma": "CuerpoTripulacion",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/crew/crew-view.tsx",
+          "lineas": 22,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "CrewView",
+              "tipo": "función",
+              "firma": "CrewView",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/device/device-view.tsx",
-          "lineas": 331,
+          "lineas": 338,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1691,6 +1868,20 @@
               "nombre": "RelojIlustracion",
               "tipo": "función",
               "firma": "RelojIlustracion",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/device/pasos-conexion.tsx",
+          "lineas": 98,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "PasosConexion",
+              "tipo": "función",
+              "firma": "PasosConexion",
               "doc": ""
             }
           ]
@@ -1845,7 +2036,7 @@
         },
         {
           "ruta": "apps/web/components/reports/reports-view.tsx",
-          "lineas": 264,
+          "lineas": 272,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2097,7 +2288,7 @@
         },
         {
           "ruta": "apps/web/components/shell/alert-center.tsx",
-          "lineas": 209,
+          "lineas": 219,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2111,7 +2302,7 @@
         },
         {
           "ruta": "apps/web/components/shell/app-shell.tsx",
-          "lineas": 260,
+          "lineas": 283,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2133,6 +2324,20 @@
               "nombre": "SwRegister",
               "tipo": "función",
               "firma": "SwRegister",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/start/elegir-rol.tsx",
+          "lineas": 35,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ElegirRol",
+              "tipo": "función",
+              "firma": "ElegirRol",
               "doc": ""
             }
           ]
@@ -2232,7 +2437,7 @@
         },
         {
           "ruta": "apps/web/components/ui/dialog.tsx",
-          "lineas": 160,
+          "lineas": 161,
           "descripcion": "",
           "test": false,
           "simbolos": []
@@ -2246,7 +2451,7 @@
         },
         {
           "ruta": "apps/web/components/ui/sheet.tsx",
-          "lineas": 138,
+          "lineas": 139,
           "descripcion": "",
           "test": false,
           "simbolos": []
@@ -2305,14 +2510,14 @@
         },
         {
           "ruta": "apps/web/lib/api-registro.test.ts",
-          "lineas": 54,
+          "lineas": 61,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/api-registro.ts",
-          "lineas": 157,
+          "lineas": 160,
           "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
           "test": false,
           "simbolos": [
@@ -2350,6 +2555,12 @@
               "nombre": "retardoMin",
               "tipo": "constante",
               "firma": "retardoMin",
+              "doc": ""
+            },
+            {
+              "nombre": "retardoEnvio",
+              "tipo": "constante",
+              "firma": "retardoEnvio",
               "doc": ""
             },
             {
@@ -2447,7 +2658,7 @@
         },
         {
           "ruta": "apps/web/lib/catalogo.ts",
-          "lineas": 204,
+          "lineas": 208,
           "descripcion": "Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de",
           "test": false,
           "simbolos": [
@@ -2534,6 +2745,12 @@
               "tipo": "función",
               "firma": "cargarCatalogo",
               "doc": ""
+            },
+            {
+              "nombre": "cargarHistorialAjeno",
+              "tipo": "constante",
+              "firma": "cargarHistorialAjeno",
+              "doc": ""
             }
           ]
         },
@@ -2579,7 +2796,7 @@
         },
         {
           "ruta": "apps/web/lib/engine.ts",
-          "lineas": 279,
+          "lineas": 281,
           "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más",
           "test": false,
           "simbolos": [
@@ -2738,15 +2955,29 @@
           ]
         },
         {
+          "ruta": "apps/web/lib/guardia.ts",
+          "lineas": 8,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "seccionDe",
+              "tipo": "función",
+              "firma": "seccionDe",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/reloj.test.ts",
-          "lineas": 56,
+          "lineas": 79,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/reloj.ts",
-          "lineas": 206,
+          "lineas": 259,
           "descripcion": "Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con",
           "test": false,
           "simbolos": [
@@ -2823,6 +3054,24 @@
               "doc": ""
             },
             {
+              "nombre": "PasoConexionId",
+              "tipo": "tipo",
+              "firma": "PasoConexionId",
+              "doc": ""
+            },
+            {
+              "nombre": "PasoConexion",
+              "tipo": "interfaz",
+              "firma": "PasoConexion",
+              "doc": ""
+            },
+            {
+              "nombre": "pasosConexion",
+              "tipo": "función",
+              "firma": "pasosConexion",
+              "doc": ""
+            },
+            {
               "nombre": "siguienteEstado",
               "tipo": "función",
               "firma": "siguienteEstado",
@@ -2895,6 +3144,12 @@
               "doc": ""
             },
             {
+              "nombre": "vincularReloj",
+              "tipo": "función",
+              "firma": "vincularReloj",
+              "doc": ""
+            },
+            {
               "nombre": "cambiarTolerancia",
               "tipo": "función",
               "firma": "cambiarTolerancia",
@@ -2904,6 +3159,57 @@
               "nombre": "descargarCsvReloj",
               "tipo": "función",
               "firma": "descargarCsvReloj",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/roles.test.ts",
+          "lineas": 46,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/roles.ts",
+          "lineas": 27,
+          "descripcion": "Quién usa la app lo dice la ruta: /astronauta, /oficial y /medico. Cada rol ve sus propias pantallas.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "RUTA_DE_ROL",
+              "tipo": "constante",
+              "firma": "RUTA_DE_ROL",
+              "doc": ""
+            },
+            {
+              "nombre": "Seccion",
+              "tipo": "tipo",
+              "firma": "Seccion",
+              "doc": ""
+            },
+            {
+              "nombre": "SECCIONES",
+              "tipo": "constante",
+              "firma": "SECCIONES",
+              "doc": ""
+            },
+            {
+              "nombre": "permitida",
+              "tipo": "constante",
+              "firma": "permitida",
+              "doc": ""
+            },
+            {
+              "nombre": "rolDeRuta",
+              "tipo": "función",
+              "firma": "rolDeRuta",
+              "doc": ""
+            },
+            {
+              "nombre": "rutaDe",
+              "tipo": "constante",
+              "firma": "rutaDe",
               "doc": ""
             }
           ]
@@ -3019,7 +3325,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 873,
+          "lineas": 925,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
@@ -3225,7 +3531,7 @@
         },
         {
           "ruta": "apps/web/public/sw.js",
-          "lineas": 69,
+          "lineas": 76,
           "descripcion": "Service worker de VIGÍA: deja la aplicación disponible sin enlace (informe §4.2, \"todo funciona sin enlace\").",
           "test": false,
           "simbolos": []
@@ -3628,7 +3934,7 @@
       "archivos": [
         {
           "ruta": "packages/schemas/test_fichas.py",
-          "lineas": 57,
+          "lineas": 56,
           "descripcion": "Valida las fichas de packages/schemas/fichas contra ficha.schema.json (solo biblioteca estándar).",
           "test": true,
           "simbolos": [
@@ -4406,6 +4712,71 @@
               "doc": ""
             }
           ]
+        }
+      ]
+    },
+    {
+      "modulo": "tools/presentacion",
+      "proposito": "Genera las presentaciones de VIGÍA para NASA Space Apps (la demo oficial de 7 diapositivas en inglés y el pitch de 4 minutos) como `.pptx`, y toma las capturas limpias de la app que llevan dentro.",
+      "puntos_clave": [
+        "`deck.js` (pptxgenjs): `node deck.js <carpeta_capturas> <carpeta_marca> <salida> \"[equipo]\" \"[integrantes]\" \"[evento]\"`. Sin los tres últimos argumentos deja los marcadores `[TEAM NAME]`, `[Team members]` y `[Local Event]` en la portada. Los textos y cifras salen de `auditoria/DEMO.md`, `GUIONES.md` y `packages/engine/fixtures/kpi.json`: si cambian los KPI, cámbialos aquí a mano.",
+        "La demo oficial debe tener **como máximo 7 diapositivas** (regla de la guía de envío 2026): `demo()` crea exactamente 7; no añadas más sin quitar otra.",
+        "El pitch (`pitch()`, 15 diapositivas) añade tres que no caben en la demo: «Lo que nos diferencia», «Cinco peligros, cinco respuestas, cinco entornos» (tabla peligro → medida → regla → acción y los cinco perfiles) y «Un reloj en la muñeca» (app Wear OS + smart-monitor). `deck-es.js` es la misma presentación en español con las capturas `-es`; cualquier cambio de contenido se hace en los dos archivos.",
+        "Formas con `pres.ShapeType.roundRect` / `ellipse`, nunca el nombre como cadena: PowerPoint no abre el archivo si `prstGeom` lleva un valor inválido, aunque `validate.py` lo dé por bueno.",
+        "pptxgenjs en Windows escribe entradas de carpeta en el zip; `sin_carpetas.py <pptx…>` las quita (sin eso algunos servicios en la nube no abren el archivo).",
+        "`exportar.ps1 -Carpeta <dir> -Nombres \"a,b\"` exporta cada diapositiva a PNG con PowerPoint (COM) para revisarlas; necesita PowerPoint instalado. Es la revisión visual obligatoria antes de entregar.",
+        "`capturas-finales.js` (puppeteer-core + Chrome) toma las capturas de la app en `http://localhost:3000` (demo, inglés, día 27) ocultando los avisos emergentes y el indicador de next dev, y comprueba de paso que no quede español con `lang=en` ni avisos sobre el dial del registro. Las capturas publicadas viven en `docs/capturas/`.",
+        "Marca: colores y logotipos de `docs/brand` (Noche `0B1020`, Casco `F2F5FA`, estados ok/atención/alerta del tema claro). Fuente Calibri (segura para la revisión); sin logotipos de la NASA.",
+        "Dependencias en `package.json` (`npm install` en esta carpeta); `apply_theme.js` viene de la skill `pptx` de Claude Code (`PPTX_SKILL`), opcional: sin ella el tema de colores queda en el de Office."
+      ],
+      "tags": [
+        "herramientas",
+        "presentacion",
+        "pptx",
+        "pptxgenjs",
+        "capturas",
+        "puppeteer",
+        "demo"
+      ],
+      "env": [
+        "PPTX_SKILL",
+        "SIN_TEMA"
+      ],
+      "archivos": [
+        {
+          "ruta": "tools/presentacion/capturas-deck.js",
+          "lineas": 66,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/presentacion/capturas-finales.js",
+          "lineas": 76,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/presentacion/deck-es.js",
+          "lineas": 393,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/presentacion/deck.js",
+          "lineas": 391,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/presentacion/sin_carpetas.py",
+          "lineas": 14,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
         }
       ]
     },

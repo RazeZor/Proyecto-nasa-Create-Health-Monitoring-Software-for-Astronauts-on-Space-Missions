@@ -8,7 +8,7 @@
     "superficie": "Mark the day's symptoms on the closed list: headache, nausea, dizziness, vision, rash."
   },
   "por_que": "Partially covers three HRP risks: neuro-ocular syndrome (vision), sensorimotor and vestibular function (nausea and dizziness, relevant on days 1 to 3) and altered immune response (rash).",
-  "referencia_en_vuelo": "Space motion sickness usually subsides in 2 or 3 days.",
+  "referencia_en_vuelo": "Space motion sickness usually subsides in 1 or 2 days (Williams 2009, CMAJ).",
   "cuando_avisar": "Context rule: headache with cabin CO2 above 3 mmHg (one-hour average) generates an environment alert.",
   "prevencion": "Ventilation and scrubbing of cabin CO2: keep its 7-day average below 2.5 mmHg and avoid peaks above 3 mmHg.",
   "fuentes": [

@@ -9,8 +9,9 @@ import '@fontsource/ibm-plex-mono/600.css'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'VIGÍA · Monitor de autosalud de la tripulación',
+  title: 'VIGÍA · Crew self-health monitor / Monitor de autosalud de la tripulación',
   description:
+    'Decision-support prototype for astronauts to monitor their own health on long missions with communication delay. ' +
     'Prototipo de apoyo a la decisión para que los astronautas monitoricen su salud en misiones largas con retardo de comunicación.',
   icons: {
     icon: [

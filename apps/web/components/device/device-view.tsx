@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useApp } from "@/components/app-context"
 import { COLOR_PULSO, FcChart } from "@/components/device/fc-chart"
 import { IconoChequeo, IconoPunto, IconoSimulador, RelojIlustracion } from "@/components/device/iconos"
+import { PasosConexion } from "@/components/device/pasos-conexion"
 import { CrewWatches, WatchSettings } from "@/components/device/reloj-extras"
 import { SwitchTrack } from "@/components/device/switch"
 import { ICONO_INDICADOR, IconoPulso } from "@/components/shared/iconos"
@@ -46,7 +47,7 @@ function Dato({ etiqueta, valor, nota }: { etiqueta: React.ReactNode; valor: str
 }
 
 export function DeviceView() {
-  const { device, setDevice, simulator, setSimulator, liveHr, reloj, ordenReloj, role } = useApp()
+  const { device, setDevice, simulator, setSimulator, liveHr, reloj, ordenReloj, role, mode } = useApp()
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
 
   useEffect(() => {
@@ -68,15 +69,12 @@ export function DeviceView() {
   const cambio = ultimoCambioInstrumento(reloj)
   const sueno = suenoSugerido(reloj)
   const rmssd = datos?.resumen?.rmssd_ms ?? null
-  const diagnostico =
-    device === "disconnected" || !reloj ? null
-      : !reloj.puente.configurado ? S.device.bridgeOff
-      : !reloj.puente.conectado ? S.device.bridgeDown
-      : !reloj.vinculado ? S.device.notLinked
-      : null
+  // el diagnóstico de la conexión va en cuatro pasos (PasosConexion); aquí solo el caso del puente apagado
+  const puenteApagado = device !== "disconnected" && reloj !== null && reloj.puente.desactivado === true
 
   const conectado = device === "connected"
   const simulando = simulator && !conectado
+  const simuladorBloqueado = mode === "real" // en modo real el contexto ignora el simulador: aquí solo se refleja
   const EstadoIcono = conectado ? STATUS_ICON.ok : device === "lost" ? STATUS_ICON.act : null
   const Atencion = STATUS_ICON.watch
   const ayuda = device === "lost" ? S.device.lostDetail : S.device.stateHelp[device]
@@ -115,11 +113,12 @@ export function DeviceView() {
           {device === "lost" && <button type="button" className={principal} onClick={() => setDevice("connecting")}>{S.device.reconnect}</button>}
           {device !== "disconnected" && <button type="button" className={secundario} onClick={() => setDevice("disconnected")}>{S.device.disconnect}</button>}
         </div>
-        {diagnostico && (
+        {puenteApagado && (
           <p className="flex w-full items-start gap-3 rounded-2xl border border-status-watch/40 bg-status-watch/12 p-4 text-lg">
-            <Atencion aria-hidden className="mt-0.5 size-6 shrink-0 text-status-watch" />{diagnostico}
+            <Atencion aria-hidden className="mt-0.5 size-6 shrink-0 text-status-watch" />{S.device.bridgeOff}
           </p>
         )}
+        {device !== "disconnected" && !conectado && !puenteApagado && <PasosConexion reloj={reloj} />}
       </section>
 
       {cambio && (
@@ -146,7 +145,7 @@ export function DeviceView() {
                 style={liveHr != null ? { color: COLOR_PULSO, animationDuration: `${(60 / Math.max(liveHr, 30)).toFixed(2)}s` } : undefined}
               />
               <span className={cn("font-mono text-8xl font-semibold leading-none tabular-nums", liveHr == null && "text-muted-foreground")}>{liveHr ?? "--"}</span>
-              <span className="self-end pb-2 text-2xl text-muted-foreground">bpm</span>
+              <span className="self-end pb-2 text-2xl text-muted-foreground">{S.device.bpm}</span>
             </p>
             {liveHr == null && (
               <p className="min-w-0 flex-1 basis-64 text-lg leading-snug">
@@ -172,7 +171,7 @@ export function DeviceView() {
                 <p className="rounded-2xl border border-dashed border-border p-4 text-base text-muted-foreground">{S.device.curveEmpty}</p>
               )}
               <dl className="grid gap-3 sm:grid-cols-3">
-                {fcDia && <Dato etiqueta={S.device.restingToday} valor={`${fcDia.valor} bpm`} nota={S.device.restingSource[fcDia.fuente] ?? fcDia.fuente} />}
+                {fcDia && <Dato etiqueta={S.device.restingToday} valor={`${fcDia.valor} ${S.device.bpm}`} nota={S.device.restingSource[fcDia.fuente] ?? fcDia.fuente} />}
                 <Dato etiqueta={S.device.hrv5} valor={fmt(rmssd, " ms")} />
                 <Dato
                   etiqueta={<span className="flex items-center gap-1.5"><IconoSueno className="size-4" />{S.device.sleepEst}</span>}
@@ -190,7 +189,7 @@ export function DeviceView() {
           )}
           {!conectado && fcDia && (
             <dl className="grid gap-3 sm:grid-cols-3">
-              <Dato etiqueta={S.device.restingToday} valor={`${fcDia.valor} bpm`} nota={S.device.restingSource[fcDia.fuente] ?? fcDia.fuente} />
+              <Dato etiqueta={S.device.restingToday} valor={`${fcDia.valor} ${S.device.bpm}`} nota={S.device.restingSource[fcDia.fuente] ?? fcDia.fuente} />
             </dl>
           )}
         </section>
@@ -239,7 +238,7 @@ export function DeviceView() {
               {ultimo ? (
                 ultimo.valido ? (
                   <dl className="mt-2 grid grid-cols-3 gap-3">
-                    <Dato etiqueta={S.device.restingHr} valor={fmt(ultimo.fc_reposo_lpm)} nota="bpm" />
+                    <Dato etiqueta={S.device.restingHr} valor={fmt(ultimo.fc_reposo_lpm)} nota={S.device.bpm} />
                     <Dato etiqueta={S.device.hrv} valor={fmt(ultimo.rmssd_ms)} nota="ms" />
                     <Dato etiqueta={S.device.spo2} valor={fmt(ultimo.spo2_pct)} nota="%" />
                   </dl>
@@ -307,20 +306,28 @@ export function DeviceView() {
           <button
             type="button"
             role="switch"
-            aria-checked={simulator}
+            aria-checked={simulator && !simuladorBloqueado}
+            aria-disabled={simuladorBloqueado}
+            disabled={simuladorBloqueado}
             onClick={() => setSimulator(!simulator)}
-            className={cn(tarjeta, "flex flex-col gap-4 text-left transition-all active:scale-[0.99]", simulator && "border-primary ring-2 ring-primary/40")}
+            className={cn(
+              tarjeta,
+              "flex flex-col gap-4 text-left transition-all active:scale-[0.99]",
+              simulator && !simuladorBloqueado && "border-primary ring-2 ring-primary/40",
+              simuladorBloqueado && "cursor-not-allowed opacity-60 active:scale-100",
+            )}
           >
             <span className="flex items-start gap-4">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-muted"><IconoSimulador className="size-7" /></span>
               <span>
                 <span className="block text-xl font-semibold">{S.device.simulator}</span>
                 <span className="mt-0.5 block text-base text-muted-foreground">{S.device.simulatorDesc}</span>
+                {simuladorBloqueado && <span className="mt-2 block text-base font-medium">{S.device.simulatorRealHint}</span>}
               </span>
             </span>
             <span className="mt-auto flex min-h-14 items-center gap-4 rounded-2xl bg-muted/60 px-4">
-              <SwitchTrack checked={simulator} />
-              <span className="text-lg font-semibold">{simulator ? S.device.on : S.device.off}</span>
+              <SwitchTrack checked={simulator && !simuladorBloqueado} />
+              <span className="text-lg font-semibold">{simulator && !simuladorBloqueado ? S.device.on : S.device.off}</span>
             </span>
           </button>
           {device !== "disconnected" && <WatchSettings />}

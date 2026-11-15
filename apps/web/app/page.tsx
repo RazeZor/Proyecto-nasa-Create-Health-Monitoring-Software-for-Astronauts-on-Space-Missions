@@ -1,5 +1,5 @@
-import { BodyView } from "@/components/body/body-view"
+import { ElegirRol } from "@/components/start/elegir-rol"
 
 export default function Page() {
-  return <BodyView />
+  return <ElegirRol />
 }

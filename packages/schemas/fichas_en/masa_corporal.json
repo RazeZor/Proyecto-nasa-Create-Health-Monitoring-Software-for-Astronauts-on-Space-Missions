@@ -2,6 +2,7 @@
   "id": "masa_corporal",
   "nombre": "Body mass",
   "que_es": "Amount of matter in the body; in 0 g it is not weighed, its inertia is measured.",
+  "unidad": "kg",
   "como_se_mide_en_vuelo": {
     "estacion": "Inertial device (SLAMMD or BMMD), body rigid and secured to the guide arm. Note which one.",
     "transito": "Same as on station.",
