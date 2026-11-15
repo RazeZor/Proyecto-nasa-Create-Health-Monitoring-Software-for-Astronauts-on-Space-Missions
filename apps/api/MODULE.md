@@ -24,7 +24,8 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 - Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests.
 - `GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del caso de referencia (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 27`) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).
 - `mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta. `/fichas`, `/fichas/{id}` y `recordatorios` aceptan `lang=en`: las fichas toman los textos de `packages/schemas/fichas_en/<id>.json` (solo campos de texto y títulos de fuente; si falta la traducción se sirve en español).
-- Reloj (`puente_reloj.py`): con `SMART_URL` (`ws://<host>:8765/live` de smart-monitor) se conecta como un panel, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). El nombre del reloj se traduce a id con `SMART_TRIPULANTES` o, si falta, por `alias`. Rutas `GET /reloj/estado`, `GET /tripulantes/{id}/reloj` y `POST /tripulantes/{id}/reloj/ordenes` (privacidad del registro). `websockets` solo se importa con `SMART_URL`. Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).
+- Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).
+- `.env` de la raíz: `main.cargar_env` lo lee al arrancar (lifespan) con la biblioteca estándar, sin pisar variables ya definidas ni definir las vacías, y lo deshace al apagar. Así `.env.example` describe lo que la API realmente lee.
 - Los mensajes de error salen de `packages/i18n` (`api.error.*`).
 
 ## Relación con el informe
@@ -53,9 +54,9 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 96 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [almacen/vocabulario.py](almacen/vocabulario.py) | 7 | Vocabulario compartido con la interfaz: lee el contrato packages/schemas/vocabulario.json. |
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
-| [main.py](main.py) | 196 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
-| [puente_reloj.py](puente_reloj.py) | 383 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
-| [rutas_dashboard.py](rutas_dashboard.py) | 235 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
+| [main.py](main.py) | 224 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [puente_reloj.py](puente_reloj.py) | 587 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
+| [rutas_dashboard.py](rutas_dashboard.py) | 242 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
 | [rutas_registro.py](rutas_registro.py) | 214 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
@@ -63,10 +64,10 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_db.py](test_almacen_db.py) | 97 | — |
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
-| [test_api.py](test_api.py) | 116 | — |
-| [test_api_dashboard.py](test_api_dashboard.py) | 227 | — |
+| [test_api.py](test_api.py) | 138 | — |
+| [test_api_dashboard.py](test_api_dashboard.py) | 240 | — |
 | [test_api_registro.py](test_api_registro.py) | 208 | — |
-| [test_puente_reloj.py](test_puente_reloj.py) | 215 | — |
+| [test_puente_reloj.py](test_puente_reloj.py) | 441 | — |
 
 ### API pública
 
@@ -124,7 +125,8 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 **main.py**
 
-- función `ciclo_de_vida(_app)`: Reloj de la cola de reportes: cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 lo apaga). Con `SMART_URL`, además,
+- función `cargar_env(ruta=None)`: Carga el `.env` de la raíz del repo (plantilla: `.env.example`) en `os.environ` con la biblioteca estándar:
+- función `ciclo_de_vida(_app)`: Carga el `.env` de la raíz (sin pisar el entorno) y arranca el reloj de la cola de reportes: cada
 - función `dato_invalido(_, e)`
 - función `salud()`: Devuelve {"estado": "ok"} si el servicio responde. No toca el gold.
 - función `listar_escenarios()`: Lista de `nombre` válidos para `/escenarios/{nombre}`. Vacía si el ETL no ha publicado nada.
@@ -142,18 +144,27 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 - función `t_canonico(texto)`: `t` del reloj (ISO 8601 UTC, quizá con milisegundos) a `YYYY-MM-DDTHH:MM:SSZ`; None si no se entiende.
 - función `mapa_tripulantes(texto)`: `"Sebastián=1, Ana=2"` -> `{"sebastián": 1, "ana": 2}`. Ignora las entradas mal formadas.
+- función `nombre_por_defecto(nombre)`: True si el nombre no identifica a nadie: vacío, `Sin nombre`, `Tripulante previo` o el `Tripulante XXXX` de fábrica.
+- función `metodo_de(chequeo)`: `galaxy_watch4:<dispositivo>` (el instrumento, A.6); sin `dispositivo`, `galaxy_watch4` a secas.
 - clase `EstadoReloj`: Último estado conocido de cada tripulante según el servidor del reloj. Puro: no hace IO.
-- función `resolver_id(conn, nombre, mapa, registrar=False)`: Id de tripulante para un nombre del reloj: `SMART_TRIPULANTES`, luego el alias en la base y, con
-- función `nombres_de(conn, tripulante_id, mapa)`: Nombres con que el reloj puede conocer a un tripulante: los del mapa y su alias.
-- función `persistir_chequeos(conn, chequeos, mapa)`: Guarda la FC en reposo y el SpO2 de los chequeos válidos. Idempotente (clave única de `lectura`).
+- función `vinculos_bd(conn)`: `{nombre en minúsculas: tripulante_id}` de la tabla `reloj_vinculo` (vínculos hechos desde la app).
+- función `mapa_completo(conn, mapa)`: `SMART_TRIPULANTES` ∪ vínculos de la base (el vínculo explícito, más reciente, manda).
+- función `resolver_id(conn, nombre, mapa, registrar=False)`: Id de tripulante para un nombre del reloj: `SMART_TRIPULANTES` o vínculo de la base, luego el alias
+- función `nombres_de(conn, tripulante_id, mapa)`: Nombres con que el reloj puede conocer a un tripulante: los del mapa, sus vínculos y su alias.
+- función `persistir_chequeos(conn, chequeos, mapa, registrar=False)`: Guarda la FC en reposo y el SpO2 de los chequeos válidos de relojes vinculados (`resolver_id`), con
 - clase `Puente`: Cliente WebSocket del `/live` del reloj, con reconexión (1 s, 2 s, 4 s... hasta 30 s).
 - función `url_http(url_ws, ruta)`: `ws://h:8765/live` -> `http://h:8765/<ruta>` (y wss -> https): el HTTP del mismo servidor del reloj.
-- función `crear_puente()`: El puente configurado por entorno, o None si falta `SMART_URL`.
-- función `estado_puente()`: `{configurado, conectado, ultima_vez, error}`. `configurado` es false sin `SMART_URL`. No lleva datos de
-- función `reloj_tripulante(id: int=Depends(propio), conn=Depends(conexion))`: `{puente, vinculado, reloj}`. `reloj` (null si el servidor del reloj no conoce al tripulante): `nombre`,
+- función `ip_lan()`: IP de esta máquina en la red local, sin tocar la red: un socket UDP «conectado» solo elige la interfaz de
+- función `url_reloj_sugerida(url_live, ip)`: URL que hay que escribir en el campo «Servidor» del reloj (`/watch` del mismo smart-monitor). Si `SMART_URL`
+- función `crear_puente()`: El puente configurado por entorno (`SMART_URL` o su valor por defecto), o None con `SMART_DESACTIVADO=1`.
+- función `estado_puente()`: `{configurado, desactivado, conectado, ultima_vez, error, url_live, ip_lan, url_reloj_sugerida, avisos}`.
+- función `reloj_tripulante(id: int=Depends(propio), conn=Depends(conexion))`: `{puente, nombres, vinculado, reloj}`. `nombres` son los nombres de reloj que la API asocia al tripulante
+- clase `VinculoIn(BaseModel)`
+- función `vincular_reloj(cuerpo: VinculoIn, id: int=Depends(propio), conn=Depends(conexion))`: `{nombre}` = el campo «Tripulante» configurado en el reloj. Desde entonces sus chequeos válidos se guardan
+- función `desvincular_reloj(nombre: str | None=None, id: int=Depends(propio), conn=Depends(conexion))`: Quita los vínculos del tripulante hechos por la API (`nombre` opcional para quitar solo uno). No toca
 - clase `OrdenIn(BaseModel)`
 - función `orden_reloj(orden: OrdenIn, id: int=Depends(propio), conn=Depends(conexion))`: `{tipo: medir_spo2 | iniciar_chequeo}`. Se reenvía al servidor del reloj con el nombre del tripulante. 202 =
-- función `tripulacion_reloj(_quien: int=Depends(actor))`: Lista de `{nombre, conectado, relojes_conectados, ultima_lectura, chequeo_hoy}`. Dato mínimo para coordinar
+- función `tripulacion_reloj(_quien: int=Depends(actor), conn=Depends(conexion))`: Lista de `{nombre, conectado, relojes_conectados, ultima_lectura, chequeo_hoy, nombre_por_defecto, vinculado,
 - función `config_reloj()`: `{tolerancia, presets}` según el servidor del reloj: `preset` (estricta, normal, flexible, personalizada),
 - clase `ToleranciaIn(BaseModel)`
 - función `cambiar_config_reloj(tolerancia: ToleranciaIn, _quien: int=Depends(actor))`: Reenvía `set_config` al servidor del reloj, que la aplica a todos los relojes. Con `personalizada` van los
@@ -163,8 +174,8 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 - función `listar_fichas(lang: Literal['es', 'en']='es')`: Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice.
 - función `leer_ficha(id: str, lang: Literal['es', 'en']='es')`: Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...).
-- función `referencia_entorno()`: Límites de radiación y CO2, umbral de tormenta y fuentes del panel. `dosis_previa_carrera_msv` es simulada.
-- función `historial(id: int=Depends(propio), modo: Literal['real', 'demo']='real', conn=Depends(conexion))`: Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`.
+- función `referencia_entorno(lang: Literal['es', 'en']='es')`: Límites de radiación y CO2, umbral de tormenta y fuentes del panel (`lang=en` en inglés).
+- función `historial(id: int=Depends(propio), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))`: Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`.
 - función `tripulacion_de_la_mision(quien: int=Depends(actor), conn=Depends(conexion))`: `{id, alias, rol}` de cada tripulante de la misión de quien pregunta (para saber quién es el oficial médico).
 - función `recordatorios(id: int=Depends(propio), lang: Literal['es', 'en']='es')`: Lista de textos (`lang=en` en inglés). Simulado: aún no hay plan de actividades a bordo.
 - función `mensajes(id: int=Depends(propio), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))`: `{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas de tierra a los reportes del tripulante.
@@ -204,14 +215,14 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `DATALAKE_DIR`, `SMART_TRIPULANTES`, `SMART_URL`, `VIGIA_DB`, `VIGIA_RELOJ_SEG`
+- Variables de entorno: `DATALAKE_DIR`, `SMART_AUTOREGISTRO`, `SMART_DESACTIVADO`, `SMART_TRIPULANTES`, `SMART_URL`, `VIGIA_DB`, `VIGIA_PRUEBA_A`, `VIGIA_PRUEBA_FIJA`, `VIGIA_RELOJ_SEG`
 
 ### Dependencias
 
 - Internas: `gold`, `main`, `puente_reloj`, `rutas_dashboard`, `rutas_registro`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: `almacen`, `fastapi`, `pydantic`, `websockets`
-- Biblioteca estándar: `asyncio`, `collections`, `concurrent`, `contextlib`, `datetime`, `hashlib`, `json`, `math`, `os`, `pathlib`, `re`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`, `urllib`
+- Biblioteca estándar: `asyncio`, `collections`, `concurrent`, `contextlib`, `datetime`, `hashlib`, `json`, `math`, `os`, `pathlib`, `re`, `socket`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`, `urllib`
 
 ### Tests
 
@@ -221,8 +232,8 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_almacen_db.py`: 8 pruebas en Esquema (8)
 - `apps/api/test_almacen_lecturas.py`: 9 pruebas en Lecturas (9)
 - `apps/api/test_almacen_tripulacion.py`: 8 pruebas en Tripulacion (8)
-- `apps/api/test_api.py`: 11 pruebas en Api (11)
-- `apps/api/test_api_dashboard.py`: 16 pruebas en Dashboard (13), Entorno (3)
+- `apps/api/test_api.py`: 12 pruebas en Api (11), Entorno (1)
+- `apps/api/test_api_dashboard.py`: 17 pruebas en Dashboard (14), Entorno (3)
 - `apps/api/test_api_registro.py`: 19 pruebas en Registro (19)
-- `apps/api/test_puente_reloj.py`: 13 pruebas en Estado (5), Persistencia (3), Rutas (4), ExtremoAExtremo (1)
+- `apps/api/test_puente_reloj.py`: 28 pruebas en Estado (12), Persistencia (7), Rutas (7), ExtremoAExtremo (2)
 <!-- CONTEXT:AUTO:END -->

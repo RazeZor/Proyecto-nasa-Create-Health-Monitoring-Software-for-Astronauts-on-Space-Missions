@@ -24,10 +24,18 @@
       "dato_invalido": "invalid data: {detalle}",
       "linea_base_no_existe": "there is no baseline for that indicator and origin",
       "reloj_sin_conexion": "the watch server is not connected (check SMART_URL and that smart-monitor is running)",
-      "reloj_sin_tripulante": "the watch server does not know this crew member (check SMART_TRIPULANTES or the name on the watch)"
+      "reloj_sin_tripulante": "the watch server does not know this crew member (check SMART_TRIPULANTES or the name on the watch)",
+      "reloj_nombre_por_defecto": "“{nombre}” is the watch's factory name: change the Crew member field on the watch before linking it.",
+      "reloj_nombre_ocupado": "The name “{nombre}” is already linked to another crew member."
     },
     "autor": {
       "cirujano": "Flight Surgeon"
+    },
+    "reloj": {
+      "aviso_relojes_duplicados": "More than one watch is connected as “{nombre}”: the check was not saved to avoid mixing instruments."
+    },
+    "aviso": {
+      "entorno_reanclado": "Each series is a real measurement re-anchored to the mission timeline. That series from different real dates coincide on one mission day is a scenario decision, not an observed fact (report §3.4)."
     }
   },
   "web": {
@@ -211,7 +219,8 @@
           "glucose": "Sugar available in the blood.",
           "massKg": "Your weight: reflects muscle and bone."
         },
-        "remindersExample": "Example reminders: no on-board activity plan is connected yet."
+        "remindersExample": "Example reminders: no on-board activity plan is connected yet.",
+        "flow": "You log → VIGÍA compares → You know what to do"
       },
       "checkin": {
         "title": "Daily check-in",
@@ -558,7 +567,8 @@
         "threadEmpty": "No messages yet.",
         "surgeonEmpty": "No report has arrived yet.",
         "summaryReal": "Overall status {estado}. Sent from {perfil} with the profile one-way delay ({retardo}).",
-        "offline": "No link with the API: showing the last queue read. New reports need a link."
+        "offline": "No link with the API: showing the last queue read. New reports need a link.",
+        "oneWayHintReal": "How long a message takes to reach Earth from {perfil}. The report is delivered once that time has passed."
       },
       "device": {
         "title": "Device",
@@ -578,7 +588,7 @@
           "lost": "Connection lost"
         },
         "lostDetail": "Signal lost. Check that the watch is on your wrist, with monitoring active and on the same network.",
-        "bridgeOff": "The API has no watch server configured (SMART_URL). In the meantime you can use the simulator.",
+        "bridgeOff": "The watch bridge is disabled in the API (SMART_DESACTIVADO=1). Remove it from .env and restart the API to use the watch.",
         "bridgeDown": "The API cannot connect to the watch server (smart-monitor). It retries automatically.",
         "notLinked": "The watch server does not know this crew member yet: check the name configured on the watch or SMART_TRIPULANTES.",
         "model": "Model",
@@ -664,7 +674,26 @@
         "exportDesc": "The watch readings in a CSV file.",
         "instrumentTitle": "Instrument change",
         "bpm": "bpm",
-        "simulatorRealHint": "Demo mode only. In real mode VIGÍA never invents a pulse."
+        "simulatorRealHint": "Demo mode only. In real mode VIGÍA never invents a pulse.",
+        "steps": {
+          "api": "The VIGÍA API responds",
+          "server": "The API talks to the watch server (smart-monitor)",
+          "watch": "Your watch is linked and transmitting to the server",
+          "wrist": "Recent pulse on the wrist"
+        },
+        "stepFix": {
+          "api": "The API is not responding. Check that it is running (uvicorn, port 8000) and that there is a link; it retries on its own.",
+          "server": "Start smart-monitor on the API machine: in its server folder, “SMART_HOST=0.0.0.0 python server.py”. The API looks for it at {urlLive} and reconnects on its own.",
+          "watchUnlinked": "In the watch app set Server = {urlReloj} and, in Crew member, a name of your own (not the factory one); tap Start monitoring. Then pick your watch here.",
+          "watchOffline": "Your watch (“{nombres}”) is not transmitting. Open the watch app, check Server = {urlReloj} and tap Start monitoring.",
+          "wrist": "Put the watch on and wait a few seconds: the first reading arrives in under 10 s."
+        },
+        "linkTitle": "Watches the server sees that are not linked yet",
+        "linkThis": "This is my watch: “{nombre}”",
+        "linkNone": "The server does not see any watch with its own name yet.",
+        "linkDefaultNames": "With a factory name (cannot be linked until you change it on the watch): {nombres}.",
+        "linkDone": "Watch linked. Your pulse will appear in a few seconds.",
+        "linkFailed": "Could not link: {motivo}"
       },
       "catalog": {
         "hazards": {

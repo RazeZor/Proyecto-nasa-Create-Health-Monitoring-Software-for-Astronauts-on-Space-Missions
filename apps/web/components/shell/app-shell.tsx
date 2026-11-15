@@ -36,7 +36,7 @@ function useActiveIndex() {
 function NavLinks() {
   const activeIndex = useActiveIndex()
   return (
-    <nav aria-label={S.nav.label} className="min-w-0 flex-1 sm:overflow-x-auto">
+    <nav aria-label={S.nav.label} className="order-last min-w-0 basis-full sm:order-none sm:flex-1 sm:basis-auto sm:overflow-x-auto">
       <ul className="flex flex-wrap items-stretch justify-center gap-1 px-2 sm:flex-nowrap sm:justify-start">
         {NAV.map(({ href, label, icon: Icon }, i) => {
           const active = i === activeIndex
@@ -105,7 +105,7 @@ function TopBar() {
   const MISSION_DAYS = analisis.missionDays
   return (
     <header className="border-b border-border bg-card shadow-sm">
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1 sm:flex-nowrap">
         <Brand />
         <NavLinks />
         <div className="flex shrink-0 items-center gap-2 pr-4 md:pr-6">

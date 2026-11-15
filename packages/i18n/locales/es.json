@@ -24,10 +24,18 @@
       "dato_invalido": "dato inválido: {detalle}",
       "linea_base_no_existe": "no hay línea base para ese indicador y origen",
       "reloj_sin_conexion": "el servidor del reloj no está conectado (revisa SMART_URL y que smart-monitor esté encendido)",
-      "reloj_sin_tripulante": "el servidor del reloj no conoce a este tripulante (revisa SMART_TRIPULANTES o el nombre en el reloj)"
+      "reloj_sin_tripulante": "el servidor del reloj no conoce a este tripulante (revisa SMART_TRIPULANTES o el nombre en el reloj)",
+      "reloj_nombre_por_defecto": "«{nombre}» es el nombre de fábrica del reloj: cambia el campo Tripulante en el reloj antes de vincularlo.",
+      "reloj_nombre_ocupado": "El nombre «{nombre}» ya está vinculado a otro tripulante."
     },
     "autor": {
       "cirujano": "Cirujano de Vuelo"
+    },
+    "reloj": {
+      "aviso_relojes_duplicados": "Hay más de un reloj conectado como «{nombre}»: el chequeo no se guardó para no mezclar instrumentos."
+    },
+    "aviso": {
+      "entorno_reanclado": "Cada serie es una medición real reanclada a la línea de tiempo de misión. Que series de fechas reales distintas coincidan en un día de misión es una decisión del escenario, no un hecho observado (informe §3.4)."
     }
   },
   "web": {
@@ -211,7 +219,8 @@
           "glucose": "Azúcar disponible en la sangre.",
           "massKg": "Tu peso: refleja músculo y hueso."
         },
-        "remindersExample": "Recordatorios de ejemplo: aún no hay un plan de actividades de a bordo conectado."
+        "remindersExample": "Recordatorios de ejemplo: aún no hay un plan de actividades de a bordo conectado.",
+        "flow": "Registras → VIGÍA compara → Sabes qué hacer"
       },
       "checkin": {
         "title": "Registro diario",
@@ -558,7 +567,8 @@
         "threadEmpty": "Aún no hay mensajes.",
         "surgeonEmpty": "Aún no ha llegado ningún informe.",
         "summaryReal": "Estado general {estado}. Enviado desde {perfil} con el retardo de ida del perfil ({retardo}).",
-        "offline": "Sin enlace con la API: se muestra la última cola leída. Los informes nuevos necesitan enlace."
+        "offline": "Sin enlace con la API: se muestra la última cola leída. Los informes nuevos necesitan enlace.",
+        "oneWayHintReal": "Lo que tarda un mensaje en llegar a Tierra desde {perfil}. El informe se entrega cuando pasa ese tiempo."
       },
       "device": {
         "title": "Dispositivo",
@@ -578,7 +588,7 @@
           "lost": "Conexión perdida"
         },
         "lostDetail": "Señal perdida. Comprueba que el reloj esté en tu muñeca, con el monitoreo activo y en la misma red.",
-        "bridgeOff": "La API no tiene configurado el servidor del reloj (SMART_URL). Mientras tanto puedes usar el simulador.",
+        "bridgeOff": "El puente del reloj está desactivado en la API (SMART_DESACTIVADO=1). Quítalo del .env y reinicia la API para usar el reloj.",
         "bridgeDown": "La API no logra conectarse con el servidor del reloj (smart-monitor). Se reintenta sola.",
         "notLinked": "El servidor del reloj aún no conoce a este tripulante: revisa el nombre configurado en el reloj o SMART_TRIPULANTES.",
         "model": "Modelo",
@@ -664,7 +674,26 @@
         "exportDesc": "Las lecturas del reloj en un archivo CSV.",
         "instrumentTitle": "Cambio de instrumento",
         "bpm": "lpm",
-        "simulatorRealHint": "Solo en modo demo. En modo real VIGÍA no inventa ningún pulso."
+        "simulatorRealHint": "Solo en modo demo. En modo real VIGÍA no inventa ningún pulso.",
+        "steps": {
+          "api": "La API de VIGÍA responde",
+          "server": "La API habla con el servidor del reloj (smart-monitor)",
+          "watch": "Tu reloj está vinculado y transmite al servidor",
+          "wrist": "Hay pulso reciente en la muñeca"
+        },
+        "stepFix": {
+          "api": "La API no responde. Comprueba que esté en marcha (uvicorn, puerto 8000) y que haya enlace; se reintenta sola.",
+          "server": "Arranca smart-monitor en la máquina de la API: en su carpeta server, «SMART_HOST=0.0.0.0 python server.py». La API lo busca en {urlLive} y se reconecta sola.",
+          "watchUnlinked": "En la app del reloj escribe Servidor = {urlReloj} y, en Tripulante, un nombre tuyo (no el de fábrica); pulsa Iniciar monitoreo. Después elige tu reloj aquí.",
+          "watchOffline": "Tu reloj («{nombres}») no está transmitiendo. Abre la app del reloj, comprueba Servidor = {urlReloj} y pulsa Iniciar monitoreo.",
+          "wrist": "Ponte el reloj y espera unos segundos: la primera lectura llega en menos de 10 s."
+        },
+        "linkTitle": "Relojes que ve el servidor sin vincular",
+        "linkThis": "Este es mi reloj: «{nombre}»",
+        "linkNone": "El servidor aún no ve ningún reloj con nombre propio.",
+        "linkDefaultNames": "Con nombre de fábrica (no se pueden vincular hasta cambiarlo en el reloj): {nombres}.",
+        "linkDone": "Reloj vinculado. En unos segundos aparecerá tu pulso.",
+        "linkFailed": "No se pudo vincular: {motivo}"
       },
       "catalog": {
         "hazards": {

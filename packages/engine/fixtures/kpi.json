@@ -1,0 +1,73 @@
+{
+ "protocolo": "informe-tecnico-5.5",
+ "semilla_principal": 2026,
+ "semilla_validacion": 2027,
+ "n_misiones_anomalia": 500,
+ "n_misiones_control": 500,
+ "generado": "2026-11-15T02:31:58Z",
+ "supuestos": {
+  "fc_desplazamiento_lpm": 3.0,
+  "sueno_desplazamiento_h": -0.7,
+  "pas_desplazamiento_mmHg": -4.0,
+  "tau_adaptacion_dias": 4.0,
+  "mad_min": {
+   "fc": 2.5,
+   "pas": 4.0,
+   "glucosa": 6.0,
+   "sueno": 0.4,
+   "animo": 1.0
+  }
+ },
+ "parametros": {
+  "cusum_k": 0.75,
+  "cusum_h": 5.0,
+  "z_fisiologico": 3.5,
+  "z_conductual": 3.0,
+  "dias_consecutivos_b": 2
+ },
+ "resultados": {
+  "anomalias": {
+   "misiones": 500,
+   "intensidad": 1.0,
+   "A1_deriva_deteccion_pct": 99.8,
+   "A1_dias_hasta_alerta_mediana": 8.0,
+   "A2_co2_cefalea_deteccion_pct": 100.0,
+   "A3_tormenta_deteccion_pct": 100.0,
+   "umbral_fijo_91_lpm_disparado_pct": 0.0
+  },
+  "anomalias_media_intensidad": {
+   "misiones": 500,
+   "intensidad": 0.5,
+   "A1_deriva_deteccion_pct": 17.8,
+   "A1_dias_hasta_alerta_mediana": 9.0,
+   "A2_co2_cefalea_deteccion_pct": 100.0,
+   "A3_tormenta_deteccion_pct": 100.0,
+   "umbral_fijo_91_lpm_disparado_pct": 0.0
+  },
+  "control_sin_anomalias": {
+   "misiones": 500,
+   "misiones_con_falsa_alarma_pct": 0.2,
+   "alerta_por_azar_en_ventana_A1_pct": 0.0,
+   "falsas_por_tripulante_semana_dias_1_14": 0.0003,
+   "falsas_por_tripulante_semana_dias_15_30": 0.0
+  },
+  "validacion_independiente_2027": {
+   "anomalias": {
+    "misiones": 500,
+    "intensidad": 1.0,
+    "A1_deriva_deteccion_pct": 99.8,
+    "A1_dias_hasta_alerta_mediana": 8.0,
+    "A2_co2_cefalea_deteccion_pct": 100.0,
+    "A3_tormenta_deteccion_pct": 100.0,
+    "umbral_fijo_91_lpm_disparado_pct": 0.0
+   },
+   "control_sin_anomalias": {
+    "misiones": 500,
+    "misiones_con_falsa_alarma_pct": 0.0,
+    "alerta_por_azar_en_ventana_A1_pct": 0.0,
+    "falsas_por_tripulante_semana_dias_1_14": 0.0,
+    "falsas_por_tripulante_semana_dias_15_30": 0.0
+   }
+  }
+ }
+}

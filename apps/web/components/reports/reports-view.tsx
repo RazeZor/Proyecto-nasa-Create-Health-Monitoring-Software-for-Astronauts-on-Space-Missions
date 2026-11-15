@@ -141,7 +141,8 @@ export function ReportsView() {
     return () => window.clearInterval(id)
   }, [leer])
   // los informes de ejemplo sembrados para la demo (o fechados en el futuro) no son del tripulante real
-  const visibles = cola && cola.filter((x) => mode === "demo" || !(x.contenido?.demo || Date.parse(x.creado_t_real) > Date.now() + 86_400_000))
+  // cada modo ve solo lo suyo: en demo los informes de ejemplo; en real los propios (ni los de demo ni los fechados en el futuro)
+  const visibles = cola && cola.filter((x) => (mode === "demo" ? Boolean(x.contenido?.demo) : !(x.contenido?.demo || Date.parse(x.creado_t_real) > Date.now() + 86_400_000)))
   const reports: Report[] | null = visibles && visibles.map(reporteDeServidor)
   const porId = new Map((cola ?? []).map((x) => [x.id, x]))
   const surgeon = role === "surgeon"
@@ -221,7 +222,7 @@ export function ReportsView() {
             <span className="eyebrow block">{S.reports.oneWay}</span>
             <span className="block text-4xl font-semibold leading-tight tabular-nums">{formatDelay(profile.delayMinutes)}</span>
           </p>
-          <p className="min-w-0 text-sm leading-snug text-muted-foreground">{S.reports.oneWayHint(profile.label)}</p>
+          <p className="min-w-0 text-sm leading-snug text-muted-foreground">{(mode === "demo" ? S.reports.oneWayHint : S.reports.oneWayHintReal)(profile.label)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           {!surgeon && <Dato etiqueta={S.reports.countTransit} valor={reports ? enCamino : "—"}><IconoSobre className="size-7" /></Dato>}

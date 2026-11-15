@@ -131,6 +131,16 @@ class Dashboard(unittest.TestCase):
         en = self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=real&lang=en", headers=self.h).json()
         self.assertEqual([m["autor"] for m in en], ["Flight Surgeon"])
         self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=demo&lang=en", headers=self.h).json()[0]["autor"], "You")
+        demo_en = [m["texto"] for m in self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=demo&lang=en", headers=self.h).json()]
+        self.assertIn("Copy. Keep the extended sleep window and measure your HR again tomorrow.", demo_en)
+        self.assertNotIn("Recibido. Sigue con la ventana de sueño ampliada y vuelve a medir la FC mañana.", demo_en)
+
+    def test_referencia_y_aviso_del_entorno_en_ingles(self):
+        en = self.c.get("/entorno/referencia?lang=en").json()
+        es = self.c.get("/entorno/referencia").json()
+        self.assertEqual([f["id"] for f in en["fuentes"]], [f["id"] for f in es["fuentes"]])
+        self.assertEqual(en["fuentes"][1]["alimenta"], "Cabin CO2, temperature and humidity")
+        self.assertEqual(en["limite_carrera_msv"], es["limite_carrera_msv"])
 
     def test_reporte_guarda_y_devuelve_su_contenido(self):
         contenido = {"titulo": "Informe diario · Día 24", "resumen": "Ámbar", "lectura": "FC 70 lpm"}
@@ -197,7 +207,10 @@ class Entorno(unittest.TestCase):
 
     def test_modo_real_solo_trae_mediciones_reales_con_fuente_y_fecha(self):
         h, e = self.entorno("real")
-        self.assertEqual((h["escenario_entorno"], h["aviso_entorno"]), ("mision-real", "aviso"))
+        # el aviso del panel no se copia tal cual: sale del catálogo i18n en el idioma pedido
+        self.assertEqual(h["escenario_entorno"], "mision-real")
+        self.assertIn("reanclada", h["aviso_entorno"])
+        self.assertIn("re-anchored", self.c.get(f"/tripulantes/{self.ana}/historial?modo=real&lang=en", headers=self.h).json()["aviso_entorno"])
         self.assertEqual(sorted(e), [12, 18, 19, 22])
         self.assertEqual(e[19]["co2_ppm_max_horario"], 2950.5)
         self.assertIsNone(e[19]["co2_mmhg_max_horario"])  # la conversión depende del perfil: la hace la app

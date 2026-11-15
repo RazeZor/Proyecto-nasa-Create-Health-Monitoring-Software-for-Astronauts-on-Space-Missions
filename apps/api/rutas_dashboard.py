@@ -72,9 +72,10 @@ def leer_ficha(id: str, lang: Literal["es", "en"] = "es"):
 
 
 @router.get("/entorno/referencia", summary="Límites, fuentes y dosis previa de carrera")
-def referencia_entorno():
-    """Límites de radiación y CO2, umbral de tormenta y fuentes del panel. `dosis_previa_carrera_msv` es simulada."""
-    return _json(_DEMO / "entorno_referencia.json")
+def referencia_entorno(lang: Literal["es", "en"] = "es"):
+    """Límites de radiación y CO2, umbral de tormenta y fuentes del panel (`lang=en` en inglés).
+    `dosis_previa_carrera_msv` es simulada."""
+    return _json(_DEMO / ("entorno_referencia.en.json" if lang == "en" else "entorno_referencia.json"))
 
 
 def _fecha_real(ventanas, fuente, dia):
@@ -169,7 +170,8 @@ def _lecturas_reales(conn, id):
 
 
 @router.get("/tripulantes/{id}/historial", responses=ERRORES, summary="Historial fisiológico y entorno del tripulante")
-def historial(id: int = Depends(propio), modo: Literal["real", "demo"] = "real", conn=Depends(conexion)):
+def historial(id: int = Depends(propio), modo: Literal["real", "demo"] = "real", lang: Literal["es", "en"] = "es",
+              conn=Depends(conexion)):
     """Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`.
 
     - `modo=real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`) y el entorno medido
@@ -183,7 +185,8 @@ def historial(id: int = Depends(propio), modo: Literal["real", "demo"] = "real",
     panel = gold.panel(ESCENARIO_ENTORNO[modo])
     reales = _entorno_real(panel) if panel else {}
     comun = {"modo": modo, "escenario_entorno": panel["escenario"] if panel else None,
-             "aviso_entorno": panel["aviso"] if panel else None}
+             # el aviso del panel gold está en español; a la interfaz va traducido (`lang`)
+             "aviso_entorno": t("api.aviso.entorno_reanclado", lang) if panel else None}
     if modo == "demo":
         caso = _json(_CASO)
         # shortcut: cada tripulante recibe un tripulante simulado por turno; asignar uno propio al sembrar la misión
@@ -222,6 +225,9 @@ def mensajes(id: int = Depends(propio), modo: Literal["real", "demo"] = "real", 
     Los reportes de demo (`contenido.demo`, también los que siembra `sembrar`) solo salen en `modo=demo`, que añade
     además el hilo de ejemplo; en `modo=real` solo las respuestas a reportes reales. `lang=en` traduce autor e hilo."""
     hilo = _json(_DEMO / ("mensajes.en.json" if lang == "en" else "mensajes.json")) if modo == "demo" else []
+    # las respuestas de los informes de ejemplo se sembraron en español; en inglés se toma `respuesta_en` por título
+    traducciones = ({i["contenido"]["titulo"]: i.get("respuesta_en") for i in _json(_DEMO / "informes.json")}
+                    if modo == "demo" and lang == "en" else {})
     dia_tope = DIA_ACTUAL_DEMO if modo == "demo" else 10**6
     for r in cola.leer_reportes(conn, id):
         es_demo = bool((r["contenido"] or {}).get("demo"))
@@ -231,5 +237,6 @@ def mensajes(id: int = Depends(propio), modo: Literal["real", "demo"] = "real", 
             dia = tripulacion.dia_de_vuelo(conn, id, r["llega_t_real"]) or 1
             hilo.append({"id": f"r{r['id']}", "de": "surgeon", "autor": t("api.autor.cirujano", lang),
                          # en modo demo la UI vive en el día de demo: la respuesta real se ancla a él
-                         "dia": min(dia, dia_tope), "hora": r["llega_t_real"][11:16], "texto": r["respuesta"]})
+                         "dia": min(dia, dia_tope), "hora": r["llega_t_real"][11:16],
+                         "texto": traducciones.get((r["contenido"] or {}).get("titulo")) or r["respuesta"]})
     return hilo

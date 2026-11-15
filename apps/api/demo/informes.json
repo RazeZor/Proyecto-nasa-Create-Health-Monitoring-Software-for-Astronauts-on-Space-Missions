@@ -11,6 +11,7 @@
       "linea_base": "Banda de FC en vuelo 56-64 lpm",
       "entorno": "Flujo de protones 64 pfu (en descenso), CO2 1.4 mmHg",
       "accion": "Refugio de 6 h el día 22. Ventana de sueño ampliada planificada."
-    }
+    },
+    "respuesta_en": "Copy. Keep the extended sleep window and measure your HR again tomorrow."
   }
 ]

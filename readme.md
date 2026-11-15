@@ -10,7 +10,8 @@
 Halfway to Mars a message to the flight surgeon takes up to 22 minutes each way and evacuation is not possible. VIGÍA ("lookout" in Spanish) lets each astronaut evaluate their own health and decide what to do next, on board, without waiting for Earth.
 
 - **Live app:** https://vigia.smoraleslo.dev — demo scenario in English: https://vigia.smoraleslo.dev/?modo=demo&lang=en
-- **Technical report (Spanish):** [documentacion/](documentacion/)
+- **Final project report (English):** [auditoria/FINAL-PROJECT-REPORT.md](auditoria/FINAL-PROJECT-REPORT.md) · glossary: [auditoria/GLOSARIO.md](auditoria/GLOSARIO.md)
+- **Technical report (Spanish, supplementary):** [documentacion/](documentacion/)
 - VIGÍA is a decision-support prototype, **not a medical device**.
 
 ## What it does
@@ -37,7 +38,7 @@ Every environmental value shows whether it is **Real** or **Simulated**, its sou
 
 ## Results (simulation, not clinical performance)
 
-500 simulated missions with anomalies and 500 control missions, seed 2026 ([pipelines/reanclaje/simulacion.py](pipelines/reanclaje/simulacion.py)); the TypeScript engine of the app reproduces the reference case alert by alert.
+500 simulated missions with anomalies and 500 control missions, seed 2026 ([pipelines/reanclaje/simulacion.py](pipelines/reanclaje/simulacion.py)); the TypeScript engine of the app reproduces the reference case alert by alert. The generated outputs are committed as fixtures so the numbers can be checked without re-running the simulation: [packages/engine/fixtures/kpi.json](packages/engine/fixtures/kpi.json), [barrido.json](packages/engine/fixtures/barrido.json) (parameter sweep) and [caso-referencia.json](packages/engine/fixtures/caso-referencia.json) (the case the parity test replays).
 
 | KPI | Result |
 | --- | --- |
@@ -78,6 +79,14 @@ npm install
 npm run build && npm start                            # http://localhost:3000
 ```
 
+### Connect a Galaxy Watch4 (optional)
+
+The watch talks to the team's [smart-monitor](https://github.com/smoraleslo/smart-monitor) server; VIGÍA's API listens to that server and the app only talks to the API. Three steps:
+
+1. Start smart-monitor on the same machine as the API: `cd smart-monitor/server && SMART_HOST=0.0.0.0 python server.py` (port 8765). The API connects to `ws://127.0.0.1:8765/live` by default; set `SMART_URL` in `.env` if it runs elsewhere, or `SMART_DESACTIVADO=1` to turn the bridge off.
+2. On the watch app set **Server** to the address shown on the Device screen (`ws://<IP of the API machine>:8765/watch`) and give it a **crew member name** of your own (the factory name "Tripulante XXXX" is never accepted), then start monitoring.
+3. Open **Device** in VIGÍA and press **Connect**. The screen shows four steps (API, server, watch, wrist) and marks the one that fails with what to do. When the server sees your watch, press **This is my watch** to link the name to your crew member (or set `SMART_TRIPULANTES="Name=1"` in `.env`). Only valid checks (resting HR, SpO2) are stored, labelled `galaxy_watch4:<device>`; the 1 Hz stream never leaves memory.
+
 Tests: `python -m unittest discover -s <module>` for each Python module and `node --test packages/engine/*.test.ts apps/web/lib/*.test.ts`.
 
 ## Repository
@@ -93,6 +102,8 @@ tools/          team tooling
 ```
 
 Conventions and architecture (in Spanish): [AGENTS.md](AGENTS.md), [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md), [docs/CONVENCIONES.md](docs/CONVENCIONES.md), [docs/context/INDEX.md](docs/context/INDEX.md).
+
+**License:** code under the [MIT License](LICENSE). Data contracts (JSON Schema) live in [packages/schemas](packages/schemas/MODULE.md); every reading, alert and environment record exchanged between the pipelines, the API and the app follows them.
 
 ## Declared limits
 

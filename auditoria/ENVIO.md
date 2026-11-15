@@ -8,15 +8,13 @@ VIGÍA
 
 ## High-Level Project Summary
 
-On the International Space Station an astronaut with a health problem has a flight surgeon less than a second away. Halfway to Mars a message takes up to 22 minutes each way and evacuation is not possible. NASA calls this shift Earth-Independent Medical Operations: the crew must detect, interpret and act on their own.
+*(≈150 words, readable in 60 seconds)*
 
-VIGÍA (Spanish for "lookout") is an offline-first web app that helps each astronaut evaluate their own health and decide the next step on board. A guided daily check-in of under 90 seconds gathers heart rate, blood pressure, SpO2, temperature, sleep, mood, weekly glucose and symptoms, each with plain instructions on how to measure it in that mission profile and why it matters. A three-layer hybrid engine evaluates every reading: clinical safety bands (NEWS2 per-parameter bands with our own, more conservative cut-offs), deviation from the astronaut's own baseline (pre-flight during adaptation, in-flight afterwards) and cumulative sums that catch slow drifts a fixed threshold never sees.
+Halfway to Mars a message to the flight surgeon takes up to 22 minutes each way and evacuation is impossible: the crew must detect, interpret and act on their own health. **VIGÍA** (Spanish for "lookout") is an offline-first web app that lets each astronaut do exactly that on board.
 
-Every reading is joined with the measured environment. We use real open data: radiation dose from ISS detectors (RadLab, NASA OSDR), cabin CO2, temperature and humidity (Environmental Data Application, NASA OSDR), solar energetic particle events (DONKI, NASA CCMC) and GOES proton flux (NOAA SWPC). A headache with cabin CO2 above 3 mmHg becomes an environment alert for the whole crew, not a medical alert for one person; a solar particle event switches on storm mode.
+**Gather:** a guided daily check-in under 90 seconds (heart rate, blood pressure, SpO2, temperature, sleep, mood, symptoms, weekly glucose), each indicator with how-to-measure and why-it-matters instructions. **Evaluate:** a three-layer engine compares every reading with clinical safety bands, with the astronaut's own baseline and with slow drifts, and joins it with real NASA and NOAA environment data (ISS radiation dose and cabin CO2 from NASA OSDR, solar particle events from DONKI, GOES proton flux). **Act:** a clickable 3D body shows green, amber or red per system with the reason and the next step; only a red safety alert reaches the crew medical officer, with the minimum data; reports travel to Earth under the real communication delay.
 
-A clickable 3D anatomical body shows the status of each system with its reason and next step. Health data is private by default: only a red safety alert is escalated automatically to the crew medical officer, with the minimum data, and the astronaut sees exactly what was sent. Reports to the ground travel through a queue that respects the mission's communication delay. Everything runs on board without a link.
-
-In real mode VIGÍA only shows what the crew member enters or the watch measures; in demo mode a simulated 30-day crew member with three injected anomalies is shown, labelled "Simulated" on every screen. VIGÍA is a decision-support prototype, not a medical device.
+Real mode shows only what the crew enters or the watch measures; demo mode shows a labelled simulated crew member. Decision-support prototype, not a medical device.
 
 ## Link to Project Demo
 

@@ -282,7 +282,7 @@ export function BodyView() {
             <OverallIcon aria-hidden className="size-9" />
           </span>
           <div className="min-w-0">
-            <p className="eyebrow">{S.body.overall} · {S.common.day} {day}</p>
+            <p className="eyebrow">{S.body.overall} · {S.common.day} {day} · <span className="normal-case">{S.body.flow}</span></p>
             <h1 id="overall" className={cn("text-3xl font-bold leading-tight md:text-4xl", sinDatos ? "text-muted-foreground" : statusText[overall])}>{sinDatos ? S.body.never : S.body.headline[overall]}</h1>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-pretty text-sm md:text-base">
               {sinDatos ? S.banners.realEmptyDetail : S.statusLong[overall]}
@@ -413,9 +413,9 @@ export function BodyView() {
                 activa ? "border-primary ring-2 ring-primary/40" : "border-border",
               )}
             >
-              <Icono aria-hidden className={cn("size-6 shrink-0", statusText[z.status], z.status !== "ok" && "animate-pulse")} />
+              <Icono aria-hidden className={cn("size-6 shrink-0", sinDatos ? "text-muted-foreground" : statusText[z.status], !sinDatos && z.status !== "ok" && "animate-pulse")} />
               <span className="min-w-0 flex-1 leading-tight">{S.zones[z.zone]}</span>
-              <span className={cn("hidden font-mono text-xs uppercase xl:inline", statusText[z.status])}>{S.status[z.status]}</span>
+              <span className={cn("hidden font-mono text-xs uppercase xl:inline", sinDatos ? "text-muted-foreground" : statusText[z.status])}>{sinDatos ? S.body.notMeasured : S.status[z.status]}</span>
             </button>
           )
         })}

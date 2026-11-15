@@ -102,6 +102,8 @@ function Estado({ mensaje, detalle, reintentar }: { mensaje: string; detalle?: s
   )
 }
 
+const CLAVE_RELOJ = "vigia:reloj"
+
 function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Catalogo; mode: Mode; setMode: (m: Mode) => void; recargar: () => void; children: React.ReactNode }) {
   const [day, setDayRaw] = useState(catalogo.historial.dia_actual)
   const [profileId, setProfileId] = useState<ProfileId>("transit")
@@ -112,8 +114,21 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   const conectandoDesde = useRef(0)
   const setDevice = useCallback((s: DeviceState) => {
     if (s === "connecting") conectandoDesde.current = Date.now()
+    // se recuerda si el usuario dejó el reloj conectado, para no pedir «Conectar» en cada apertura
+    try {
+      window.localStorage.setItem(CLAVE_RELOJ, s === "disconnected" ? "off" : "on")
+    } catch {
+      // sin almacenamiento (ventana privada): se pide conectar cada vez
+    }
     setDeviceRaw(s)
   }, [])
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(CLAVE_RELOJ) === "on") setDevice("connecting")
+    } catch {
+      // ídem
+    }
+  }, [setDevice])
   const [simulator, setSimulator] = useState(false)
   const [liveHr, setLiveHr] = useState<number | null>(null)
   const [sex, setSex] = useState<Sex>("female")

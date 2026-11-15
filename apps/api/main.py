@@ -38,6 +38,30 @@ DESCRIPCION = (
     "coincide con el manifiesto).")
 ERRORES = {404: {"description": "El nombre no existe como este tipo (escenario o panel) en el manifiesto del gold."},
            500: {"description": "El archivo gold no coincide con el SHA-256 del manifiesto. No usar sus datos."}}
+RAIZ = Path(__file__).resolve().parents[2]
+
+
+def cargar_env(ruta=None):
+    """Carga el `.env` de la raíz del repo (plantilla: `.env.example`) en `os.environ` con la biblioteca estándar:
+    líneas `CLAVE=VALOR` (comillas opcionales, `#` comenta, `export` se tolera). No pisa variables ya definidas ni
+    define las vacías. Devuelve `{clave: valor}` de lo que definió, para poder deshacerlo al apagar."""
+    definidas = {}
+    try:
+        lineas = Path(RAIZ / ".env" if ruta is None else ruta).read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return definidas
+    for linea in lineas:
+        linea = linea.strip()
+        if not linea or linea.startswith("#") or "=" not in linea:
+            continue
+        clave, _, valor = linea.partition("=")
+        clave, valor = clave.removeprefix("export ").strip(), valor.strip()
+        if len(valor) >= 2 and valor[0] == valor[-1] and valor[0] in "\"'":
+            valor = valor[1:-1]
+        if clave and valor and clave not in os.environ:
+            os.environ[clave] = definidas[clave] = valor
+    return definidas
+
 
 def _tic():
     """Entrega los reportes cuyo retardo ya pasó (hora real del servidor)."""
@@ -58,8 +82,10 @@ async def _reloj(segundos):
 
 @asynccontextmanager
 async def ciclo_de_vida(_app):
-    """Reloj de la cola de reportes: cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 lo apaga). Con `SMART_URL`, además,
-    el puente con el servidor del Galaxy Watch (puente_reloj.py)."""
+    """Carga el `.env` de la raíz (sin pisar el entorno) y arranca el reloj de la cola de reportes: cada
+    `VIGIA_RELOJ_SEG` s (por defecto 5; 0 lo apaga). Salvo con `SMART_DESACTIVADO=1`, además el puente con el
+    servidor del Galaxy Watch (puente_reloj.py; `SMART_URL`, por defecto `ws://127.0.0.1:8765/live`)."""
+    cargadas = cargar_env()
     segundos = float(os.environ.get("VIGIA_RELOJ_SEG", "5"))
     tareas = [asyncio.create_task(_reloj(segundos))] if segundos > 0 else []
     puente_reloj.PUENTE = puente_reloj.crear_puente()
@@ -71,6 +97,8 @@ async def ciclo_de_vida(_app):
         with suppress(asyncio.CancelledError):
             await tarea
     puente_reloj.PUENTE = None
+    for clave in cargadas:  # lo que vino del .env se deshace al apagar (los tests arrancan la app varias veces)
+        os.environ.pop(clave, None)
 
 
 app = FastAPI(lifespan=ciclo_de_vida, title="VIGÍA: API del ETL", description=DESCRIPCION, openapi_tags=[
@@ -80,7 +108,7 @@ app = FastAPI(lifespan=ciclo_de_vida, title="VIGÍA: API del ETL", description=D
     {"name": "reloj", "description": "Galaxy Watch4 en vivo, a través del servidor smart-monitor (SMART_URL)."},
     {"name": "sistema", "description": "Estado del servicio."}])
 # shortcut: cualquier origen, sin cookies ni autenticación real (X-Tripulante); acotar `allow_origins` al desplegar
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT"], allow_headers=["*"],
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["*"],
                    allow_private_network=True)  # shortcut: sin lista de orígenes; acotar antes de producción
 app.include_router(rutas_registro)
 app.include_router(rutas_dashboard)

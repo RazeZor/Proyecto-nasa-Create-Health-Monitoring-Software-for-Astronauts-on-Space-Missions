@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useApp } from "@/components/app-context"
 import { COLOR_PULSO, FcChart } from "@/components/device/fc-chart"
 import { IconoChequeo, IconoPunto, IconoSimulador, RelojIlustracion } from "@/components/device/iconos"
+import { PasosConexion } from "@/components/device/pasos-conexion"
 import { CrewWatches, WatchSettings } from "@/components/device/reloj-extras"
 import { SwitchTrack } from "@/components/device/switch"
 import { ICONO_INDICADOR, IconoPulso } from "@/components/shared/iconos"
@@ -68,12 +69,8 @@ export function DeviceView() {
   const cambio = ultimoCambioInstrumento(reloj)
   const sueno = suenoSugerido(reloj)
   const rmssd = datos?.resumen?.rmssd_ms ?? null
-  const diagnostico =
-    device === "disconnected" || !reloj ? null
-      : !reloj.puente.configurado ? S.device.bridgeOff
-      : !reloj.puente.conectado ? S.device.bridgeDown
-      : !reloj.vinculado ? S.device.notLinked
-      : null
+  // el diagnóstico de la conexión va en cuatro pasos (PasosConexion); aquí solo el caso del puente apagado
+  const puenteApagado = device !== "disconnected" && reloj !== null && reloj.puente.desactivado === true
 
   const conectado = device === "connected"
   const simulando = simulator && !conectado
@@ -116,11 +113,12 @@ export function DeviceView() {
           {device === "lost" && <button type="button" className={principal} onClick={() => setDevice("connecting")}>{S.device.reconnect}</button>}
           {device !== "disconnected" && <button type="button" className={secundario} onClick={() => setDevice("disconnected")}>{S.device.disconnect}</button>}
         </div>
-        {diagnostico && (
+        {puenteApagado && (
           <p className="flex w-full items-start gap-3 rounded-2xl border border-status-watch/40 bg-status-watch/12 p-4 text-lg">
-            <Atencion aria-hidden className="mt-0.5 size-6 shrink-0 text-status-watch" />{diagnostico}
+            <Atencion aria-hidden className="mt-0.5 size-6 shrink-0 text-status-watch" />{S.device.bridgeOff}
           </p>
         )}
+        {device !== "disconnected" && !conectado && !puenteApagado && <PasosConexion reloj={reloj} />}
       </section>
 
       {cambio && (

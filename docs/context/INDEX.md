@@ -7,7 +7,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 24 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 77 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 78 |
 | [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 3 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
@@ -89,6 +89,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ESPERA_CONEXION_MS` | constante | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `Ecg` | función | [apps/web/components/body/ecg.tsx](../../apps/web/components/body/ecg.tsx) |
 | `EmptyState` | función | [apps/web/components/shared/states.tsx](../../apps/web/components/shared/states.tsx) |
+| `Entorno` | clase | [apps/api/test_api.py](../../apps/api/test_api.py) |
 | `Entorno` | clase | [apps/api/test_api_dashboard.py](../../apps/api/test_api_dashboard.py) |
 | `EntornoDia` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `EntornoHistorial` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
@@ -222,7 +223,10 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Palabra` | función | [apps/web/components/shared/logo.tsx](../../apps/web/components/shared/logo.tsx) |
 | `Panel` | clase | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
 | `PanelEntornoEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
+| `PasoConexion` | interfaz | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
+| `PasoConexionId` | tipo | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `Pasos` | clase | [pipelines/reanclaje/test_reanclaje.py](../../pipelines/reanclaje/test_reanclaje.py) |
+| `PasosConexion` | función | [apps/web/components/device/pasos-conexion.tsx](../../apps/web/components/device/pasos-conexion.tsx) |
 | `Persistencia` | clase | [apps/api/test_puente_reloj.py](../../apps/api/test_puente_reloj.py) |
 | `PresetTolerancia` | tipo | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `ProfileId` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
@@ -237,6 +241,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ReferenciaEntorno` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `Registro` | clase | [apps/api/test_api_registro.py](../../apps/api/test_api_registro.py) |
 | `Reglas` | clase | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
+| `RelojFalso` | clase | [apps/api/test_puente_reloj.py](../../apps/api/test_puente_reloj.py) |
 | `RelojIlustracion` | función | [apps/web/components/device/iconos.tsx](../../apps/web/components/device/iconos.tsx) |
 | `Report` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `ReportState` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
@@ -284,6 +289,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Validar` | clase | [tools/validar-referencias/test_validar_referencias.py](../../tools/validar-referencias/test_validar_referencias.py) |
 | `Vec3` | tipo | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `VentanaEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
+| `VinculoIn` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `Vista` | tipo | [apps/web/components/body/escena.ts](../../apps/web/components/body/escena.ts) |
 | `Vocabulario` | clase | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
 | `WatchSettings` | función | [apps/web/components/device/reloj-extras.tsx](../../apps/web/components/device/reloj-extras.tsx) |
@@ -324,6 +330,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `cargarEscenarioDiario` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarKpiSimulacion` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `cargarPanelGold` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
+| `cargar_env` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `carpeta` | función | [apps/api/gold.py](../../apps/api/gold.py) |
 | `catalogo` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `cerebro` | función | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
@@ -361,6 +368,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `d` | función | [pipelines/reanclaje/test_panel.py](../../pipelines/reanclaje/test_panel.py) |
 | `dato_invalido` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `descargarCsvReloj` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
+| `desvincular_reloj` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `detectarIdioma` | función | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `dia_de_vuelo` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `diario` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
@@ -409,6 +417,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `indicadorApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `indicadoresUi` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `ingest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
+| `ip_lan` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `isAdaptation` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `lectura` | función | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
 | `lecturaVigente` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
@@ -456,6 +465,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `manifest` | función | [apps/web/app/manifest.ts](../../apps/web/app/manifest.ts) |
 | `manifest` | función | [pipelines/datalake/datalake.py](../../pipelines/datalake/datalake.py) |
 | `manifiesto` | función | [apps/api/gold.py](../../apps/api/gold.py) |
+| `mapa_completo` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `mapa_tripulantes` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `mediana` | función | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `medidas` | función | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
@@ -463,11 +473,13 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `mensajes` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `mensajesUi` | constante | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `metadata` | constante | [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx) |
+| `metodo_de` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `migrar` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |
 | `modoActual` | constante | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
 | `modulo_de` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `modulos` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `nivelApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
+| `nombre_por_defecto` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `nombres_de` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `normales_cara` | función | [tools/modelo-anatomico/construir.py](../../tools/modelo-anatomico/construir.py) |
 | `normales_suaves` | función | [tools/modelo-anatomico/construir.py](../../tools/modelo-anatomico/construir.py) |
@@ -479,6 +491,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `orden_reloj` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `pancreas` | constante | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `panel` | función | [apps/api/gold.py](../../apps/api/gold.py) |
+| `pasosConexion` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `pendientes` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `pendientes` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `perfilApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
@@ -550,6 +563,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `union` | función | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `union_ts` | función | [packages/schemas/test_vocabulario.py](../../packages/schemas/test_vocabulario.py) |
 | `url_http` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
+| `url_reloj_sugerida` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `usarModo` | función | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
 | `useApp` | función | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
 | `useReportState` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
@@ -558,6 +572,9 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `validar` | función | [tools/validar-referencias/validar_referencias.py](../../tools/validar-referencias/validar_referencias.py) |
 | `verificarSaludApi` | función | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `viewport` | constante | [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx) |
+| `vincularReloj` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
+| `vincular_reloj` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
+| `vinculos_bd` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `vista` | función | [tools/modelo-anatomico/construir.py](../../tools/modelo-anatomico/construir.py) |
 | `volumen` | función | [tools/modelo-anatomico/util_malla.py](../../tools/modelo-anatomico/util_malla.py) |
 | `worst` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
