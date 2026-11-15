@@ -621,7 +621,7 @@
         "hrv5": "HRV últimos 5 min (RMSSD)",
         "sleepEst": "Sueño de anoche (estimado)",
         "experimental": "experimental",
-        "instrumentChange": "Cambio de instrumento ({detalle}): la FC en reposo de antes y de después no es comparable. VIGÍA reinicia su línea base en vuelo: durante 7 días registrados la FC solo se evalúa con los límites clínicos (A.6).",
+        "instrumentChange": "Cambio de instrumento ({detalle}): la FC en reposo de antes y de después no es comparable. VIGÍA reinicia su línea base en vuelo: durante 8 días registrados la FC solo se evalúa con los límites clínicos (A.6).",
         "crew": "Relojes de la tripulación",
         "crewDesc": "Solo el estado de cada reloj y si hubo chequeo hoy. Los valores fisiológicos los ve su dueño.",
         "crewEmpty": "El servidor del reloj aún no informa tripulantes.",
@@ -847,7 +847,7 @@
         },
         "sourcesNote": "Las referencias completas están en el informe técnico del repositorio.",
         "ai": "Uso de IA",
-        "aiBody": "Usamos un asistente de IA (Claude, de Anthropic) para investigar fuentes públicas de NASA, CSA y NOAA, redactar documentación y ayudar a escribir y revisar código. El equipo comprobó las fuentes, que se citan en el informe. No se usan imágenes ni vídeos generados por IA.",
+        "aiBody": "Usamos asistentes de IA (Claude, de Anthropic, mediante Claude Code; OpenAI Codex como revisor independiente) para investigar fuentes públicas de NASA, CSA y NOAA, redactar y revisar documentación y ayudar a escribir, revisar y probar código. Las decisiones, los indicadores, las reglas y las fuentes son del equipo. No hay imágenes, vídeo ni audio generados por IA.",
         "provMeasured": "Introducido por el astronauta o transmitido desde un dispositivo vinculado.",
         "provSimulated": "Fisiología sintética y anomalías inyectadas del modo demo.",
         "provScenario": "Calendario de misión: el día en que cae cada ventana real es una decisión del escenario.",
@@ -879,7 +879,19 @@
         "scopeBody": "VIGÍA ayuda a un astronauta a evaluar su propia salud en menos de 90 segundos al día y decidir qué hacer sin esperar a la Tierra. Combina tres capas de detección: límites clínicos de seguridad (A), desviación de una línea base personal (B) y deriva lenta durante varios días (C), además del contexto ambiental.",
         "provenance": "Leyenda de procedencia de datos",
         "hazards": "Marco de riesgos",
-        "disclaimer": "Aviso"
+        "disclaimer": "Aviso",
+        "earth": "En la Tierra",
+        "earthLead": "El mismo patrón sirve donde el médico está lejos y la evacuación no es inmediata: autoevaluación diaria contra la propia línea base, con el entorno como contexto.",
+        "earthList": {
+          "0": {
+            "0": "Estación Concordia (Antártida, ESA)",
+            "1": "Un solo médico para la tripulación y nueve meses de invierno sin posibilidad de evacuación; la ESA la usa como análogo de misiones de larga duración. VIGÍA daría a cada persona su estado y su siguiente paso antes de consultar."
+          },
+          "1": {
+            "0": "Comunidades remotas y salud rural",
+            "1": "La CSA explora llevar la monitorización portátil del Bio-Monitor a regiones alejadas de un hospital. Un registro diario con línea base personal cambia la decisión de cuándo pedir un traslado."
+          }
+        }
       },
       "common": {
         "loading": "Cargando...",

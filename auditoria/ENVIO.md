@@ -47,7 +47,7 @@ Context rules sit on top: cabin CO2 above 3 mmHg with reported headache becomes 
 
 **Offline.** A hand-written service worker caches the app shell, the engine and the 3D model; check-ins and escalations queue locally and sync when the link returns. Only the first opening on a device needs a link.
 
-**Tools and languages.** Next.js 16, React 19, TypeScript and Tailwind CSS 4 for the PWA; three.js for the 3D body; FastAPI and SQLite for the on-board API; Python 3 (standard library only) for the data lake and the ETL that re-anchors real measurements to the mission timeline; JSON Schema contracts shared between pipelines and apps; node:test and unittest (248 tests). Interface in Spanish and English.
+**Tools and languages.** Next.js 16, React 19, TypeScript and Tailwind CSS 4 for the PWA; three.js for the 3D body; FastAPI and SQLite for the on-board API; Python 3 (standard library only) for the data lake and the ETL that re-anchors real measurements to the mission timeline; JSON Schema contracts shared between pipelines and apps; node:test and unittest (270 tests: 211 Python, 59 Node). Interface in Spanish and English.
 
 **What we hope to achieve.** To move health monitoring from "send data to Earth" to "decide on board", with a method a flight surgeon can audit: every alert states its layer, its threshold, its source and what left the device. The same architecture serves analog missions, Antarctic stations and remote communities on Earth.
 

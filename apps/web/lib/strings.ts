@@ -727,6 +727,12 @@ export const S = {
     provSimulated: tx("web.S.about.provSimulated"),
     provScenario: tx("web.S.about.provScenario"),
     provReal: tx("web.S.about.provReal"),
+    earth: tx("web.S.about.earth"),
+    earthLead: tx("web.S.about.earthLead"),
+    earthList: [
+      [tx("web.S.about.earthList.0.0"), tx("web.S.about.earthList.0.1")],
+      [tx("web.S.about.earthList.1.0"), tx("web.S.about.earthList.1.1")],
+    ] as [string, string][],
     hazardList: [
       [
         tx("web.S.about.hazardList.0.0"),

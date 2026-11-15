@@ -170,6 +170,19 @@ export function AboutView() {
         </section>
       </div>
 
+      {/* 5b. En la Tierra: el mismo patrón donde el médico está lejos */}
+      <section aria-labelledby="tierra" className={tarjeta}>
+        <Titulo id="tierra" icono={IconoEntorno} titulo={S.about.earth} entrada={S.about.earthLead} />
+        <dl className="mt-5 grid gap-3 md:grid-cols-2">
+          {S.about.earthList.map(([k, v]) => (
+            <div key={k} className="rounded-2xl bg-muted/60 p-4">
+              <dt className="text-lg font-semibold leading-tight">{k}</dt>
+              <dd className="mt-1 text-base leading-snug text-muted-foreground">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
       {/* 5. Marco de riesgos */}
       <section aria-labelledby="riesgos" className={tarjeta}>
         <Titulo id="riesgos" icono={IconoEntorno} titulo={S.about.hazards} />

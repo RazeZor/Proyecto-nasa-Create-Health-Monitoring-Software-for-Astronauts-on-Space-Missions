@@ -1164,7 +1164,7 @@
         },
         {
           "ruta": "apps/web/components/about/about-view.tsx",
-          "lineas": 234,
+          "lineas": 247,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2188,7 +2188,7 @@
         },
         {
           "ruta": "apps/web/components/shell/alert-center.tsx",
-          "lineas": 212,
+          "lineas": 213,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2676,7 +2676,7 @@
         },
         {
           "ruta": "apps/web/lib/engine.ts",
-          "lineas": 279,
+          "lineas": 281,
           "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más",
           "test": false,
           "simbolos": [
@@ -3140,7 +3140,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 901,
+          "lineas": 907,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [

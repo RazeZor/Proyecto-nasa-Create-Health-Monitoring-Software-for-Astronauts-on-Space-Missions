@@ -215,8 +215,8 @@ function Banners() {
         </div>
       )}
       {sinRegistros && (
-        <div role="status" className="flex flex-wrap items-center gap-3 border-b border-primary/30 bg-primary/10 px-4 py-3 md:px-6">
-          <div className="min-w-0 flex-1">
+        <div role="status" className="flex flex-col gap-3 border-b border-primary/30 bg-primary/10 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center md:px-6">
+          <div className="min-w-0 basis-full sm:flex-1 sm:basis-auto">
             <p className="font-semibold">{S.banners.realEmpty}</p>
             <p className="text-sm text-muted-foreground">{S.banners.realEmptyDetail}</p>
           </div>

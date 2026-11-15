@@ -6,12 +6,12 @@
 
 | Criterio | Iteración 1 | Iteración 2 | Evidencia |
 | --- | --- | --- | --- |
-| Impact | 12 | | I2 roles, I3 KPI reproducibles, I4 casos terrestres, I5 licencia (`EVALUADOR-iteracion-1.md`) |
-| Creativity | 16 | | C2 alerta ambiental trazable a dato real, C3 privacidad del sitio público |
-| Validity | 10 | | V1–V5: correcciones locales sin desplegar; sin salidas de tests adjuntas; inglés incompleto en el sitio público |
-| Relevance | 16 | | R2 «Todo en orden» sin datos (corregido en local), R4 recorrido dato NASA → alerta |
-| Presentation | 8 | | P1 demo ausente, P2 síntesis larga (acortada), P3 propósito en la primera pantalla (añadido), P4 versión pública distinta |
-| **Total /100** | **62** | | Evaluador: Codex gpt-6.1-sol, solo con material embebido y capturas |
+| Impact | 12 | 16 | I2 roles, I3 KPI reproducibles, I4 casos terrestres, I5 licencia (`EVALUADOR-iteracion-1.md`) |
+| Creativity | 16 | 20 | C2 alerta ambiental trazable a dato real, C3 privacidad del sitio público |
+| Validity | 10 | 16 | V1–V5: correcciones locales sin desplegar; sin salidas de tests adjuntas; inglés incompleto en el sitio público |
+| Relevance | 16 | 20 | R2 «Todo en orden» sin datos (corregido en local), R4 recorrido dato NASA → alerta |
+| Presentation | 8 | 12 | P1 demo ausente, P2 síntesis larga (acortada), P3 propósito en la primera pantalla (añadido), P4 versión pública distinta |
+| **Total /100** | **62** | **84** | It. 1: Codex gpt-6.1-sol con material embebido y capturas. It. 2: agente Claude independiente con acceso de solo lectura al repo, tests y app local (`EVALUADOR-iteracion-2.md`) |
 
 ## 2. Puertas de elegibilidad (E1–E10)
 
@@ -33,6 +33,7 @@
 Ver `BITACORA.md`. Commits en `fix/auditoria-final`:
 
 - `52ed761` Corregir la veracidad del modo real y alinear textos con el código tras la auditoría.
+- `d6529d6` Hacer conectable el reloj, completar el inglés de la API y cerrar los hallazgos del Tester 2 (LICENSE MIT, fixtures de KPI, informe final en inglés, glosario, guiones). El paso de build de la web en el CI no pudo subirse: el token de git no tiene el permiso `workflow`; queda como pendiente para el equipo (el build se verificó en local).
 
 ## 4. Pendientes y su impacto
 

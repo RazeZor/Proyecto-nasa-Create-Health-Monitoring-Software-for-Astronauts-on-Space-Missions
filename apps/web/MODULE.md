@@ -50,7 +50,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [app/page.tsx](app/page.tsx) | 5 | — |
 | [app/reports/page.tsx](app/reports/page.tsx) | 5 | — |
 | [app/trends/page.tsx](app/trends/page.tsx) | 5 | — |
-| [components/about/about-view.tsx](components/about/about-view.tsx) | 234 | — |
+| [components/about/about-view.tsx](components/about/about-view.tsx) | 247 | — |
 | [components/about/iconos.tsx](components/about/iconos.tsx) | 63 | Iconos de la pantalla Acerca de, con el lenguaje de `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/alerts/alerts-view.tsx](components/alerts/alerts-view.tsx) | 432 | — |
 | [components/alerts/iconos.tsx](components/alerts/iconos.tsx) | 92 | Iconos de las alertas y de los avisos emergentes: privacidad (quién lo ve) y tipo de aviso. Mismo lenguaje que |
@@ -82,7 +82,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/shared/logo.tsx](components/shared/logo.tsx) | 42 | Marca VIGÍA («Centinela»), tal como la define docs/brand: el casco, la V con su cabeza y el punto de estado. |
 | [components/shared/states.tsx](components/shared/states.tsx) | 50 | — |
 | [components/shared/status.tsx](components/shared/status.tsx) | 73 | — |
-| [components/shell/alert-center.tsx](components/shell/alert-center.tsx) | 212 | — |
+| [components/shell/alert-center.tsx](components/shell/alert-center.tsx) | 213 | — |
 | [components/shell/app-shell.tsx](components/shell/app-shell.tsx) | 267 | — |
 | [components/shell/sw-register.tsx](components/shell/sw-register.tsx) | 15 | — |
 | [components/trends/iconos.tsx](components/trends/iconos.tsx) | 46 | Iconos de la ficha del indicador, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
@@ -104,7 +104,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
 | [lib/cola.ts](lib/cola.ts) | 41 | Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local. |
 | [lib/engine.test.ts](lib/engine.test.ts) | 172 | — |
-| [lib/engine.ts](lib/engine.ts) | 279 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más |
+| [lib/engine.ts](lib/engine.ts) | 281 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más |
 | [lib/etl-client.ts](lib/etl-client.ts) | 166 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
 | [lib/reloj.test.ts](lib/reloj.test.ts) | 79 | — |
 | [lib/reloj.ts](lib/reloj.ts) | 259 | Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con |
@@ -112,7 +112,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 901 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/strings.ts](lib/strings.ts) | 907 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
 | [lib/types.ts](lib/types.ts) | 188 | — |
 | [lib/utils.ts](lib/utils.ts) | 10 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |

@@ -264,6 +264,13 @@ The two central user profiles come from the challenge statement itself, which na
 
 ---
 
+### 9.3 Earth analogs with a concrete decision
+
+| Setting | Why it matches | Decision VIGÍA changes | Source |
+| --- | --- | --- | --- |
+| Concordia station, Antarctica (ESA) | One doctor for the crew and nine months of winter with no possible evacuation; ESA uses it as an analog for long-duration spaceflight. | Each crew member gets a daily status against their own baseline and a next step before consulting the single doctor. | https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Concordia |
+| Remote communities and rural health (CSA Bio-Monitor) | CSA presents its Bio-Monitor wearable as technology that can also serve people far from a hospital. | A daily check-in with a personal baseline and transparent alert levels informs when to request a transfer. | https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp |
+
 ## 10. Declared limits and roadmap
 
 **Limits of the prototype.**

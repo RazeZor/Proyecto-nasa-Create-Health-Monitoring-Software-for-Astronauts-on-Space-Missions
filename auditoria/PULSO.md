@@ -1,16 +1,15 @@
 # Pulso del ciclo de auditoría (se reescribe cada ~10 min)
 
-**Última actualización:** 2026-11-15 02:20 (UTC-3). Corte del ciclo: 21:59. Envío: 23:59 (lo hace el usuario).
+**Última actualización:** 2026-11-15 07:55 (UTC-3). Corte del ciclo: 21:59. Envío: 23:59 (lo hace el usuario).
 
 ## Dónde estamos
-- Rama `fix/auditoria-final`, commit `52ed761` + cambios sin commit: MODULE web, LICENSE (MIT), fixtures kpi/barrido, README (licencia, fixtures), CI con build web, home con línea «Registras → compara → sabes qué hacer» y zonas «sin medir» sin datos, ENVIO con resumen corto, GLOSARIO.md, GUIONES.md, EXPLORADOR-reloj.md, EVALUADOR-iteracion-1.md (62/100), INFORME_FINAL.md (borrador con notas it. 1).
-- Build de producción OK en el worktree `C:/Users/ASUS-07/Documents/vigia-build` (junction a node_modules). `tsc` OK.
-- En marcha: Tester iteración 2; Implementador del puente del reloj (solo apps/api: vínculo por API, sin alta automática, metodo unificado, caducidad, .env, SMART_URL por defecto, ip_lan).
-- Codex: evaluador funciona con material embebido (`scratchpad/codex/EVAL-prompt.md` + `-i capturas`), modelo gpt-6.1-sol, ~10 min.
+- Rama `fix/auditoria-final`: commits `52ed761` y `d6529d6` (rama subida a origin); árbol limpio salvo `.claude/`. Build de producción OK en `C:/Users/ASUS-07/Documents/vigia-build` (a5e40ee). API local :8000 con a5e40ee y base nueva; puente del reloj conectado a smart-monitor local.
+- Presentaciones: generador `scratchpad/deck/deck.js` (pptxgenjs 3.12 en `scratchpad/deck/node_modules`; ejecutar con `NODE_PATH` a esa carpeta y `PPTX_SKILL` a la skill pptx; `sin_carpetas.py` quita las entradas de carpeta del zip; `exportar.ps1` exporta PNG con PowerPoint COM). Salida: `scratchpad/deck/salida/VIGIA-demo-7-slides.pptx` (7) y `VIGIA-pitch.pptx` (12), ya abren en PowerPoint y pasan `validate.py`. Faltan las capturas definitivas (`t3-deck-*.png`) y los datos del equipo (argumentos 4-6 de deck.js).
+- El usuario pidió: no usar más Codex; todo con Claude; terminar lo pendiente con varios agentes.
+- Agentes en marcha: Tester 3 (reanudado tras el límite de cuota), Evaluador it. 2 (Claude), conversor a Word del informe final (skill docx).
 
 ## Pendiente (orden)
-1. Tester 2 → regresiones. Reloj API → luego la parte web del reloj (device-view: diagnóstico por pasos, botón «Este es mi reloj», URL para el reloj, autoconexión; reloj.ts con `recibido_hace_s`) + README/ENVIO (cómo conectar el reloj).
-2. Commit 2; `git fetch origin && git merge origin/main`; merge a main y push.
-3. Evaluador iteración 2 (mismo prompt con material actualizado y capturas nuevas).
-4. Redespliegue (permiso ssh pendiente del usuario) con `NEXT_PUBLIC_VIGIA_MODO=demo NEXT_PUBLIC_VIGIA_PUBLICO=1`; resembrar base; probar en ventana privada.
-5. Entregables D: pptx (skill `anthropic-skills:pptx`): demo 7 diapositivas + pitch; informe final del proyecto en inglés (D2, docx o docs); INFORME_FINAL.md; ENVIO con equipo (lo da el usuario).
+1. Tester 3 → regresiones y capturas t3-deck-* → regenerar decks con `node deck.js <capturas> <marca> <salida> "<equipo>" "<integrantes>" "<evento>"` → revisar PNG → copiar los .pptx a `auditoria/`.
+2. Evaluador 2 → `INFORME_FINAL.md` (notas it. 2).
+3. Merge a `main` y push (ff-only). Redespliegue cuando haya permiso ssh (`NEXT_PUBLIC_VIGIA_MODO=demo NEXT_PUBLIC_VIGIA_PUBLICO=1`).
+4. ENVIO.md: equipo e integrantes (los da el usuario). Docx del informe (agente en marcha).

@@ -186,9 +186,10 @@ export function AlertCenter() {
     return () => window.clearTimeout(id)
   }, [push, enRegistro])
 
-  // un aviso no repite lo que la pantalla abierta ya muestra entero: ni las alertas en Alertas ni el entorno en Entorno
+  // un aviso no repite lo que la pantalla abierta ya muestra entero: ni las alertas en Alertas ni el entorno en Entorno.
+  // Durante el registro no se muestra ninguno: taparían el dial y el resultado del registro ya trae el estado y el siguiente paso
   const visibles = toasts.filter((t) =>
-    enRegistro ? t.kind !== "reminder" : ruta.startsWith("/alerts") ? t.kind !== "watch" && t.kind !== "act" : ruta.startsWith("/environment") ? t.kind !== "env" : true)
+    enRegistro ? false : ruta.startsWith("/alerts") ? t.kind !== "watch" && t.kind !== "act" : ruta.startsWith("/environment") ? t.kind !== "env" : true)
   return (
     // franja baja y a la derecha: lejos de la barra superior y de la acción principal de cada pantalla; solo el aviso recibe toques
     <section aria-label={S.toast.region} className="pointer-events-none fixed bottom-3 right-3 z-50 w-[min(38rem,calc(100vw-1.5rem))] md:bottom-5 md:right-5">

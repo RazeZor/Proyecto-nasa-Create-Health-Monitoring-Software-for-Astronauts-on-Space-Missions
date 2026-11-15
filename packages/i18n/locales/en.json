@@ -621,7 +621,7 @@
         "hrv5": "HRV last 5 min (RMSSD)",
         "sleepEst": "Last night's sleep (estimated)",
         "experimental": "experimental",
-        "instrumentChange": "Instrument change ({detalle}): resting HR from before and after is not comparable. VIGÍA resets its in-flight baseline: for 7 logged days HR is evaluated only against the clinical limits (A.6).",
+        "instrumentChange": "Instrument change ({detalle}): resting HR from before and after is not comparable. VIGÍA resets its in-flight baseline: for 8 logged days HR is evaluated only against the clinical limits (A.6).",
         "crew": "Crew watches",
         "crewDesc": "Only each watch's status and whether a check was done today. Physiological values are visible only to their owner.",
         "crewEmpty": "The watch server is not reporting any crew members yet.",
@@ -847,7 +847,7 @@
         },
         "sourcesNote": "Full references are in the technical report of the repository.",
         "ai": "Use of AI",
-        "aiBody": "We used an AI assistant (Claude, by Anthropic) to research public NASA, CSA and NOAA sources, to draft documentation and to help write and review code. Sources were checked by the team and are cited in the report. No AI-generated images or videos are used.",
+        "aiBody": "We used AI assistants (Claude, by Anthropic, through Claude Code; OpenAI Codex as an independent reviewer) to research public NASA, CSA and NOAA sources, to draft and review documentation and to help write, review and test code. Decisions, indicators, rules and sources are the team's. No AI-generated images, video or audio.",
         "provMeasured": "Entered by the astronaut or streamed from a paired device.",
         "provSimulated": "Synthetic physiology and injected anomalies from demo mode.",
         "provScenario": "Mission calendar: the day on which each real window falls is a scenario decision.",
@@ -879,7 +879,19 @@
         "scopeBody": "VIGÍA helps an astronaut assess their own health in under 90 seconds a day and decide what to do without waiting for Earth. It combines three detection layers: clinical safety limits (A), deviation from a personal baseline (B) and slow drift over several days (C), plus environmental context.",
         "provenance": "Data provenance legend",
         "hazards": "Hazard framework",
-        "disclaimer": "Disclaimer"
+        "disclaimer": "Disclaimer",
+        "earth": "On Earth",
+        "earthLead": "The same pattern serves wherever the doctor is far away and evacuation is not immediate: a daily self-assessment against your own baseline, with the environment as context.",
+        "earthList": {
+          "0": {
+            "0": "Concordia station (Antarctica, ESA)",
+            "1": "One doctor for the crew and nine months of winter with no possible evacuation; ESA uses it as an analog for long-duration missions. VIGÍA would give each person their status and next step before consulting."
+          },
+          "1": {
+            "0": "Remote communities and rural health",
+            "1": "CSA explores bringing Bio-Monitor wearable monitoring to regions far from a hospital. A daily check-in with a personal baseline changes the decision of when to ask for a transfer."
+          }
+        }
       },
       "common": {
         "loading": "Loading...",
