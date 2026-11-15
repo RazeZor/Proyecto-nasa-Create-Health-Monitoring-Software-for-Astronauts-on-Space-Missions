@@ -7,7 +7,7 @@
 import { API_BASE_URL } from "./api-registro.ts"
 import type { Lectura } from "../../../packages/engine/engine.ts"
 import { guardarCache, leerCache } from "./storage.ts"
-import { S } from "./strings.ts"
+import { IDIOMA, S } from "./strings.ts"
 import type { IndicatorId, IndicatorInfo, MissionProfile, Mode, ProfileId, Provenance, ThreadMessage, ZoneId } from "./types.ts"
 
 export type FichaJson = {
@@ -123,8 +123,8 @@ export function perfilesUi(api: Record<string, PerfilApi>): MissionProfile[] {
   return (Object.keys(PERFIL_API) as ProfileId[]).map((id) => {
     const p = api[PERFIL_API[id]]
     return {
-      id, label: p.nombre, cabinPressureMmHg: p.presion_cabina_mmHg as MissionProfile["cabinPressureMmHg"],
-      delayMinutes: p.retardo_demo_min, gravity: p.gravedad_etiqueta,
+      id, label: S.profiles[id] ?? p.nombre, cabinPressureMmHg: p.presion_cabina_mmHg as MissionProfile["cabinPressureMmHg"],
+      delayMinutes: p.retardo_demo_min, gravity: S.gravity[p.gravedad_etiqueta] ?? p.gravedad_etiqueta,
     }
   })
 }
@@ -179,14 +179,14 @@ const armar = (c: CatalogoCrudo, sinEnlace: boolean): Catalogo => ({
  * (`sinEnlace: true`): a bordo la red solo sincroniza. Null solo si nunca hubo enlace o falta algo.
  */
 export async function cargarCatalogo(tripulante: number, modo: Mode = "real"): Promise<Catalogo | null> {
-  const clave = `catalogo:${modo}:${tripulante}`
+  const clave = `catalogo:${modo}:${tripulante}:${IDIOMA}`
   try {
     const [perfiles, fichas, entorno, historial, recordatorios, mensajes] = await Promise.all([
       pedir<Record<string, PerfilApi>>("/perfiles"),
-      pedir<FichaJson[]>("/fichas"),
+      pedir<FichaJson[]>(`/fichas?lang=${IDIOMA}`),
       pedir<ReferenciaEntorno>("/entorno/referencia"),
       pedir<Historial>(`/tripulantes/${tripulante}/historial?modo=${modo}`, tripulante),
-      pedir<string[]>(`/tripulantes/${tripulante}/recordatorios`, tripulante),
+      pedir<string[]>(`/tripulantes/${tripulante}/recordatorios?lang=${IDIOMA}`, tripulante),
       pedir<MensajeApi[]>(`/tripulantes/${tripulante}/mensajes?modo=${modo}`, tripulante),
     ])
     const crudo: CatalogoCrudo = { perfiles, fichas, entorno, historial, recordatorios, mensajes }

@@ -12,7 +12,7 @@ Este plan cierra las diferencias entre el repositorio y el [informe técnico](./
 | 4. Entorno real al motor | Hecha. Se añadió el modo real (solo lo que el tripulante ingresa) junto al modo demo |
 | 5. Escalamiento rojo real | Hecha |
 | 6. Sin conexión | Hecha (service worker, manifiesto, copia local del catálogo y cola). Falta la prueba manual con la red cortada en el sitio público |
-| 7. Inglés e i18n | Hecha para la interfaz (435 textos). Las fichas de indicador siguen en español |
+| 7. Inglés e i18n | Hecha: interfaz (435 textos), fichas de indicador, perfiles y recordatorios |
 | 8. Cierre y envío | Tests, lint y contexto en verde; README en inglés. Faltan el despliegue, la prueba de humo en el sitio público, las medidas con personas, el video y el formulario |
 
 Cifras definitivas (500 + 500 misiones, semilla 2026): deriva A1 detectada en el 99,8 % de las misiones a los 8 días de mediana; 17,8 % a mitad de intensidad; A2 y A3 al 100 %; el umbral fijo de 91 lpm no se disparó; falsas alarmas por tripulante y semana de 0,0003 (días 1 a 14) y 0,000 (días 15 a 30).

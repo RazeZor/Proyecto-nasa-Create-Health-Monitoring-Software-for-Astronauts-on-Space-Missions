@@ -37,6 +37,11 @@ class Dashboard(unittest.TestCase):
         self.assertNotIn("index", [f["id"] for f in fichas])
         self.assertEqual(self.c.get("/fichas/spo2").json()["id"], "spo2")
         self.assertEqual(self.c.get("/fichas/no-existe").status_code, 404)
+        en = self.c.get("/fichas/spo2?lang=en").json()  # mismos campos y fuentes; solo cambian los textos
+        es = self.c.get("/fichas/spo2").json()
+        self.assertEqual((set(en), [f["url"] for f in en["fuentes"]]), (set(es), [f["url"] for f in es["fuentes"]]))
+        self.assertNotEqual(en["que_es"], es["que_es"])
+        self.assertEqual(len(self.c.get("/fichas?lang=en").json()), len(fichas))
         self.assertEqual(self.c.get("/fichas/..%2Fperfiles").status_code, 404)  # sin rutas arbitrarias
 
     def test_referencia_de_entorno(self):
@@ -93,6 +98,7 @@ class Dashboard(unittest.TestCase):
     def test_recordatorios_y_mensajes(self):
         rec = self.c.get(f"/tripulantes/{self.ana}/recordatorios", headers=self.h).json()
         self.assertTrue(rec and all(isinstance(x, str) for x in rec))
+        self.assertEqual(len(self.c.get(f"/tripulantes/{self.ana}/recordatorios?lang=en", headers=self.h).json()), len(rec))
         self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/mensajes", headers=self.h).json(), [])  # real: sin hilo de ejemplo
         msj = self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=demo", headers=self.h).json()
         self.assertTrue(msj)

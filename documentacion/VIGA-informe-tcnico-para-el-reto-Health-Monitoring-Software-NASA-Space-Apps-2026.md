@@ -633,7 +633,7 @@ El prototipo demuestra el ciclo completo \(capturar, contextualizar, decidir, re
 | Rachas de registro | Si hay tiempo | No |
 | Lectura de sensor por Bluetooth; entrada por cámara | Si hay tiempo | No |
 
-**Estado al 15 de noviembre de 2026\.** Todas las funciones imprescindibles y los perfiles de misión están implementados y cubiertos por pruebas\. Quedan declarados como pendientes: la glucosa en la capa B, la corrección metrológica de la capa A \(sección 5\.1\), el reinicio de la línea base de SpO2 al cambiar de perfil, la corrección de masa por gravedad local, la prueba PVT\-B, las rachas de registro, la entrada por cámara, el cifrado del almacén y la autenticación de tripulantes\. La interfaz está en español e inglés; las fichas de indicador, en español\.
+**Estado al 15 de noviembre de 2026\.** Todas las funciones imprescindibles y los perfiles de misión están implementados y cubiertos por pruebas\. Quedan declarados como pendientes: la glucosa en la capa B, la corrección metrológica de la capa A \(sección 5\.1\), el reinicio de la línea base de SpO2 al cambiar de perfil, la corrección de masa por gravedad local, la prueba PVT\-B, las rachas de registro, la entrada por cámara, el cifrado del almacén y la autenticación de tripulantes\. La interfaz y las fichas de indicador están en español e inglés\.
 
 Regla de coherencia: el resumen ejecutivo, el resumen del formulario y los guiones solo nombran funciones imprescindibles\. Si una función imprescindible no llega a la entrega, se retira de esos textos antes de enviar\.
 

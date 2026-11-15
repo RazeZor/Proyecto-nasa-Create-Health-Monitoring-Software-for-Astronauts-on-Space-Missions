@@ -60,7 +60,7 @@ function entornoMotor(e: EntornoHistorial, presion: number): EntornoDia {
 }
 
 const textoOrigen = (o?: OrigenDato | null) =>
-  o ? `${o.naturaleza === "Real" ? MOTOR.real : MOTOR.simulado} · ${o.fuente}${o.fecha_real ? ` · ${o.fecha_real}` : ""}` : ""
+  !o ? "" : o.naturaleza === "Real" ? `${MOTOR.real} · ${o.fuente}${o.fecha_real ? ` · ${o.fecha_real}` : ""}` : `${MOTOR.simulado} · ${MOTOR.escenarioDemo}`
 
 /** El parámetro de la capa A que más puntúa ese día: indicador, valor y tramo (lo único que sale en un escalamiento). */
 function parametroClinico(l: Lectura | undefined, suma: number) {

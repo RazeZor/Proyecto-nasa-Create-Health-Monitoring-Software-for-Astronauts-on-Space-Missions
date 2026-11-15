@@ -23,7 +23,7 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 - El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.
 - Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests. Incluye CORS de solo lectura (`GET`) para que `apps/web` consulte la API desde el navegador en entorno local.
 - `GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del caso de referencia (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 27`) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).
-- `mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta.
+- `mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta. `/fichas`, `/fichas/{id}` y `recordatorios` aceptan `lang=en`: las fichas toman los textos de `packages/schemas/fichas_en/<id>.json` (solo campos de texto y títulos de fuente; si falta la traducción se sirve en español).
 - Reloj (`puente_reloj.py`): con `SMART_URL` (`ws://<host>:8765/live` de smart-monitor) se conecta como un panel, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). El nombre del reloj se traduce a id con `SMART_TRIPULANTES` o, si falta, por `alias`. Rutas `GET /reloj/estado`, `GET /tripulantes/{id}/reloj` y `POST /tripulantes/{id}/reloj/ordenes` (privacidad del registro). `websockets` solo se importa con `SMART_URL`. Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).
 - Los mensajes de error salen de `packages/i18n` (`api.error.*`).
 
@@ -55,7 +55,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
 | [main.py](main.py) | 196 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 383 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
-| [rutas_dashboard.py](rutas_dashboard.py) | 212 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
+| [rutas_dashboard.py](rutas_dashboard.py) | 230 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
 | [rutas_registro.py](rutas_registro.py) | 214 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
@@ -64,7 +64,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 59 | — |
 | [test_api.py](test_api.py) | 116 | — |
-| [test_api_dashboard.py](test_api_dashboard.py) | 202 | — |
+| [test_api_dashboard.py](test_api_dashboard.py) | 208 | — |
 | [test_api_registro.py](test_api_registro.py) | 208 | — |
 | [test_puente_reloj.py](test_puente_reloj.py) | 215 | — |
 
@@ -161,12 +161,12 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 **rutas_dashboard.py**
 
-- función `listar_fichas()`: Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice.
-- función `leer_ficha(id: str)`: Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...).
+- función `listar_fichas(lang: Literal['es', 'en']='es')`: Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice.
+- función `leer_ficha(id: str, lang: Literal['es', 'en']='es')`: Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...).
 - función `referencia_entorno()`: Límites de radiación y CO2, umbral de tormenta y fuentes del panel. `dosis_previa_carrera_msv` es simulada.
 - función `historial(id: int=Depends(propio), modo: Literal['real', 'demo']='real', conn=Depends(conexion))`: Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`.
 - función `tripulacion_de_la_mision(quien: int=Depends(actor), conn=Depends(conexion))`: `{id, alias, rol}` de cada tripulante de la misión de quien pregunta (para saber quién es el oficial médico).
-- función `recordatorios(id: int=Depends(propio))`: Lista de textos. Simulado: aún no hay plan de actividades a bordo.
+- función `recordatorios(id: int=Depends(propio), lang: Literal['es', 'en']='es')`: Lista de textos (`lang=en` en inglés). Simulado: aún no hay plan de actividades a bordo.
 - función `mensajes(id: int=Depends(propio), modo: Literal['real', 'demo']='real', conn=Depends(conexion))`: `{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas reales de tierra a los reportes del
 
 **rutas_registro.py**

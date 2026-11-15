@@ -488,6 +488,16 @@
         "close": "Close",
         "apiOffline": "Could not connect to the VIGÍA API",
         "apiOfflineDetail": "This is the first time you have opened VIGÍA on this device and there is no local copy yet. It is saved on the first link, and after that it works offline."
+      },
+      "profiles": {
+        "station": "Station (ISS)",
+        "transit": "Mars transit",
+        "transit-docked": "Docked transit / EVA prep",
+        "lunar": "Lunar surface",
+        "mars": "Mars surface"
+      },
+      "gravity": {
+        "Microgravedad": "Microgravity"
       }
     },
     "MOTOR": {
@@ -553,7 +563,8 @@
         "bone": "Complete today's resistance exercise session.",
         "blood": "Maintain hand hygiene; log your temperature every morning.",
         "mind": "Protect your sleep window; schedule time with the crew."
-      }
+      },
+      "escenarioDemo": "Demonstration scenario"
     }
   }
 }

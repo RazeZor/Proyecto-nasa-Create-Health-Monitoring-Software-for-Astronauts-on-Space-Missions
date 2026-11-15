@@ -488,6 +488,16 @@
         "close": "Cerrar",
         "apiOffline": "No se pudo conectar con la API de VIGÍA",
         "apiOfflineDetail": "Es la primera vez que abres VIGÍA en este dispositivo y aún no hay copia local. Con el primer enlace se guarda y después funciona sin conexión."
+      },
+      "profiles": {
+        "station": "Estación (ISS)",
+        "transit": "Tránsito a Marte",
+        "transit-docked": "Tránsito acoplado / EVA prep",
+        "lunar": "Superficie lunar",
+        "mars": "Superficie de Marte"
+      },
+      "gravity": {
+        "Microgravedad": "Microgravedad"
       }
     },
     "MOTOR": {
@@ -553,7 +563,8 @@
         "bone": "Completa la sesión de ejercicio de resistencia de hoy.",
         "blood": "Mantén la higiene de manos; registra la temperatura cada mañana.",
         "mind": "Protege tu ventana de sueño; programa tiempo con la tripulación."
-      }
+      },
+      "escenarioDemo": "Escenario de demostración"
     }
   }
 }

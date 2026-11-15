@@ -93,7 +93,7 @@ Conventions and architecture (in Spanish): [AGENTS.md](AGENTS.md), [docs/ARQUITE
 
 - Crew physiology in demo mode is simulated; no real astronaut data is used. Clinical thresholds come from NEWS2, a terrestrial standard, and need review by a flight surgeon.
 - Radiation is ambient dose from an area detector, not personal dose. GOES measures at geostationary orbit: it indicates severity and timing, not crew dose.
-- Not yet implemented: glucose in layer B, the in-flight metrology correction of layer A, the PVT-B vigilance test, camera input, storage encryption and crew authentication. Indicator fact sheets are in Spanish only.
+- Not yet implemented: glucose in layer B, the in-flight metrology correction of layer A, the PVT-B vigilance test, camera input, storage encryption and crew authentication.
 
 ## Use of AI
 

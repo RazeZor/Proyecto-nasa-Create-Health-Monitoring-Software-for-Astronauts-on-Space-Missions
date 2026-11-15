@@ -432,6 +432,16 @@ export const S = {
     exportCsv: tx("web.S.device.exportCsv"),
     exportFailed: tx("web.S.device.exportFailed"),
   },
+  profiles: {
+    station: tx("web.S.profiles.station"),
+    transit: tx("web.S.profiles.transit"),
+    "transit-docked": tx("web.S.profiles.transit-docked"),
+    lunar: tx("web.S.profiles.lunar"),
+    mars: tx("web.S.profiles.mars"),
+  } as Record<string, string>,
+  gravity: {
+    Microgravedad: tx("web.S.gravity.Microgravedad"),
+  } as Record<string, string>,
   catalog: {
     hazards: {
       radiacion: tx("web.S.catalog.hazards.radiacion"),
@@ -552,6 +562,7 @@ export const MOTOR = {
   tramoSuma: (puntos: string | number, suma: string | number) => tx("web.MOTOR.tramoSuma", { puntos, suma }),
   eventoSep: (id: string | number) => tx("web.MOTOR.eventoSep", { id }),
   real: tx("web.MOTOR.real"),
+  escenarioDemo: tx("web.MOTOR.escenarioDemo"),
   simulado: tx("web.MOTOR.simulado"),
   estable: tx("web.MOTOR.estable"),
   sinDatos: tx("web.MOTOR.sinDatos"),

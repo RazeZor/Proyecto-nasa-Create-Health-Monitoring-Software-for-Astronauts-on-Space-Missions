@@ -17,6 +17,7 @@ from rutas_registro import ERRORES, actor, conexion, propio
 router = APIRouter(tags=["tablero"])
 _RAIZ = Path(__file__).resolve().parents[2]
 _FICHAS = _RAIZ / "packages" / "schemas" / "fichas"
+_FICHAS_EN = _RAIZ / "packages" / "schemas" / "fichas_en"
 _CASO = _RAIZ / "packages" / "engine" / "fixtures" / "caso-referencia.json"
 _DEMO = Path(__file__).resolve().parent / "demo"
 DIA_ACTUAL_DEMO = 27  # día de misión fijo del modo demo: el último de la deriva A1, con sus alertas ya visibles
@@ -39,18 +40,35 @@ def _ids_fichas():
     return _json(_FICHAS / "index.json")
 
 
+def _ficha(id, lang):
+    """La ficha en español o, con `lang=en`, con los textos de `packages/schemas/fichas_en` encima (si existen:
+    el inglés es secundario y una ficha sin traducir se sirve en español)."""
+    ficha = _json(_FICHAS / f"{id}.json")
+    traduccion = _FICHAS_EN / f"{id}.json"
+    if lang != "en" or not traduccion.exists():
+        return ficha
+    en = _json(traduccion)
+    titulos = en.pop("fuentes", [])
+    ficha.update({k: v for k, v in en.items() if k in ficha})
+    for fuente, titulo in zip(ficha["fuentes"], titulos, strict=False):
+        fuente["titulo"] = titulo
+    return ficha
+
+
 @router.get("/fichas", summary="Fichas de los indicadores")
-def listar_fichas():
-    """Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice."""
-    return [_json(_FICHAS / f"{i}.json") for i in _ids_fichas()]
+def listar_fichas(lang: Literal["es", "en"] = "es"):
+    """Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice.
+    `lang=en` devuelve los textos en inglés donde hay traducción."""
+    return [_ficha(i, lang) for i in _ids_fichas()]
 
 
 @router.get("/fichas/{id}", responses={404: {"description": "No hay ficha con ese id."}}, summary="Una ficha")
-def leer_ficha(id: str):
-    """Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...)."""
+def leer_ficha(id: str, lang: Literal["es", "en"] = "es"):
+    """Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...).
+    `lang=en` la devuelve en inglés si hay traducción."""
     if id not in _ids_fichas():  # el id sale del índice: no hay rutas arbitrarias
         raise HTTPException(404, t("api.error.gold_no_existe", nombre=id))
-    return _json(_FICHAS / f"{id}.json")
+    return _ficha(id, lang)
 
 
 @router.get("/entorno/referencia", summary="Límites, fuentes y dosis previa de carrera")
@@ -192,9 +210,9 @@ def tripulacion_de_la_mision(quien: int = Depends(actor), conn=Depends(conexion)
 
 
 @router.get("/tripulantes/{id}/recordatorios", responses=ERRORES, summary="Recordatorios del día")
-def recordatorios(id: int = Depends(propio)):
-    """Lista de textos. Simulado: aún no hay plan de actividades a bordo."""
-    return _json(_DEMO / "recordatorios.json")
+def recordatorios(id: int = Depends(propio), lang: Literal["es", "en"] = "es"):
+    """Lista de textos (`lang=en` en inglés). Simulado: aún no hay plan de actividades a bordo."""
+    return _json(_DEMO / ("recordatorios.en.json" if lang == "en" else "recordatorios.json"))
 
 
 @router.get("/tripulantes/{id}/mensajes", responses=ERRORES, summary="Hilo con tierra")

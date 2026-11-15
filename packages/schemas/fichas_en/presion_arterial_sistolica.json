@@ -1,0 +1,18 @@
+{
+  "id": "presion_arterial_sistolica",
+  "nombre": "Systolic blood pressure",
+  "que_es": "Peak pressure of the blood in the arteries with each heartbeat.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Feet in the restraints. Arm still and relaxed. Two readings; record the second.",
+    "transito": "Same as on station.",
+    "superficie": "Seated, cuff at heart level. Two readings; record the second."
+  },
+  "por_que": "Monitors cardiovascular adaptation and the response to exercise.",
+  "referencia_en_vuelo": "24-hour brachial pressure drops by 8 to 10 mmHg after 3 to 6 months on the ISS, with a 39% fall in systemic vascular resistance.",
+  "cuando_avisar": "Extreme band of layer A (90 mmHg or less; 220 or more), or persistent deviation from the profile baseline.",
+  "prevencion": "Aerobic and resistance exercise according to the flight plan.",
+  "fuentes": [
+    "The Journal of Physiology, DOI 10.1113/jphysiol.2014.284869 (24-hour brachial pressure in flight)",
+    "Royal College of Physicians: NEWS2 scoring table"
+  ]
+}

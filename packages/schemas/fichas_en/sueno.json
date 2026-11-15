@@ -1,0 +1,18 @@
+{
+  "id": "sueno",
+  "nombre": "Sleep (total duration)",
+  "que_es": "Hours slept per night.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Bedtime and wake-up time in the check-in; actigraphy as a cross-check. Total duration only.",
+    "transito": "Bedtime and wake-up time in the check-in; actigraphy as a cross-check. Total duration only.",
+    "superficie": "Bedtime and wake-up time in the check-in; actigraphy as a cross-check. Total duration only."
+  },
+  "por_que": "HRP risk: inadequate sleep and irregular schedules. Actigraphy estimates total duration well and efficiency and latency poorly, which is why it is never used alone.",
+  "referencia_en_vuelo": "Average sleep in flight is 6 to 6.5 hours.",
+  "cuando_avisar": "Personal deviation (layer B, 3.0 or more two days in a row) or downward drift (layer C, from day 21). With an amber status due to sleep, the vigilance test is offered.",
+  "prevencion": "Consistent sleep schedule in crew quarters with little light and noise; blue-enriched light during the day and blue-depleted light before sleep.",
+  "fuentes": [
+    "NASA HRP: Risks of Human Spaceflight",
+    "VIGÍA technical report, §2.4"
+  ]
+}
