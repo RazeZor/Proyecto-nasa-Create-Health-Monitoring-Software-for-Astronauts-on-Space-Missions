@@ -575,7 +575,7 @@
         },
         {
           "ruta": "apps/api/rutas_dashboard.py",
-          "lineas": 339,
+          "lineas": 341,
           "descripcion": "Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante,",
           "test": false,
           "simbolos": [
@@ -911,7 +911,7 @@
         },
         {
           "ruta": "apps/api/test_api_dashboard.py",
-          "lineas": 326,
+          "lineas": 335,
           "descripcion": "",
           "test": true,
           "simbolos": [

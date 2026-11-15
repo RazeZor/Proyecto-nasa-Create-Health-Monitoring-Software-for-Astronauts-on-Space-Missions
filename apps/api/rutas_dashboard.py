@@ -1,6 +1,6 @@
 """Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante,
 historial, recordatorios y mensajes. La app no guarda datos de ejemplo: los que aún no salen de una fuente real
-viven aquí (apps/api/demo/ y el caso de referencia del simulador) y se rotulan `Simulado`.
+viven aquí (apps/api/demo/ y el caso del viaje a Marte del simulador) y se rotulan `Simulado`.
 """
 import json
 import math
@@ -20,9 +20,9 @@ router = APIRouter(tags=["tablero"])
 _RAIZ = Path(__file__).resolve().parents[2]
 _FICHAS = _RAIZ / "packages" / "schemas" / "fichas"
 _FICHAS_EN = _RAIZ / "packages" / "schemas" / "fichas_en"
-_CASO = _RAIZ / "packages" / "engine" / "fixtures" / "caso-referencia.json"
+_CASO = _RAIZ / "packages" / "engine" / "fixtures" / "caso-viaje.json"
 _DEMO = Path(__file__).resolve().parent / "demo"
-DIA_ACTUAL_DEMO = 27  # día de misión fijo del modo demo: el último de la deriva A1, con sus alertas ya visibles
+DIA_ACTUAL_DEMO = 130  # día de misión fijo del modo demo: a mitad del tránsito, con las tres anomalías (días 60, 100–109 y 112–113) ya visibles
 DIAS_VUELO_MINIMO = 30  # eje de las gráficas en modo real mientras la misión es más corta
 ESCENARIO_ENTORNO = {"real": "mision-real", "demo": "mision-vigia"}  # paneles gold de pipelines/reanclaje/escenarios
 CO2_LIMITE_MMHG = 3.0
@@ -159,13 +159,15 @@ def _entorno_real(panel):
 
 
 def _entorno_demo(caso, reales):
-    """Escenario de demostración: el entorno simulado del caso de referencia, con las mediciones reales del gold
+    """Escenario de demostración: el entorno simulado del viaje a Marte (con la posición de la nave y la dosis de cada día), con las mediciones reales del gold
     donde el escenario las trae. Las anomalías inyectadas (pico de CO2 y tormenta, §5.5) mandan y van `Simulado`."""
     salida = []
+    posiciones = {p["dia"]: p for p in caso.get("trayectoria", [])}
     for sim in caso["entorno_diario"]:
         d = sim["dia_mision"]
         real = reales.get(d, {})
-        e = {"dia_mision": d, "co2_ppm_max_horario": None, "co2_mmhg_max_horario": sim["co2_mmhg_max_horario"],
+        e = {"dia_mision": d, "posicion": posiciones.get(d), "dosis_msv_dia": sim.get("dosis_msv_dia"),
+             "dosis_acumulada_msv": sim.get("dosis_acumulada_msv"), "co2_ppm_max_horario": None, "co2_mmhg_max_horario": sim["co2_mmhg_max_horario"],
              "co2_origen": {"naturaleza": "Simulado", "fuente": "Escenario de demostración", "fecha_real": None},
              "flujo_protones_10mev_pfu": sim["flujo_protones_10mev_pfu"],
              "flujo_origen": {"naturaleza": "Simulado", "fuente": "Escenario de demostración", "fecha_real": None},
@@ -216,7 +218,7 @@ def historial(id: int = Depends(propio_o_clinico), modo: Literal["real", "demo"]
 
     - `modo=real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`) y el entorno medido
       del panel gold `mision-real`. Sin simulación: un día sin registro no tiene lecturas.
-    - `modo=demo`: el tripulante simulado del caso de referencia (§5.5, `naturaleza: Simulado`) con las anomalías
+    - `modo=demo`: el tripulante simulado del viaje a Marte (259 días, `naturaleza: Simulado`) con las anomalías
       inyectadas, más las mediciones reales del panel gold `mision-vigia` donde el escenario las trae.
 
     En `entorno_diario`, el CO2 real viene en ppm (`co2_ppm_max_horario`: la app lo convierte con la presión del
@@ -254,7 +256,7 @@ PASO_INTRADIA_MIN = 15
 
 
 def _intradia_demo(id, dia, base, hasta):
-    """Puntos cada 15 min desde las 00:00 hasta `hasta` alrededor del valor diario `base` del caso de referencia: ritmo
+    """Puntos cada 15 min desde las 00:00 hasta `hasta` alrededor del valor diario `base` del viaje: ritmo
     circadiano suave (máximo a las 16:00) y ruido acotado. La semilla es (tripulante, día, campo): siempre los mismos."""
     fin = int(hasta[:2]) * 60 + int(hasta[3:])
     series = {}
@@ -281,7 +283,7 @@ def intradia(id: int = Depends(propio_o_clinico_intradia), modo: Literal["real",
 
     - `modo=real`: las lecturas `Real` de ese día, sin agrupar. Sin lecturas, listas vacías.
     - `modo=demo`: simuladas cada 15 min hasta `hasta` (por defecto la hora actual) alrededor del valor diario del
-      tripulante simulado del caso de referencia (día `DIA_ACTUAL_DEMO`); `naturaleza: Simulado`."""
+      tripulante simulado del viaje (día `DIA_ACTUAL_DEMO`); `naturaleza: Simulado`."""
     if modo == "demo":
         dia = dia or DIA_ACTUAL_DEMO
         caso = _json(_CASO)

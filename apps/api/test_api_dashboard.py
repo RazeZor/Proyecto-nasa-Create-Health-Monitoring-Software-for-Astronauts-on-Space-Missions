@@ -50,15 +50,23 @@ class Dashboard(unittest.TestCase):
         self.assertEqual({f["id"] for f in r["fuentes"]}, {"radlab", "eda", "donki", "goes"})
         self.assertEqual(r["naturaleza_dosis_previa"], "Simulado")
 
-    def test_historial_demo_es_el_caso_de_referencia_simulado(self):
+    def test_historial_demo_es_el_viaje_a_marte_simulado(self):
         r = self.c.get(f"/tripulantes/{self.ana}/historial?modo=demo", headers=self.h)
         self.assertEqual(r.status_code, 200)
         h = r.json()
-        self.assertEqual((h["modo"], h["naturaleza"], h["dias_vuelo"], h["dia_actual"]), ("demo", "Simulado", 30, 27))
-        self.assertEqual(len(h["lecturas"]), 44)  # 14 de prevuelo + 30 de vuelo
-        self.assertEqual(len(h["entorno_diario"]), 30)
-        dia12 = h["entorno_diario"][11]  # anomalía A2 inyectada: va rotulada Simulado
-        self.assertEqual((dia12["co2_mmhg_max_horario"], dia12["co2_origen"]["naturaleza"]), (4.6, "Simulado"))
+        self.assertEqual((h["modo"], h["naturaleza"], h["dias_vuelo"], h["dia_actual"]), ("demo", "Simulado", 259, 130))
+        self.assertEqual(len(h["lecturas"]), 14 + 259)  # 14 de prevuelo + el tránsito completo
+        self.assertEqual(len(h["entorno_diario"]), 259)
+        dia60 = h["entorno_diario"][59]  # anomalía A2 inyectada: va rotulada Simulado
+        self.assertEqual((dia60["co2_mmhg_max_horario"], dia60["co2_origen"]["naturaleza"]), (4.6, "Simulado"))
+
+    def test_historial_demo_trae_la_posicion_y_la_dosis_de_cada_dia(self):
+        h = self.c.get(f"/tripulantes/{self.ana}/historial?modo=demo", headers=self.h).json()
+        primero, ultimo = h["entorno_diario"][0], h["entorno_diario"][-1]
+        self.assertLess(primero["posicion"]["retardo_min"], 1)
+        self.assertTrue(3 < ultimo["posicion"]["retardo_min"] <= 22)
+        self.assertLess(primero["dosis_acumulada_msv"], ultimo["dosis_acumulada_msv"])
+        self.assertEqual([e["posicion"]["dia"] for e in h["entorno_diario"]], list(range(1, 260)))
 
     def test_historial_real_sin_registros_no_inventa_lecturas(self):
         h = self.c.get(f"/tripulantes/{self.ana}/historial", headers=self.h).json()
@@ -101,7 +109,7 @@ class Dashboard(unittest.TestCase):
         # el cuerpo de cada tripulante lo ven los clínicos (oficial médico y, desde Tierra, el cirujano de vuelo); los demás, solo el suyo
         r = self.c.get(f"/tripulantes/{self.ana}/historial", params={"modo": "demo"}, headers={"X-Tripulante": str(self.med)})
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()["lecturas"]), 44)
+        self.assertEqual(len(r.json()["lecturas"]), 14 + 259)
         conn = conectar()
         (fila,) = conn.execute("SELECT actor_id, entidad, entidad_id FROM auditoria WHERE accion = 'lectura_ajena'").fetchall()
         conn.close()
@@ -111,13 +119,13 @@ class Dashboard(unittest.TestCase):
         r = self.c.get(f"/tripulantes/{self.ana}/intradia", params={"modo": "demo", "hasta": "12:00"}, headers=self.h)
         self.assertEqual(r.status_code, 200)
         d = r.json()
-        self.assertEqual((d["dia"], d["naturaleza"]), (27, "Simulado"))
+        self.assertEqual((d["dia"], d["naturaleza"]), (130, "Simulado"))
         self.assertEqual(set(d["series"]), {"fc_reposo_lpm", "spo2_pct", "temp_central_c", "pas_mmHg"})
         fc = d["series"]["fc_reposo_lpm"]
         self.assertEqual([p["hora"] for p in fc[:3]] + [fc[-1]["hora"]], ["00:00", "00:15", "00:30", "12:00"])
         self.assertEqual(len(fc), 49)
         diario = self.c.get(f"/tripulantes/{self.ana}/historial", params={"modo": "demo"}, headers=self.h).json()
-        base = next(f for f in diario["lecturas"] if f["dia_mision"] == 27)
+        base = next(f for f in diario["lecturas"] if f["dia_mision"] == 130)
         for campo, margen in (("fc_reposo_lpm", 15), ("spo2_pct", 1.5), ("temp_central_c", 0.6), ("pas_mmHg", 15)):
             for p in d["series"][campo]:
                 self.assertLessEqual(abs(p["valor"] - base[campo]), margen, (campo, p))
@@ -308,13 +316,14 @@ class Entorno(unittest.TestCase):
 
     def test_modo_demo_mezcla_real_y_anomalias_simuladas_rotuladas(self):
         _, e = self.entorno("demo")
-        self.assertEqual(len(e), 30)
-        self.assertEqual(e[19]["co2_origen"]["naturaleza"], "Real")
-        self.assertEqual((e[12]["co2_mmhg_max_horario"], e[12]["co2_origen"]["naturaleza"]), (4.6, "Simulado"))  # A2 manda
+        self.assertEqual(len(e), 259)
+        self.assertEqual(e[19]["co2_origen"]["naturaleza"], "Real")  # sin anomalía ese día: manda la medición real
         self.assertEqual(e[12]["flujo_origen"]["naturaleza"], "Real")
-        self.assertEqual((e[22]["flujo_protones_10mev_pfu"], e[22]["flujo_origen"]["naturaleza"]), (200.0, "Simulado"))  # A3 manda
+        # las anomalías inyectadas del viaje (A2 el día 60, A3 los días 112 y 113) son simuladas y rotuladas
+        self.assertEqual((e[60]["co2_mmhg_max_horario"], e[60]["co2_origen"]["naturaleza"]), (4.6, "Simulado"))
+        self.assertEqual((e[112]["flujo_protones_10mev_pfu"], e[112]["flujo_origen"]["naturaleza"]), (200.0, "Simulado"))
         self.assertEqual(e[1]["co2_origen"]["naturaleza"], "Simulado")
-        self.assertTrue(e[18]["modo_tormenta"])
+        self.assertTrue(e[18]["modo_tormenta"])  # el evento SEP real de DONKI de este panel de prueba
 
     def test_gold_alterado_no_se_usa(self):
         (Path(self.tmp.name) / "gold" / "panel-mision-real.json").write_text("{}")
