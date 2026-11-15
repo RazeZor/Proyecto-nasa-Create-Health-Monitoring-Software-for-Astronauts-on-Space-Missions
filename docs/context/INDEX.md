@@ -7,7 +7,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 24 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 90 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 91 |
 | [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 5 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
@@ -74,6 +74,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Contratos` | clase | [packages/schemas/test_schemas.py](../../packages/schemas/test_schemas.py) |
 | `CrewView` | función | [apps/web/components/crew/crew-view.tsx](../../apps/web/components/crew/crew-view.tsx) |
 | `CrewWatches` | función | [apps/web/components/device/reloj-extras.tsx](../../apps/web/components/device/reloj-extras.tsx) |
+| `CuerpoPropio` | función | [apps/web/components/crew/crew-body.tsx](../../apps/web/components/crew/crew-body.tsx) |
 | `CuerpoTripulacion` | función | [apps/web/components/crew/crew-body.tsx](../../apps/web/components/crew/crew-body.tsx) |
 | `DIAS_AMBAR_PARA_RECOMENDAR` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `DIAS_CONSECUTIVOS_B` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
@@ -219,6 +220,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `MiembroReloj` | interfaz | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `MissionProfile` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `Mode` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
+| `Modo` | tipo | [apps/web/components/crew/modo-animado.tsx](../../apps/web/components/crew/modo-animado.tsx) |
 | `Opciones` | función | [apps/web/components/checkin/controles.tsx](../../apps/web/components/checkin/controles.tsx) |
 | `OpcionesMotor` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `OrdenIn` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
@@ -285,6 +287,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `SUPUESTOS` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `Sdf` | tipo | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `Seccion` | tipo | [apps/web/lib/roles.ts](../../apps/web/lib/roles.ts) |
+| `SelectorModo` | función | [apps/web/components/crew/modo-animado.tsx](../../apps/web/components/crew/modo-animado.tsx) |
 | `Sex` | tipo | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
 | `Sexo` | tipo | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `Simbolo` | función | [apps/web/components/shared/logo.tsx](../../apps/web/components/shared/logo.tsx) |
@@ -605,6 +608,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `url_reloj_sugerida` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `usarModo` | función | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
 | `useApp` | función | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
+| `useModoAnimado` | función | [apps/web/components/crew/modo-animado.tsx](../../apps/web/components/crew/modo-animado.tsx) |
 | `useReportState` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
 | `validar` | función | [packages/schemas/validador.py](../../packages/schemas/validador.py) |
 | `validar` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
