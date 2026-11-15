@@ -26,3 +26,9 @@ export function lecturaDeTrayecto(entorno: EntornoHistorial[], dia: number): Lec
 /** La trayectoria completa, en orden de día, para dibujarla. */
 export const posicionesDelViaje = (entorno: EntornoHistorial[]): PosicionViaje[] =>
   entorno.flatMap((e) => (e.posicion ? [e.posicion] : [])).sort((a, b) => a.dia - b.dia)
+
+/** Retardo medio de comunicación con la Tierra a lo largo de todo el tránsito (min); null sin posiciones. */
+export function retardoMedioMin(entorno: EntornoHistorial[]): number | null {
+  const ps = posicionesDelViaje(entorno)
+  return ps.length ? ps.reduce((s, p) => s + p.retardo_min, 0) / ps.length : null
+}

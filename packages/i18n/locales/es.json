@@ -969,7 +969,10 @@
         "girarDerecha": "Girar a la derecha (mantén pulsado)",
         "deFrente": "Volver de frente",
         "back7": "7 días atrás",
-        "forward7": "7 días adelante"
+        "forward7": "7 días adelante",
+        "today": "Hoy",
+        "backToToday": "Volver a hoy (día {dia})",
+        "alertDay": "Día con alerta"
       },
       "trayecto": {
         "title": "Trayecto a Marte",
@@ -987,7 +990,8 @@
         "help": "La nave sigue una órbita de transferencia de Hohmann: sale de la Tierra y llega a Marte tras 259 días. Cada día de misión tiene una posición, y de ella salen el retardo de comunicación y la dosis acumulada. Es un escenario simulado, no efemérides reales.",
         "doseNote": "Modelo de escenario: radiación de fondo de unos 1,8 mSv al día más las tormentas solares. No es una medición.",
         "ua": "UA",
-        "mkm": "millones de km"
+        "mkm": "millones de km",
+        "delayMean": "Retardo medio del viaje"
       }
     },
     "MOTOR": {

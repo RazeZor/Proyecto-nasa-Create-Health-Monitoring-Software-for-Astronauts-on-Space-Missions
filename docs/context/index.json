@@ -1013,7 +1013,7 @@
         "**Tiempo real vs. histórico de datos:** en el cuerpo (tiempo real) el pulso, la SpO2, la temperatura y la presión se ven del día por hora (`/intradia`, refresco cada minuto; `shared/grafico-intradia.tsx` y la mini curva de las tarjetas); sueño, ánimo, glucosa y masa no tienen intervalo menor y remiten al histórico. Tendencias (histórico) añade la descomposición en tendencia, ciclo semanal y residuo (`trends/descomposicion.tsx`, `descomponer` de `packages/engine/series.ts`), que solo dibuja el ciclo si existe.",
         "**Ayuda [?]** (`shared/ayuda.tsx`): la explicación (qué es, cómo leerlo, por qué) va detrás de un botón de 44 px que se abre con un toque (popover; pantallas táctiles, sin hover) y queda a la vista solo lo que se lee o se toca: valores, estados y acciones. Aplicado a todas las pantallas: títulos de página (`PageHeader ayuda` en vez de `subtitle`), lienzo y detalle del cuerpo, Tendencias y su descomposición, notas de los paneles de Entorno, secciones de Dispositivo y el retardo de Informes. A la vista quedan los avisos, aclaraciones legales, estados vacíos e instrucciones del registro diario (que ya tiene su propio botón de información); «Acerca de» es la explicación en sí. El popover va en `z-[70]`, por encima de los avisos emergentes (`z-50`).",
         "**Rutas por rol** (`lib/roles.ts`, `app/[rol]/`): `/` solo elige el rol; cada uno entra a su tablero: `/astronauta` (cuerpo, `/body` es el mismo, `/check-in`, `/trends`, `/environment`, `/alerts`, `/reports`, `/device`, `/about`), `/oficial` (tripulación: relojes y bandeja de avisos escalados; `/body`, `/ficha`, `/alerts`, `/environment`, `/device`, `/about`) y `/medico` (informes en Tierra; `/body`, `/ficha`, `/alerts`, `/environment`, `/about`). El conmutador (`modo-animado.tsx`: `useModoAnimado` y `SelectorModo`) es común: el astronauta también tiene los dos modos sobre su propio cuerpo (`CuerpoPropio`, en `/astronauta` y `/astronauta/body`; sin selector de tripulante y sin cambiar de ruta). Oficial y médico tienen los dos modos sobre el mismo selector de tripulantes (`crew-body.tsx`): «Tiempo real» (`/body`, su cuerpo de hoy con botones táctiles de giro (`shared/giro-botones.tsx`: izquierda y derecha mientras se mantienen pulsados, y «de frente») como único modo de girarlo, una vuelta completa (`giroExtra`; sin balanceo ni arrastre: `sinBalanceo`, `sinArrastre`; la rueda anterior está en el commit 3c895f8); vuelve el día al actual) e «Histórico» (`/ficha`; el cambio entre los dos es estado, no navegación: conserva el tripulante elegido, anima 220 ms —`prefers-reduced-motion` lo omite— y deja la ruta con `history.replaceState`; `historico.tsx`: elige el día de misión, minicuerpo (miniatura quieta del cuerpo de tiempo real: el mismo modelo 3D en pequeño, con los órganos teñidos según el estado de ese día; no gira) y `TrendsView`). El encabezado solo muestra el día de misión; cambiarlo es cosa del modo Histórico (el astronauta lo mueve desde su modo Histórico). Este conmutador es aparte de Demo/Real (de dónde salen los datos). `/body` es el cuerpo de cada tripulante en solo lectura: `crew-body.tsx` (`CuerpoTripulacion`, con la vista como parámetro) pide `historial` ajeno (`cargarHistorialAjeno`, queda auditado como `lectura_ajena`) y lo muestra con `VerComo`; el astronauta ve el suyo (`CuerpoPropio`), sin selector. shortcut: el médico actúa con el id del oficial médico hasta tener autenticación. El rol sale de la ruta (`role` en `useApp()`, sin selector); una pantalla que el rol no tiene da 404 (`lib/guardia.ts`; en export estático el estado HTTP es 200 con la página 404). Menú, avisos emergentes (salen plegados, solo el título; tocarlo despliega el detalle) y banners de registro son del astronauta: el estado personal (logo, «Vigilar», toasts) no se muestra a los otros roles. Enlaces entre pantallas con `rutaDe(rol, seccion)`. Si cambias las rutas, actualiza `PANTALLAS` en `public/sw.js` (lo comprueba `lib/roles.test.ts`). shortcut: la ruta solo cambia la vista; el servidor no comprueba el rol hasta la autenticación (#46).",
-        "**Viaje a Marte** (demo): `lib/trayecto.ts` (`lecturaDeTrayecto`, `posicionesDelViaje`) y `components/environment/trayectoria-marte.tsx` dibujan en SVG el Sol, las órbitas de la Tierra y Marte, el arco de la nave (continuo lo recorrido) y el día elegido, con distancia a la Tierra, retardo y dosis acumulada; sale en Entorno (tarjeta grande) y, en miniatura, en el Histórico. Solo aparece si el historial trae `posicion` (el modo real no). En Entorno la dosis del demo es la del modelo del viaje (`Simulado`), no la ventana RadLab. El retardo del perfil de tránsito (`perfilesUi`) es el de hoy. Con 259 días el Histórico añade saltos de 7 días y un deslizador (`historico.tsx`) y los ejes de las gráficas rotulan unas 5 marcas (`lib/ejes.ts`, `marcasDeDia`)."
+        "**Viaje a Marte** (demo): `lib/trayecto.ts` (`lecturaDeTrayecto`, `posicionesDelViaje`) y `components/environment/trayectoria-marte.tsx` dibujan en SVG el Sol, las órbitas de la Tierra y Marte, el arco de la nave (continuo lo recorrido) y el día elegido, con distancia a la Tierra, retardo y dosis acumulada; sale en Entorno (tarjeta grande) y, en miniatura, en el Histórico. Solo aparece si el historial trae `posicion` (el modo real no). En Entorno la dosis del demo es la del modelo del viaje (`Simulado`), no la ventana RadLab. El retardo del perfil de tránsito (`perfilesUi`) es el de hoy. Con 259 días el Histórico usa `navegador-dias.tsx` (día grande con saltos de 1 y 7, deslizador sobre la línea del viaje con la marca de «Hoy», los días con alerta y un botón «Volver a hoy» al día actual; la trayectoria actual no se pierde al navegar). La tarjeta de Entorno suma el retardo medio de todo el tránsito (`retardoMedioMin`) y los ejes de las gráficas rotulan unas 5 marcas (`lib/ejes.ts`, `marcasDeDia`)."
       ],
       "tags": [
         "frontend",
@@ -1809,7 +1809,7 @@
         },
         {
           "ruta": "apps/web/components/crew/historico.tsx",
-          "lineas": 67,
+          "lineas": 42,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1843,6 +1843,20 @@
               "nombre": "SelectorModo",
               "tipo": "función",
               "firma": "SelectorModo",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/crew/navegador-dias.tsx",
+          "lineas": 61,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "NavegadorDias",
+              "tipo": "función",
+              "firma": "NavegadorDias",
               "doc": ""
             }
           ]
@@ -2039,7 +2053,7 @@
         },
         {
           "ruta": "apps/web/components/environment/trayectoria-marte.tsx",
-          "lineas": 80,
+          "lineas": 82,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -3522,7 +3536,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 986,
+          "lineas": 990,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
@@ -3554,14 +3568,14 @@
         },
         {
           "ruta": "apps/web/lib/trayecto.test.ts",
-          "lineas": 32,
+          "lineas": 37,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/trayecto.ts",
-          "lineas": 28,
+          "lineas": 34,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -3581,6 +3595,12 @@
               "nombre": "posicionesDelViaje",
               "tipo": "constante",
               "firma": "posicionesDelViaje",
+              "doc": ""
+            },
+            {
+              "nombre": "retardoMedioMin",
+              "tipo": "función",
+              "firma": "retardoMedioMin",
               "doc": ""
             }
           ]
