@@ -10,9 +10,9 @@ export type Seccion = "body" | "check-in" | "trends" | "environment" | "alerts" 
 
 // El astronauta ve lo suyo; el oficial médico, la tripulación (relojes y avisos escalados); el cirujano de
 // vuelo, en Tierra, lo que le llega (informes y avisos). Los dos clínicos ven el cuerpo de cada tripulante (`body`);
-// el astronauta solo el suyo, que es su inicio.
+// el astronauta solo el suyo (`body` es su propio cuerpo, sin selector).
 export const SECCIONES: Record<Role, Seccion[]> = {
-  astronaut: ["check-in", "trends", "environment", "alerts", "reports", "device", "about"],
+  astronaut: ["body", "check-in", "trends", "environment", "alerts", "reports", "device", "about"],
   cmo: ["body", "alerts", "environment", "device", "about"],
   surgeon: ["body", "reports", "alerts", "environment", "about"],
 }

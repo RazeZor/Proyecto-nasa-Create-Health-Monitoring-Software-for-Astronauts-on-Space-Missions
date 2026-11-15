@@ -32,10 +32,10 @@ test("no todos ven lo mismo: el registro diario es del astronauta y los informes
   assert.equal(permitida("surgeon", "device"), false)
 })
 
-test("los clínicos ven el cuerpo de cada tripulante; el astronauta solo el suyo, que es su inicio", () => {
+test("los clínicos ven el cuerpo de cada tripulante; el astronauta solo el suyo", () => {
   assert.equal(permitida("cmo", "body"), true)
   assert.equal(permitida("surgeon", "body"), true)
-  assert.equal(permitida("astronaut", "body"), false) // sin /astronauta/body: no hay selector de otros tripulantes
+  assert.equal(permitida("astronaut", "body"), true) // el suyo: /astronauta/body no tiene selector de otros
 })
 
 test("el service worker guarda para uso sin conexión cada pantalla de cada rol", () => {
