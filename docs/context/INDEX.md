@@ -7,7 +7,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 24 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 88 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 89 |
 | [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 3 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
@@ -263,6 +263,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ResumenDiarioEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `Role` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `RootLayout` | función | [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx) |
+| `RuedaGiro` | función | [apps/web/components/shared/rueda-giro.tsx](../../apps/web/components/shared/rueda-giro.tsx) |
 | `Rutas` | clase | [apps/api/test_puente_reloj.py](../../apps/api/test_puente_reloj.py) |
 | `S` | constante | [apps/web/lib/strings.ts](../../apps/web/lib/strings.ts) |
 | `SECCIONES` | constante | [apps/web/lib/roles.ts](../../apps/web/lib/roles.ts) |

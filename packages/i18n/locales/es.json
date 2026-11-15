@@ -937,7 +937,7 @@
         "modoReal": "Tiempo real",
         "modoHistorico": "Histórico",
         "minicuerpo": "Estado del cuerpo en el día elegido",
-        "girar": "Girar el cuerpo"
+        "girar": "Girar el cuerpo (arrastra la rueda o usa las flechas)"
       }
     },
     "MOTOR": {

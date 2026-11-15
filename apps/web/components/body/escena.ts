@@ -36,6 +36,8 @@ export interface EstadoEscena {
   giroExtra?: number
   /** Sin el balanceo en reposo: el cuerpo solo gira cuando se le gira (arrastre o deslizador). */
   sinBalanceo?: boolean
+  /** El arrastre del lienzo no gira el cuerpo (solo la rueda de fuera). */
+  sinArrastre?: boolean
 }
 export type Proyeccion = Record<AnclaId, { x: number; y: number; frente: boolean }>
 
@@ -513,7 +515,7 @@ export function crearEscena(
     canvas.setPointerCapture(e.pointerId)
   }
   const alMover = (e: PointerEvent) => {
-    if (!arrastre || estado.giroFijo !== undefined) return
+    if (!arrastre || estado.giroFijo !== undefined || estado.sinArrastre) return
     giroUsuario = arrastre.giro - (e.clientX - arrastre.x) * 0.009
     ultimoToque = performance.now()
   }

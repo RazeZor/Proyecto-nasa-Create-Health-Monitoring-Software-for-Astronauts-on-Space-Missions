@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, ChevronRight, ListChecks, Rotate3d } from "lucide-react"
 import { useApp } from "@/components/app-context"
 import type { AnclaId } from "@/components/body/anatomia"
+import { RuedaGiro } from "@/components/shared/rueda-giro"
 import { BodyStage, type Marcador } from "@/components/body/body-stage"
 import { Ecg } from "@/components/body/ecg"
 import type { Proyeccion, Vista, ZonaCaliente } from "@/components/body/escena"
@@ -217,7 +218,7 @@ export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
         .sort((a, b) => (lecturas[a].estado === "act" ? -1 : 1) - (lecturas[b].estado === "act" ? -1 : 1))
         .map((id): ZonaCaliente => ({ ancla: id, color: HEX[lecturas[id].estado], radio: lecturas[id].estado === "act" ? 0.15 : 0.12 })),
     ]
-    return { sexo: sex, oscuro: theme === "dark", lpm, vista, calientes, giroExtra: (grados * Math.PI) / 180, sinBalanceo: ajeno }
+    return { sexo: sex, oscuro: theme === "dark", lpm, vista, calientes, giroExtra: (grados * Math.PI) / 180, sinBalanceo: ajeno, sinArrastre: ajeno }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sex, theme, lpm, vista, grados, ajeno, lecturas, sintomas.join()])
 
@@ -367,12 +368,7 @@ export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
               </span>
             </p>
           )}
-          {ajeno && general && (
-            <label className="absolute inset-x-12 bottom-16 flex flex-col gap-1 text-center text-xs text-muted-foreground">
-              {S.crew.girar}
-              <input type="range" min={-180} max={180} step={1} value={grados} onChange={(e) => setGrados(Number(e.target.value))} className="w-full accent-primary" />
-            </label>
-          )}
+          {ajeno && <RuedaGiro grados={grados} onChange={setGrados} etiqueta={S.crew.girar} className="absolute bottom-3 right-3" />}
           {general ? (
             <p className="pointer-events-none absolute inset-x-0 bottom-7 text-center text-sm font-medium text-muted-foreground">{S.body.tapHint}</p>
           ) : (
