@@ -63,11 +63,12 @@ test("un campo vacío conserva el valor del escenario", () => {
 
 test("cefalea con el pico de CO2 simulado del día 12: una alerta de entorno, no médica", () => {
   const a = analizar([entrada(12, { symptoms: ["headache"] })])
-  const ctx = a.alerts(12).filter((x) => x.layer === "context")
+  const ctx = a.alerts(12).filter((x) => x.day === 12)
   assert.equal(ctx.length, 1)
   assert.deepEqual([ctx[0].scope, ctx[0].status, ctx[0].escalates, ctx[0].zone], ["crew", "watch", false, "head"])
   // un día sin CO2 alto, el mismo síntoma no cruza con el entorno
-  assert.equal(analizar([entrada(10, { symptoms: ["headache"] })]).alerts(10).filter((x) => x.layer === "context").length, 0)
+  // queda como síntoma personal sin causa ambiental
+  assert.deepEqual(analizar([entrada(10, { symptoms: ["headache"] })]).alerts(10).filter((x) => x.day === 10).map((x) => [x.scope, x.zone]), [["personal", "head"]])
 })
 
 test("el CO2 real llega en ppm y se convierte con la presión del perfil (§3.3)", () => {
@@ -76,11 +77,22 @@ test("el CO2 real llega en ppm y se convierte con la presión del perfil (§3.3)
   const registro = [entrada(10, { symptoms: ["headache"] })]
   const estacion = analizarCon(registro, h, 760)
   assert.equal(estacion.co2(10)?.mmHg, 3.42)
-  const alerta = estacion.alerts(10).find((x) => x.layer === "context")
+  const alerta = estacion.alerts(10).find((x) => x.scope === "crew")
   assert.ok(alerta?.source?.includes("EDA RR-1") && alerta.source.includes("2014-09-21") && alerta.source.startsWith("Real"))
   const superficie = analizarCon(registro, h, 424)
   assert.equal(superficie.co2(10)?.mmHg, 1.908)
-  assert.equal(superficie.alerts(10).filter((x) => x.layer === "context").length, 0)
+  assert.deepEqual(superficie.alerts(10).filter((x) => x.day === 10).map((x) => x.scope), ["personal"]) // ya no es de entorno
+})
+
+test("un síntoma sin causa ambiental pone su zona en ámbar sin escalar; la glucosa tiene banda y capa B", () => {
+  const a = analizar([entrada(10, { symptoms: ["rash", "dizziness"] })])
+  const sintomas = a.alerts(10).filter((x) => x.day === 10)
+  assert.deepEqual(sintomas.map((x) => [x.zone, x.status, x.scope, x.escalates]).sort(), [["blood", "watch", "personal", false], ["head", "watch", "personal", false]])
+  assert.deepEqual([a.zones(10).find((z) => z.zone === "blood")?.status, a.zones(10).find((z) => z.zone === "head")?.status], ["watch", "watch"])
+  const g = analizar([entrada(21, { glucose: 150 }), entrada(28, { glucose: 152 })])
+  const alerta = g.alerts(28).find((x) => x.zone === "blood" && x.layer === "B")
+  assert.deepEqual([alerta?.day, alerta?.status, alerta?.escalates], [28, "watch", false])
+  assert.ok(g.band("glucose").length > 0)
 })
 
 test("evaluateCheckIn: lectura normal ok, límite clínico act, síntoma watch", () => {

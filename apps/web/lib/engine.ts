@@ -9,7 +9,7 @@ import {
   analizarTripulante, DIA_FIN_ADAPTACION, PROTONES_TORMENTA_PFU, puntosNews2, Z_UMBRAL_CONDUCTUAL, Z_UMBRAL_FISIOLOGICO,
 } from "../../../packages/engine/engine.ts"
 import type { EntornoHistorial, Historial, OrigenDato } from "./catalogo.ts"
-import { MOTOR } from "./strings.ts"
+import { MOTOR, S } from "./strings.ts"
 import vocabulario from "./vocabulario.json" with { type: "json" }
 import type { Alert, BandPoint, CheckInEntry, DailyVitals, IndicatorId, Status, Symptom, ZoneId, ZoneResult } from "./types.ts"
 
@@ -24,12 +24,17 @@ const rank: Record<Status, number> = { ok: 0, watch: 1, act: 2 }
 export const worst = (list: Status[]): Status =>
   list.reduce<Status>((a, b) => (rank[b] > rank[a] ? b : a), "ok")
 
-const ZONA: Record<string, ZoneId | null> = { fc: "heart", pas: "heart", news2: "heart", sueno: "mind", animo: "mind", co2: "head", protones: null }
+const ZONA: Record<string, ZoneId | null> = {
+  fc: "heart", pas: "heart", news2: "heart", sueno: "mind", animo: "mind", glucosa: "blood", co2: "head", protones: null,
+  // síntomas sin causa ambiental (informe §3.2): neuro-oculares y vestibulares a la cabeza; inmunes a sangre e inmunidad
+  sintoma_cefalea: "head", sintoma_mareo: "head", sintoma_vision: "head", sintoma_nausea: "head", sintoma_erupcion: "blood",
+}
+const PREFIJO_SINTOMA = "sintoma_"
 const ZONAS: ZoneId[] = ["head", "heart", "bone", "blood", "mind"]
 const SINTOMA = vocabulario.sintomas as Record<Symptom, string>
 /** Indicador de la interfaz -> indicador con banda personal en el motor (capa B). */
 const CON_BANDA: Partial<Record<IndicatorId, [IndicadorB, number]>> = {
-  restingHr: ["fc", Z_UMBRAL_FISIOLOGICO], systolic: ["pas", Z_UMBRAL_FISIOLOGICO],
+  restingHr: ["fc", Z_UMBRAL_FISIOLOGICO], systolic: ["pas", Z_UMBRAL_FISIOLOGICO], glucose: ["glucosa", Z_UMBRAL_FISIOLOGICO],
   sleepH: ["sueno", Z_UMBRAL_CONDUCTUAL], mood: ["animo", Z_UMBRAL_CONDUCTUAL],
 }
 /** Parámetros de la capa A con el id de indicador de la API, para el dato mínimo del escalamiento (§5.4). */
@@ -49,6 +54,7 @@ const enLectura = (e: CheckInEntry, base?: Lectura): Lectura => ({
   temp_central_c: e.tempC ?? base?.temp_central_c ?? null,
   sueno_h: e.sleepH ?? base?.sueno_h ?? null,
   animo_1_10: e.mood,
+  glucosa_mg_dl: e.glucose ?? (base as { glucosa_mg_dl?: number | null } | undefined)?.glucosa_mg_dl ?? null,
   sintomas: e.symptoms.map((s) => SINTOMA[s]),
   durante_tormenta: base?.durante_tormenta ?? false,
 })
@@ -95,6 +101,19 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
 
   function textoAlerta(a: Alerta): Alert {
     const capa = a.capa === "contexto" ? "context" : a.capa
+    if (a.indicador.startsWith(PREFIJO_SINTOMA)) {
+      // síntoma que el entorno medido no explica: ámbar personal en su zona; nunca escala
+      const codigo = a.indicador.slice(PREFIJO_SINTOMA.length)
+      const ui = (Object.keys(SINTOMA) as Symptom[]).find((k) => SINTOMA[k] === codigo)
+      const zona = ZONA[a.indicador] ?? "head"
+      const t = creado.get(a.dia_mision)
+      return {
+        id: `al-${a.dia_mision}-${capa}-${a.indicador}`, day: a.dia_mision, time: t ? new Date(t).toISOString().slice(11, 16) : "",
+        createdAt: t ?? null, status: "watch", layer: capa, zone: zona,
+        indicator: `${MOTOR.sintoma}: ${ui ? S.symptoms[ui] : codigo}`, value: "", clinicalBand: MOTOR.bandaSintoma, cause: MOTOR.causaSintoma,
+        action: MOTOR.accionSintoma[zona === "blood" ? "blood" : "head"], scope: "personal", informative: false, escalates: false,
+      }
+    }
     const indicador = a.indicador as keyof typeof MOTOR.indicador
     const unidad = MOTOR.unidad[indicador]
     const env = entornoApi.get(a.dia_mision)

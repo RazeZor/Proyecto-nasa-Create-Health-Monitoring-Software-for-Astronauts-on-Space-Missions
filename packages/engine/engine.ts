@@ -34,14 +34,17 @@ export const VENTANA_MIN_LECTURAS = 5
 /** Días que tarda un indicador en volver a tener referencia tras un cambio de instrumento (anexo A.6). */
 export const DIAS_VENTANA_REINICIO = VENTANA_MIN_LECTURAS + VENTANA_REZAGO_DIAS
 
-export type IndicadorB = "fc" | "pas" | "sueno" | "animo"
-type CampoB = "fc_reposo_lpm" | "pas_mmHg" | "sueno_h" | "animo_1_10"
+export type IndicadorB = "fc" | "pas" | "sueno" | "animo" | "glucosa"
+type CampoB = "fc_reposo_lpm" | "pas_mmHg" | "sueno_h" | "animo_1_10" | "glucosa_mg_dl"
 const INDICADORES_B: [IndicadorB, CampoB, number][] = [
   ["fc", "fc_reposo_lpm", Z_UMBRAL_FISIOLOGICO],
   ["pas", "pas_mmHg", Z_UMBRAL_FISIOLOGICO],
   ["sueno", "sueno_h", Z_UMBRAL_CONDUCTUAL],
   ["animo", "animo_1_10", Z_UMBRAL_CONDUCTUAL],
+  ["glucosa", "glucosa_mg_dl", Z_UMBRAL_FISIOLOGICO],
 ]
+/** Indicadores semanales: su persistencia son dos medidas seguidas y un día sin medida no la rompe. */
+const SEMANALES: ReadonlySet<IndicadorB> = new Set<IndicadorB>(["glucosa"])
 /** Sentido que vigila la capa C: FC al alza; sueño y ánimo a la baja. */
 const SENTIDO_C: Partial<Record<IndicadorB, number>> = { fc: 1, sueno: -1, animo: -1 }
 
@@ -54,6 +57,8 @@ export interface Lectura {
   temp_central_c: number | null
   sueno_h: number | null
   animo_1_10: number | null
+  /** Semanal: ausente o null los días que no se mide. */
+  glucosa_mg_dl?: number | null
   sintomas: string[]
   durante_tormenta: boolean
 }
@@ -188,7 +193,7 @@ export function analizarTripulante(
   const consecB = {} as Record<IndicadorB, number>
   const referencias = {} as Record<IndicadorB, Referencia[]>
   for (const [ind, campo] of INDICADORES_B) {
-    const valores = prevuelo.map((r) => r[campo]).filter((v): v is number => v !== null)
+    const valores = prevuelo.map((r) => r[campo]).filter((v): v is number => v != null)
     tierra[ind] = valores.length > 0 ? medianaMad(valores) : null
     historia[ind] = []
     excluidos[ind] = new Set()
@@ -232,9 +237,9 @@ export function analizarTripulante(
     // Capas B y C: desviación y deriva contra la referencia vigente
     const adaptacion = d <= DIA_FIN_ADAPTACION
     for (const [ind, campo, umbral] of INDICADORES_B) {
-      const valor = r[campo]
+      const valor = r[campo] ?? null
       if (valor === null) {
-        consecB[ind] = 0 // un día sin medida rompe los "dos días seguidos"
+        if (!SEMANALES.has(ind)) consecB[ind] = 0 // un día sin medida rompe los "dos días seguidos"
         continue
       }
       const ref = referencia(d, tierra[ind], historia[ind], excluidos[ind], piso[ind])
@@ -263,8 +268,13 @@ export function analizarTripulante(
 
     // Contexto: el entorno explica el síntoma o pide refugio. Dato ambiental, no personal.
     const co2 = env.co2_mmhg_max_horario ?? null
-    if (co2 !== null && co2 > CO2_LIMITE_MMHG && r.sintomas.includes("cefalea")) nueva(d, "contexto", "ambar", "co2", co2, { ambito: "tripulacion" })
+    const co2Alto = co2 !== null && co2 > CO2_LIMITE_MMHG
+    if (co2Alto && r.sintomas.includes("cefalea")) nueva(d, "contexto", "ambar", "co2", co2, { ambito: "tripulacion" })
     if (tormenta) nueva(d, "contexto", "ambar", "protones", flujo, { ambito: "tripulacion" })
+    // Síntoma reportado que el entorno medido no explica: ámbar personal, para que su zona del cuerpo lo muestre
+    for (const sintoma of r.sintomas) {
+      if (!(co2Alto && sintoma === "cefalea")) nueva(d, "contexto", "ambar", `sintoma_${sintoma}`, null)
+    }
   }
   return { alertas, referencias }
 }

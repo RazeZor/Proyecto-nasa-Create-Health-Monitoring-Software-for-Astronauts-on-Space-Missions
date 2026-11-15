@@ -43,10 +43,10 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 | [index.py](index.py) | 39 | CLI del ETL de reanclaje. |
 | [panel.py](panel.py) | 82 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
 | [reanclaje.py](reanclaje.py) | 155 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
-| [simulacion.py](simulacion.py) | 517 | Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5). |
+| [simulacion.py](simulacion.py) | 538 | Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5). |
 | [test_panel.py](test_panel.py) | 71 | — |
 | [test_reanclaje.py](test_reanclaje.py) | 96 | — |
-| [test_simulacion.py](test_simulacion.py) | 151 | — |
+| [test_simulacion.py](test_simulacion.py) | 170 | — |
 
 ### API pública
 
@@ -99,5 +99,5 @@ python3 index.py manifest                 SHA-256 y tamaños de cada escenario g
 
 - `pipelines/reanclaje/test_panel.py`: 6 pruebas en Panel (5), Publicar (1)
 - `pipelines/reanclaje/test_reanclaje.py`: 9 pruebas en Pasos (6), Construir (3)
-- `pipelines/reanclaje/test_simulacion.py`: 15 pruebas en Simulacion (3), Reglas (11), FixtureDelMotor (1)
+- `pipelines/reanclaje/test_simulacion.py`: 17 pruebas en Simulacion (3), Reglas (13), FixtureDelMotor (1)
 <!-- CONTEXT:AUTO:END -->

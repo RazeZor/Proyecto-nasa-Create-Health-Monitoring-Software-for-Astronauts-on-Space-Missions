@@ -67,10 +67,19 @@ test("capa B: informativa en adaptación; ámbar y sin escalar después", () => 
 test("contexto: CO2 sobre el límite con cefalea y tormenta son alertas de entorno, no médicas", () => {
   const co2 = alertas({ 12: { sintomas: ["cefalea"] } }, { 12: { co2_mmhg_max_horario: 4.6 } })
   assert.deepEqual(co2.map((a) => [a.capa, a.nivel, a.ambito, a.escalada_auto]), [["contexto", "ambar", "tripulacion", false]])
-  assert.deepEqual(alertas({ 12: { sintomas: ["cefalea"] } }, { 12: { co2_mmhg_max_horario: 3.0 } }), [])
+  // en el límite exacto no lo supera: la cefalea queda como síntoma personal sin causa ambiental
+  assert.deepEqual(alertas({ 12: { sintomas: ["cefalea"] } }, { 12: { co2_mmhg_max_horario: 3.0 } }).map((a) => [a.indicador, a.ambito, a.nivel, a.escalada_auto]), [["sintoma_cefalea", "personal", "ambar", false]])
   for (const entorno of [{ 22: { flujo_protones_10mev_pfu: 10 } }, { 22: { modo_tormenta: true } }]) {
     assert.deepEqual(alertas({}, entorno).map((a) => [a.dia_mision, a.indicador, a.ambito]), [[22, "protones", "tripulacion"]])
   }
+})
+
+test("glucosa semanal en capa B: dos medidas seguidas fuera de la banda, sin que los días sin medida la rompan", () => {
+  const base = { [-7]: { glucosa_mg_dl: 92 }, 0: { glucosa_mg_dl: 92 }, 7: { glucosa_mg_dl: 92 }, 14: { glucosa_mg_dl: 92 } }
+  assert.deepEqual(alertas(base), [])
+  assert.deepEqual(alertas({ ...base, 21: { glucosa_mg_dl: 140 } }), [])
+  const dos = alertas({ ...base, 21: { glucosa_mg_dl: 140 }, 28: { glucosa_mg_dl: 141 } })
+  assert.deepEqual(dos.map((a) => [a.dia_mision, a.capa, a.nivel, a.indicador, a.valor]), [[28, "B", "ambar", "glucosa", 141]])
 })
 
 test("valores ausentes: no puntúan, no alertan y rompen los dos días seguidos", () => {

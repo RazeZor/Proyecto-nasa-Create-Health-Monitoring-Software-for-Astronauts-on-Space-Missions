@@ -510,7 +510,8 @@
         "animo": "Estado de ánimo",
         "news2": "Puntaje clínico NEWS2",
         "co2": "Cefalea con CO2 alto en cabina",
-        "protones": "Tormenta solar"
+        "protones": "Tormenta solar",
+        "glucosa": "Glucosa en sangre"
       },
       "unidad": {
         "fc": "lpm",
@@ -519,7 +520,8 @@
         "animo": "/10",
         "news2": "pts",
         "co2": "mmHg",
-        "protones": "pfu"
+        "protones": "pfu",
+        "glucosa": "mg/dL"
       },
       "banda": {
         "A": "NEWS2 de 5 o más, o un parámetro en su tramo extremo",
@@ -549,7 +551,8 @@
         "animo": "Programa tiempo con la tripulación y comenta cómo te sientes en tu informe.",
         "news2": "Vuelve a medir en 5 min y llama al Oficial Médico.",
         "co2": "Revisa la ventilación y el depurador, acércate a la salida de aire y repite el registro.",
-        "protones": "Ve a la zona blindada y vigila náusea, vómito o fatiga. Las lecturas de hoy quedan marcadas."
+        "protones": "Ve a la zona blindada y vigila náusea, vómito o fatiga. Las lecturas de hoy quedan marcadas.",
+        "glucosa": "Repite la medida con otra tira, con contención de residuos biológicos, y coméntalo en tu informe."
       },
       "tramoExtremo": "Tramo extremo (3 puntos)",
       "tramoSuma": "{puntos} puntos; suma NEWS2 {suma}",
@@ -566,7 +569,14 @@
         "blood": "Mantén la higiene de manos; registra la temperatura cada mañana.",
         "mind": "Protege tu ventana de sueño; programa tiempo con la tripulación."
       },
-      "escenarioDemo": "Escenario de demostración"
+      "escenarioDemo": "Escenario de demostración",
+      "sintoma": "Síntoma reportado",
+      "bandaSintoma": "Síntoma sin causa ambiental medida",
+      "causaSintoma": "Reportaste un síntoma y el entorno medido (CO2 de cabina) no lo explica.",
+      "accionSintoma": {
+        "head": "Descansa, hidrátate y vigila si cambia la visión o aumenta el mareo. Si persiste mañana, compártelo con el Oficial Médico.",
+        "blood": "Mantén la higiene, mide tu temperatura y registra la evolución. Si persiste, compártelo con el Oficial Médico."
+      }
     }
   }
 }

@@ -14,9 +14,9 @@ import validador  # noqa: E402
 import reanclaje  # noqa: E402
 
 
-def lectura(dia, fc=60.0, pas=118.0, spo2=98.0, temp=36.7, sueno=7.0, animo=8, sintomas=()):
+def lectura(dia, fc=60.0, pas=118.0, spo2=98.0, temp=36.7, sueno=7.0, animo=8, sintomas=(), glucosa=None):
     return {"dia_mision": dia, "fc_reposo_lpm": fc, "pas_mmHg": pas, "pad_mmHg": 74.0, "spo2_pct": spo2,
-            "temp_central_c": temp, "sueno_h": sueno, "animo_1_10": animo, "glucosa_mg_dl": None, "masa_kg": None,
+            "temp_central_c": temp, "sueno_h": sueno, "animo_1_10": animo, "glucosa_mg_dl": glucosa, "masa_kg": None,
             "sintomas": list(sintomas), "durante_tormenta": False}
 
 
@@ -114,8 +114,27 @@ class Reglas(unittest.TestCase):
         a = alertas({12: {"sintomas": ("cefalea",)}}, entorno)
         self.assertEqual([(x["capa"], x["nivel"], x["ambito"], x["escalada_auto"]) for x in a],
                          [("contexto", "ambar", "tripulacion", False)])
-        self.assertEqual(alertas({12: {"sintomas": ("cefalea",)}}, {12: {"co2_mmhg_max_horario": 3.0}}), [])  # el límite no lo supera
+        sin_superar = alertas({12: {"sintomas": ("cefalea",)}}, {12: {"co2_mmhg_max_horario": 3.0}})  # el límite no lo supera
+        self.assertEqual([(x["indicador"], x["ambito"]) for x in sin_superar], [("sintoma_cefalea", "personal")])
         self.assertEqual(alertas(None, entorno), [])  # sin síntoma no hay cruce
+
+    def test_sintoma_sin_causa_ambiental_es_ambar_personal(self):
+        a = alertas({10: {"sintomas": ("erupcion", "cefalea")}})
+        self.assertEqual(sorted((x["indicador"], x["capa"], x["nivel"], x["ambito"], x["escalada_auto"]) for x in a),
+                         [("sintoma_cefalea", "contexto", "ambar", "personal", False),
+                          ("sintoma_erupcion", "contexto", "ambar", "personal", False)])
+        # con CO2 alto la cefalea queda explicada por el entorno; la erupción no
+        b = alertas({12: {"sintomas": ("cefalea", "erupcion")}}, {12: {"co2_mmhg_max_horario": 4.6}})
+        self.assertEqual(sorted(x["indicador"] for x in b), ["co2", "sintoma_erupcion"])
+
+    def test_glucosa_semanal_en_capa_b_con_dos_medidas_seguidas(self):
+        base = {d: {"glucosa": 92.0} for d in (-7, 0, 7, 14)}
+        self.assertEqual(alertas(base), [])
+        una = alertas({**base, 21: {"glucosa": 140.0}})
+        self.assertEqual(una, [])  # una sola medida fuera no alerta
+        dos = alertas({**base, 21: {"glucosa": 140.0}, 28: {"glucosa": 141.0}})
+        self.assertEqual([(x["dia_mision"], x["capa"], x["nivel"], x["indicador"], x["valor"]) for x in dos],
+                         [(28, "B", "ambar", "glucosa", 141.0)])
 
     def test_tormenta_por_flujo_o_por_evento(self):
         for entorno in ({22: {"flujo_protones_10mev_pfu": 10.0}}, {22: {"modo_tormenta": True}}):

@@ -408,9 +408,9 @@ VIGÍA no diagnostica: detecta desviaciones, las pone en contexto y propone el s
 | Capa | Variables | Regla | Resultado |
 | --- | --- | --- | --- |
 | A\. Seguridad clínica \(umbral fijo\) | SpO2, temperatura, presión arterial sistólica, frecuencia cardíaca | Tramos de NEWS2 \(Royal College of Physicians, 2017\) | Rojo si un parámetro cae en su tramo extremo o la suma es 5 o más; ámbar si la suma es 3 o 4 |
-| B\. Desviación personal \(robusta\) | Frecuencia cardíaca en reposo, presión sistólica, sueño, ánimo \(glucosa: pendiente\) | Puntuación z modificada frente a la línea base vigente, dos días seguidos | Ámbar |
+| B\. Desviación personal \(robusta\) | Frecuencia cardíaca en reposo, presión sistólica, glucosa, sueño, ánimo | Puntuación z modificada frente a la línea base vigente, dos días seguidos \(glucosa, semanal: dos medidas seguidas\) | Ámbar |
 | C\. Deriva lenta \(CUSUM\) | Frecuencia cardíaca en reposo \(al alza\), sueño y ánimo \(a la baja\) | Suma acumulada unilateral con k = 0,75 y h = 5 | Ámbar |
-| Contexto | Síntomas y entorno | CO2 por encima de 3 mmHg con cefalea; flujo de protones de 10 o más en ≥10 MeV o evento SEP de DONKI | Alerta de entorno \(ámbar, para toda la tripulación\); modo tormenta |
+| Contexto | Síntomas y entorno | CO2 por encima de 3 mmHg con cefalea; flujo de protones de 10 o más en ≥10 MeV o evento SEP de DONKI | Alerta de entorno \(ámbar, para toda la tripulación\); modo tormenta\. Un síntoma que el entorno no explica da un ámbar personal en su zona del cuerpo |
 
 **Capa A: tramos clínicos usados\.**
 
@@ -433,7 +433,7 @@ Esta capa está activa desde el primer día y no depende de ninguna línea base\
 M = 0,6745 * (x - mediana) / MAD
 ```
 
-El umbral no es uniforme\. Para variables fisiológicas \(frecuencia cardíaca y presión; la glucosa semanal aún no pasa por esta capa\) es |M| de 3,5 o más, el valor de Iglewicz y Hoaglin\. Para variables conductuales autorreportadas \(sueño, ánimo\) es 3,0\. En ambos casos se exige persistencia de dos días, y cada variable tiene un piso de dispersión para que una línea base muy estable no convierta ruido en alerta\. SpO2 y temperatura no pasan por esta capa: su rango fisiológico es estrecho y solo responden a la capa A\.
+El umbral no es uniforme\. Para variables fisiológicas \(frecuencia cardíaca, presión y glucosa\) es |M| de 3,5 o más, el valor de Iglewicz y Hoaglin\. Para variables conductuales autorreportadas \(sueño, ánimo\) es 3,0\. En ambos casos se exige persistencia de dos días, y cada variable tiene un piso de dispersión para que una línea base muy estable no convierta ruido en alerta\. SpO2 y temperatura no pasan por esta capa: su rango fisiológico es estrecho y solo responden a la capa A\.
 
 **Capa C: CUSUM\.** Acumula desviaciones pequeñas y sostenidas en un solo sentido\. Solo se activa cuando la línea base ya es por completo de vuelo \(día 21 en adelante\), porque durante la transición el desplazamiento propio de la adaptación la dispararía\. Al emitir una alerta, la suma vuelve a cero\. Los parámetros k = 0,75 y h = 5 se contrastan con un barrido de nueve combinaciones \(`index\.py barrer`, publicado en `gold/barrido\.json`\)\.
 
@@ -633,7 +633,7 @@ El prototipo demuestra el ciclo completo \(capturar, contextualizar, decidir, re
 | Rachas de registro | Si hay tiempo | No |
 | Lectura de sensor por Bluetooth; entrada por cámara | Si hay tiempo | No |
 
-**Estado al 15 de noviembre de 2026\.** Todas las funciones imprescindibles y los perfiles de misión están implementados y cubiertos por pruebas\. Quedan declarados como pendientes: la glucosa en la capa B, la corrección metrológica de la capa A \(sección 5\.1\), el reinicio de la línea base de SpO2 al cambiar de perfil, la corrección de masa por gravedad local, la prueba PVT\-B, las rachas de registro, la entrada por cámara, el cifrado del almacén y la autenticación de tripulantes\. La interfaz y las fichas de indicador están en español e inglés\.
+**Estado al 15 de noviembre de 2026\.** Todas las funciones imprescindibles y los perfiles de misión están implementados y cubiertos por pruebas\. Quedan declarados como pendientes: la masa corporal en la capa C, la corrección metrológica de la capa A \(sección 5\.1\), el reinicio de la línea base de SpO2 al cambiar de perfil, la corrección de masa por gravedad local, la prueba PVT\-B, las rachas de registro, la entrada por cámara, el cifrado del almacén y la autenticación de tripulantes\. La interfaz y las fichas de indicador están en español e inglés\.
 
 Regla de coherencia: el resumen ejecutivo, el resumen del formulario y los guiones solo nombran funciones imprescindibles\. Si una función imprescindible no llega a la entrega, se retira de esos textos antes de enviar\.
 

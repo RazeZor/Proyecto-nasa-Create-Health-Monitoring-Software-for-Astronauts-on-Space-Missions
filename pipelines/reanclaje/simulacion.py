@@ -69,7 +69,9 @@ INDICADORES_B = (
     ("pas", "pas_mmHg", Z_UMBRAL_FISIOLOGICO),
     ("sueno", "sueno_h", Z_UMBRAL_CONDUCTUAL),
     ("animo", "animo_1_10", Z_UMBRAL_CONDUCTUAL),
+    ("glucosa", "glucosa_mg_dl", Z_UMBRAL_FISIOLOGICO),
 )
+# La glucosa es semanal: su persistencia son dos medidas seguidas (no dos días) y un día sin medida no la rompe.
 SENTIDO_C = {"fc": 1.0, "sueno": -1.0, "animo": -1.0}  # FC al alza; sueño y ánimo a la baja
 
 # Anomalías del protocolo (§5.5)
@@ -117,6 +119,11 @@ def _referencia(dia, tierra, historia, excluidos, piso):
     """
     ventana = [v for j, v in historia
                if VENTANA_DIA_INICIO <= j <= dia - VENTANA_REZAGO_DIAS and j not in excluidos][-VENTANA_MAX_LECTURAS:]
+    if tierra is None:  # sin línea base de tierra: la ventana en vuelo sola, cuando llega a 5 lecturas
+        if len(ventana) < VENTANA_MIN_LECTURAS:
+            return None
+        med_v, mad_v = _mediana_mad(ventana)
+        return med_v, max(mad_v, piso)
     w = _peso_vuelo(dia, len(ventana))
     med_t, mad_t = tierra
     if w == 0.0:
@@ -272,18 +279,22 @@ def evaluar_tripulante(tripulante, entorno_por_dia, cusum_k=CUSUM_K, cusum_h=CUS
     """Motor híbrido de referencia sobre un tripulante: alertas de las capas A, B, C y de contexto.
 
     - Capa A: rojo (escala siempre) con un parámetro en su tramo extremo o suma >= 5; ámbar con suma 3 o 4.
-    - Capa B: z modificada contra la referencia vigente, dos días seguidos. En adaptación (días 1 a 14) se
+    - Capa B: z modificada contra la referencia vigente, dos días seguidos (glucosa, semanal: dos medidas seguidas). En adaptación (días 1 a 14) se
       devuelve como `informativa`: se muestra, no alerta. Siempre ámbar.
     - Capa C: CUSUM unilateral desde el día 21 (FC al alza; sueño y ánimo a la baja). Ámbar; al emitir, la suma
       vuelve a cero.
     - Contexto: CO2 sobre el límite con cefalea y modo tormenta. Son de `ambito: tripulacion`: no llevan datos
-      personales y no escalan como alerta médica.
+      personales y no escalan como alerta médica. Un síntoma que el entorno no explica da un ámbar personal
+      (`sintoma_<código>`), que tampoco escala.
     """
     lecturas = sorted(tripulante["lecturas"], key=lambda r: r["dia_mision"])
     prevuelo = [r for r in lecturas if r["dia_mision"] <= 0]
     vuelo = [r for r in lecturas if r["dia_mision"] >= 1]
     piso = SUPUESTOS["mad_min"]
-    tierra = {ind: _mediana_mad([r[campo] for r in prevuelo]) for ind, campo, _ in INDICADORES_B}
+    tierra = {}
+    for ind, campo, _ in INDICADORES_B:
+        medidas = [r[campo] for r in prevuelo if r[campo] is not None]
+        tierra[ind] = _mediana_mad(medidas) if medidas else None  # sin prevuelo: solo vale la ventana en vuelo
 
     alertas = []
     historia = {ind: [] for ind, _, _ in INDICADORES_B}
@@ -308,9 +319,14 @@ def evaluar_tripulante(tripulante, entorno_por_dia, cusum_k=CUSUM_K, cusum_h=CUS
         adaptacion = d <= DIA_FIN_ADAPTACION
         for ind, campo, umbral in INDICADORES_B:
             valor = r[campo]
-            centro, dispersion = _referencia(d, tierra[ind], historia[ind], excluidos[ind], piso[ind])
-            z = 0.6745 * (valor - centro) / dispersion
+            if valor is None:  # medida semanal que hoy no toca
+                continue
+            referencia = _referencia(d, tierra[ind], historia[ind], excluidos[ind], piso[ind])
             historia[ind].append((d, valor))
+            if referencia is None:  # aún no hay con qué comparar
+                continue
+            centro, dispersion = referencia
+            z = 0.6745 * (valor - centro) / dispersion
 
             if abs(z) >= umbral:
                 consec_b[ind] += 1
@@ -330,10 +346,15 @@ def evaluar_tripulante(tripulante, entorno_por_dia, cusum_k=CUSUM_K, cusum_h=CUS
 
         # Contexto: el entorno explica el síntoma o pide refugio. Dato ambiental, no personal.
         co2 = env.get("co2_mmhg_max_horario")
-        if co2 is not None and co2 > CO2_LIMITE_MMHG and "cefalea" in r["sintomas"]:
+        co2_alto = co2 is not None and co2 > CO2_LIMITE_MMHG
+        if co2_alto and "cefalea" in r["sintomas"]:
             alertas.append(_alerta(tripulante, d, "contexto", "ambar", "co2", co2, ambito="tripulacion"))
         if tormenta:
             alertas.append(_alerta(tripulante, d, "contexto", "ambar", "protones", flujo, ambito="tripulacion"))
+        # Síntoma reportado que el entorno medido no explica: ámbar personal, para que su zona del cuerpo lo muestre
+        for sintoma in r["sintomas"]:
+            if not (co2_alto and sintoma == "cefalea"):
+                alertas.append(_alerta(tripulante, d, "contexto", "ambar", f"sintoma_{sintoma}", None))
 
     return alertas
 

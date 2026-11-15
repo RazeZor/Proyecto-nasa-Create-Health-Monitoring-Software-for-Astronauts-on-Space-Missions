@@ -510,7 +510,8 @@
         "animo": "Mood",
         "news2": "NEWS2 clinical score",
         "co2": "Headache with high cabin CO2",
-        "protones": "Solar storm"
+        "protones": "Solar storm",
+        "glucosa": "Blood glucose"
       },
       "unidad": {
         "fc": "bpm",
@@ -519,7 +520,8 @@
         "animo": "/10",
         "news2": "pts",
         "co2": "mmHg",
-        "protones": "pfu"
+        "protones": "pfu",
+        "glucosa": "mg/dL"
       },
       "banda": {
         "A": "NEWS2 of 5 or more, or one parameter in its extreme range",
@@ -549,7 +551,8 @@
         "animo": "Schedule time with the crew and describe how you feel in your report.",
         "news2": "Measure again in 5 min and call the Crew Medical Officer.",
         "co2": "Check the ventilation and the scrubber, move closer to the air outlet and repeat the check-in.",
-        "protones": "Go to the shielded area and watch for nausea, vomiting or fatigue. Today's readings are flagged."
+        "protones": "Go to the shielded area and watch for nausea, vomiting or fatigue. Today's readings are flagged.",
+        "glucosa": "Repeat the measurement with another strip, containing biological waste, and mention it in your report."
       },
       "tramoExtremo": "Extreme range (3 points)",
       "tramoSuma": "{puntos} points; NEWS2 total {suma}",
@@ -566,7 +569,14 @@
         "blood": "Maintain hand hygiene; log your temperature every morning.",
         "mind": "Protect your sleep window; schedule time with the crew."
       },
-      "escenarioDemo": "Demonstration scenario"
+      "escenarioDemo": "Demonstration scenario",
+      "sintoma": "Reported symptom",
+      "bandaSintoma": "Symptom with no measured environmental cause",
+      "causaSintoma": "You reported a symptom and the measured environment (cabin CO2) does not explain it.",
+      "accionSintoma": {
+        "head": "Rest, hydrate and watch for vision changes or worsening dizziness. If it persists tomorrow, share it with the Crew Medical Officer.",
+        "blood": "Keep up hygiene, take your temperature and log how it evolves. If it persists, share it with the Crew Medical Officer."
+      }
     }
   }
 }

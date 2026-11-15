@@ -17,6 +17,8 @@ Este plan cierra las diferencias entre el repositorio y el [informe técnico](./
 
 Cifras definitivas (500 + 500 misiones, semilla 2026): deriva A1 detectada en el 99,8 % de las misiones a los 8 días de mediana; 17,8 % a mitad de intensidad; A2 y A3 al 100 %; el umbral fijo de 91 lpm no se disparó; falsas alarmas por tripulante y semana de 0,0003 (días 1 a 14) y 0,000 (días 15 a 30).
 
+Tras revisar los PR #62 y #63 del equipo se incorporó lo que encaja con el informe: lecturas y referencia por zona en la pantalla del cuerpo, glucosa en la capa B y un ámbar personal por síntoma sin causa ambiental (así las cinco zonas responden). No se incorporó: el envío a la API de alertas ámbar o simuladas (§5.4), los umbrales fijos de glucosa, masa, sueño y ánimo que el informe no define, ni el guardado de la línea base en la API (el motor la recalcula de las lecturas ya guardadas y nadie la lee todavía).
+
 Enlaces directos tras el despliegue: `/?modo=demo&lang=en` abre el escenario de demostración en inglés.
 
 ## Cómo leerlo

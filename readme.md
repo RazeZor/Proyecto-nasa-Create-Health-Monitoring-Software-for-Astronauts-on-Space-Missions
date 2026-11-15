@@ -13,7 +13,7 @@ Halfway to Mars a message to the flight surgeon takes up to 22 minutes each way 
 1. **Daily check-in in under 90 seconds:** heart rate, blood pressure, SpO2, temperature, sleep, mood and symptoms, each with its unit and plain "how to measure in this mission profile" and "why it matters" instructions.
 2. **Three-layer hybrid engine** ([packages/engine](packages/engine/MODULE.md)):
    - **A – clinical safety:** NEWS2 bands. Red on an extreme band or a total of 5+, amber on 3–4.
-   - **B – personal deviation:** modified z-score (median and MAD) against the astronaut's own baseline, two days in a row.
+   - **B – personal deviation:** modified z-score (median and MAD) against the astronaut's own baseline, two days in a row (weekly glucose: two readings in a row).
    - **C – slow drift:** one-sided CUSUM from day 21.
    - The baseline moves from **pre-flight to in-flight** (days 1–14 adaptation, 15–20 blend, 21+ in-flight window with a 3-day lag).
 3. **Measured environment inside the reasoning:** a headache with cabin CO2 above 3 mmHg becomes one environment alert for the crew, not a medical alert; a solar particle event switches on storm mode. CO2 in ppm is converted to partial pressure with the cabin pressure of the mission profile (ISS, transit, Gateway-like, lunar and Mars surface).
@@ -93,7 +93,7 @@ Conventions and architecture (in Spanish): [AGENTS.md](AGENTS.md), [docs/ARQUITE
 
 - Crew physiology in demo mode is simulated; no real astronaut data is used. Clinical thresholds come from NEWS2, a terrestrial standard, and need review by a flight surgeon.
 - Radiation is ambient dose from an area detector, not personal dose. GOES measures at geostationary orbit: it indicates severity and timing, not crew dose.
-- Not yet implemented: glucose in layer B, the in-flight metrology correction of layer A, the PVT-B vigilance test, camera input, storage encryption and crew authentication.
+- Not yet implemented: body mass in layer C, the in-flight metrology correction of layer A, the PVT-B vigilance test, camera input, storage encryption and crew authentication.
 
 ## Use of AI
 

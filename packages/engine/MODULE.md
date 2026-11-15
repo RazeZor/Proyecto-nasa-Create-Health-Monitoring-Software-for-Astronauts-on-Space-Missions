@@ -14,7 +14,8 @@ Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación
 - Reglas (§5.1 y §5.4): capa A roja (un parámetro en tramo extremo o suma >= 5) con `escalada_auto: true` siempre; capa A ámbar con suma 3 o 4. Capa B siempre ámbar; en adaptación (días 1 a 14) sale con `informativa: true` (se muestra, no alerta). Capa C desde el día 21, solo FC al alza y sueño y ánimo a la baja, ámbar, y la suma vuelve a cero al emitir. Contexto: CO2 **mayor** que 3 mmHg con `cefalea` y tormenta (flujo >= 10 pfu o `modo_tormenta` por evento SEP); ambas con `ambito: "tripulacion"`, ámbar y sin escalar.
 - Solo en TypeScript (Python evalúa series completas): valores `null` (medida no tomada: no puntúa, no alerta y rompe los dos días seguidos), tripulante sin prevuelo (capa A desde el día 1; B y C cuando la ventana en vuelo llega a 5 lecturas) y cambio de instrumento (A.6): `{ cambiosInstrumento }` descarta la línea base y la ventana de la FC y pausa sus capas B y C `DIAS_VENTANA_REINICIO` (8) días; la capa A sigue.
 - `analizarTripulante` devuelve además `referencias` (centro, dispersión, z y peso de vuelo por día): con ellas la interfaz dibuja la banda personal. Las claves y los códigos (`fc`, `cefalea`...) son los de la API y el simulador, no los de la UI.
-- Pendiente declarado en el informe: glucosa en la capa B y corrección metrológica de la capa A.
+- Glucosa (semanal) en la capa B: su persistencia son dos medidas seguidas y un día sin medida no la rompe (`SEMANALES`). Síntomas: uno que el entorno no explica (todo salvo `cefalea` con CO2 sobre el límite) da `sintoma_<código>`, ámbar personal de capa `contexto`, sin escalar; la interfaz lo lleva a su zona del cuerpo.
+- Pendiente declarado en el informe: masa corporal en la capa C y corrección metrológica de la capa A.
 
 ## Relación con el informe
 
@@ -32,9 +33,9 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [engine.ts](engine.ts) | 279 | Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD), |
+| [engine.ts](engine.ts) | 289 | Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD), |
 | [instrumento.test.ts](instrumento.test.ts) | 41 | — |
-| [paridad-referencia.test.ts](paridad-referencia.test.ts) | 89 | — |
+| [paridad-referencia.test.ts](paridad-referencia.test.ts) | 98 | — |
 
 ### API pública
 

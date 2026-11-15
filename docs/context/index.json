@@ -1822,14 +1822,14 @@
         },
         {
           "ruta": "apps/web/lib/engine.test.ts",
-          "lineas": 139,
+          "lineas": 151,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/engine.ts",
-          "lineas": 233,
+          "lineas": 252,
           "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más",
           "test": false,
           "simbolos": [
@@ -2269,7 +2269,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 579,
+          "lineas": 589,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
@@ -2493,7 +2493,8 @@
         "Reglas (§5.1 y §5.4): capa A roja (un parámetro en tramo extremo o suma >= 5) con `escalada_auto: true` siempre; capa A ámbar con suma 3 o 4. Capa B siempre ámbar; en adaptación (días 1 a 14) sale con `informativa: true` (se muestra, no alerta). Capa C desde el día 21, solo FC al alza y sueño y ánimo a la baja, ámbar, y la suma vuelve a cero al emitir. Contexto: CO2 **mayor** que 3 mmHg con `cefalea` y tormenta (flujo >= 10 pfu o `modo_tormenta` por evento SEP); ambas con `ambito: \"tripulacion\"`, ámbar y sin escalar.",
         "Solo en TypeScript (Python evalúa series completas): valores `null` (medida no tomada: no puntúa, no alerta y rompe los dos días seguidos), tripulante sin prevuelo (capa A desde el día 1; B y C cuando la ventana en vuelo llega a 5 lecturas) y cambio de instrumento (A.6): `{ cambiosInstrumento }` descarta la línea base y la ventana de la FC y pausa sus capas B y C `DIAS_VENTANA_REINICIO` (8) días; la capa A sigue.",
         "`analizarTripulante` devuelve además `referencias` (centro, dispersión, z y peso de vuelo por día): con ellas la interfaz dibuja la banda personal. Las claves y los códigos (`fc`, `cefalea`...) son los de la API y el simulador, no los de la UI.",
-        "Pendiente declarado en el informe: glucosa en la capa B y corrección metrológica de la capa A."
+        "Glucosa (semanal) en la capa B: su persistencia son dos medidas seguidas y un día sin medida no la rompe (`SEMANALES`). Síntomas: uno que el entorno no explica (todo salvo `cefalea` con CO2 sobre el límite) da `sintoma_<código>`, ámbar personal de capa `contexto`, sin escalar; la interfaz lo lleva a su zona del cuerpo.",
+        "Pendiente declarado en el informe: masa corporal en la capa C y corrección metrológica de la capa A."
       ],
       "tags": [
         "engine",
@@ -2508,7 +2509,7 @@
       "archivos": [
         {
           "ruta": "packages/engine/engine.ts",
-          "lineas": 279,
+          "lineas": 289,
           "descripcion": "Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD),",
           "test": false,
           "simbolos": [
@@ -2709,7 +2710,7 @@
         },
         {
           "ruta": "packages/engine/paridad-referencia.test.ts",
-          "lineas": 89,
+          "lineas": 98,
           "descripcion": "",
           "test": true,
           "simbolos": []
@@ -3191,7 +3192,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/simulacion.py",
-          "lineas": 517,
+          "lineas": 538,
           "descripcion": "Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5).",
           "test": false,
           "simbolos": [
@@ -3299,14 +3300,14 @@
         },
         {
           "ruta": "pipelines/reanclaje/test_simulacion.py",
-          "lineas": 151,
+          "lineas": 170,
           "descripcion": "",
           "test": true,
           "simbolos": [
             {
               "nombre": "lectura",
               "tipo": "función",
-              "firma": "lectura(dia, fc=60.0, pas=118.0, spo2=98.0, temp=36.7, sueno=7.0, animo=8, sintomas=())",
+              "firma": "lectura(dia, fc=60.0, pas=118.0, spo2=98.0, temp=36.7, sueno=7.0, animo=8, sintomas=(), glucosa=None)",
               "doc": ""
             },
             {
