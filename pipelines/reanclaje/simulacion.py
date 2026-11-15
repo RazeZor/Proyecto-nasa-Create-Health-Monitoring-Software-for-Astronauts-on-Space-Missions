@@ -1,13 +1,15 @@
-"""Simulador reproducible y generación de caso de referencia para VIGÍA (§5.5).
+"""Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5).
 
-Protocolo del informe técnico (§5.5):
-- 14 días previos al vuelo (referencia personal) + 30 días de misión en órbita.
-- 4 tripulantes por misión con variabilidad basal realista y desplazamiento por
-  adaptación microgravedad (+3 lpm FC, -0,7 h sueño, -4 mmHg PAS; tau = 4 días).
-- Inyección controlada de anomalías A1 (deriva cardiaca lenta desde día 15),
-  A2 (pérdida aguda de sueño días 20-21) y A3 (deriva conductual combinada desde día 22).
-- Evaluación mediante el motor híbrido de referencia (Capa A NEWS2 + Capa B MAD +
-  Capa C CUSUM desde día 21) y publicación de `caso_referencia` + `kpi` en `gold/`.
+Protocolo (§5.5): 14 días previos al vuelo + 30 de misión, 4 tripulantes, y tres anomalías conocidas:
+- A1: deriva cardiovascular por falta de sueño en trip-1, días 18 a 27 (sueño -0,20 h/día, FC +1 lpm/día,
+  ánimo -0,15/día).
+- A2: pico de CO2 de 4,6 mmHg el día 12; trip-2 y trip-3 reportan cefalea.
+- A3: tormenta solar, 200 pfu en >=10 MeV los días 22 y 23.
+
+Motor (§5.1 y §5.2): capa A (NEWS2), capa B (z modificada contra la línea base vigente, dos días seguidos),
+capa C (CUSUM unilateral desde el día 21) y reglas de contexto (CO2 con cefalea, modo tormenta).
+La línea base pasa de tierra a vuelo: el detector NO conoce los desplazamientos de `SUPUESTOS`; solo los usa
+el generador. `packages/engine/engine.ts` es el port 1:1: si cambias una regla, cámbiala en ambos.
 """
 import datetime as dt
 import math
@@ -22,6 +24,7 @@ DIAS_PREVUELO = 14
 DIAS_VUELO = 30
 TRIPULANTES_POR_MISION = 4
 
+# Supuestos del escenario simulado (solo los usa el generador) y pisos de dispersión del motor.
 SUPUESTOS = {
     "fc_desplazamiento_lpm": 3.0,
     "sueno_desplazamiento_h": -0.7,
@@ -50,24 +53,80 @@ DIAS_CONSECUTIVOS_B = 2
 CUSUM_K = 0.75
 CUSUM_H = 5.0
 CUSUM_DIA_INICIO = 21
+CO2_LIMITE_MMHG = 3.0
+PROTONES_TORMENTA_PFU = 10.0
+# Línea base de tierra a vuelo (§5.2)
+DIA_FIN_ADAPTACION = 14
+DIAS_TRANSICION = 7
+VENTANA_DIA_INICIO = 8
+VENTANA_MAX_LECTURAS = 14
+VENTANA_REZAGO_DIAS = 3
+VENTANA_MIN_LECTURAS = 5
+
+# Indicadores con capa B: campo de la lectura y umbral de z. Los de capa C llevan además el sentido vigilado.
+INDICADORES_B = (
+    ("fc", "fc_reposo_lpm", Z_UMBRAL_FISIOLOGICO),
+    ("pas", "pas_mmHg", Z_UMBRAL_FISIOLOGICO),
+    ("sueno", "sueno_h", Z_UMBRAL_CONDUCTUAL),
+    ("animo", "animo_1_10", Z_UMBRAL_CONDUCTUAL),
+)
+SENTIDO_C = {"fc": 1.0, "sueno": -1.0, "animo": -1.0}  # FC al alza; sueño y ánimo a la baja
+
+# Anomalías del protocolo (§5.5)
+A1_DIA_INICIO = 18
+A1_DIA_FIN = 27
+A2_DIA = 12
+A2_CO2_MMHG = 4.6
+A2_AFECTADOS = ("trip-2", "trip-3")
+A3_DIAS = (22, 23)
+A3_FLUJO_PFU = 200.0
+UMBRAL_FIJO_FC_LPM = 91.0  # comparador terrestre: primer tramo de NEWS2 para la frecuencia cardíaca
 
 
 def _factor_adaptacion(dia_mision, tau=SUPUESTOS["tau_adaptacion_dias"]):
-    """Peso w(d) = 1 - exp(-d / tau) para días de vuelo (d >= 1)."""
+    """Curva del generador: w(d) = 1 - exp(-d / tau) para días de vuelo (d >= 1)."""
     if dia_mision <= 0:
         return 0.0
     return 1.0 - math.exp(-dia_mision / tau)
 
 
-def _mad_bruto(valores, minimo):
-    """Calcula mediana y MAD sin factor 1,4826 con piso MAD_MIN (§5.1)."""
+def _mediana_mad(valores):
+    """Mediana y MAD sin el factor 1,4826 y sin piso."""
     med = median(valores)
-    desviaciones = [abs(v - med) for v in valores]
-    return med, max(median(desviaciones), minimo)
+    return med, median([abs(v - med) for v in valores])
+
+
+def _mad_bruto(valores, minimo):
+    """Mediana y MAD con piso MAD_MIN (§5.1)."""
+    med, mad = _mediana_mad(valores)
+    return med, max(mad, minimo)
+
+
+def _peso_vuelo(dia, n_ventana):
+    """w(d) de §5.2: 0 en adaptación o con menos de 5 lecturas en vuelo; luego sube hasta 1 en 7 días."""
+    if dia <= DIA_FIN_ADAPTACION or n_ventana < VENTANA_MIN_LECTURAS:
+        return 0.0
+    return min(1.0, (dia - DIA_FIN_ADAPTACION) / DIAS_TRANSICION)
+
+
+def _referencia(dia, tierra, historia, excluidos, piso):
+    """Centro y dispersión vigentes el día `dia` (§5.2): mezcla de la línea base de tierra y la ventana en vuelo.
+
+    La ventana toma hasta 14 lecturas desde el día 8 y termina 3 días antes de `dia`, sin los días excluidos
+    (los que superaron el umbral o tuvieron alerta), para que una deriva en curso no se absorba en su referencia.
+    """
+    ventana = [v for j, v in historia
+               if VENTANA_DIA_INICIO <= j <= dia - VENTANA_REZAGO_DIAS and j not in excluidos][-VENTANA_MAX_LECTURAS:]
+    w = _peso_vuelo(dia, len(ventana))
+    med_t, mad_t = tierra
+    if w == 0.0:
+        return med_t, max(mad_t, piso)
+    med_v, mad_v = _mediana_mad(ventana)
+    return (1.0 - w) * med_t + w * med_v, max((1.0 - w) * mad_t + w * mad_v, piso)
 
 
 def _puntos_news2(fc, pas, spo2, temp):
-    """Puntaje NEWS2 simplificado para FC, PAS, SpO2 y temperatura (§5.1)."""
+    """Puntaje NEWS2 de FC, PAS, SpO2 y temperatura (§5.1): (suma, máximo individual)."""
     pts = 0
     max_individual = 0
 
@@ -80,25 +139,25 @@ def _puntos_news2(fc, pas, spo2, temp):
     # Frecuencia cardiaca
     if fc <= 40 or fc >= 131:
         acumular(3)
-    elif 111 <= fc <= 130:
+    elif fc >= 111:
         acumular(2)
-    elif 41 <= fc <= 50 or 91 <= fc <= 110:
+    elif fc <= 50 or fc >= 91:
         acumular(1)
 
     # Presión arterial sistólica
     if pas <= 90 or pas >= 220:
         acumular(3)
-    elif 91 <= pas <= 100:
+    elif pas <= 100:
         acumular(2)
-    elif 101 <= pas <= 110:
+    elif pas <= 110:
         acumular(1)
 
     # SpO2 (%)
     if spo2 <= 91:
         acumular(3)
-    elif 92 <= spo2 <= 93:
+    elif spo2 <= 93:
         acumular(2)
-    elif 94 <= spo2 <= 95:
+    elif spo2 <= 95:
         acumular(1)
 
     # Temperatura central (°C)
@@ -106,42 +165,41 @@ def _puntos_news2(fc, pas, spo2, temp):
         acumular(3)
     elif temp >= 39.1:
         acumular(2)
-    elif 35.1 <= temp <= 36.0 or 38.1 <= temp <= 39.0:
+    elif temp <= 36.0 or temp >= 38.1:
         acumular(1)
 
     return pts, max_individual
 
 
-def _entorno_sintetico_mision(rng, con_tormenta=False):
-    """Genera 30 días de entorno (CO2 y protones) para una misión simulada."""
+def _entorno_sintetico_mision(rng, con_co2=False, con_tormenta=False):
+    """30 días de entorno simulado (CO2 y protones), con las anomalías A2 y A3 si se piden."""
     entorno = []
     for dia in range(1, DIAS_VUELO + 1):
-        tormenta = con_tormenta and dia in (22, 23)
         co2 = round(max(1.2, min(2.95, 2.05 + rng.gauss(0.0, 0.25))), 3)
-        if tormenta:
-            flujo = round(25.0 + rng.uniform(5.0, 45.0), 2)
-        else:
-            flujo = round(max(0.15, 0.35 + rng.gauss(0.0, 0.08)), 3)
+        flujo = round(max(0.15, 0.35 + rng.gauss(0.0, 0.08)), 3)
+        if con_co2 and dia == A2_DIA:
+            co2 = A2_CO2_MMHG
+        if con_tormenta and dia in A3_DIAS:
+            flujo = A3_FLUJO_PFU
         entorno.append({
             "dia_mision": dia,
             "co2_mmhg_max_horario": co2,
             "flujo_protones_10mev_pfu": flujo,
-            "modo_tormenta": tormenta,
+            "modo_tormenta": flujo >= PROTONES_TORMENTA_PFU,
         })
     return entorno
 
 
 def _ruido_fisiologico(rng, sigma):
-    """Ruido diario con ligeras colas pesadas (3 % transitorio benigno) como datos reales."""
+    """Ruido diario con colas algo pesadas (1,5 % de transitorios benignos)."""
     base = rng.gauss(0.0, sigma)
     if rng.random() < 0.015:
         base += rng.choice((-1.0, 1.0)) * sigma * rng.uniform(1.6, 2.3)
     return base
 
 
-def _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia, anomalia=None, intensidad=1.0):
-    """Genera 14 días pre-vuelo + 30 días de vuelo para un tripulante."""
-    # Basales individuales del tripulante
+def _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia, a1=None, cefalea_dias=()):
+    """14 días de prevuelo + 30 de vuelo. `a1` es la intensidad de la deriva A1 (None = sin deriva)."""
     base_fc = 60.0 + rng.uniform(-6.0, 10.0)
     base_pas = 118.0 + rng.uniform(-8.0, 10.0)
     base_pad = 74.0 + rng.uniform(-5.0, 6.0)
@@ -159,37 +217,24 @@ def _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia, anomalia=None, i
         delta_sueno = SUPUESTOS["sueno_desplazamiento_h"] * w
         delta_pas = SUPUESTOS["pas_desplazamiento_mmHg"] * w
 
-        # Inyección de anomalías según protocolo §5.5
-        inj_fc = 0.0
-        inj_sueno = 0.0
-        inj_animo = 0.0
-        if anomalia == "A1" and dia >= 15:
-            inj_fc = 0.8 * intensidad * (dia - 14)
-        elif anomalia == "A2" and dia >= 20:
-            # Pérdida aguda de sueño -2,0 h/día sostenida desde día 20 (ventana 2+ días)
-            inj_sueno = -2.0 * intensidad
-        elif anomalia == "A3" and dia >= 22:
-            inj_sueno = -0.25 * intensidad * (dia - 21)
-            inj_animo = -0.30 * intensidad * (dia - 21)
+        # A1 (§5.5): deriva lineal dentro de la ventana, proporcional a los días transcurridos
+        pasos = (dia - A1_DIA_INICIO + 1) * a1 if a1 is not None and A1_DIA_INICIO <= dia <= A1_DIA_FIN else 0.0
+        inj_fc = 1.0 * pasos
+        inj_sueno = -0.20 * pasos
+        inj_animo = -0.15 * pasos
 
-        tormenta = entorno_por_dia.get(dia, {}).get("modo_tormenta", False)
         fc = round(base_fc + delta_fc + inj_fc + _ruido_fisiologico(rng, 2.2), 1)
         pas = round(base_pas + delta_pas + _ruido_fisiologico(rng, 4.0), 1)
         pad = round(base_pad + delta_pas * 0.5 + _ruido_fisiologico(rng, 2.8), 1)
         spo2 = round(min(100.0, max(94.0, base_spo2 + rng.gauss(0.0, 0.35))), 1)
         temp = round(base_temp + rng.gauss(0.0, 0.12), 2)
         sueno = round(max(1.5, min(11.0, base_sueno + delta_sueno + inj_sueno + _ruido_fisiologico(rng, 0.38))), 2)
-        animo_val = round(base_animo + inj_animo + rng.gauss(0.0, 0.55))
-        animo = max(1, min(10, int(animo_val)))
+        animo = max(1, min(10, int(round(base_animo + inj_animo + rng.gauss(0.0, 0.55)))))
 
-        # Semanales (glucosa y masa corporal cada 7 días desde -7)
+        # Semanales (glucosa y masa corporal cada 7 días)
         es_semanal = (dia % 7 == 0)
         glucosa = round(base_glucosa + rng.gauss(0.0, 4.5), 1) if es_semanal else None
         masa = round(base_masa - (0.03 * max(0, dia)) + rng.gauss(0.0, 0.2), 2) if es_semanal else None
-
-        sintomas = []
-        if inj_sueno <= -1.8:
-            sintomas = ["cefalea"]
 
         lecturas.append({
             "dia_mision": dia,
@@ -202,157 +247,124 @@ def _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia, anomalia=None, i
             "animo_1_10": animo,
             "glucosa_mg_dl": glucosa,
             "masa_kg": masa,
-            "sintomas": sintomas,
-            "durante_tormenta": bool(tormenta),
+            "sintomas": ["cefalea"] if dia in cefalea_dias else [],
+            "durante_tormenta": bool(entorno_por_dia.get(dia, {}).get("modo_tormenta", False)),
         })
 
     return {"id": tid, "nombre": nombre, "rol": rol, "lecturas": lecturas}
 
 
-def evaluar_tripulante(tripulante, entorno_por_dia):
-    """Ejecuta el motor híbrido de referencia (Capas A, B, C y contexto) sobre un tripulante.
+def _alerta(tripulante, dia, capa, nivel, indicador, valor, escalada=False, ambito="personal", informativa=False):
+    return {
+        "dia_mision": dia,
+        "tripulante_id": tripulante["id"],
+        "capa": capa,
+        "nivel": nivel,
+        "indicador": indicador,
+        "valor": valor,
+        "escalada_auto": escalada,
+        "ambito": ambito,
+        "informativa": informativa,
+    }
 
-    Calibra mediana y MAD personal en pre-vuelo (días <= 0) ajustando la curva nominal
-    w(d) = 1 - exp(-d / tau) para FC, sueño y PAS durante la adaptación a microgravedad.
+
+def evaluar_tripulante(tripulante, entorno_por_dia, cusum_k=CUSUM_K, cusum_h=CUSUM_H):
+    """Motor híbrido de referencia sobre un tripulante: alertas de las capas A, B, C y de contexto.
+
+    - Capa A: rojo (escala siempre) con un parámetro en su tramo extremo o suma >= 5; ámbar con suma 3 o 4.
+    - Capa B: z modificada contra la referencia vigente, dos días seguidos. En adaptación (días 1 a 14) se
+      devuelve como `informativa`: se muestra, no alerta. Siempre ámbar.
+    - Capa C: CUSUM unilateral desde el día 21 (FC al alza; sueño y ánimo a la baja). Ámbar; al emitir, la suma
+      vuelve a cero.
+    - Contexto: CO2 sobre el límite con cefalea y modo tormenta. Son de `ambito: tripulacion`: no llevan datos
+      personales y no escalan como alerta médica.
     """
     lecturas = sorted(tripulante["lecturas"], key=lambda r: r["dia_mision"])
     prevuelo = [r for r in lecturas if r["dia_mision"] <= 0]
     vuelo = [r for r in lecturas if r["dia_mision"] >= 1]
-
-    med_fc, mad_fc = _mad_bruto([r["fc_reposo_lpm"] for r in prevuelo], SUPUESTOS["mad_min"]["fc"])
-    med_pas, mad_pas = _mad_bruto([r["pas_mmHg"] for r in prevuelo], SUPUESTOS["mad_min"]["pas"])
-    med_sueno, mad_sueno = _mad_bruto([r["sueno_h"] for r in prevuelo], SUPUESTOS["mad_min"]["sueno"])
-    med_animo, mad_animo = _mad_bruto([r["animo_1_10"] for r in prevuelo], SUPUESTOS["mad_min"]["animo"])
+    piso = SUPUESTOS["mad_min"]
+    tierra = {ind: _mediana_mad([r[campo] for r in prevuelo]) for ind, campo, _ in INDICADORES_B}
 
     alertas = []
-    consec_b = {"fc": 0, "pas": 0, "sueno": 0, "animo": 0}
-    cusum_pos = {"fc": 0.0, "pas": 0.0}
-    cusum_neg = {"sueno": 0.0, "animo": 0.0, "conductual": 0.0}
-    ya_emitida_c = set()
+    historia = {ind: [] for ind, _, _ in INDICADORES_B}
+    excluidos = {ind: set() for ind, _, _ in INDICADORES_B}
+    consec_b = {ind: 0 for ind, _, _ in INDICADORES_B}
+    cusum = {ind: 0.0 for ind in SENTIDO_C}
 
     for r in vuelo:
         d = r["dia_mision"]
-        w = _factor_adaptacion(d)
         env = entorno_por_dia.get(d, {})
-        tormenta = env.get("modo_tormenta", False) or r["durante_tormenta"]
-        co2_alto = env.get("co2_mmhg_max_horario", 0.0) >= 3.0
+        flujo = env.get("flujo_protones_10mev_pfu")
+        tormenta = bool(env.get("modo_tormenta")) or (flujo is not None and flujo >= PROTONES_TORMENTA_PFU)
 
         # Capa A: clínica NEWS2
         news2, max_ind = _puntos_news2(r["fc_reposo_lpm"], r["pas_mmHg"], r["spo2_pct"], r["temp_central_c"])
         if news2 >= 5 or max_ind == 3:
-            alertas.append({
-                "dia_mision": d,
-                "tripulante_id": tripulante["id"],
-                "capa": "A",
-                "nivel": "rojo",
-                "indicador": "news2",
-                "valor": float(news2),
-                "escalada_auto": bool(tormenta),
-            })
+            alertas.append(_alerta(tripulante, d, "A", "rojo", "news2", float(news2), escalada=True))
+        elif news2 >= 3:
+            alertas.append(_alerta(tripulante, d, "A", "ambar", "news2", float(news2)))
 
-        # Capa B: desviación personal respecto a referencia ajustada por w(d)
-        z_fc = 0.6745 * (r["fc_reposo_lpm"] - (med_fc + SUPUESTOS["fc_desplazamiento_lpm"] * w)) / mad_fc
-        z_pas = 0.6745 * (r["pas_mmHg"] - (med_pas + SUPUESTOS["pas_desplazamiento_mmHg"] * w)) / mad_pas
-        z_sueno = 0.6745 * (r["sueno_h"] - (med_sueno + SUPUESTOS["sueno_desplazamiento_h"] * w)) / mad_sueno
-        z_animo = 0.6745 * (r["animo_1_10"] - med_animo) / mad_animo
+        # Capas B y C: desviación y deriva contra la referencia vigente
+        adaptacion = d <= DIA_FIN_ADAPTACION
+        for ind, campo, umbral in INDICADORES_B:
+            valor = r[campo]
+            centro, dispersion = _referencia(d, tierra[ind], historia[ind], excluidos[ind], piso[ind])
+            z = 0.6745 * (valor - centro) / dispersion
+            historia[ind].append((d, valor))
 
-        # En los primeros 14 días de vuelo, exigimos mayor margen para evitar falsos por transición residual
-        margen_adaptacion = 1.15 if d <= 14 else 1.0
-        pares_b = [
-            ("fc", z_fc, Z_UMBRAL_FISIOLOGICO * margen_adaptacion, r["fc_reposo_lpm"]),
-            ("pas", z_pas, Z_UMBRAL_FISIOLOGICO * margen_adaptacion, r["pas_mmHg"]),
-            ("sueno", z_sueno, Z_UMBRAL_CONDUCTUAL * margen_adaptacion, r["sueno_h"]),
-            ("animo", z_animo, Z_UMBRAL_CONDUCTUAL * margen_adaptacion, float(r["animo_1_10"])),
-        ]
-        for ind, z, umbral, valor in pares_b:
             if abs(z) >= umbral:
                 consec_b[ind] += 1
+                excluidos[ind].add(d)
             else:
                 consec_b[ind] = 0
             if consec_b[ind] >= DIAS_CONSECUTIVOS_B:
-                nivel = "rojo" if (abs(z) >= umbral + 1.5 or tormenta) else "ambar"
-                alertas.append({
-                    "dia_mision": d,
-                    "tripulante_id": tripulante["id"],
-                    "capa": "B",
-                    "nivel": nivel,
-                    "indicador": ind,
-                    "valor": round(valor, 2),
-                    "escalada_auto": bool(tormenta and nivel == "rojo"),
-                })
+                alertas.append(_alerta(tripulante, d, "B", "ambar", ind, round(float(valor), 2),
+                                       informativa=adaptacion))
 
-        # Capa C: CUSUM desde el día 21 (deriva sostenida)
-        if d >= CUSUM_DIA_INICIO:
-            cusum_pos["fc"] = max(0.0, cusum_pos["fc"] + z_fc - CUSUM_K)
-            cusum_pos["pas"] = max(0.0, cusum_pos["pas"] - z_pas - CUSUM_K)
-            cusum_neg["sueno"] = max(0.0, cusum_neg["sueno"] - z_sueno - CUSUM_K)
-            cusum_neg["animo"] = max(0.0, cusum_neg["animo"] - z_animo - CUSUM_K)
-            z_comb = (-z_sueno - z_animo) / math.sqrt(2.0)
-            cusum_neg["conductual"] = max(0.0, cusum_neg["conductual"] + z_comb - CUSUM_K)
+            if ind in SENTIDO_C and d >= CUSUM_DIA_INICIO:
+                cusum[ind] = max(0.0, cusum[ind] + SENTIDO_C[ind] * z - cusum_k)
+                if cusum[ind] >= cusum_h:
+                    alertas.append(_alerta(tripulante, d, "C", "ambar", ind, round(cusum[ind], 2)))
+                    excluidos[ind].add(d)
+                    cusum[ind] = 0.0
 
-            candidatos_c = [
-                ("fc", cusum_pos["fc"]),
-                ("pas", cusum_pos["pas"]),
-                ("sueno", cusum_neg["sueno"]),
-                ("animo", cusum_neg["animo"]),
-                ("conductual", cusum_neg["conductual"]),
-            ]
-            for ind, s in candidatos_c:
-                if s >= CUSUM_H and ind not in ya_emitida_c:
-                    ya_emitida_c.add(ind)
-                    alertas.append({
-                        "dia_mision": d,
-                        "tripulante_id": tripulante["id"],
-                        "capa": "C",
-                        "nivel": "rojo" if s >= CUSUM_H * 1.5 else "ambar",
-                        "indicador": ind,
-                        "valor": round(s, 2),
-                        "escalada_auto": bool(tormenta),
-                    })
-
-        # Regla de contexto ambiental
-        if co2_alto and any(s in r["sintomas"] for s in ("cefalea", "nausea", "mareo")):
-            alertas.append({
-                "dia_mision": d,
-                "tripulante_id": tripulante["id"],
-                "capa": "contexto",
-                "nivel": "rojo",
-                "indicador": "co2",
-                "valor": env.get("co2_mmhg_max_horario"),
-                "escalada_auto": True,
-            })
+        # Contexto: el entorno explica el síntoma o pide refugio. Dato ambiental, no personal.
+        co2 = env.get("co2_mmhg_max_horario")
+        if co2 is not None and co2 > CO2_LIMITE_MMHG and "cefalea" in r["sintomas"]:
+            alertas.append(_alerta(tripulante, d, "contexto", "ambar", "co2", co2, ambito="tripulacion"))
+        if tormenta:
+            alertas.append(_alerta(tripulante, d, "contexto", "ambar", "protones", flujo, ambito="tripulacion"))
 
     return alertas
 
 
-def generar_mision(rng, asignaciones=None, con_tormenta=False):
-    """Genera una misión completa (4 tripulantes x 44 días) y calcula sus alertas."""
-    asignaciones = asignaciones or {}
-    entorno = _entorno_sintetico_mision(rng, con_tormenta=con_tormenta)
+def _orden(a):
+    return (a["dia_mision"], a["tripulante_id"], a["capa"], a["indicador"])
+
+
+def generar_mision(rng, a1=None, a2=False, a3=False):
+    """Genera una misión (entorno y 4 tripulantes x 44 días). `a1` = intensidad de la deriva en trip-1."""
+    entorno = _entorno_sintetico_mision(rng, con_co2=a2, con_tormenta=a3)
     entorno_por_dia = {e["dia_mision"]: e for e in entorno}
-    tripulantes = []
-    alertas = []
+    tripulantes = [
+        _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia,
+                            a1=a1 if tid == "trip-1" else None,
+                            cefalea_dias=(A2_DIA,) if a2 and tid in A2_AFECTADOS else ())
+        for tid, nombre, rol in ROLES_TRIPULACION
+    ]
+    return entorno, tripulantes
 
-    for tid, nombre, rol in ROLES_TRIPULACION:
-        anomalia, intensidad = asignaciones.get(tid, (None, 1.0))
-        trip = _generar_tripulante(rng, tid, nombre, rol, entorno_por_dia, anomalia=anomalia, intensidad=intensidad)
-        tripulantes.append(trip)
-        alertas.extend(evaluar_tripulante(trip, entorno_por_dia))
 
-    alertas.sort(key=lambda a: (a["dia_mision"], a["tripulante_id"], a["capa"]))
-    return entorno, tripulantes, alertas
+def evaluar_mision(entorno, tripulantes, cusum_k=CUSUM_K, cusum_h=CUSUM_H):
+    entorno_por_dia = {e["dia_mision"]: e for e in entorno}
+    alertas = [a for t in tripulantes for a in evaluar_tripulante(t, entorno_por_dia, cusum_k, cusum_h)]
+    return sorted(alertas, key=_orden)
 
 
 def generar_caso_referencia(semilla=SEMILLA_DEFECTO):
-    """Construye el caso de referencia único con trip-1=A1, trip-2=A2, trip-3=A3, trip-4=nominal."""
+    """Caso de referencia: una misión con A1 (trip-1), A2 (trip-2 y trip-3) y A3; trip-4 es nominal."""
     rng = random.Random(semilla)
-    asignaciones = {
-        "trip-1": ("A1", 1.0),
-        "trip-2": ("A2", 1.0),
-        "trip-3": ("A3", 1.0),
-        "trip-4": (None, 1.0),
-    }
-    entorno, tripulantes, alertas = generar_mision(rng, asignaciones=asignaciones, con_tormenta=True)
+    entorno, tripulantes = generar_mision(rng, a1=1.0, a2=True, a3=True)
     return {
         "semilla": semilla,
         "dias_prevuelo": DIAS_PREVUELO,
@@ -361,69 +373,99 @@ def generar_caso_referencia(semilla=SEMILLA_DEFECTO):
         "supuestos": SUPUESTOS,
         "entorno_diario": entorno,
         "tripulantes": tripulantes,
-        "alertas_esperadas": alertas,
+        "alertas_esperadas": evaluar_mision(entorno, tripulantes),
     }
 
 
-def _evaluar_lote(n_misiones, semilla, tipo, intensidad=1.0):
-    """Corre n_misiones para un escenario ('control', 'A1', 'A2', 'A3') y calcula métricas."""
+def _es_medica(a):
+    """Alerta personal que cuenta para detección y falsas alarmas (no informativa ni de entorno)."""
+    return a["ambito"] == "personal" and not a["informativa"]
+
+
+def _lote_anomalias(n_misiones, semilla, intensidad=1.0, cusum_k=CUSUM_K, cusum_h=CUSUM_H):
+    """Misiones con las tres anomalías: detección de A1, A2 y A3, días hasta la alerta y umbral fijo."""
     rng = random.Random(semilla)
-    detectadas = 0
-    tiempos = []
-    falsas_1_14 = 0
-    falsas_15_30 = 0
-    misiones_con_falsa = 0
-    inicio_esperado = {"A1": 15, "A2": 20, "A3": 22}.get(tipo, 1)
-
+    det_a1 = det_a2 = det_a3 = fijo = 0
+    dias = []
     for _ in range(n_misiones):
-        asignaciones = {"trip-1": (tipo, intensidad)} if tipo != "control" else {}
-        _, _, alertas = generar_mision(rng, asignaciones=asignaciones, con_tormenta=False)
-        if tipo == "control":
-            hubo_alerta = len(alertas) > 0
-            if hubo_alerta:
-                misiones_con_falsa += 1
-            for a in alertas:
-                if 1 <= a["dia_mision"] <= 14:
-                    falsas_1_14 += 1
-                elif 15 <= a["dia_mision"] <= 30:
-                    falsas_15_30 += 1
-        else:
-            # Alerta sobre trip-1 en o después del día de inyección
-            validas = [a for a in alertas if a["tripulante_id"] == "trip-1" and a["dia_mision"] >= inicio_esperado]
-            if validas:
-                detectadas += 1
-                tiempos.append(validas[0]["dia_mision"] - inicio_esperado + 1)
+        entorno, tripulantes = generar_mision(rng, a1=intensidad, a2=True, a3=True)
+        alertas = evaluar_mision(entorno, tripulantes, cusum_k, cusum_h)
 
-    if tipo == "control":
-        # 4 tripulantes * (2 semanas días 1-14; ~2,286 semanas días 15-30)
-        semanas_1_14 = n_misiones * TRIPULANTES_POR_MISION * (14 / 7.0)
-        semanas_15_30 = n_misiones * TRIPULANTES_POR_MISION * (16 / 7.0)
-        return {
-            "misiones": n_misiones,
-            "misiones_con_falsa_alarma_pct": round(100.0 * misiones_con_falsa / n_misiones, 2),
-            "falsas_por_tripulante_semana_dias_1_14": round(falsas_1_14 / semanas_1_14, 4),
-            "falsas_por_tripulante_semana_dias_15_30": round(falsas_15_30 / semanas_15_30, 4),
-        }
+        deriva = [a["dia_mision"] for a in alertas
+                  if a["tripulante_id"] == "trip-1" and a["capa"] in ("B", "C") and _es_medica(a)
+                  and A1_DIA_INICIO <= a["dia_mision"] <= A1_DIA_FIN]
+        if deriva:
+            det_a1 += 1
+            dias.append(min(deriva) - A1_DIA_INICIO + 1)
 
+        del_dia = [a for a in alertas if a["dia_mision"] == A2_DIA and a["tripulante_id"] in A2_AFECTADOS]
+        con_entorno = {a["tripulante_id"] for a in del_dia if a["indicador"] == "co2"}
+        if con_entorno == set(A2_AFECTADOS) and not any(_es_medica(a) for a in del_dia):
+            det_a2 += 1
+
+        if any(a["indicador"] == "protones" and a["dia_mision"] == A3_DIAS[0] for a in alertas):
+            det_a3 += 1
+
+        if any(r["fc_reposo_lpm"] >= UMBRAL_FIJO_FC_LPM for r in tripulantes[0]["lecturas"]
+               if A1_DIA_INICIO <= r["dia_mision"] <= A1_DIA_FIN):
+            fijo += 1
+
+    pct = lambda x: round(100.0 * x / n_misiones, 2)  # noqa: E731
     return {
         "misiones": n_misiones,
-        "deteccion_pct": round(100.0 * detectadas / n_misiones, 2),
-        "tiempo_deteccion_mediana_dias": round(float(median(tiempos)), 2) if tiempos else None,
+        "intensidad": intensidad,
+        "A1_deriva_deteccion_pct": pct(det_a1),
+        "A1_dias_hasta_alerta_mediana": round(float(median(dias)), 2) if dias else None,
+        "A2_co2_cefalea_deteccion_pct": pct(det_a2),
+        "A3_tormenta_deteccion_pct": pct(det_a3),
+        "umbral_fijo_91_lpm_disparado_pct": pct(fijo),
     }
+
+
+def _lote_control(n_misiones, semilla, cusum_k=CUSUM_K, cusum_h=CUSUM_H):
+    """Misiones sin anomalías: falsas alarmas por tripulante y semana, y alerta por azar en la ventana de A1."""
+    rng = random.Random(semilla)
+    falsas_1_14 = falsas_15_30 = con_falsa = azar = 0
+    for _ in range(n_misiones):
+        entorno, tripulantes = generar_mision(rng)
+        medicas = [a for a in evaluar_mision(entorno, tripulantes, cusum_k, cusum_h) if _es_medica(a)]
+        con_falsa += bool(medicas)
+        falsas_1_14 += sum(a["dia_mision"] <= DIA_FIN_ADAPTACION for a in medicas)
+        falsas_15_30 += sum(a["dia_mision"] > DIA_FIN_ADAPTACION for a in medicas)
+        azar += any(a["tripulante_id"] == "trip-1" and a["capa"] in ("B", "C")
+                    and A1_DIA_INICIO <= a["dia_mision"] <= A1_DIA_FIN for a in medicas)
+    semanas_1_14 = n_misiones * TRIPULANTES_POR_MISION * (DIA_FIN_ADAPTACION / 7.0)
+    semanas_15_30 = n_misiones * TRIPULANTES_POR_MISION * ((DIAS_VUELO - DIA_FIN_ADAPTACION) / 7.0)
+    return {
+        "misiones": n_misiones,
+        "misiones_con_falsa_alarma_pct": round(100.0 * con_falsa / n_misiones, 2),
+        "alerta_por_azar_en_ventana_A1_pct": round(100.0 * azar / n_misiones, 2),
+        "falsas_por_tripulante_semana_dias_1_14": round(falsas_1_14 / semanas_1_14, 4),
+        "falsas_por_tripulante_semana_dias_15_30": round(falsas_15_30 / semanas_15_30, 4),
+    }
+
+
+def barrer(n_misiones=200, semilla=SEMILLA_DEFECTO, ks=(0.5, 0.75, 1.0), hs=(4.0, 5.0, 6.0)):
+    """Barrido de k y h del CUSUM (§5.1): falsas alarmas en control y detección de A1 por combinación."""
+    filas = []
+    for k in ks:
+        for h in hs:
+            control = _lote_control(n_misiones, semilla + 5, k, h)
+            anomalia = _lote_anomalias(n_misiones, semilla + 1, 1.0, k, h)
+            filas.append({
+                "k": k,
+                "h": h,
+                "falsas_por_tripulante_semana_dias_15_30": control["falsas_por_tripulante_semana_dias_15_30"],
+                "alerta_por_azar_en_ventana_A1_pct": control["alerta_por_azar_en_ventana_A1_pct"],
+                "A1_deriva_deteccion_pct": anomalia["A1_deriva_deteccion_pct"],
+                "A1_dias_hasta_alerta_mediana": anomalia["A1_dias_hasta_alerta_mediana"],
+            })
+    return {"misiones_por_combinacion": n_misiones, "semilla": semilla, "elegidos": {"k": CUSUM_K, "h": CUSUM_H},
+            "barrido": filas}
 
 
 def ejecutar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO):
-    """Ejecuta el protocolo completo: 500 anomalías (por tipo) + 500 control + media intensidad + semilla 2027."""
-    # Dividimos o corremos por clase para tener métricas desglosadas de A1, A2, A3 + global 500
-    n_tercio = max(1, n_misiones // 3)
-    res_a1 = _evaluar_lote(n_tercio, semilla + 1, "A1", intensidad=1.0)
-    res_a2 = _evaluar_lote(n_tercio, semilla + 2, "A2", intensidad=1.0)
-    res_a3 = _evaluar_lote(n_misiones - 2 * n_tercio, semilla + 3, "A3", intensidad=1.0)
-    res_a1_media = _evaluar_lote(n_tercio, semilla + 4, "A1", intensidad=0.5)
-    res_ctrl = _evaluar_lote(n_misiones, semilla + 5, "control")
-    res_ctrl_2027 = _evaluar_lote(min(n_misiones, 200), SEMILLA_SECUNDARIA + 5, "control")
-    res_a1_2027 = _evaluar_lote(min(n_misiones, 200), SEMILLA_SECUNDARIA + 1, "A1", intensidad=1.0)
-
+    """Protocolo completo: n misiones con anomalías y n de control, mitad de intensidad y segunda semilla."""
     caso = generar_caso_referencia(semilla=semilla)
     kpi = {
         "protocolo": "informe-tecnico-5.5",
@@ -433,15 +475,15 @@ def ejecutar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO):
         "n_misiones_control": n_misiones,
         "generado": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "supuestos": SUPUESTOS,
+        "parametros": {"cusum_k": CUSUM_K, "cusum_h": CUSUM_H, "z_fisiologico": Z_UMBRAL_FISIOLOGICO,
+                       "z_conductual": Z_UMBRAL_CONDUCTUAL, "dias_consecutivos_b": DIAS_CONSECUTIVOS_B},
         "resultados": {
-            "A1_deriva_cardiaca": res_a1,
-            "A2_perdida_aguda_sueno": res_a2,
-            "A3_deriva_conductual_cusum": res_a3,
-            "A1_media_intensidad": res_a1_media,
-            "control_sin_anomalias": res_ctrl,
+            "anomalias": _lote_anomalias(n_misiones, semilla + 1),
+            "anomalias_media_intensidad": _lote_anomalias(n_misiones, semilla + 4, intensidad=0.5),
+            "control_sin_anomalias": _lote_control(n_misiones, semilla + 5),
             "validacion_independiente_2027": {
-                "A1_deriva_cardiaca": res_a1_2027,
-                "control_sin_anomalias": res_ctrl_2027,
+                "anomalias": _lote_anomalias(n_misiones, SEMILLA_SECUNDARIA + 1),
+                "control_sin_anomalias": _lote_control(n_misiones, SEMILLA_SECUNDARIA + 5),
             },
         },
     }
@@ -466,3 +508,10 @@ def publicar_simulacion(n_misiones=500, semilla=SEMILLA_DEFECTO):
         misiones=n_misiones,
     )
     return {"caso_referencia": entrada_caso, "kpi": entrada_kpi, "resumen_kpi": kpi["resultados"]}
+
+
+def publicar_barrido(n_misiones=200, semilla=SEMILLA_DEFECTO):
+    """Persiste el barrido de k y h en `gold/barrido.json`."""
+    datos = barrer(n_misiones=n_misiones, semilla=semilla)
+    entrada = reanclaje.guardar("barrido", datos, tipo="simulacion", semilla=semilla, misiones=n_misiones)
+    return {"barrido": entrada, "tabla": datos["barrido"]}

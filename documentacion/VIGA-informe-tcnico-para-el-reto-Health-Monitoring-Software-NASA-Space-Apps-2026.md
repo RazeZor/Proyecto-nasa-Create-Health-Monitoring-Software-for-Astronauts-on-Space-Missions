@@ -35,7 +35,7 @@ Cada objetivo y cada consideración del enunciado tiene una respuesta concreta e
 
 **La solución\.** VIGÍA es una aplicación web que funciona sin conexión y convierte indicadores de salud en decisiones para quien los genera\. Su pantalla principal es una figura humana interactiva: cada zona muestra el estado de un sistema y, al tocarla, explica qué se mide, cómo medirlo y cuándo avisar\. El astronauta completa un registro diario de menos de 90 segundos\. Un **motor híbrido de tres capas** evalúa cada lectura: umbrales clínicos fijos de seguridad, desviación respecto a la **línea base personal** \(previa al vuelo durante la adaptación, en vuelo después\) y deriva lenta acumulada\. Cada resultado se cruza con el **entorno medido**: dosis de radiación, eventos de partículas solares y CO2, temperatura y humedad de cabina, tomados de datos abiertos de NASA y NOAA\. La salida es un estado verde, ámbar o rojo con su explicación, una acción recomendada y un reporte que viaja a tierra con el retardo del día de misión\.
 
-**El diferencial\.** La mayoría de los prototipos de este reto son tableros que aplican rangos clínicos terrestres\. VIGÍA parte de tres hechos: el cuerpo en vuelo se desplaza respecto a esos rangos, los cinco peligros del vuelo espacial se potencian entre sí, y la tripulación decide sin la Tierra\. Por eso mide la desviación respecto a la persona sin renunciar a los límites clínicos de seguridad, y nunca muestra un síntoma sin el entorno que pudo causarlo\. En 500 misiones simuladas, el motor de referencia detectó la deriva inyectada a los 6 días de mediana, mientras un umbral fijo terrestre no llegó a dispararse \(sección 5\.5\)\.
+**El diferencial\.** La mayoría de los prototipos de este reto son tableros que aplican rangos clínicos terrestres\. VIGÍA parte de tres hechos: el cuerpo en vuelo se desplaza respecto a esos rangos, los cinco peligros del vuelo espacial se potencian entre sí, y la tripulación decide sin la Tierra\. Por eso mide la desviación respecto a la persona sin renunciar a los límites clínicos de seguridad, y nunca muestra un síntoma sin el entorno que pudo causarlo\. En 500 misiones simuladas, el motor detectó la deriva inyectada en el 99,8 % de los casos, a los 8 días de mediana, mientras un umbral fijo terrestre no llegó a dispararse \(sección 5\.5\)\.
 
 ## 2\. Diagnóstico del problema y estado del arte
 
@@ -126,7 +126,7 @@ VIGÍA usa mediciones abiertas reales para todo lo que describe el entorno y un 
 | Dataset o misión | Fuente / agencia | Variables clave | Resolución espacial / temporal | Rol exacto en VIGÍA |
 | --- | --- | --- | --- | --- |
 | RadLab \(portal y Data API\) | NASA OSDR\. Detectores de ASI, de la Academia Búlgara de Ciencias y otros | Tasa de dosis absorbida \(µGy/h\), tasa de dosis equivalente \(µSv/h\) y flujo, por instrumento | Por módulo de la ISS y por nave\. Cadencia mediana: 5 min \(DosTel1, DosTel2, Lidal, REM\), 20 a 90 s \(Liulin\-5\), 60 s \(ALTEA\), 1 h \(CRaTER, LND\), 24 h \(RAD, REM y TEPC preliminares\) | Dosis ambiental\. Alimenta el contador de dosis acumulada de cada perfil de misión |
-| Environmental Data Application \(EDA\) | NASA OSDR | Temperatura \(°C\), humedad relativa \(%\) y CO2 \(ppm\) de cabina; dosis acumulada y total | ISS y control en tierra; 21 misiones \(17 Rodent Research, APEX\-03\-1, APEX\-03\-2, APEX\-04, VEG\-01C\)\. La cadencia no está publicada: se calcula de las marcas de tiempo | Perfil real de cabina\. Permite distinguir un síntoma ambiental de uno fisiológico |
+| Environmental Data Application \(EDA\) | NASA OSDR | Temperatura \(°C\), humedad relativa \(%\) y CO2 \(ppm\) de cabina; dosis acumulada y total | ISS y control en tierra; 21 misiones \(17 Rodent Research, APEX\-03\-1, APEX\-03\-2, APEX\-04, VEG\-01C\)\. La telemetría de RR\-1 llega cada 5 minutos | Perfil real de cabina\. Permite distinguir un síntoma ambiental de uno fisiológico |
 | DONKI | NASA CCMC, Goddard | Eventos de partículas energéticas solares \(SEP\): identificador, hora, instrumento, eventos ligados | Catálogo por evento, en JSON | Fija la hora real de inicio del modo tormenta |
 | Flujo de protones GOES | NOAA SWPC | Flujo integral de protones en ≥10, ≥50 y ≥100 MeV | Órbita geoestacionaria; promedios de 5 minutos | Severidad del evento\. Umbral de evento de SWPC: 10 partículas/cm²·s·sr en ≥10 MeV |
 | Inspiration4 \(OSD\-569, OSD\-575\) | NASA OSDR | Hemograma completo y panel metabólico en suero \(glucosa, sodio, potasio, albúmina\) | 4 tripulantes, 7 tomas a lo largo de 286 días; misión de 3 días | Valores humanos reales frente a la línea base de cada persona\. No se generaliza |
@@ -230,7 +230,7 @@ Esquema de una ficha, con la instrucción separada por perfil:
 
 ### 3\.3 Ingesta y puntos de acceso
 
-El script `vigia\_ingesta\.py` prueba las cuatro fuentes, valida el código HTTP y la estructura, limpia los datos y guarda JSON estáticos con URL, hora de consulta y huella SHA\-256 en `manifest\.json`\. La aplicación lee esos archivos, así que la demo no depende de la red\.
+El módulo `pipelines/datalake` \(`index\.py ingest goes|donki|radlab|eda`\) prueba las cuatro fuentes, valida el código HTTP y la estructura, limpia los datos y guarda la respuesta original y las filas limpias con URL, hora de consulta y huella SHA\-256 en `manifest\.json`\. `pipelines/reanclaje` las coloca sobre la línea de tiempo de misión y publica la zona *gold*; la API de a bordo sirve esos archivos verificando su huella, así que la aplicación no depende de las fuentes en vivo\.
 
 *[Table view](https://miro.com/app/board/uXjVENjWII4=/?moveToWidget=3458764690457314551&cot=14)*
 
@@ -239,7 +239,7 @@ El script `vigia\_ingesta\.py` prueba las cuatro fuentes, valida el código HTTP
 | GOES | https://services\.swpc\.noaa\.gov/json/goes/primary/integral\-protons\-1\-day\.json | Arreglo de objetos con time\_tag, satellite, flux, energy | Se conservan ≥10, ≥50 y ≥100 MeV; se descartan flujos negativos o de relleno y duplicados |
 | DONKI | https://ccmc\.gsfc\.nasa\.gov/DONKI/WS/get/SEP?startDate=AAAA\-MM\-DD&amp;endDate=AAAA\-MM\-DD | Arreglo de objetos con sepID, eventTime, instruments\[\]\.displayName, linkedEvents\[\]\.activityID, link | Horas a UTC ISO 8601; una respuesta vacía significa sin eventos |
 | RadLab | https://visualization\.osdr\.nasa\.gov/radlab/api/ con pares clave\-valor | CSV \(formato por defecto\) con timestamp, instrument\_id, absorbed\_dose\_rate, dose\_equivalent\_rate | Ventanas de un día; se descartan filas sin dosis; se guardan unidades |
-| EDA | https://visualization\.osdr\.nasa\.gov/eda \(sin API documentada\) | Tabla de telemetría exportada desde Data Tables | El script convierte los CSV guardados en eda\_manual/ |
+| EDA | https://visualization\.osdr\.nasa\.gov/eda/api/missions/\{misión\}/telemetry\_data/ con `start` y `end` | Arreglo de objetos con time, temperature\_iss, humidity\_iss, co2\_iss y sus equivalentes de tierra | Horas a UTC; se conservan las columnas y se anota la misión |
 
 Tres precisiones sobre los puntos de acceso:
 
@@ -247,7 +247,7 @@ Tres precisiones sobre los puntos de acceso:
 - **El archivo de GOES solo trae las últimas 24 horas\.** Sirve para demostrar la ingesta en vivo\. Una tormenta histórica requiere el archivo de NOAA NCEI o se representa como escenario \(sección 3\.4\)\.
 - **RadLab admite dos sintaxis que no se mezclan**, pares clave\-valor o expresión booleana\. El límite de carrera de la NASA está en mSv, así que la dosis acumulada usa `dose\_equivalent\_rate` cuando el instrumento lo ofrece; con dosis absorbida la comparación es solo orientativa y así se rotula\.
 
-**Estado de la verificación\.** La estructura de DONKI, RadLab y EDA sale de su documentación oficial; la de GOES, de su uso por terceros\. La prueba en vivo de los cuatro puntos de acceso se hace al ejecutar el script en la red del equipo: su tabla de salida y `manifest\.json` son la evidencia\. Si una fuente devuelve otra estructura, el script la reporta como `ESTRUCTURA\_INESPERADA` en lugar de guardar datos incorrectos\.
+**Estado de la verificación\.** Los cuatro puntos de acceso se probaron en vivo el 14 y el 15 de noviembre de 2026: GOES \(858 filas de las últimas 24 horas\), DONKI \(14 eventos SEP del 9 al 13 de mayo de 2024 y ninguno en los últimos 30 días\), RadLab \(6 157 filas de ALTEA\-Survey del 12 al 16 de noviembre de 2011, con dosis equivalente\) y EDA \(1 440 filas de RR\-1 del 21 al 25 de septiembre de 2014\)\. El `manifest\.json` del datalake es la evidencia\. Si una fuente devuelve otra estructura, el script la reporta como `ESTRUCTURA\_INESPERADA` en lugar de guardar datos incorrectos\.
 
 **Límites de referencia \(NASA\-STD\-3001\)\.** Dosis efectiva total de carrera menor a 600 mSv, igual para todas las edades y sexos; 250 mSv por evento de partículas solares\. CO2: promedio de una hora no mayor a 3 mmHg en el volumen habitable\. El límite de CO2 es una presión parcial, así que no depende de la presión de cabina; la lectura en ppm sí\.
 
@@ -303,8 +303,9 @@ Las series reales provienen de misiones y años distintos, así que no pueden su
 | Dosis, flujo de protones, eventos SEP, cabina | Medición real reanclada | "Real", con fuente y fecha original |
 | Calendario de la misión y día en que cae cada ventana | Escenario | "Escenario" |
 | Signos vitales, sueño, ánimo y síntomas de la tripulación | Simulación con supuestos declarados | "Simulado" |
-| Anomalías inyectadas para la demo \(deriva, pico de CO2\) | Simulación | "Simulado" |
-| Hemograma y panel metabólico de Inspiration4 | Medición humana real | "Real", vista descriptiva separada |
+| Anomalías inyectadas para la demo \(deriva, pico de CO2, tormenta de 200 pfu\) | Simulación | "Simulado", solo en el modo demo |
+| Lecturas que el tripulante registra en el modo real | Medición del usuario | "Medido" |
+| Hemograma y panel metabólico de Inspiration4 | Medición humana real | Fuente citada; aún no integrada en la aplicación |
 
 **Por qué los datos de la NASA son indispensables\.** Sin RadLab no hay contador de dosis; sin DONKI y GOES no existe el modo tormenta; sin EDA el motor no distingue un síntoma ambiental de uno fisiológico; sin las páginas de HRP las fichas de indicador no tienen sustento\.
 
@@ -325,13 +326,13 @@ flowchart LR
     G[GOES - NOAA SWPC]
   end
   subgraph PREP[Antes de la mision o de la demo]
-    I[vigia_ingesta.py: prueba, limpia y guarda JSON]
+    I[pipelines/datalake: prueba, limpia y guarda con huella]
     S[Reanclaje a la linea de tiempo de mision]
   end
   subgraph BORDO[A bordo: navegador sin conexion]
     C[Registro diario de menos de 90 s]
     W[Sensor o simulador con esquema Bio-Monitor]
-    A[(Almacen local cifrado)]
+    A[(Almacen local)]
     X[Cruce por tiempo: salud + entorno]
     M[Motor hibrido: A clinica, B desviacion, C deriva]
     P[Permisos: privado en verde y ambar]
@@ -366,7 +367,7 @@ Lectura del diagrama: los datos ambientales entran una sola vez, ya limpios; tod
 | Ingesta | Prueba las cuatro fuentes, limpia y guarda JSON con huella | Se ejecuta antes de la demo; en misión equivaldría a la telemetría de la nave |
 | Reanclaje | Coloca las ventanas reales sobre la línea de tiempo de misión | Conserva la hora real de cada punto \(sección 3\.4\) |
 | Captura | Registro diario de menos de 90 segundos; sensor o simulador | Entrada manual primero: funciona aunque falle el sensor |
-| Almacén | Guarda lecturas, entorno, alertas y reportes en el dispositivo | Nada sale sin una regla explícita |
+| Almacén | Guarda lecturas, entorno, alertas y reportes en el dispositivo; una API local con SQLite los consolida para la tripulación | Nada sale sin una regla explícita; el cifrado queda para la versión de producción |
 | Motor híbrido | Capa A clínica, capa B de desviación personal, capa C de deriva, y reglas con contexto | Reglas legibles y auditables; mismos parámetros que el motor de referencia en Python |
 | Permisos | Verde y ámbar privados; rojo escala al oficial médico | Consentimiento previo al vuelo y registro de cada escalamiento \(sección 5\.4\) |
 | Decisión | Figura humana, explicación y acción | Tres niveles como máximo, para reducir la fatiga de alarmas |
@@ -381,17 +382,18 @@ Lectura del diagrama: los datos ambientales entran una sola vez, ya limpios; tod
 
 | Componente | MVP de hackathon | Proyección a producción |
 | --- | --- | --- |
-| Interfaz | React con Vite, como aplicación web progresiva \(service worker\) | La misma base empaquetada para la tableta de a bordo |
-| Almacenamiento | IndexedDB mediante Dexie | Base local cifrada con registro de auditoría |
-| Motor de análisis | TypeScript puro, sin servidor, con pruebas unitarias | Módulo validado clínicamente, versionado y con trazabilidad de reglas |
-| Gráficas | Recharts o uPlot | Igual |
-| Ingesta | Script de Python \(requests, pandas\) que genera JSON | Servicio conectado a la telemetría ambiental de la nave |
-| Sensor | Simulador con el esquema de Bio\-Monitor; opcional, banda de pulso por Web Bluetooth | Integración con prendas tipo Bio\-Monitor; intercambio en formato HL7 FHIR |
-| Despliegue | Vercel o GitHub Pages; repositorio público | Cómputo de a bordo, sin nube |
+| Interfaz | React con Next\.js, como aplicación web progresiva \(service worker y manifiesto\) | La misma base empaquetada para la tableta de a bordo |
+| Almacenamiento | `localStorage` en el dispositivo para registros, cola y copia del catálogo; SQLite en la API local para la tripulación | Base local cifrada con registro de auditoría |
+| Motor de análisis | TypeScript puro, sin servidor, con pruebas unitarias y prueba de paridad contra el motor de referencia en Python | Módulo validado clínicamente, versionado y con trazabilidad de reglas |
+| Gráficas | SVG propio, sin dependencias | Igual |
+| Ingesta y reanclaje | Scripts de Python con biblioteca estándar que generan JSON con huella SHA\-256 | Servicio conectado a la telemetría ambiental de la nave |
+| API de a bordo | FastAPI en la red local: sirve el entorno verificado, guarda el registro de la tripulación y aplica las reglas de privacidad y escalamiento | Servicio del cómputo de a bordo, con autenticación |
+| Sensor | Galaxy Watch4 a través de un servidor propio en la red local \(anexo A\); simulador como respaldo | Integración con prendas tipo Bio\-Monitor; intercambio en formato HL7 FHIR |
+| Despliegue | Un servidor propio con la web y la API; repositorio público | Cómputo de a bordo, sin nube |
 
-**Por qué este stack\.** No necesita servidor, se despliega en minutos y la propiedad central del producto \(funcionar sin conexión\) se demuestra apagando el wifi frente a los jueces\.
+**Por qué este stack\.** El razonamiento completo corre en el navegador: registro, motor, estado y alertas funcionan con la red apagada, y la aplicación abre sin enlace gracias al service worker y a la copia local del catálogo\. La API no es la nube: representa el cómputo de la nave en la red local, que consolida a la tripulación, guarda el escalamiento y lleva la cola hacia tierra\. Lo que el prototipo no tiene todavía es cifrado del almacén ni autenticación de tripulantes; ambos están declarados como límites\.
 
-**Decisión de stack según el equipo\.** Si dos o más personas ya trabajan con React, se usa el stack de la tabla\. Si no, la opción por defecto es HTML, CSS y JavaScript sin framework, con Chart\.js incluido localmente y almacenamiento en IndexedDB o localStorage: el motor de análisis es el mismo, se despliega igual en GitHub Pages y un service worker de pocas líneas conserva el modo sin conexión\. Al menos otro equipo del reto entrega así\. Streamlit queda descartado porque exige servidor y rompe la demostración sin red\.
+**Dos modos de datos\.** La aplicación arranca en modo **real**: evalúa solo lo que el tripulante registra y el entorno medido \(GOES y DONKI del día, y ventanas reales de RadLab y EDA reancladas\)\. El modo **demo** muestra un tripulante simulado de 30 días con las tres anomalías de la sección 5\.5 y lo rotula como simulado; lo registrado en la demo no se mezcla con los datos reales ni se envía a la API\.
 
 ## 5\. Validación científica, viabilidad y gestión de riesgos
 
@@ -406,9 +408,9 @@ VIGÍA no diagnostica: detecta desviaciones, las pone en contexto y propone el s
 | Capa | Variables | Regla | Resultado |
 | --- | --- | --- | --- |
 | A\. Seguridad clínica \(umbral fijo\) | SpO2, temperatura, presión arterial sistólica, frecuencia cardíaca | Tramos de NEWS2 \(Royal College of Physicians, 2017\) | Rojo si un parámetro cae en su tramo extremo o la suma es 5 o más; ámbar si la suma es 3 o 4 |
-| B\. Desviación personal \(robusta\) | Frecuencia cardíaca en reposo, presión sistólica, glucosa, sueño, ánimo | Puntuación z modificada frente a la línea base vigente, dos días seguidos | Ámbar |
+| B\. Desviación personal \(robusta\) | Frecuencia cardíaca en reposo, presión sistólica, sueño, ánimo \(glucosa: pendiente\) | Puntuación z modificada frente a la línea base vigente, dos días seguidos | Ámbar |
 | C\. Deriva lenta \(CUSUM\) | Frecuencia cardíaca en reposo \(al alza\), sueño y ánimo \(a la baja\) | Suma acumulada unilateral con k = 0,75 y h = 5 | Ámbar |
-| Contexto | Síntomas y entorno | CO2 por encima de 3 mmHg con cefalea; flujo de protones de 10 o más en ≥10 MeV | Alerta de entorno; modo tormenta |
+| Contexto | Síntomas y entorno | CO2 por encima de 3 mmHg con cefalea; flujo de protones de 10 o más en ≥10 MeV o evento SEP de DONKI | Alerta de entorno \(ámbar, para toda la tripulación\); modo tormenta |
 
 **Capa A: tramos clínicos usados\.**
 
@@ -431,9 +433,9 @@ Esta capa está activa desde el primer día y no depende de ninguna línea base\
 M = 0,6745 * (x - mediana) / MAD
 ```
 
-El umbral no es uniforme\. Para variables fisiológicas \(frecuencia cardíaca, presión, glucosa\) es |M| de 3,5 o más, el valor de Iglewicz y Hoaglin\. Para variables conductuales autorreportadas \(sueño, ánimo\) es 3,0\. En ambos casos se exige persistencia de dos días, y cada variable tiene un piso de dispersión para que una línea base muy estable no convierta ruido en alerta\. SpO2 y temperatura no pasan por esta capa: su rango fisiológico es estrecho y solo responden a la capa A\.
+El umbral no es uniforme\. Para variables fisiológicas \(frecuencia cardíaca y presión; la glucosa semanal aún no pasa por esta capa\) es |M| de 3,5 o más, el valor de Iglewicz y Hoaglin\. Para variables conductuales autorreportadas \(sueño, ánimo\) es 3,0\. En ambos casos se exige persistencia de dos días, y cada variable tiene un piso de dispersión para que una línea base muy estable no convierta ruido en alerta\. SpO2 y temperatura no pasan por esta capa: su rango fisiológico es estrecho y solo responden a la capa A\.
 
-**Capa C: CUSUM\.** Acumula desviaciones pequeñas y sostenidas en un solo sentido\. Solo se activa cuando la línea base ya es por completo de vuelo \(día 21 en adelante\), porque durante la transición el desplazamiento propio de la adaptación la dispararía\. Los parámetros k = 0,75 y h = 5 salen de un barrido sobre misiones de control \(sección 5\.5\)\.
+**Capa C: CUSUM\.** Acumula desviaciones pequeñas y sostenidas en un solo sentido\. Solo se activa cuando la línea base ya es por completo de vuelo \(día 21 en adelante\), porque durante la transición el desplazamiento propio de la adaptación la dispararía\. Al emitir una alerta, la suma vuelve a cero\. Los parámetros k = 0,75 y h = 5 se contrastan con un barrido de nueve combinaciones \(`index\.py barrer`, publicado en `gold/barrido\.json`\)\.
 
 ### 5\.2 Línea base: de tierra a vuelo
 
@@ -458,7 +460,7 @@ centro(d)     = (1 - w) * mediana_tierra + w * mediana_vuelo
 dispersion(d) = (1 - w) * MAD_tierra     + w * MAD_vuelo
 ```
 
-La ventana en vuelo toma hasta 14 días, empieza en el día 8 y termina 3 días antes de la fecha evaluada\. Ese rezago evita que una deriva en curso se absorba en su propia referencia\. Los días con alerta se excluyen de la ventana\.
+La ventana en vuelo toma hasta 14 días, empieza en el día 8 y termina 3 días antes de la fecha evaluada\. Ese rezago evita que una deriva en curso se absorba en su propia referencia\. Los días en que el indicador superó su umbral o tuvo alerta se excluyen de la ventana\. El motor no conoce los desplazamientos que usa el simulador: la referencia en vuelo sale solo de las lecturas\. Un tripulante sin línea base de tierra se evalúa con la capa A desde el primer día y con las capas B y C cuando su ventana en vuelo reúne 5 lecturas\.
 
 Durante el modo adaptación la interfaz lo dice de forma explícita: "cambio esperado por adaptación; se vigilan solo los límites de seguridad"\. La duración de 14 días es una decisión conservadora de diseño, no un valor clínico validado\.
 
@@ -474,7 +476,7 @@ El registro diario y la prueba de vigilancia son dos actividades distintas, con 
 | Registro semanal | Unos 2 minutos | Una vez por semana | Glucosa y masa corporal |
 | Prueba de vigilancia PVT\-B | 3 minutos | Cada 3 días, o el mismo día si hay ámbar por sueño o CO2 sobre el límite | Tiempos de reacción; lapso a partir de 355 ms; salida en falso por debajo de 100 ms (umbral por confirmar en Basner y colaboradores, 2011) |
 
-La PVT\-B es la versión de 3 minutos que la NASA usa en la ISS desde 2009 con el nombre Reaction Self\-Test\. En VIGÍA es un módulo posterior al núcleo del prototipo \(sección 7\.1\); el motor de referencia ya calcula cuándo debe ofrecerse\.
+La PVT\-B es la versión de 3 minutos que la NASA usa en la ISS desde 2009 con el nombre Reaction Self\-Test\. En VIGÍA es un módulo posterior al núcleo del prototipo \(sección 7\.1\) y aún no está implementado\.
 
 ### 5\.4 Privacidad y escalamiento
 
@@ -499,7 +501,7 @@ Reglas del escalamiento automático:
 
 ### 5\.5 Protocolo de simulación y resultados
 
-El script `vigia\_simulacion\.py` genera misiones de 30 días con 14 días previos al vuelo y 4 tripulantes, inyecta tres anomalías conocidas y las pasa por el motor de referencia\. La misma cantidad de misiones de control, sin anomalías, mide las falsas alarmas\.
+El módulo `pipelines/reanclaje/simulacion\.py` \(`index\.py simular`\) genera misiones de 30 días con 14 días previos al vuelo y 4 tripulantes, inyecta tres anomalías conocidas y las pasa por el motor de referencia\. La misma cantidad de misiones de control, sin anomalías, mide las falsas alarmas\.
 
 *[Table view](https://miro.com/app/board/uXjVENjWII4=/?moveToWidget=3458764690457314658&cot=14)*
 
@@ -517,15 +519,15 @@ Supuestos del escenario, todos declarados en el archivo de resultados: desplazam
 
 | KPI | Resultado | Lectura |
 | --- | --- | --- |
-| Anomalías inyectadas detectadas | 100 % \(A1, A2 y A3 al 100 %\) | A2 y A3 son reglas deterministas; el valor informativo está en A1 |
-| A1 con la deriva a mitad de intensidad | 79 % | La sensibilidad cae con derivas débiles; no se presenta el 100 % como general |
-| Alerta por azar en la misma ventana, misiones de control | 1,6 % | La detección de A1 no se explica por falsas alarmas |
-| Días desde el inicio de la deriva hasta la alerta | 6 \(mediana\) | Con la deriva a mitad de intensidad, 8 |
+| Anomalías inyectadas detectadas | A1: 99,8 %; A2 y A3: 100 % | A2 y A3 son reglas deterministas; el valor informativo está en A1 |
+| A1 con la deriva a mitad de intensidad | 17,8 % | La sensibilidad cae mucho con derivas débiles; no se presenta el 99,8 % como general |
+| Alerta por azar en la misma ventana, misiones de control | 0,0 % | La detección de A1 no se explica por falsas alarmas |
+| Días desde el inicio de la deriva hasta la alerta | 8 \(mediana\) | Con la deriva a mitad de intensidad, 9 |
 | Umbral fijo terrestre \(frecuencia cardíaca de 91 lpm o más\) | No se disparó en ninguna misión | El adelanto en días no se puede calcular; el dato es que el umbral fijo no ve la deriva |
-| Falsas alarmas por tripulante y semana, días 15 a 30 | 0,024 | Con otra semilla, 0,026 |
-| Falsas alarmas por tripulante y semana, días 1 a 14 | 0,006 | El modo adaptación no genera alertas estadísticas |
+| Falsas alarmas por tripulante y semana, días 15 a 30 | 0,000 | Con otra semilla, 0,000 |
+| Falsas alarmas por tripulante y semana, días 1 a 14 | 0,0003 | Solo capa A; las capas B y C calculan pero no alertan en modo adaptación |
 
-**Límites de estos resultados\.** Son del motor de referencia en Python sobre datos generados por el mismo equipo, y los parámetros de CUSUM se ajustaron con ese generador, así que son optimistas\. No miden desempeño clínico\. El script exporta `caso\_referencia\.json` con las lecturas y las alertas esperadas día por día: el motor de la aplicación web debe reproducirlas antes de citar estas cifras como propias\.
+**Límites de estos resultados\.** Salen del motor de referencia sobre datos generados por el mismo equipo: no miden desempeño clínico\. Dos lecturas honestas de las cifras: las falsas alarmas casi nulas reflejan que el ruido simulado es gaussiano y que los pisos de dispersión son amplios, no que el motor no vaya a dar falsas alarmas con personas reales; y esos mismos pisos explican que la deriva a mitad de intensidad se detecte solo en el 17,8 % de las misiones\. Bajar `k` a 0,5 adelanta la detección un día en el barrido; no se cambió para no ajustar los parámetros a la anomalía que se quiere detectar\. El script exporta `caso\_referencia\.json` con las lecturas y las alertas esperadas día por día, y el motor de la aplicación web lo reproduce alerta por alerta \(prueba de paridad en `packages/engine`\), de modo que las cifras valen también para el motor de la aplicación\.
 
 ### 5\.6 Supuestos, limitaciones y mitigación
 
@@ -567,7 +569,7 @@ Supuestos del escenario, todos declarados en el archivo de resultados: desplazam
 **Caso 1: registro diario con 20 minutos de retardo \(día 143 de tránsito\)\.**
 
 1. La astronauta abre VIGÍA sin enlace y completa el registro en menos de 90 segundos\.
-2. El motor detecta que su frecuencia cardíaca en reposo lleva seis días subiendo respecto a su línea base \(aviso por deriva, no por valor atípico\)\.
+2. El motor detecta que su frecuencia cardíaca en reposo lleva más de una semana subiendo respecto a su línea base \(aviso por deriva, no por valor atípico\)\.
 3. La pantalla muestra estado ámbar, la gráfica de la tendencia y el entorno: sueño reducido, sin evento solar, CO2 normal\.
 4. Acción sugerida: priorizar sueño, repetir medición en 24 horas y enviar reporte\.
 5. El reporte entra a la cola; el contador muestra cuándo llegará a tierra y cuándo puede volver la respuesta\.
@@ -592,14 +594,14 @@ Supuestos del escenario, todos declarados en el archivo de resultados: desplazam
 
 | KPI | Cómo se mide | Valor | Estado |
 | --- | --- | --- | --- |
-| Anomalías inyectadas que el motor detecta | vigia\_simulacion\.py, 500 misiones | 100 %; 79 % en la deriva a mitad de intensidad | Medido en el motor de referencia |
-| Detección frente a un umbral fijo terrestre | Días hasta la alerta; comparador de 91 lpm | Alerta a los 6 días de mediana; el umbral fijo no se disparó | Medido en el motor de referencia |
-| Falsas alarmas por tripulante y semana | 500 misiones de control | 0,024 \(días 15 a 30\); 0,006 \(días 1 a 14\) | Medido en el motor de referencia |
+| Anomalías inyectadas que el motor detecta | simulacion\.py, 500 misiones | 99,8 % a 100 %; 17,8 % en la deriva a mitad de intensidad | Medido; el motor de la aplicación lo reproduce |
+| Detección frente a un umbral fijo terrestre | Días hasta la alerta; comparador de 91 lpm | Alerta a los 8 días de mediana; el umbral fijo no se disparó | Medido; el motor de la aplicación lo reproduce |
+| Falsas alarmas por tripulante y semana | 500 misiones de control | 0,000 \(días 15 a 30\); 0,0003 \(días 1 a 14\) | Medido; optimista por el ruido simulado |
 | Funciones disponibles sin conexión | Prueba con la red apagada | Meta: 100 % de captura, análisis y decisión | Se mide con la aplicación |
 | Tiempo del registro diario | Cronómetro con 5 personas | Meta: menos de 90 segundos | Se mide con la aplicación |
 | Usabilidad | Escala SUS con 5 personas ajenas al equipo | Meta: más de 68 | Se mide con la aplicación |
 
-Los tres primeros valores pasan a ser de la aplicación cuando su motor reproduce `caso\_referencia\.json` \(sección 5\.5\)\. Los tres últimos no tienen valor hasta medirlos; en la entrega se reporta la cifra obtenida o se omite\.
+Los tres primeros valores son también de la aplicación: su motor reproduce `caso\_referencia\.json` \(sección 5\.5\)\. Los tres últimos no tienen valor hasta medirlos; en la entrega se reporta la cifra obtenida o se omite\.
 
 **Impacto por dimensión\.** Social: autonomía en salud para quien está lejos de un médico, en el espacio y en la Tierra\. Científico: un registro que une salud y exposición ambiental por persona, el dato que la investigación sobre interacción de peligros necesita\. Operativo: menos consultas de ida y vuelta por cada evento\. No se afirma impacto económico cuantificado porque no hay datos para sostenerlo\.
 
@@ -630,6 +632,8 @@ El prototipo demuestra el ciclo completo \(capturar, contextualizar, decidir, re
 | Prueba de vigilancia PVT\-B | Si hay tiempo | No |
 | Rachas de registro | Si hay tiempo | No |
 | Lectura de sensor por Bluetooth; entrada por cámara | Si hay tiempo | No |
+
+**Estado al 15 de noviembre de 2026\.** Todas las funciones imprescindibles y los perfiles de misión están implementados y cubiertos por pruebas\. Quedan declarados como pendientes: la glucosa en la capa B, la corrección metrológica de la capa A \(sección 5\.1\), el reinicio de la línea base de SpO2 al cambiar de perfil, la corrección de masa por gravedad local, la prueba PVT\-B, las rachas de registro, la entrada por cámara, el cifrado del almacén y la autenticación de tripulantes\. La interfaz está en español e inglés; las fichas de indicador, en español\.
 
 Regla de coherencia: el resumen ejecutivo, el resumen del formulario y los guiones solo nombran funciones imprescindibles\. Si una función imprescindible no llega a la entrega, se retira de esos textos antes de enviar\.
 
@@ -687,11 +691,11 @@ Crew physiological data in the prototype is simulated; environmental data is rea
 | --- | --- | --- | --- |
 | 0:00 a 0:25 | Gancho | "Te duele la cabeza y estás mareada\. Le escribes a tu médico\. La respuesta llegará en 44 minutos, si llega\. Estás a medio camino de Marte\." | Pantalla negra con un contador de retardo |
 | 0:25 a 1:00 | Problema | La NASA define cinco peligros que se potencian entre sí\. En la ISS el modelo es estabilizar y regresar\. En Marte no hay regreso: la tripulación decide sola\. Los monitores actuales envían datos a tierra; no ayudan a decidir a bordo\. | Los cinco peligros; ISS frente a Marte en una línea |
-| 1:00 a 2:30 | Demo y datos NASA | Registro diario en vivo, con el wifi apagado, en menos de 90 segundos\. La figura humana pasa a ámbar: "tu pulso en reposo lleva seis días subiendo respecto a tu propia línea base; ningún límite clínico lo habría marcado"\. Se abre el entorno: dosis real de un detector de la ISS \(RadLab\) y CO2 de cabina \(EDA\)\. Un evento solar real de DONKI activa el modo tormenta para toda la tripulación\. Una lectura roja de SpO2 avisa sola al oficial médico\. El reporte aparece en la vista de tierra tras el retardo\. | La aplicación en vivo; cada dato con su rótulo de real o simulado |
-| 2:30 a 3:20 | Impacto | En 500 misiones simuladas, el motor detectó la deriva a los 6 días; el umbral fijo terrestre no se disparó nunca; 0,02 falsas alarmas por tripulante y semana\. Lo usan el astronauta, el oficial médico y el médico de vuelo\. En la Tierra: bases remotas y salud rural\. | Tres números grandes con la leyenda "simulación" |
+| 1:00 a 2:30 | Demo y datos NASA | Registro diario en vivo, con el wifi apagado, en menos de 90 segundos\. La figura humana pasa a ámbar: "tu sueño y tu pulso en reposo llevan más de una semana derivando respecto a tu propia línea base; ningún límite clínico lo habría marcado"\. Se abre el entorno: dosis real de un detector de la ISS \(RadLab\) y CO2 de cabina \(EDA\)\. Un evento solar real de DONKI activa el modo tormenta para toda la tripulación\. Una lectura roja de SpO2 avisa sola al oficial médico\. El reporte aparece en la vista de tierra tras el retardo\. | La aplicación en vivo; cada dato con su rótulo de real o simulado |
+| 2:30 a 3:20 | Impacto | En 500 misiones simuladas, el motor detectó la deriva en el 99,8 % de los casos, a los 8 días de mediana; el umbral fijo terrestre no se disparó nunca; menos de 0,001 falsas alarmas por tripulante y semana\. Lo usan el astronauta, el oficial médico y el médico de vuelo\. En la Tierra: bases remotas y salud rural\. | Tres números grandes con la leyenda "simulación" |
 | 3:20 a 4:00 | Cierre | Lo que es y lo que no: fisiología simulada, entorno real, apoyo a la decisión y no diagnóstico\. Próximo paso a 3 meses\. Frase final: "Cuando la Tierra tarda 22 minutos en contestar, el primer médico eres tú\. VIGÍA se asegura de que no estés a ciegas\." | Hoja de ruta en una línea; nombre y enlace |
 
-**Origen de las cifras del bloque de impacto:** `resultados/kpi\.json`, generado por `vigia\_simulacion\.py`\. Son del motor de referencia\. Se citan como propias de la aplicación solo si su motor reproduce `caso\_referencia\.json`; si el motor cambia, se vuelve a ejecutar el script y se actualizan\.
+**Origen de las cifras del bloque de impacto:** `gold/kpi\.json`, generado por `pipelines/reanclaje` \(`index\.py simular`\) y servido por la API en `/simulacion/kpi`\. El motor de la aplicación reproduce `caso\_referencia\.json`; si el motor cambia, se vuelve a ejecutar el script y se actualizan\.
 
 ### 8\.4 Demo oficial: 30 segundos o 7 diapositivas
 
@@ -739,12 +743,12 @@ El guion de 240 segundos sirve para la presentación ante el jurado local, si la
 ### 8\.6 Orden de trabajo sugerido para hoy
 
 - [ ] Leer la página oficial del reto y contrastarla con la tabla de trazabilidad
-- [ ] Ejecutar `vigia\_ingesta\.py` en la red del equipo y guardar `manifest\.json` como evidencia
-- [ ] Descargar una tabla de telemetría de EDA a `eda\_manual/` y volver a ejecutar la ingesta
-- [ ] Portar el motor híbrido a la aplicación y reproducir `caso\_referencia\.json`
-- [ ] Construir registro diario, figura humana y fichas de indicador
-- [ ] Implementar permisos y escalamiento de alertas rojas
-- [ ] Activar el modo sin conexión y la cola con retardo
+- [x] Ejecutar la ingesta \(`pipelines/datalake`\) en la red del equipo y guardar `manifest\.json` como evidencia
+- [x] Ingerir la telemetría de EDA por su API
+- [x] Portar el motor híbrido a la aplicación y reproducir `caso\_referencia\.json`
+- [x] Construir registro diario, figura humana y fichas de indicador
+- [x] Implementar permisos y escalamiento de alertas rojas
+- [x] Activar el modo sin conexión y la cola con retardo
 - [ ] Medir tiempo de registro y usabilidad con 5 personas
 - [ ] Retirar del resumen y del pitch cualquier función imprescindible que no haya llegado
 - [ ] Grabar el video de 30 segundos o armar las 7 diapositivas, y enviar el formulario en inglés

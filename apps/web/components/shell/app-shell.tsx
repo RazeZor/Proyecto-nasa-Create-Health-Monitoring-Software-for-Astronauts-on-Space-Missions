@@ -12,8 +12,8 @@ import { STATUS_ICON, statusText } from "@/components/shared/status"
 import { AlertCenter } from "@/components/shell/alert-center"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { isAdaptation } from "@/lib/engine"
-import { S } from "@/lib/strings"
-import type { ProfileId, Role } from "@/lib/types"
+import { cambiarIdioma, IDIOMA, S } from "@/lib/strings"
+import type { Mode, ProfileId, Role } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const NAV = [
@@ -121,7 +121,7 @@ function Cell({ label, children, className }: { label: string; children: React.R
 }
 
 function TopBar() {
-  const { day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, voice, setVoice, catalogo, analisis } = useApp()
+  const { day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, voice, setVoice, catalogo, analisis, mode, setMode, online, pending } = useApp()
   const MISSION_DAYS = analisis.missionDays
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
@@ -181,10 +181,18 @@ function TopBar() {
           </p>
         </Cell>
 
+        <Cell label={S.top.mode}>
+          <select className={selectCls} value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
+            <option value="real">{S.top.modeReal}</option>
+            <option value="demo">{S.top.modeDemo}</option>
+          </select>
+        </Cell>
+
         <Cell label={S.shell.link} className="hidden xl:flex">
-          <p className="flex min-h-10 items-center gap-2 text-sm font-medium text-status-ok">
-            <span aria-hidden className="size-2 rounded-full bg-status-ok" />
-            {S.shell.linkValue}
+          <p className={cn("flex min-h-10 items-center gap-2 text-sm font-medium", online ? "text-status-ok" : "text-status-watch")} role="status">
+            <span aria-hidden className={cn("size-2 rounded-full", online ? "bg-status-ok" : "bg-status-watch")} />
+            {online ? S.shell.linkOnline : S.shell.linkOffline}
+            {pending > 0 && <span className="font-mono text-xs text-muted-foreground">· {S.shell.pending(pending)}</span>}
           </p>
         </Cell>
 
@@ -194,6 +202,12 @@ function TopBar() {
               {(Object.keys(S.roles) as Role[]).map((r) => (
                 <option key={r} value={r}>{S.roles[r]}</option>
               ))}
+            </select>
+          </Cell>
+          <Cell label={S.top.language}>
+            <select className={selectCls} value={IDIOMA} onChange={(e) => cambiarIdioma(e.target.value as "es" | "en")}>
+              <option value="es">Español</option>
+              <option value="en">English</option>
             </select>
           </Cell>
           <div className="flex items-center gap-1 px-2">
@@ -226,15 +240,42 @@ function TopBar() {
 }
 
 function Banners() {
-  const { day, analisis } = useApp()
+  const { day, analisis, mode, setMode, online, checkIns, catalogo } = useApp()
+  const tormenta = analisis.stormInfo(day)
+  const sinRegistros = mode === "real" && checkIns.length === 0 && catalogo.historial.lecturas.length === 0
   return (
     <>
-      {analisis.storm(day) && (
+      {mode === "demo" && (
+        <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-status-watch/40 bg-status-watch/10 px-4 py-2 md:px-8">
+          <p className="text-sm"><span className="font-semibold">{S.banners.demo}.</span> <span className="text-muted-foreground">{S.banners.demoDetail}</span></p>
+          <button type="button" onClick={() => setMode("real")} className="min-h-9 shrink-0 rounded-sm border border-input px-3 text-sm font-medium hover:bg-accent">{S.banners.demoExit}</button>
+        </div>
+      )}
+      {!online && (
+        <div role="status" className="flex items-start gap-3 border-b border-status-watch/40 bg-status-watch/10 px-4 py-3 md:px-8">
+          <div>
+            <p className="font-semibold">{S.banners.offline}</p>
+            <p className="text-sm text-muted-foreground">{S.banners.offlineDetail}</p>
+          </div>
+        </div>
+      )}
+      {sinRegistros && (
+        <div role="status" className="flex flex-wrap items-center gap-3 border-b border-primary/30 bg-primary/10 px-4 py-3 md:px-8">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">{S.banners.realEmpty}</p>
+            <p className="text-sm text-muted-foreground">{S.banners.realEmptyDetail}</p>
+          </div>
+          <Link href="/check-in" className="inline-flex min-h-10 items-center rounded-sm bg-primary px-4 text-sm font-semibold text-primary-foreground">{S.banners.realEmptyCta}</Link>
+          <button type="button" onClick={() => setMode("demo")} className="min-h-10 rounded-sm border border-input px-4 text-sm font-medium hover:bg-accent">{S.banners.realEmptyDemo}</button>
+        </div>
+      )}
+      {tormenta && (
         <div role="alert" className="flex items-start gap-3 border-b border-status-act/40 bg-status-act/12 px-4 py-3 md:px-8">
           <ShieldAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-status-act" />
           <div>
             <p className="font-semibold text-status-act">{S.banners.storm}</p>
             <p className="text-sm">{S.banners.stormDetail}</p>
+            <p className="mt-1 font-mono text-xs text-muted-foreground">{S.banners.stormSource}: {tormenta.source}{tormenta.flux !== null ? ` · ${tormenta.flux} pfu` : ""}</p>
           </div>
         </div>
       )}

@@ -7,7 +7,7 @@ import { analizar as analizarCon, evaluateCheckIn as evaluar } from "./engine.ts
 import type { CheckInEntry } from "./types.ts"
 
 // Lo que devuelve GET /tripulantes/1/historial: el tripulante 1 del caso de referencia.
-const HISTORIAL = { ...caso, dia_actual: 24, lecturas: caso.tripulantes[0].lecturas } as unknown as Historial
+const HISTORIAL = { ...caso, modo: "demo", dia_actual: 27, lecturas: caso.tripulantes[0].lecturas } as unknown as Historial
 const analizar = (c: CheckInEntry[]) => analizarCon(c, HISTORIAL)
 const evaluateCheckIn = (e: CheckInEntry, p: CheckInEntry[]) => evaluar(e, p, HISTORIAL)
 
@@ -17,23 +17,36 @@ const entrada = (day: number, o: Partial<CheckInEntry> = {}): CheckInEntry => ({
   symptoms: [], glucose: null, glucoseEnzyme: "", massKg: null, massMethod: "", status: "ok", ...o,
 })
 
-test("sin registros, el escenario de partida da la deriva cardiaca (capa C) del día 24", () => {
+test("sin registros, el escenario de partida da la deriva A1 (capas B y C) dentro de su ventana", () => {
   const a = analizar([])
-  const c = a.alerts(24).filter((x) => x.day === 24)
-  assert.equal(c.length, 1)
-  assert.equal(c[0].layer, "C")
-  assert.equal(c[0].zone, "heart")
-  assert.equal(c[0].status, "watch")
-  assert.equal(a.alerts(23).length, 0) // lo de después del día no se ve
+  const deriva = a.alerts(27).filter((x) => (x.layer === "B" || x.layer === "C") && !x.informative)
+  assert.ok(deriva.length >= 2)
+  assert.ok(deriva.every((x) => x.status === "watch" && x.day >= 18 && x.day <= 27 && !x.escalates))
+  assert.ok(deriva.some((x) => x.layer === "C"))
+  assert.equal(a.alerts(17).filter((x) => x.scope === "personal").length, 0) // lo de después del día no se ve
 })
 
-test("un registro con SpO2 de 89 % el día 10 dispara la capa A y pone el corazón en acción", () => {
+test("un registro con SpO2 de 89 % el día 10 dispara la capa A, escala y pone el corazón en acción", () => {
   const a = analizar([entrada(10, { spo2: 89 })])
   const hit = a.alerts(10).find((x) => x.layer === "A")
   assert.ok(hit)
   assert.equal(hit.status, "act")
+  assert.equal(hit.escalates, true)
+  assert.deepEqual(hit.clinical, { indicador: "spo2", valor: 89, tramo: "Tramo extremo (3 puntos)" }) // dato mínimo del escalamiento
+  assert.equal(hit.createdAt, "2026-11-14T08:00:00Z")
   assert.equal(a.zones(10).find((z) => z.zone === "heart")?.status, "act")
   assert.equal(a.overall(10), "act")
+})
+
+test("capa A ámbar (suma 3) no escala; la capa B en adaptación es informativa y no cambia el estado", () => {
+  const a = analizar([entrada(10, { spo2: 93, systolic: 105 })])
+  const hit = a.alerts(10).find((x) => x.layer === "A")
+  assert.deepEqual([hit?.status, hit?.escalates, hit?.clinical], ["watch", false, undefined])
+  const b = analizar([entrada(9, { restingHr: 95 }), entrada(10, { restingHr: 95 })])
+  const info = b.alerts(10).filter((x) => x.layer === "B")
+  assert.equal(info.length, 1)
+  assert.equal(info[0].informative, true)
+  assert.equal(b.overall(10), "ok") // 95 lpm es 1 punto NEWS2 (sin alerta) y la B informativa no cambia el estado
 })
 
 test("el registro del usuario reemplaza la lectura del escenario ese día", () => {
@@ -48,10 +61,26 @@ test("un campo vacío conserva el valor del escenario", () => {
   assert.equal(a.vitals(5).find((v) => v.day === 5)?.restingHr, base?.restingHr)
 })
 
-test("un síntoma sin CO2 alto en el escenario no dispara la regla de contexto", () => {
-  // el CO2 sale de entorno_diario del escenario, no del registro
-  const a = analizar([entrada(10, { symptoms: ["headache"] })])
-  assert.equal(a.alerts(10).filter((x) => x.layer === "context").length, 0)
+test("cefalea con el pico de CO2 simulado del día 12: una alerta de entorno, no médica", () => {
+  const a = analizar([entrada(12, { symptoms: ["headache"] })])
+  const ctx = a.alerts(12).filter((x) => x.layer === "context")
+  assert.equal(ctx.length, 1)
+  assert.deepEqual([ctx[0].scope, ctx[0].status, ctx[0].escalates, ctx[0].zone], ["crew", "watch", false, "head"])
+  // un día sin CO2 alto, el mismo síntoma no cruza con el entorno
+  assert.equal(analizar([entrada(10, { symptoms: ["headache"] })]).alerts(10).filter((x) => x.layer === "context").length, 0)
+})
+
+test("el CO2 real llega en ppm y se convierte con la presión del perfil (§3.3)", () => {
+  // 4 500 ppm: 3,42 mmHg en la estación (760 mmHg) y 1,91 mmHg en superficie (424 mmHg)
+  const h = { ...HISTORIAL, entorno_diario: [{ dia_mision: 10, co2_ppm_max_horario: 4500, co2_origen: { naturaleza: "Real", fuente: "EDA RR-1", fecha_real: "2014-09-21" } }] } as Historial
+  const registro = [entrada(10, { symptoms: ["headache"] })]
+  const estacion = analizarCon(registro, h, 760)
+  assert.equal(estacion.co2(10)?.mmHg, 3.42)
+  const alerta = estacion.alerts(10).find((x) => x.layer === "context")
+  assert.ok(alerta?.source?.includes("EDA RR-1") && alerta.source.includes("2014-09-21") && alerta.source.startsWith("Real"))
+  const superficie = analizarCon(registro, h, 424)
+  assert.equal(superficie.co2(10)?.mmHg, 1.908)
+  assert.equal(superficie.alerts(10).filter((x) => x.layer === "context").length, 0)
 })
 
 test("evaluateCheckIn: lectura normal ok, límite clínico act, síntoma watch", () => {
@@ -60,18 +89,44 @@ test("evaluateCheckIn: lectura normal ok, límite clínico act, síntoma watch",
   assert.equal(evaluateCheckIn(entrada(10, { symptoms: ["rash"] }), []), "watch")
 })
 
-test("tormenta tomada del entorno del escenario", () => {
+test("tormenta: por flujo simulado del escenario o por un evento SEP real de DONKI", () => {
   const a = analizar([])
   assert.equal(a.storm(22), true)
+  assert.equal(a.stormInfo(22)?.simulated, true)
   assert.equal(a.storm(21), false)
+  const sep = { sepID: "2024-05-09T13:59:00-SEP-001", t_real: "2024-05-09T13:59:00Z", link: null, fuente: "DONKI (NASA CCMC)" }
+  const h = { ...HISTORIAL, entorno_diario: [{ dia_mision: 18, modo_tormenta: true, eventos_sep: [sep] }] } as Historial
+  const real = analizarCon([], h)
+  assert.deepEqual([real.stormInfo(18)?.simulated, real.stormInfo(18)?.flux], [false, null])
+  const alerta = real.alerts(18).find((x) => x.layer === "context")
+  assert.ok(alerta?.source?.includes("DONKI") && alerta.zone === null && alerta.scope === "crew")
 })
 
-test("líneas base: dos tramos con la personal de vuelo desplazada", () => {
-  const [pre, vuelo] = analizar([]).baselines("restingHr")
-  assert.equal(pre.phase, "pre-flight")
-  assert.equal(vuelo.phase, "in-flight")
-  assert.ok(vuelo.low > pre.low && vuelo.high < pre.high + 4)
-  assert.ok(vuelo.low < vuelo.high)
+test("banda personal: de tierra (peso 0) a vuelo (peso 1), siguiendo la referencia del motor", () => {
+  const banda = analizar([]).band("restingHr")
+  assert.equal(banda[0].day, 1)
+  assert.equal(banda[0].flightWeight, 0)
+  assert.equal(banda.find((b) => b.day === 14)?.flightWeight, 0)
+  assert.equal(banda.find((b) => b.day === 21)?.flightWeight, 1)
+  assert.ok(banda.every((b) => b.low < b.high))
+  assert.deepEqual(analizar([]).band("spo2"), []) // sin capa B no hay banda personal
+})
+
+test("modo real: sin lecturas no se inventa nada; una medida ausente no puntúa", () => {
+  const vacio: Historial = { modo: "real", naturaleza: "Real", dias_prevuelo: 0, dias_vuelo: 30, dia_actual: 2, entorno_diario: [], lecturas: [] }
+  const a = analizarCon([], vacio)
+  assert.deepEqual([a.alerts(30), a.vitals(30), a.overall(2), a.hasData(2), a.real], [[], [], "ok", false, true])
+  // registro solo con ánimo y SpO2 normal: lo demás queda en null y no cuenta como 0
+  const parcial = analizarCon([entrada(2, { restingHr: null, systolic: null, tempC: null, sleepH: null })], vacio)
+  assert.deepEqual(parcial.alerts(2), [])
+  assert.deepEqual([parcial.vitals(2)[0].restingHr, parcial.vitals(2)[0].spo2], [null, 98])
+  assert.equal(evaluar(entrada(2, { spo2: 91, restingHr: null, systolic: null, tempC: null, sleepH: null }), [], vacio), "act")
+})
+
+test("tres días seguidos en ámbar: se recomienda compartir", () => {
+  const a = analizar([24, 25, 26, 27].map((d) => entrada(d, { systolic: 150 })))
+  const pas = a.alerts(27).filter((x) => x.indicator.includes("sistólica") && !x.informative)
+  assert.deepEqual(pas.map((x) => [x.day, x.recommendShare]).sort(), [[25, false], [26, false], [27, true]])
 })
 
 test("cambios de instrumento de la FC: manual -> reloj -> otro reloj, en orden de día", async () => {

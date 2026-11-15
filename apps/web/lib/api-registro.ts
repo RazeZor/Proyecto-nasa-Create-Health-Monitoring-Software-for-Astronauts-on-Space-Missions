@@ -4,13 +4,14 @@
  * Offline primero: nada aquí lanza por falta de red; devuelve false y el dato sigue en el almacén local.
  */
 import vocabulario from "./vocabulario.json" with { type: "json" }
-import type { ContenidoReporte, ReporteServidor } from "./cola"
-import type { CheckInEntry, IndicatorId, Layer, ProfileId, Report, Status } from "./types"
+import type { AvisoRojo } from "./alertas-sync.ts"
+import type { ContenidoReporte, ReporteServidor } from "./cola.ts"
+import type { CheckInEntry, IndicatorId, Layer, ProfileId, Report, Status } from "./types.ts"
 
 // Por defecto, el proxy del mismo origen (next.config.mjs); NEXT_PUBLIC_VIGIA_API_URL lo salta con una URL directa.
 export const API_BASE_URL = process.env.NEXT_PUBLIC_VIGIA_API_URL || "/vigia-api"
 
-type Lectura = { indicador: string; valor: number; t_real: string; origen: "manual" | "sensor"; metodo: string | null }
+type Lectura = { indicador: string; valor: number; t_real: string; origen: "manual" | "sensor"; metodo: string | null; naturaleza: "Real" }
 type Sintoma = { codigo: string; gravedad: number; t_real: string }
 
 const IDS: Record<string, string> = Object.fromEntries(
@@ -40,7 +41,8 @@ export function lecturasDeCheckIn(e: CheckInEntry): Lectura[] {
     [IDS.massKg, e.massKg, e.massMethod || null, "manual"],
   ]
   return medidas.flatMap(([indicador, valor, metodo, origen]) =>
-    valor === null ? [] : [{ indicador, valor, t_real: t, origen, metodo }],
+    // solo se suben registros del modo real: lo que el tripulante midió de verdad
+    valor === null ? [] : [{ indicador, valor, t_real: t, origen, metodo, naturaleza: "Real" as const }],
   )
 }
 
@@ -94,6 +96,10 @@ export async function listarReportes(tripulante: number): Promise<ReporteServido
   }
 }
 
+/** El médico de vuelo responde un reporte ya entregado. shortcut: la API acepta a cualquier tripulante conocido. */
+export const responderReporte = (reporteId: number, respuesta: string, actor: number) =>
+  enviar(`/reportes/${reporteId}/respuesta`, actor, { respuesta, t_real: tReal(new Date().toISOString()) })
+
 /** Un reporte de la API en el modelo de la interfaz. Sin `contenido` (encolado por otra vía) muestra solo el estado. */
 export function reporteDeServidor(s: ReporteServidor): Report {
   const c = s.contenido
@@ -103,3 +109,49 @@ export function reporteDeServidor(s: ReporteServidor): Report {
     environment: c?.entorno ?? "", actionTaken: c?.accion ?? "",
   }
 }
+
+/** Un escalamiento tal como lo guarda la API: el dato mínimo que salió y, si lo hay, el contexto del afectado. */
+export interface Escalamiento {
+  id: number
+  alerta_id: number
+  tripulante_id: number
+  destinatario_id: number
+  enviado_t_real: string
+  contenido: { indicador: string; valor: number; t_real: string; tramo: string | null }
+  contexto_astronauta: string | null
+}
+
+/** Registra un rojo de capa A; la API lo escala al oficial médico. Devuelve el id del escalamiento, null si la API
+ *  lo guardó sin escalar (sin destinatario o sin consentimiento) o `undefined` si no respondió. */
+export async function enviarAlertaRoja(a: AvisoRojo, tripulante: number, explicacion: string): Promise<number | null | undefined> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/alertas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) },
+      body: JSON.stringify({ indicador: a.indicador, capa: "A", nivel: "rojo", valor: a.valor, t_real: tReal(a.t_real), tramo: a.tramo, explicacion, regla_version: "news2-2017" }),
+    })
+    if (!res.ok) return undefined
+    return ((await res.json()) as { escalamiento_id: number | null }).escalamiento_id
+  } catch {
+    return undefined
+  }
+}
+
+async function leer<T>(ruta: string, actor: number): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}${ruta}`, { headers: { "X-Tripulante": String(actor) }, cache: "no-store" })
+    return res.ok ? ((await res.json()) as T) : null
+  } catch {
+    return null
+  }
+}
+
+/** Transparencia (§5.4): lo que salió sobre el tripulante, a quién y con qué contenido. */
+export const escalamientosPropios = (tripulante: number) => leer<Escalamiento[]>(`/tripulantes/${tripulante}/escalamientos`, tripulante)
+/** Bandeja del oficial médico (o del comandante de respaldo). */
+export const escalamientosRecibidos = (actor: number) => leer<Escalamiento[]>("/escalamientos", actor)
+export const leerTripulacion = (actor: number) => leer<{ id: number; alias: string; rol: string }[]>("/tripulacion", actor)
+
+/** El afectado añade contexto una sola vez; no puede cancelar el aviso. */
+export const agregarContexto = (escalamientoId: number, texto: string, tripulante: number) =>
+  enviar(`/escalamientos/${escalamientoId}/contexto`, tripulante, { texto })

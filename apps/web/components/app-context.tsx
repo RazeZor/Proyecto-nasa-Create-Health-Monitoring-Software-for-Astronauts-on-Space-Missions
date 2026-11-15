@@ -4,10 +4,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { cargarCatalogo, type Catalogo } from "@/lib/catalogo"
 import { type Analisis, analizar } from "@/lib/engine"
 import { enviarOrdenReloj, INTERVALO_SONDEO_MS, leerReloj, type OrdenReloj, type RespuestaReloj, siguienteEstado } from "@/lib/reloj"
-import { store } from "@/lib/storage"
-import { sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
+import { leerModo, store, usarModo } from "@/lib/storage"
+import { sincronizarAlertasRojas, sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
-import type { CheckInEntry, DeviceState, MissionProfile, ProfileId, Role } from "@/lib/types"
+import type { CheckInEntry, DeviceState, MissionProfile, Mode, ProfileId, Role } from "@/lib/types"
 
 interface AppState {
   day: number
@@ -36,6 +36,15 @@ interface AppState {
   recargarRegistros: () => Promise<void>
   /** lo que da la API: perfiles, fichas, historial, recordatorios, mensajes y referencia de entorno */
   catalogo: Catalogo
+  /** `real`: lo que el tripulante registra y el entorno medido; `demo`: escenario simulado */
+  mode: Mode
+  setMode: (m: Mode) => void
+  /** false si la API no responde: la app sigue con la copia local y encola lo pendiente */
+  online: boolean
+  /** registros reales guardados en el dispositivo que aún no llegaron a la API */
+  pending: number
+  /** escalamientos ya creados en la API: clave de la alerta -> id (null = guardada sin escalar) */
+  escalations: Record<string, number | null>
 }
 
 export type Sex = "female" | "male"
@@ -44,14 +53,32 @@ const Ctx = createContext<AppState | null>(null)
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [catalogo, setCatalogo] = useState<Catalogo | null | "error">(null)
-  const cargar = useCallback(() => {
-    setCatalogo(null)
-    cargarCatalogo(TRIPULANTE ?? 1).then((c) => setCatalogo(c ?? "error"))
+  const [mode, setModeRaw] = useState<Mode | null>(null) // null hasta leer la preferencia en el navegador
+  const cargar = useCallback((m: Mode, silencioso = false) => {
+    if (!silencioso) setCatalogo(null)
+    usarModo(m)
+    cargarCatalogo(TRIPULANTE ?? 1, m).then((c) => setCatalogo((previo) => c ?? (silencioso && previo ? previo : "error")))
   }, [])
-  useEffect(cargar, [cargar])
-  if (catalogo === null) return <Estado mensaje={S.common.loading} />
-  if (catalogo === "error") return <Estado mensaje={S.common.apiOffline} detalle={S.common.apiOfflineDetail} reintentar={cargar} />
-  return <Sesion catalogo={catalogo}>{children}</Sesion>
+  useEffect(() => {
+    const m = leerModo()
+    setModeRaw(m)
+    cargar(m)
+  }, [cargar])
+  const setMode = useCallback((m: Mode) => {
+    usarModo(m, true)
+    setModeRaw(m)
+    cargar(m)
+  }, [cargar])
+  // al volver el enlace se recarga el catálogo sin tapar la pantalla
+  useEffect(() => {
+    if (!mode) return
+    const alVolver = () => cargar(mode, true)
+    window.addEventListener("online", alVolver)
+    return () => window.removeEventListener("online", alVolver)
+  }, [mode, cargar])
+  if (catalogo === null || mode === null) return <Estado mensaje="" />
+  if (catalogo === "error") return <Estado mensaje={S.common.apiOffline} detalle={S.common.apiOfflineDetail} reintentar={() => cargar(mode)} />
+  return <Sesion key={mode} catalogo={catalogo} mode={mode} setMode={setMode} recargar={() => cargar(mode, true)}>{children}</Sesion>
 }
 
 function Estado({ mensaje, detalle, reintentar }: { mensaje: string; detalle?: string; reintentar?: () => void }) {
@@ -68,7 +95,7 @@ function Estado({ mensaje, detalle, reintentar }: { mensaje: string; detalle?: s
   )
 }
 
-function Sesion({ catalogo, children }: { catalogo: Catalogo; children: React.ReactNode }) {
+function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Catalogo; mode: Mode; setMode: (m: Mode) => void; recargar: () => void; children: React.ReactNode }) {
   const [day, setDayRaw] = useState(catalogo.historial.dia_actual)
   const [profileId, setProfileId] = useState<ProfileId>("transit")
   const [role, setRole] = useState<Role>("astronaut")
@@ -85,15 +112,51 @@ function Sesion({ catalogo, children }: { catalogo: Catalogo; children: React.Re
   const [sex, setSex] = useState<Sex>("female")
   const [voice, setVoice] = useState(false)
   const [checkIns, setCheckIns] = useState<CheckInEntry[]>([])
+  const [pending, setPending] = useState(0)
+  const [escalations, setEscalations] = useState<Record<string, number | null>>({})
+  const [navegadorEnLinea, setNavegadorEnLinea] = useState(true)
   const recargarRegistros = useCallback(async () => setCheckIns(await store.listCheckIns()), [])
-  const analisis = useMemo(() => analizar(checkIns, catalogo.historial), [checkIns, catalogo])
+  const profile = catalogo.perfiles.find((p) => p.id === profileId) ?? catalogo.perfiles[1]
+  const analisis = useMemo(() => analizar(checkIns, catalogo.historial, profile.cabinPressureMmHg), [checkIns, catalogo, profile.cabinPressureMmHg])
+  const online = navegadorEnLinea && !catalogo.sinEnlace
+
+  // Cola local -> API: registros del día y rojos de capa A (§5.4). Sin enlace quedan pendientes y se reintenta.
+  const sincronizarTodo = useCallback(async () => {
+    await sincronizarRegistros()
+    await sincronizarAlertasRojas(analisis.alerts(analisis.missionDays))
+    const [todos, subidos] = await Promise.all([store.listCheckIns(), store.listSyncedCheckInIds()])
+    setPending(mode === "real" ? todos.filter((c) => !subidos.includes(c.id)).length : 0)
+    setEscalations(await store.listEscalations())
+  }, [analisis, mode])
+  useEffect(() => {
+    void sincronizarTodo()
+  }, [sincronizarTodo])
+  useEffect(() => {
+    setNavegadorEnLinea(navigator.onLine)
+    const conectar = () => {
+      setNavegadorEnLinea(true)
+      void sincronizarTodo()
+    }
+    const cortar = () => setNavegadorEnLinea(false)
+    window.addEventListener("online", conectar)
+    window.addEventListener("offline", cortar)
+    // sin evento del navegador (la API cayó pero hay red): reintenta cada 30 s mientras haya algo pendiente o no haya enlace
+    const id = window.setInterval(() => {
+      if (catalogo.sinEnlace) recargar()
+      else if (pending > 0) void sincronizarTodo()
+    }, 30000)
+    return () => {
+      window.removeEventListener("online", conectar)
+      window.removeEventListener("offline", cortar)
+      window.clearInterval(id)
+    }
+  }, [sincronizarTodo, catalogo.sinEnlace, pending, recargar])
 
   const dias = catalogo.historial.dias_vuelo
   const setDay = useCallback((d: number) => setDayRaw(Math.min(dias, Math.max(1, d))), [dias])
   const toggleTheme = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), [])
 
   useEffect(() => {
-    void sincronizarRegistros() // reintenta lo que quedó pendiente sin red
     void recargarRegistros()
   }, [recargarRegistros])
 
@@ -141,11 +204,9 @@ function Sesion({ catalogo, children }: { catalogo: Catalogo; children: React.Re
   }, [simulando])
   const hrEnVivo = device === "connected" ? (reloj?.reloj?.fc_lpm ?? null) : liveHr
 
-  const profile = catalogo.perfiles.find((p) => p.id === profileId) ?? catalogo.perfiles[1]
-
   const value = useMemo(
-    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo }),
-    [day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, hrEnVivo, reloj, ordenReloj, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
+    () => ({ day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo, mode, setMode, online, pending, escalations }),
+    [mode, setMode, online, pending, escalations, day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, hrEnVivo, reloj, ordenReloj, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

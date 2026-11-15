@@ -4,10 +4,11 @@
  * Misma semántica que i18n.py: una clave que falte en inglés cae al español, y una
  * que falte en ambos devuelve la clave. Es una función pura: la app decide el idioma
  * (preferencia guardada o idioma del navegador) y se lo pasa a detectarIdioma().
- * Requiere `resolveJsonModule` en el tsconfig de la app.
+ * Requiere `resolveJsonModule` en el tsconfig de la app. Los JSON se importan con `with { type: "json" }` para que
+ * el mismo archivo corra en Node (tests) y en el empaquetador de la app.
  */
-import es from "./locales/es.json";
-import en from "./locales/en.json";
+import es from "./locales/es.json" with { type: "json" };
+import en from "./locales/en.json" with { type: "json" };
 
 export type Idioma = "es" | "en";
 export const PRINCIPAL: Idioma = "es";

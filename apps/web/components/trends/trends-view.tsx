@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 
 
 export function TrendsView() {
-  const { day, analisis, catalogo } = useApp()
+  const { day, analisis, catalogo, mode } = useApp()
   const INDICATORS = catalogo.indicadores
   const IDS = Object.keys(INDICATORS) as IndicatorId[]
   const [id, setId] = useState<IndicatorId>("restingHr")
@@ -21,7 +21,7 @@ export function TrendsView() {
   const points = analisis.vitals(day)
     .map((v) => ({ day: v.day, value: v[id] as number | undefined }))
     .filter((p): p is { day: number; value: number } => typeof p.value === "number")
-  const alerts = analisis.alerts(day).filter((a) => a.zone === info.zone)
+  const alerts = analisis.alerts(day).filter((a) => a.zone === info.zone && !a.informative)
   const layers = [...new Set(alerts.map((a) => a.layer))]
 
   return (
@@ -43,8 +43,7 @@ export function TrendsView() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-semibold">{info.label} <span className="font-normal text-muted-foreground">({info.unit})</span></h2>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span aria-hidden className="size-3 rounded-sm bg-muted-foreground/25" />{S.trends.preflight}</span>
-            <span className="flex items-center gap-1.5"><span aria-hidden className="size-3 rounded-sm bg-primary/25" />{S.trends.inflight}</span>
+            <span className="flex items-center gap-1.5"><span aria-hidden className="size-3 rounded-sm bg-primary/25" />{S.trends.band}</span>
             <span className="flex items-center gap-1.5"><span aria-hidden className="h-3 border-l-2 border-dashed border-primary" />{S.trends.baselineSwitch} (D{BASELINE_SWITCH_DAY})</span>
             <span className="flex items-center gap-1.5"><span aria-hidden className="text-status-watch">▲</span>{S.trends.alertMarker}</span>
           </div>
@@ -53,11 +52,11 @@ export function TrendsView() {
           <EmptyState message={S.trends.noData} />
         ) : (
           <LineChart label={info.label} unit={info.unit} points={points} days={analisis.missionDays} currentDay={day}
-            bands={analisis.baselines(id)} switchDay={BASELINE_SWITCH_DAY} markers={alerts.map((a) => a.day)}
-            threshold={info.safetyHigh ? { value: info.safetyHigh, label: `Safety limit ${info.safetyHigh}` } : info.safetyLow ? { value: info.safetyLow, label: `Safety limit ${info.safetyLow}` } : undefined} />
+            band={analisis.band(id)} switchDay={BASELINE_SWITCH_DAY} markers={alerts.map((a) => a.day)}
+            threshold={info.safetyHigh ? { value: info.safetyHigh, label: `${S.trends.safetyLimit} ${info.safetyHigh}` } : info.safetyLow ? { value: info.safetyLow, label: `${S.trends.safetyLimit} ${info.safetyLow}` } : undefined} />
         )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <ProvenanceTag provenance={{ kind: "simulated" }} />
+          <ProvenanceTag provenance={{ kind: mode === "real" ? "measured" : "simulated" }} />
           {layers.length > 0 && (
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
               {S.trends.layersFired}: {layers.map((l) => <LayerChip key={l} layer={l} />)}

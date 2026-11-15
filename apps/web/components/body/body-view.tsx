@@ -68,7 +68,7 @@ function Segmented<T extends string>({
 }
 
 export function BodyView() {
-  const { day, sex, setSex, analisis, catalogo } = useApp()
+  const { day, sex, setSex, analisis, catalogo, mode } = useApp()
   const [side, setSide] = useState<BodySide>("front")
   const zones = analisis.zones(day)
   const overall = analisis.overall(day)
@@ -106,7 +106,7 @@ export function BodyView() {
           <div className="flex h-[440px] w-full justify-center">
             <BodyFigure zones={zones} selected={selected} onSelect={setSelected} sex={sex} side={side} />
           </div>
-          <ProvenanceTag provenance={{ kind: "simulated" }} />
+          <ProvenanceTag provenance={{ kind: mode === "real" ? "measured" : "simulated" }} />
         </section>
 
         <div className="flex flex-col gap-4">
@@ -207,7 +207,7 @@ export function BodyView() {
                   <dt className="text-xs font-medium uppercase tracking-wide">{S.body.next}</dt>
                   <dd className="mt-1 text-base font-medium leading-relaxed">{current.next}</dd>
                 </div>
-                <ProvenanceTag provenance={{ kind: "simulated" }} className="self-start" />
+                <ProvenanceTag provenance={{ kind: mode === "real" ? "measured" : "simulated" }} className="self-start" />
               </dl>
             </>
           )}

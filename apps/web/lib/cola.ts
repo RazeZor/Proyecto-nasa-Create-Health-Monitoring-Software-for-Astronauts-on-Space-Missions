@@ -14,6 +14,8 @@ export interface ReporteServidor {
 /** Lo que la app escribe en un informe; vive en el servidor (columna `contenido`). */
 export interface ContenidoReporte {
   titulo: string
+  /** Informe de ejemplo sembrado para la demo: no se muestra en modo real. */
+  demo?: boolean
   resumen: string
   lectura: string
   linea_base: string

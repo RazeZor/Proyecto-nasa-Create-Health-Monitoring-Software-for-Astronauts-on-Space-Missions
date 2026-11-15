@@ -82,6 +82,15 @@ class Construir(unittest.TestCase):
             rc.construir({"nombre": "t", "ventanas": [{**V, "fuente": "goes"}]})
         self.assertFalse((rc.datalake.ROOT / "gold").exists())
 
+    def test_donki_consultado_sin_eventos_es_un_resultado_valido(self):
+        donki = {**V, "fuente": "donki"}
+        with self.assertRaisesRegex(ValueError, "no hay datos"):  # nunca se ingirió DONKI: es un hueco
+            rc.construir({"nombre": "t", "ventanas": [V, donki]})
+        (rc.datalake.ROOT / "manifest.json").write_text(json.dumps([{"fuente": "donki", "filas": 0}]))
+        rc.construir({"nombre": "t", "ventanas": [V, donki]})  # consultado y vacío: ventana tranquila
+        gold = json.loads((rc.datalake.ROOT / "gold" / "t.json").read_text())
+        self.assertEqual((gold["eventos"], len(gold["serie5min"])), ([], 2))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,11 +1,13 @@
-import type { Baseline } from "@/lib/types"
+import { S } from "@/lib/strings"
+import type { BandPoint } from "@/lib/types"
 
 interface Props {
   label: string
   points: { day: number; value: number }[]
   days: number
   currentDay: number
-  bands?: Baseline[]
+  /** Banda personal por día (referencia vigente del motor). */
+  band?: BandPoint[]
   threshold?: { value: number; label: string }
   markers?: number[]
   switchDay?: number
@@ -17,9 +19,9 @@ const W = 720
 const H = 260
 const P = { l: 48, r: 16, t: 16, b: 32 }
 
-export function LineChart({ label, points, days, currentDay, bands = [], threshold, markers = [], switchDay, log, unit }: Props) {
+export function LineChart({ label, points, days, currentDay, band = [], threshold, markers = [], switchDay, log, unit }: Props) {
   const tf = (v: number) => (log ? Math.log10(Math.max(v, 0.1)) : v)
-  const vals = [...points.map((p) => p.value), ...bands.flatMap((b) => [b.low, b.high]), ...(threshold ? [threshold.value] : [])]
+  const vals = [...points.map((p) => p.value), ...band.flatMap((b) => [b.low, b.high]), ...(threshold ? [threshold.value] : [])]
   let min = Math.min(...vals.map(tf))
   let max = Math.max(...vals.map(tf))
   const pad = (max - min) * 0.12 || 1
@@ -37,11 +39,11 @@ export function LineChart({ label, points, days, currentDay, bands = [], thresho
 
   return (
     <figure className="w-full">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${label}. Latest ${last ? `${last.value} ${unit} on day ${last.day}` : "none"}.`}>
-        {bands.map((b) => (
-          <rect key={b.phase} x={x(b.fromDay)} width={x(b.toDay) - x(b.fromDay)} y={y(b.high)} height={Math.max(1, y(b.low) - y(b.high))}
-            className={b.phase === "pre-flight" ? "fill-muted-foreground/15" : "fill-primary/15"} />
-        ))}
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${label}. ${last ? `${last.value} ${unit} · ${S.common.day} ${last.day}` : ""}`}>
+        {band.length > 1 && (
+          <path className="fill-primary/15"
+            d={`${band.map((b, i) => `${i ? "L" : "M"}${x(b.day).toFixed(1)} ${y(b.high).toFixed(1)}`).join(" ")} ${[...band].reverse().map((b) => `L${x(b.day).toFixed(1)} ${y(b.low).toFixed(1)}`).join(" ")} Z`} />
+        )}
         {ticks.map((t) => (
           <g key={t}>
             <line x1={P.l} x2={W - P.r} y1={y(log ? 10 ** t : t)} y2={y(log ? 10 ** t : t)} className="stroke-border" strokeDasharray="2 4" />
@@ -66,11 +68,11 @@ export function LineChart({ label, points, days, currentDay, bands = [], thresho
           const alert = markers.includes(p.day)
           return alert ? (
             <path key={p.day} d={`M${x(p.day)} ${y(p.value) - 8}l7 12h-14z`} className="fill-status-watch stroke-background" strokeWidth={1.5}>
-              <title>{`Alerta · día ${p.day}: ${p.value} ${unit}`}</title>
+              <title>{`${S.trends.alertOn} ${p.day}: ${p.value} ${unit}`}</title>
             </path>
           ) : (
             <circle key={p.day} cx={x(p.day)} cy={y(p.value)} r={2.5} className="fill-chart-1">
-              <title>{`Día ${p.day}: ${p.value} ${unit}`}</title>
+              <title>{`${S.common.day} ${p.day}: ${p.value} ${unit}`}</title>
             </circle>
           )
         })}
