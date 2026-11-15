@@ -32,6 +32,10 @@ export interface EstadoEscena {
   quieto: boolean
   /** Giro fijo de la cámara en radianes: sin balanceo ni arrastre (el minicuerpo del histórico lo gira un deslizador). */
   giroFijo?: number
+  /** Giro extra en radianes que se suma al de la cámara (el deslizador del cuerpo en tiempo real). */
+  giroExtra?: number
+  /** Sin el balanceo en reposo: el cuerpo solo gira cuando se le gira (arrastre o deslizador). */
+  sinBalanceo?: boolean
 }
 export type Proyeccion = Record<AnclaId, { x: number; y: number; frente: boolean }>
 
@@ -610,7 +614,7 @@ export function crearEscena(
 
     // cámara: viaja al encuadre de la vista; en reposo se balancea para que el volumen se lea
     if (!arrastre && ahora - ultimoToque > 3500) giroUsuario += (0 - giroUsuario) * (1 - Math.exp(-dt * 1.5))
-    const vaiven = estado.quieto || arrastre || estado.giroFijo !== undefined ? 0 : Math.sin(reloj * 0.42) * (estado.vista ? 0.2 : 0.5)
+    const vaiven = estado.quieto || arrastre || estado.sinBalanceo || estado.giroFijo !== undefined ? 0 : Math.sin(reloj * 0.42) * (estado.vista ? 0.2 : 0.5)
     // el cuerpo entero debe caber también en lienzos estrechos
     const tan = Math.tan((FOV * Math.PI) / 360)
     const ajuste = estado.vista ? 1 : Math.max(1, 1.0 / (2 * GENERAL.distancia * tan * camara.aspect))
@@ -619,7 +623,7 @@ export function crearEscena(
     cam.distancia += (vista.distancia * ajuste - cam.distancia) * k
     cam.giro += ((estado.giroFijo ?? vista.giro) - cam.giro) * k
     cam.alzado += (vista.alzado - cam.alzado) * k
-    const giro = cam.giro + (estado.giroFijo !== undefined ? 0 : giroUsuario) + vaiven
+    const giro = cam.giro + (estado.giroFijo !== undefined ? 0 : giroUsuario) + vaiven + (estado.giroExtra ?? 0)
     camara.position.set(
       cam.objetivo.x + Math.sin(giro) * Math.cos(cam.alzado) * cam.distancia,
       cam.objetivo.y + Math.sin(cam.alzado) * cam.distancia,

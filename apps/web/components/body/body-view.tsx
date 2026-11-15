@@ -195,6 +195,7 @@ export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
   const zones = analisis.zones(day)
   const overall = analisis.overall(day)
   const [sel, setSel] = useState<Seleccion>(null)
+  const [grados, setGrados] = useState(0) // giro con el deslizador (solo en la vista de otro tripulante)
   /** true cuando el lienzo ya muestra el modelo anatómico real (uno solo: no hay selector de modelo corporal). */
   const [modeloReal, setModeloReal] = useState<boolean | null>(null) // null: aún cargando
   const since = useSinceLastCheckIn()
@@ -216,9 +217,9 @@ export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
         .sort((a, b) => (lecturas[a].estado === "act" ? -1 : 1) - (lecturas[b].estado === "act" ? -1 : 1))
         .map((id): ZonaCaliente => ({ ancla: id, color: HEX[lecturas[id].estado], radio: lecturas[id].estado === "act" ? 0.15 : 0.12 })),
     ]
-    return { sexo: sex, oscuro: theme === "dark", lpm, vista, calientes }
+    return { sexo: sex, oscuro: theme === "dark", lpm, vista, calientes, giroExtra: (grados * Math.PI) / 180, sinBalanceo: ajeno }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sex, theme, lpm, vista, lecturas, sintomas.join()])
+  }, [sex, theme, lpm, vista, grados, ajeno, lecturas, sintomas.join()])
 
   const marcadores: Marcador[] = [
     ...TODOS.filter((id) => !sel || (sel.tipo === "indicador" && sel.id === id)).map((id): Marcador => ({
@@ -365,6 +366,12 @@ export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
                 {S.body.organ[sel.id]}
               </span>
             </p>
+          )}
+          {ajeno && general && (
+            <label className="absolute inset-x-12 bottom-16 flex flex-col gap-1 text-center text-xs text-muted-foreground">
+              {S.crew.girar}
+              <input type="range" min={-180} max={180} step={1} value={grados} onChange={(e) => setGrados(Number(e.target.value))} className="w-full accent-primary" />
+            </label>
           )}
           {general ? (
             <p className="pointer-events-none absolute inset-x-0 bottom-7 text-center text-sm font-medium text-muted-foreground">{S.body.tapHint}</p>
