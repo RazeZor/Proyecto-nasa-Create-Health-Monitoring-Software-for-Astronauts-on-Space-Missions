@@ -70,6 +70,14 @@ function entornoMotor(e: EntornoHistorial, presion: number): EntornoDia {
 const textoOrigen = (o?: OrigenDato | null) =>
   !o ? "" : o.naturaleza === "Real" ? `${MOTOR.real} · ${o.fuente}${o.fecha_real ? ` · ${o.fecha_real}` : ""}` : `${MOTOR.simulado} · ${MOTOR.escenarioDemo}`
 
+/** La medida del día del indicador que acumula deriva (capa C): lo que el tripulante reconoce, en vez de la cifra CUSUM. */
+function lecturaDelDia(l: Lectura | undefined, indicador: string): number | null {
+  if (!l) return null
+  const campo: Record<string, keyof Lectura> = { fc: "fc_reposo_lpm", sueno: "sueno_h", animo: "animo_1_10" }
+  const v = campo[indicador] ? l[campo[indicador]] : null
+  return typeof v === "number" ? v : null
+}
+
 /** El parámetro de la capa A que más puntúa ese día: indicador, valor y tramo (lo único que sale en un escalamiento). */
 function parametroClinico(l: Lectura | undefined, suma: number) {
   if (!l) return undefined
@@ -122,7 +130,11 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
     const sep = env?.eventos_sep?.[0]
     // una tormenta disparada por un evento SEP de DONKI con el flujo medido bajo el umbral se nombra por el evento, no por el flujo
     const porEvento = a.indicador === "protones" && sep && (a.valor === null || a.valor < PROTONES_TORMENTA_PFU)
-    const valor = porEvento ? MOTOR.eventoSep(sep.sepID) : a.valor === null ? "" : a.capa === "C" ? `CUSUM ${a.valor}` : `${a.valor} ${unidad}`
+    // la capa C acumula una deriva (CUSUM): el valor grande es la medida del día, que es lo que entiende el tripulante;
+    // la cifra del CUSUM va a la banda, que la interfaz pliega bajo «detalle técnico»
+    const medidaDia = a.capa === "C" ? lecturaDelDia(porDia.get(a.dia_mision), indicador) : null
+    const valor = porEvento ? MOTOR.eventoSep(sep.sepID) : a.valor === null ? "" : a.capa === "C" ? (medidaDia === null ? "" : `${medidaDia} ${unidad}`) : `${a.valor} ${unidad}`
+    const bandaC = a.valor === null ? MOTOR.banda.C : `${MOTOR.cusum(a.valor)} · ${MOTOR.banda.C}`
     const origen = a.indicador === "co2" ? textoOrigen(env?.co2_origen)
       : a.indicador === "protones" ? (sep ? `${MOTOR.real} · ${sep.fuente} · ${sep.t_real.slice(0, 10)}` : textoOrigen(env?.flujo_origen))
       : ""
@@ -138,7 +150,7 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
       zone: ZONA[a.indicador] ?? null,
       indicator: MOTOR.indicador[indicador],
       value: valor,
-      clinicalBand: a.capa === "contexto" ? MOTOR.bandaContexto[a.indicador as "co2" | "protones"] : a.capa === "A" && a.nivel === "ambar" ? MOTOR.bandaAAmbar : MOTOR.banda[capa],
+      clinicalBand: a.capa === "contexto" ? MOTOR.bandaContexto[a.indicador as "co2" | "protones"] : a.capa === "A" && a.nivel === "ambar" ? MOTOR.bandaAAmbar : a.capa === "C" ? bandaC : MOTOR.banda[capa],
       cause: a.capa === "contexto" ? MOTOR.causaContexto[a.indicador as "co2" | "protones"] : MOTOR.causa[capa],
       action: MOTOR.accion[indicador],
       scope: a.ambito === "tripulacion" ? "crew" : "personal",

@@ -7,7 +7,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
 | [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 24 |
-| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 78 |
+| [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 80 |
 | [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 3 |
 | [packages/i18n](../../packages/i18n/MODULE.md) | Traducciones compartidas de VIGÍA. El español es el idioma principal y el inglés el secundario, para Python (`i18n.py`) y TypeScript (`i18n.ts`). | i18n, idiomas, español, inglés, traducciones, packages | 3 |
 | [packages/schemas](../../packages/schemas/MODULE.md) | Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`). | schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, vocabulario, json-schema, hrp | 4 |
@@ -28,6 +28,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `API_BASE_URL` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `API_BASE_URL` | constante | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `AboutView` | función | [apps/web/components/about/about-view.tsx](../../apps/web/components/about/about-view.tsx) |
+| `AccionHecha` | tipo | [apps/web/lib/cola.ts](../../apps/web/lib/cola.ts) |
 | `Alert` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `AlertCenter` | función | [apps/web/components/shell/alert-center.tsx](../../apps/web/components/shell/alert-center.tsx) |
 | `Alerta` | interfaz | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
@@ -45,6 +46,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `AvisoRojo` | interfaz | [apps/web/lib/alertas-sync.ts](../../apps/web/lib/alertas-sync.ts) |
 | `BASELINE_SWITCH_DAY` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `BandPoint` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
+| `BandaPersonal` | interfaz | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `Base` | clase | [apps/api/test_puente_reloj.py](../../apps/api/test_puente_reloj.py) |
 | `BodyFigure` | función | [apps/web/components/body/body-figure.tsx](../../apps/web/components/body/body-figure.tsx) |
 | `BodySide` | tipo | [apps/web/components/body/body-figure.tsx](../../apps/web/components/body/body-figure.tsx) |
@@ -113,6 +115,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `FichaJson` | tipo | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `Fichas` | clase | [packages/schemas/test_fichas.py](../../packages/schemas/test_fichas.py) |
 | `FixtureDelMotor` | clase | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
+| `FraseLectura` | interfaz | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `Generador` | clase | [tools/contextgen/test_contextgen.py](../../tools/contextgen/test_contextgen.py) |
 | `HUECO_MS` | constante | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `HealthStore` | interfaz | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
@@ -210,8 +213,10 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `OrdenIn` | clase | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `OrdenReloj` | tipo | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `OrigenDato` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
+| `PRESION_NORMAL` | constante | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `PRINCIPAL` | constante | [packages/i18n/i18n.ts](../../packages/i18n/i18n.ts) |
 | `PROTONES_TORMENTA_PFU` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
+| `PULSO_NORMAL` | constante | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `Page` | función | [apps/web/app/about/page.tsx](../../apps/web/app/about/page.tsx) |
 | `Page` | función | [apps/web/app/alerts/page.tsx](../../apps/web/app/alerts/page.tsx) |
 | `Page` | función | [apps/web/app/check-in/page.tsx](../../apps/web/app/check-in/page.tsx) |
@@ -257,7 +262,9 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `RootLayout` | función | [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx) |
 | `Rutas` | clase | [apps/api/test_puente_reloj.py](../../apps/api/test_puente_reloj.py) |
 | `S` | constante | [apps/web/lib/strings.ts](../../apps/web/lib/strings.ts) |
+| `SPO2_MINIMO` | constante | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `STATUS_ICON` | constante | [apps/web/components/shared/status.tsx](../../apps/web/components/shared/status.tsx) |
+| `SUENO_MINIMO_H` | constante | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `SUPUESTOS` | constante | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `Sdf` | tipo | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `Sex` | tipo | [apps/web/components/app-context.tsx](../../apps/web/components/app-context.tsx) |
@@ -272,6 +279,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Switch` | función | [apps/web/components/device/switch.tsx](../../apps/web/components/device/switch.tsx) |
 | `SwitchTrack` | función | [apps/web/components/device/switch.tsx](../../apps/web/components/device/switch.tsx) |
 | `Symptom` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
+| `TEMPERATURA_NORMAL` | constante | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `TRIPULANTE` | constante | [apps/web/lib/sincronizacion.ts](../../apps/web/lib/sincronizacion.ts) |
 | `ThreadMessage` | interfaz | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `Tolerancia` | interfaz | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
@@ -317,6 +325,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `area` | función | [tools/modelo-anatomico/util_malla.py](../../tools/modelo-anatomico/util_malla.py) |
 | `avanzar` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `avanzar_cola` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
+| `balanceLectura` | función | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `barrer` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `bloque` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `bloque` | función | [tools/sincro-smart/sincro_smart.py](../../tools/sincro-smart/sincro_smart.py) |
@@ -404,6 +413,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `fcReposoSugerida` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `filtrar_exterior` | función | [tools/modelo-anatomico/construir.py](../../tools/modelo-anatomico/construir.py) |
 | `formatDelay` | función | [apps/web/components/shared/delay-countdown.tsx](../../apps/web/components/shared/delay-countdown.tsx) |
+| `frasesLectura` | función | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `fuentesUi` | constante | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `generar` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `generar_caso_referencia` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
@@ -421,6 +431,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ip_lan` | función | [apps/api/puente_reloj.py](../../apps/api/puente_reloj.py) |
 | `isAdaptation` | constante | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `lectura` | función | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
+| `lecturaHumana` | función | [apps/web/lib/lectura-humana.ts](../../apps/web/lib/lectura-humana.ts) |
 | `lecturaVigente` | función | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `lecturasDeCheckIn` | función | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `leer` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |

@@ -9,6 +9,8 @@ de cada tripulante y persiste cada chequeo guiado válido de un reloj **vinculad
   SMART_DESACTIVADO=1                      apaga el puente
   SMART_TRIPULANTES="Sebastián=1,Ana=2"   nombre en el reloj -> id de tripulante (se suma a los vínculos de la base)
   SMART_AUTOREGISTRO=1                     crea un tripulante nuevo por cada nombre desconocido (apagado por defecto)
+  SMART_IP_LAN=192.168.137.1               IP de esta máquina que se sugiere al reloj (p. ej. la del hotspot) en vez
+                                           de la que elige el sistema (la de salida a internet)
 
 Un reloj está vinculado si su nombre está en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (ruta
 `POST /tripulantes/{id}/reloj/vinculo`) o coincide con el alias de un tripulante. Los nombres por defecto
@@ -385,8 +387,13 @@ def url_http(url_ws, ruta):
 
 
 def ip_lan():
-    """IP de esta máquina en la red local, sin tocar la red: un socket UDP «conectado» solo elige la interfaz de
-    salida y no envía nada. None si no hay red o solo hay loopback."""
+    """IP de esta máquina en la red local. `SMART_IP_LAN` manda si está definida: con varias interfaces (por ejemplo
+    un hotspot para el reloj y otro WiFi con internet) el sistema elige la de salida a internet, que el reloj no
+    alcanza. Sin ella, un socket UDP «conectado» solo elige la interfaz de salida y no envía nada. None si no hay
+    red o solo hay loopback."""
+    forzada = os.environ.get("SMART_IP_LAN", "").strip()
+    if forzada:
+        return forzada
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.connect(("10.255.255.255", 1))

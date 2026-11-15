@@ -16,7 +16,8 @@ pr = main.puente_reloj  # main agrega packages/i18n al path antes de importarlo
 
 CHEQUEO = {"type": "chequeo", "tripulante": "Sebastián", "t": "2026-11-14T19:19:18Z", "duracion_s": 60,
            "fc_reposo_lpm": 81, "rmssd_ms": 28.5, "spo2_pct": 98, "valido": True, "motivo": None}
-VARIABLES = ("VIGIA_DB", "VIGIA_RELOJ_SEG", "SMART_URL", "SMART_TRIPULANTES", "SMART_DESACTIVADO", "SMART_AUTOREGISTRO")
+VARIABLES = ("VIGIA_DB", "VIGIA_RELOJ_SEG", "SMART_URL", "SMART_TRIPULANTES", "SMART_DESACTIVADO", "SMART_AUTOREGISTRO",
+             "SMART_IP_LAN")
 
 
 class RelojFalso:
@@ -185,6 +186,12 @@ class Estado(Base):
         self.assertEqual(pr.url_reloj_sugerida("wss://smart.ejemplo.dev/live", "192.168.1.20"), "wss://smart.ejemplo.dev/watch")
         ip = pr.ip_lan()
         self.assertTrue(ip is None or (ip.count(".") == 3 and not ip.startswith("127.")))
+        # con un hotspot para el reloj, SMART_IP_LAN fuerza la IP de esa red (el sistema elegiría la de internet)
+        os.environ["SMART_IP_LAN"] = " 192.168.137.1 "
+        self.assertEqual(pr.ip_lan(), "192.168.137.1")
+        self.assertEqual(pr.url_reloj_sugerida("ws://127.0.0.1:8765/live", pr.ip_lan()), "ws://192.168.137.1:8765/watch")
+        os.environ["SMART_IP_LAN"] = ""
+        self.assertNotEqual(pr.ip_lan(), "")
 
     def test_crear_puente_por_defecto_desactivado_y_autoregistro(self):
         self.assertEqual(pr.crear_puente().url, pr.SMART_URL_DEFECTO)

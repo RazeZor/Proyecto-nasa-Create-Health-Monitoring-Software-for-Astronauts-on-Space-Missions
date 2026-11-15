@@ -169,9 +169,14 @@ export interface Report {
   delayMinutes: number
   summary: string
   reading: string
+  /** Lectura en lenguaje llano (lib/lectura-humana.ts); vacía en informes antiguos que no la llevan. */
+  plainReading: string
   baseline: string
   environment: string
   actionTaken: string
+  /** Qué hizo el tripulante con la acción sugerida (`hecha`, `no_pude`, `remedi`) y su nota, si lo confirmó. */
+  actionDone?: string
+  actionNote?: string
   /** id en la cola de la API; ausente si se encoló sin red o sin identidad */
   serverId?: number
 }

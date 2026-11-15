@@ -22,7 +22,7 @@
         "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests.",
         "`GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del caso de referencia (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 27`) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).",
         "`mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta. `/fichas`, `/fichas/{id}` y `recordatorios` aceptan `lang=en`: las fichas toman los textos de `packages/schemas/fichas_en/<id>.json` (solo campos de texto y títulos de fuente; si falta la traducción se sirve en español).",
-        "Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).",
+        "Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`; `SMART_IP_LAN` fuerza esa IP cuando el equipo tiene varias redes, por ejemplo el hotspot `umbra` para el reloj: ver `docs/SETUP.md` §8). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).",
         "`.env` de la raíz: `main.cargar_env` lo lee al arrancar (lifespan) con la biblioteca estándar, sin pisar variables ya definidas ni definir las vacías, y lo deshace al apagar. Así `.env.example` describe lo que la API realmente lee.",
         "Los mensajes de error salen de `packages/i18n` (`api.error.*`)."
       ],
@@ -38,6 +38,7 @@
         "DATALAKE_DIR",
         "SMART_AUTOREGISTRO",
         "SMART_DESACTIVADO",
+        "SMART_IP_LAN",
         "SMART_TRIPULANTES",
         "SMART_URL",
         "VIGIA_DB",
@@ -403,7 +404,7 @@
         },
         {
           "ruta": "apps/api/puente_reloj.py",
-          "lineas": 587,
+          "lineas": 594,
           "descripcion": "Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A).",
           "test": false,
           "simbolos": [
@@ -483,7 +484,7 @@
               "nombre": "ip_lan",
               "tipo": "función",
               "firma": "ip_lan()",
-              "doc": "IP de esta máquina en la red local, sin tocar la red: un socket UDP «conectado» solo elige la interfaz de"
+              "doc": "IP de esta máquina en la red local. `SMART_IP_LAN` manda si está definida: con varias interfaces (por ejemplo"
             },
             {
               "nombre": "url_reloj_sugerida",
@@ -925,7 +926,7 @@
         },
         {
           "ruta": "apps/api/test_puente_reloj.py",
-          "lineas": 441,
+          "lineas": 448,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -986,6 +987,7 @@
         "`lib/api-registro.ts` envía el registro a la API (`POST` de lecturas, síntomas y reportes) traduciendo las claves con `lib/vocabulario.json`, copia de `packages/schemas/vocabulario.json` que un test mantiene idéntica (si cambia el contrato: `cp packages/schemas/vocabulario.json apps/web/lib/`). No lanza sin red: devuelve `false` y el dato sigue en el almacén local. Prueba: `node --test apps/web/lib/*.test.ts` (Node 22.18+).",
         "El registro diario se sube a la API con `lib/sincronizacion.ts` (núcleo puro en `lib/sincronizar.ts`), solo en modo real: `AppProvider` envía los pendientes en orden al cambiar el análisis, al volver la red y cada 30 s si queda algo; la barra muestra cuántos faltan. Identidad provisional: `NEXT_PUBLIC_VIGIA_TRIPULANTE` (por defecto 1, el astronauta de `python3 -m almacen sembrar`). Los informes viven en la API con su `contenido` (lectura, línea base, entorno con procedencia y acción del día): `/reports` los lee cada 3 s; como cirujano de vuelo se puede responder un informe entregado. `t_real` es la hora real del envío.",
         "Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), la SpO2 del reloj de las últimas 12 h (`spo2Sugerida`, sitio «Muñeca (reloj)», sube como `sensor`/`galaxy_watch4`; contrato `spo2_sitio: muneca`), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. Ante un cambio de instrumento el motor descarta la línea base y la ventana de la FC y pausa sus capas B y C 8 días (A.6); `cambiosDeInstrumento` lo detecta con `hrInstrument` de los registros y `fc_instrumento` del historial. **Conexión guiada** (auditoría 2026-11-15): `components/device/pasos-conexion.tsx` muestra cuatro pasos (API → smart-monitor → reloj vinculado y transmitiendo → pulso en la muñeca) con `pasosConexion` (pura, `lib/reloj.ts`), marca el que falla y dice qué hacer con la URL real de smart-monitor (`puente.url_live`) y la que hay que escribir en el reloj (`puente.url_reloj_sugerida`); si el reloj no está vinculado lista los nombres que ve el servidor (`GET /reloj/tripulacion`) y «Este es mi reloj» llama a `POST /tripulantes/{id}/reloj/vinculo`. La vigencia de la lectura usa `recibido_hace_s` de la API (no la hora del reloj). El estado «Conectar» se recuerda en `localStorage` (`vigia:reloj`) y se reconecta solo al abrir.",
+        "**Lenguaje llano y accionables (2026-11-15):** quien lee no es médico. Cada acción del motor (`web.MOTOR.accion.*`, `accionSintoma.*`, `zona.*`) tiene tres partes: qué hacer ahora, cuándo repetir la medida y con qué resultado avisar a quién. En `/alerts` la jerga (banda clínica, causa técnica, chip de capa, origen) va plegada en «Ver detalle técnico» (`DetalleTecnico` en `alerts-view.tsx`); arriba queda solo `layerPlain`. El informe a tierra lleva `lectura_humana` (`lib/lectura-humana.ts`, puro, con test: una frase por indicador frente a la banda personal o a rangos fijos) además de los números, y la confirmación del tripulante «Qué hice» (`accion_hecha`: `hecha|no_pude|remedi`, `accion_nota`, `accion_sugerida`); en modo real con alerta activa es obligatoria para encolar. El resumen del informe ya no menciona el retardo ni el perfil (`summary`: indicadores revisados y fuera de rango).",
         "Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.",
         "i18n: ningún texto visible es literal. `lib/strings.ts` da forma y tipos a las claves `web.*` de `packages/i18n` (español e inglés); el idioma se resuelve en el navegador (preferencia guardada o idioma del navegador) y cambiarlo recarga la página. Las fichas y los recordatorios se piden a la API con `?lang=` (traducciones en `packages/schemas/fichas_en`); los nombres de perfil salen de `web.S.profiles`. Los mensajes de tierra y los errores de la API siguen en español.",
         "Rutas principales en `app/`: `/` (mapa corporal), `/check-in` (registro diario con cronómetro de 90 s), `/trends` (series y fichas), `/environment` (dosis RadLab, protones GOES, eventos DONKI y cabina EDA), `/alerts`, `/reports` (cola con retardo de comunicación), `/device` (reloj y simulador BLE) y `/about`."
@@ -1222,7 +1224,7 @@
         },
         {
           "ruta": "apps/web/components/alerts/alerts-view.tsx",
-          "lineas": 432,
+          "lineas": 473,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1936,7 +1938,7 @@
         },
         {
           "ruta": "apps/web/components/reports/reports-view.tsx",
-          "lineas": 272,
+          "lineas": 338,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2396,14 +2398,14 @@
         },
         {
           "ruta": "apps/web/lib/api-registro.test.ts",
-          "lineas": 61,
+          "lineas": 69,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/api-registro.ts",
-          "lineas": 160,
+          "lineas": 161,
           "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
           "test": false,
           "simbolos": [
@@ -2643,7 +2645,7 @@
         },
         {
           "ruta": "apps/web/lib/cola.ts",
-          "lineas": 41,
+          "lineas": 50,
           "descripcion": "Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local.",
           "test": false,
           "simbolos": [
@@ -2657,6 +2659,12 @@
               "nombre": "ContenidoReporte",
               "tipo": "interfaz",
               "firma": "ContenidoReporte",
+              "doc": ""
+            },
+            {
+              "nombre": "AccionHecha",
+              "tipo": "tipo",
+              "firma": "AccionHecha",
               "doc": ""
             },
             {
@@ -2676,7 +2684,7 @@
         },
         {
           "ruta": "apps/web/lib/engine.ts",
-          "lineas": 281,
+          "lineas": 293,
           "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más",
           "test": false,
           "simbolos": [
@@ -2830,6 +2838,81 @@
               "nombre": "cargarKpiSimulacion",
               "tipo": "función",
               "firma": "cargarKpiSimulacion",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/lectura-humana.test.ts",
+          "lineas": 64,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/lectura-humana.ts",
+          "lineas": 99,
+          "descripcion": "Lectura en lenguaje llano de las medidas de un día, para el informe diario a Tierra (§6.1).",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "BandaPersonal",
+              "tipo": "interfaz",
+              "firma": "BandaPersonal",
+              "doc": ""
+            },
+            {
+              "nombre": "FraseLectura",
+              "tipo": "interfaz",
+              "firma": "FraseLectura",
+              "doc": ""
+            },
+            {
+              "nombre": "PULSO_NORMAL",
+              "tipo": "constante",
+              "firma": "PULSO_NORMAL",
+              "doc": ""
+            },
+            {
+              "nombre": "PRESION_NORMAL",
+              "tipo": "constante",
+              "firma": "PRESION_NORMAL",
+              "doc": ""
+            },
+            {
+              "nombre": "SPO2_MINIMO",
+              "tipo": "constante",
+              "firma": "SPO2_MINIMO",
+              "doc": ""
+            },
+            {
+              "nombre": "TEMPERATURA_NORMAL",
+              "tipo": "constante",
+              "firma": "TEMPERATURA_NORMAL",
+              "doc": ""
+            },
+            {
+              "nombre": "SUENO_MINIMO_H",
+              "tipo": "constante",
+              "firma": "SUENO_MINIMO_H",
+              "doc": ""
+            },
+            {
+              "nombre": "frasesLectura",
+              "tipo": "función",
+              "firma": "frasesLectura",
+              "doc": ""
+            },
+            {
+              "nombre": "lecturaHumana",
+              "tipo": "función",
+              "firma": "lecturaHumana",
+              "doc": ""
+            },
+            {
+              "nombre": "balanceLectura",
+              "tipo": "función",
+              "firma": "balanceLectura",
               "doc": ""
             }
           ]
@@ -3140,7 +3223,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 908,
+          "lineas": 941,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
@@ -3172,7 +3255,7 @@
         },
         {
           "ruta": "apps/web/lib/types.ts",
-          "lineas": 188,
+          "lineas": 193,
           "descripcion": "",
           "test": false,
           "simbolos": [

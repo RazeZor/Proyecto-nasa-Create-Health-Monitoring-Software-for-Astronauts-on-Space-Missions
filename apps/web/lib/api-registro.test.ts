@@ -49,10 +49,18 @@ test("reporteDeServidor: el contenido guardado en la API llega a la interfaz", (
   const r = reporteDeServidor({
     id: 7, creado_t_real: "2026-12-06T07:00:00Z", retardo_min: 12, llega_t_real: "2026-12-06T07:12:00Z",
     estado: "respondido", respuesta: "ok",
-    contenido: { titulo: "Informe diario · Día 23", resumen: "Ámbar", lectura: "FC 68", linea_base: "56-64", entorno: "CO2 1.4", accion: "Refugio" },
+    contenido: {
+      titulo: "Informe diario · Día 23", resumen: "Ámbar", lectura: "FC 68", lectura_humana: "Pulso en reposo 68 lpm: normal.", linea_base: "56-64", entorno: "CO2 1.4",
+      accion: "Sugerido: Refugio. Hecho: La hice. Entré al refugio", accion_sugerida: "Refugio", accion_hecha: "hecha", accion_nota: "Entré al refugio",
+    },
   })
   assert.deepEqual([r.id, r.serverId, r.title, r.delayMinutes, r.createdAt], ["7", 7, "Informe diario · Día 23", 12, Date.parse("2026-12-06T07:00:00Z")])
-  assert.equal(reporteDeServidor({ id: 8, creado_t_real: "2026-12-06T07:00:00Z", retardo_min: 0, llega_t_real: "2026-12-06T07:00:00Z", estado: "en_cola", respuesta: null, contenido: null }).title, "#8")
+  assert.deepEqual([r.plainReading, r.actionDone, r.actionNote], ["Pulso en reposo 68 lpm: normal.", "hecha", "Entré al refugio"])
+  const sinContenido = reporteDeServidor({ id: 8, creado_t_real: "2026-12-06T07:00:00Z", retardo_min: 0, llega_t_real: "2026-12-06T07:00:00Z", estado: "en_cola", respuesta: null, contenido: null })
+  assert.equal(sinContenido.title, "#8")
+  // los informes antiguos no llevan lectura humana ni confirmación: campos vacíos o ausentes, nunca undefined visible
+  assert.equal(sinContenido.plainReading, "")
+  assert.ok(!("actionDone" in sinContenido) && !("actionNote" in sinContenido))
 })
 
 test("la SpO2 del reloj sube como sensor galaxy_watch4", () => {

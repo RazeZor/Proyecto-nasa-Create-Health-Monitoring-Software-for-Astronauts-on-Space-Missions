@@ -108,6 +108,37 @@ Las opciones de cada IDE cambian con sus versiones. Si tu herramienta no carga l
 4. Abre el PR y completa el checklist. CI exige el contexto al día y los tests en verde.
 5. **Conflicto en un bloque AUTO o en `docs/context/`:** no lo resuelvas a mano. Acepta cualquier versión, corre `python tools/contextgen/contextgen.py` y commitea.
 
+## 8. Pruebas en local con el reloj (hotspot «umbra»)
+
+Todo el proyecto corre en el PC, sin internet ni servidor: smart-monitor (servidor del reloj), la API y la web. Como las redes de eventos y universidades aíslan los dispositivos entre sí, el reloj se conecta a un hotspot cerrado que crea el propio PC.
+
+1. **Hotspot** (PowerShell, sin administrador; el PC debe estar conectado a alguna otra red):
+
+   ```powershell
+   tools\red-local\hotspot.ps1 -Vigilar     # SSID umbra, clave solem123, 2,4 GHz, WPA2; -Apagar para apagarlo
+   ```
+
+   `-Vigilar` deja el script mirando cada 15 s y lo reenciende si Windows lo apaga: el Hotspot móvil se corta solo a los 5 min sin clientes (por ejemplo al reiniciar el reloj). Para dejarlo oculto en segundo plano, el comando `Start-Process` está en la cabecera del script. Alternativa sin script: en Configuración > Red e Internet > Zona con cobertura inalámbrica móvil, desactivar «Ahorro de energía». El PC queda en `192.168.137.1`. En el `.env` de la raíz: `SMART_IP_LAN=192.168.137.1` y `SMART_TRIPULANTES="<nombre en el reloj>=<id>"` (por ejemplo `"Fernando=1"`).
+
+2. **Servidor del reloj** (repo smart-monitor, `SMART_DIR` del `.env`):
+
+   ```powershell
+   cd $env:SMART_DIR\server; $env:SMART_HOST = "0.0.0.0"; python server.py    # escucha en :8765
+   ```
+
+3. **API y web** (dos terminales; en Windows `py` si `python` no está en el PATH):
+
+   ```sh
+   cd apps/api && python -m uvicorn main:app --host 127.0.0.1 --port 8000
+   cd apps/web && npm run dev          # http://localhost:3000 ; desde el móvil http://192.168.137.1:3000
+   ```
+
+   La API lee el `.env` al arrancar: tras cambiarlo hay que reiniciarla.
+
+4. **Reloj:** Wi-Fi del reloj encendido (si está enlazado al teléfono por Bluetooth lo apaga), conectar a `umbra` / `solem123`, y en la app: Servidor `ws://192.168.137.1:8765/watch`, Tripulante el nombre que pusiste en `SMART_TRIPULANTES`. La pantalla Dispositivo de VIGÍA (`/device`) muestra esa misma URL sugerida y si el reloj ya está vinculado.
+
+Comprobación: `curl http://127.0.0.1:8000/reloj/estado` debe dar `conectado: true` e `ip_lan: "192.168.137.1"`; el panel de smart-monitor (`http://localhost:8765`) muestra el reloj al conectarse. Si el reloj no llega, revisa que `python.exe` tenga permitida la entrada en el firewall de Windows para redes públicas (así trata Windows al hotspot).
+
 ## Problemas frecuentes
 
 | Síntoma | Solución |
