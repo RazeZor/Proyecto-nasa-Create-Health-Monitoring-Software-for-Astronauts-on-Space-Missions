@@ -1574,7 +1574,7 @@
         },
         {
           "ruta": "apps/web/components/body/body-stage.tsx",
-          "lineas": 131,
+          "lineas": 135,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1622,7 +1622,7 @@
         },
         {
           "ruta": "apps/web/components/body/escena.ts",
-          "lineas": 671,
+          "lineas": 700,
           "descripcion": "Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del",
           "test": false,
           "simbolos": [

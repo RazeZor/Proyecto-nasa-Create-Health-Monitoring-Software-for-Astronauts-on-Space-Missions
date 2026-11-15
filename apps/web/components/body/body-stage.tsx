@@ -103,7 +103,7 @@ export function BodyStage({
               }}
               onClick={() => onMarcador(m.id)}
               aria-label={m.etiqueta}
-              className="group absolute left-0 top-0 -ml-6 -mt-6 flex size-12 items-center justify-center rounded-full outline-offset-0"
+              className="group absolute left-0 top-0 -ml-6 -mt-6 flex size-12 cursor-pointer items-center justify-center rounded-full outline-offset-0 hover:z-10 focus-visible:z-10"
               style={{ visibility: "hidden" }}
             >
               {m.tipo === "molestia" ? (
@@ -118,7 +118,11 @@ export function BodyStage({
               ) : (
                 <>
                   {(m.estado !== "ok" || m.activo) && <span aria-hidden className={cn("absolute size-8 rounded-full border-2 onda-dolor", ARO[m.estado])} />}
-                  <span aria-hidden className={cn("rounded-full shadow-[0_0_0_3px_var(--card)] transition-all group-active:scale-125", PUNTO[m.estado], m.activo ? "size-4" : "size-3")} />
+                  <span aria-hidden className={cn("rounded-full shadow-[0_0_0_3px_var(--card)] transition-all group-hover:scale-150 group-focus-visible:scale-150 group-active:scale-125", PUNTO[m.estado], m.activo ? "size-4" : "size-3")} />
+                  {/* lo que se va a elegir: aparece al pasar el cursor o enfocar con el teclado */}
+                  <span aria-hidden className="pointer-events-none absolute bottom-full left-1/2 mb-0.5 -translate-x-1/2 whitespace-nowrap rounded-full border border-border bg-card px-3 py-1 text-sm font-semibold opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                    {m.etiqueta}
+                  </span>
                 </>
               )}
             </button>

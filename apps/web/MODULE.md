@@ -60,10 +60,10 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/alerts/iconos.tsx](components/alerts/iconos.tsx) | 92 | Iconos de las alertas y de los avisos emergentes: privacidad (quién lo ve) y tipo de aviso. Mismo lenguaje que |
 | [components/app-context.tsx](components/app-context.tsx) | 257 | — |
 | [components/body/anatomia.ts](components/body/anatomia.ts) | 319 | Anatomía procedural del cuerpo 3D: todo se genera con matemáticas (campos de distancia con signo) y se |
-| [components/body/body-stage.tsx](components/body/body-stage.tsx) | 131 | — |
+| [components/body/body-stage.tsx](components/body/body-stage.tsx) | 135 | — |
 | [components/body/body-view.tsx](components/body/body-view.tsx) | 595 | — |
 | [components/body/ecg.tsx](components/body/ecg.tsx) | 82 | — |
-| [components/body/escena.ts](components/body/escena.ts) | 671 | Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del |
+| [components/body/escena.ts](components/body/escena.ts) | 700 | Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del |
 | [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 762 | — |
 | [components/checkin/controles.tsx](components/checkin/controles.tsx) | 141 | — |
 | [components/checkin/iconos.tsx](components/checkin/iconos.tsx) | 95 | Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |

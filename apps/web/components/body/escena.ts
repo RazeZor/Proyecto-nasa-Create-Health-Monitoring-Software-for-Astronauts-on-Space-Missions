@@ -174,6 +174,34 @@ function punto() {
 /** Doble golpe «lub-dub» en función de la fase del latido (0..1). */
 const latido = (f: number) => Math.exp(-((f - 0.08) ** 2) / 0.0028) + 0.55 * Math.exp(-((f - 0.3) ** 2) / 0.004)
 
+const SEPARACION_PX = 34 // distancia mínima entre dos marcadores en pantalla, para poder tocar uno sin tocar el vecino
+const SEPARACION_MAX_PX = 44 // lo máximo que un marcador se aparta de su órgano
+
+/** Aparta en pantalla los marcadores que quedan casi encima (el torso junta cinco): solo mueve el botón, no el órgano. */
+function separarMarcadores(proy: Proyeccion) {
+  const ids = (Object.keys(proy) as AnclaId[]).filter((id) => proy[id].frente)
+  const origen = new Map(ids.map((id) => [id, { x: proy[id].x, y: proy[id].y }]))
+  for (let vuelta = 0; vuelta < 8; vuelta++) {
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const a = proy[ids[i]], b = proy[ids[j]]
+        let dx = b.x - a.x, dy = b.y - a.y
+        let d = Math.hypot(dx, dy)
+        if (d >= SEPARACION_PX) continue
+        if (d < 0.01) { dx = 1; dy = 0; d = 1 } // exactamente encima: se aparta en horizontal
+        const m = (SEPARACION_PX - d) / 2 / d
+        a.x -= dx * m; a.y -= dy * m
+        b.x += dx * m; b.y += dy * m
+      }
+    }
+    for (const id of ids) { // ninguno se aleja demasiado de su órgano
+      const o = origen.get(id)!, p = proy[id]
+      const dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy)
+      if (d > SEPARACION_MAX_PX) { p.x = o.x + (dx / d) * SEPARACION_MAX_PX; p.y = o.y + (dy / d) * SEPARACION_MAX_PX }
+    }
+  }
+}
+
 export function crearEscena(
   canvas: HTMLCanvasElement, inicial: EstadoEscena, alCuadro: (p: Proyeccion, ancho: number, alto: number) => void,
   /** Avisa cuando el modelo anatómico real sustituye al procedural. */
@@ -643,6 +671,7 @@ export function crearEscena(
       p.y = (-tmp.y * 0.5 + 0.5) * alto
       p.frente = tmp.z < 1
     }
+    separarMarcadores(proy)
     alCuadro(proy, ancho, alto)
   }
   cuadro = requestAnimationFrame(animar)
