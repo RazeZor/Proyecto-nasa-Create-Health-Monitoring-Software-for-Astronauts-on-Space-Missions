@@ -22,8 +22,8 @@ Evaluadores: iteración 1, Codex (gpt-6.1-sol) con material embebido y capturas 
 | E1 Equipo registrado, ≤6, mismo evento | lo confirma el equipo | — |
 | E2 Campos obligatorios completos | texto listo en `ENVIO.md` | faltan nombre del equipo, integrantes y evento, y el enlace de la demo |
 | E3 Demo ≤7 diapositivas o ≤30 s | **hecha**: `VIGIA-demo-7-slides.pptx` (7 diapositivas, inglés) | rellenar equipo en la diapositiva 1, exportar a PDF, subir con enlace público y probarlo en ventana privada |
-| E4 Inglés en envío y materiales | readme, app (`?lang=en`), ENVIO, informe final (`FINAL-PROJECT-REPORT.md` y `.docx`) en inglés; el informe técnico en español queda como complementario | el sitio público sirve aún la versión anterior hasta redesplegar |
-| E5 Enlaces públicos sin registro | repo y sitio responden sin login | probar de nuevo tras el redespliegue |
+| E4 Inglés en envío y materiales | readme, app (`?lang=en`), ENVIO, informe final (`FINAL-PROJECT-REPORT.md` y `.docx`) en inglés; el informe técnico en español queda como complementario | sitio público redesplegado con `main` el 15-11 a las 10:45 |
+| E5 Enlaces públicos sin registro | repo y sitio responden sin login; comprobado en navegador limpio tras el redespliegue | — |
 | E6 Datos NASA | OSDR RadLab y EDA, DONKI, HRP (campo redactado) | — |
 | E7 Declaración de IA, sin marcas NASA | redactada (Claude Code y Codex); sin medios generados | — |
 | E8 Referencias completas | fuentes, librerías, BodyParts3D CC BY 4.0, LICENSE MIT | — |
@@ -46,7 +46,6 @@ Verificación final (08:25): 8 suites Python (212 tests) y 59 tests de Node en v
 
 | Pendiente | Impacto | Motivo / quién |
 | --- | --- | --- |
-| Redesplegar el sitio público | E4, E5, Presentation, Validity (el sitio sirve la versión anterior y su modo real es un tripulante compartido) | Permiso `ssh` denegado. Procedimiento en `PULSO.md`: `git archive` + gold por tar, build con `NEXT_PUBLIC_VIGIA_MODO=demo NEXT_PUBLIC_VIGIA_PUBLICO=1 VIGIA_API_INTERNA=http://127.0.0.1:8000`, resembrar la base, reiniciar `vigia-api vigia-web`, probar en ventana privada. Usuario (o añadir la regla de permiso). |
 | Nombre del equipo, integrantes y evento | E2, E3, P1 | Marcadores `[TEAM NAME]` en `ENVIO.md`, diapositiva 1 (`node tools/presentacion/deck.js … "Equipo" "Integrantes" "Evento"`) y portada del Word. Usuario. |
 | Enlace público de la demo | E2, E3, P1 | Exportar el `.pptx` a PDF, subir a Drive/GitHub con acceso público y pegar el enlace. Usuario. |
 | Cronometrar 5 registros con personas | I3 (+2) | Medición humana; anotar mediana y rango en README «Results». Equipo. |

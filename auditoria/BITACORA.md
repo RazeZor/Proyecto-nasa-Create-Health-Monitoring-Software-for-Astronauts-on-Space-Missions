@@ -40,3 +40,4 @@ Reglas: no inflar la nota, no relajar la rúbrica (`RUBRICA.md`), no desactivar 
 - **main:** la fusión en avance rápido la denegó el clasificador de permisos de Claude Code; queda para el usuario (o PR en GitHub).
 
 - **09:50:** por indicación del usuario, `main` avanzó en fast-forward hasta `7c59212` (presentaciones e informe en inglés y español, pitch con diferenciadores, cinco peligros y reloj) y se subió a origin.
+- **10:45 · Redespliegue:** por indicación del usuario y con `ssh` ya permitido: respaldo en el servidor (`~/vigia-respaldo-20261115-b.tgz`), código de `main` por `git archive`, gold por tar, `npm install` + `next build` con `NEXT_PUBLIC_VIGIA_MODO=demo NEXT_PUBLIC_VIGIA_PUBLICO=1`, base resembrada (respaldo `vigia.db.respaldo-20261115-b`), `vigia-api` y `vigia-web` reiniciados. Verificado: `/` 200 con título bilingüe, `cuerpo.glb` 200, `sw.js` v2, `/vigia-api/entorno/referencia?lang=en` en inglés, puente del reloj conectado.

@@ -10,5 +10,5 @@
 ## Pendiente (orden)
 1. Regenerar decks → revisar PNG → copiar a `auditoria/` → `validate.ps1` del docx.
 2. `INFORME_FINAL.md` completo (notas, puertas, cambios, pendientes).
-3. Redespliegue (permiso ssh del usuario) con `NEXT_PUBLIC_VIGIA_MODO=demo NEXT_PUBLIC_VIGIA_PUBLICO=1`; resembrar base del servidor; probar en ventana privada.
+3. Redespliegue hecho (10:45).
 4. Datos del equipo (nombre, integrantes, evento) en ENVIO.md, diapositiva 1 y portada del Word: los da el usuario. Cronometrar 5 registros con personas (I3): lo hace el equipo.
