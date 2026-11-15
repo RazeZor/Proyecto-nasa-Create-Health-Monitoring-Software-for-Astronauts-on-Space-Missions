@@ -928,7 +928,10 @@
         "bodySubtitle": "El cuerpo de cada tripulante con sus propias lecturas. Es de solo lectura y cada consulta queda en la auditoría.",
         "pick": "Tripulante",
         "bodyError": "No se pudo leer el historial de este tripulante.",
-        "navBody": "Cuerpos"
+        "navBody": "Cuerpos",
+        "fichaTitle": "Ficha histórica",
+        "fichaSubtitle": "El histórico de cada tripulante: sus indicadores día a día frente a su propia línea base. Es de solo lectura y cada consulta queda en la auditoría.",
+        "navFicha": "Ficha"
       }
     },
     "MOTOR": {

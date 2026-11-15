@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 import { useApp, VerComo } from "@/components/app-context"
 import { BodyView } from "@/components/body/body-view"
 import { EmptyState, LoadingState, PageHeader } from "@/components/shared/states"
@@ -12,8 +12,13 @@ import { cn } from "@/lib/utils"
 
 type Miembro = { id: number; alias: string; rol: string }
 
-/** Cuerpo de cada tripulante, para el oficial médico y el cirujano de vuelo: solo lectura y auditado en el servidor. */
-export function CuerpoTripulacion() {
+/** Una vista cualquiera (cuerpo, ficha histórica) con los datos de cada tripulante, para el oficial médico y el cirujano
+ * de vuelo: solo lectura y auditado en el servidor. Por defecto, el cuerpo. */
+export function CuerpoTripulacion({ titulo = S.crew.bodyTitle, subtitulo = S.crew.bodySubtitle, vista = <BodyView ajeno /> }: {
+  titulo?: string
+  subtitulo?: string
+  vista?: ReactNode
+}) {
   const { mode } = useApp()
   const [miembros, setMiembros] = useState<Miembro[] | null>(null)
   const [actor, setActor] = useState<number | null>(null)
@@ -45,7 +50,7 @@ export function CuerpoTripulacion() {
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
-      <PageHeader title={S.crew.bodyTitle} subtitle={S.crew.bodySubtitle} />
+      <PageHeader title={titulo} subtitle={subtitulo} />
       {miembros === null ? <LoadingState /> : miembros.length === 0 ? <EmptyState message={S.crew.bodyError} /> : (
         <div role="radiogroup" aria-label={S.crew.pick} className="flex flex-wrap gap-2">
           {miembros.map((m) => (
@@ -67,7 +72,7 @@ export function CuerpoTripulacion() {
       )}
       {historial === undefined ? (miembros?.length ? <LoadingState /> : null) : historial === null ? <EmptyState message={S.crew.bodyError} /> : (
         <VerComo key={elegido} historial={historial}>
-          <BodyView ajeno />
+          {vista}
         </VerComo>
       )}
     </div>

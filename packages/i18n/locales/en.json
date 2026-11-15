@@ -928,7 +928,10 @@
         "bodySubtitle": "Each crew member's body with their own readings. Read-only; every lookup is audited.",
         "pick": "Crew member",
         "bodyError": "Could not read this crew member's history.",
-        "navBody": "Bodies"
+        "navBody": "Bodies",
+        "fichaTitle": "Medical history",
+        "fichaSubtitle": "Each crew member's history: their indicators day by day against their own baseline. Read-only; every lookup is audited.",
+        "navFicha": "History"
       }
     },
     "MOTOR": {

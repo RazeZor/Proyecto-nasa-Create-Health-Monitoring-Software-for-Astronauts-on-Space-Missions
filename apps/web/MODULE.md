@@ -22,7 +22,7 @@ Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva p
 - Reloj (`lib/reloj.ts`): con el dispositivo en «Conectar», `AppProvider` sondea `GET /tripulantes/{id}/reloj` cada 1,5 s y `siguienteEstado` (pura, con test) decide `connecting → connected → lost`: `connected` solo con una lectura de menos de 10 s; si no llega en 15 s, `lost`. Las órdenes (`iniciar_chequeo`, `medir_spo2`) van por `POST .../reloj/ordenes`. El simulador solo transmite cuando no hay reloj real. La app nunca habla con smart-monitor directamente. Del reloj también salen: la FC en reposo del día que precarga el registro (`fcReposoSugerida`: del chequeo, del sueño o del día despierto; nunca el pulso instantáneo, A.6), la SpO2 del reloj de las últimas 12 h (`spo2Sugerida`, sitio «Muñeca (reloj)», sube como `sensor`/`galaxy_watch4`; contrato `spo2_sitio: muneca`), el sueño estimado como sugerencia experimental, la curva de FC (`tramosSerie`, cortes en huecos > 3 s), HRV de 5 min, el aviso de cambio de instrumento, la tolerancia al movimiento y el CSV (`components/device/reloj-extras.tsx`) y, para `cmo`/`surgeon`, el estado de los relojes de la tripulación sin valores fisiológicos. Ante un cambio de instrumento el motor descarta la línea base y la ventana de la FC y pausa sus capas B y C 8 días (A.6); `cambiosDeInstrumento` lo detecta con `hrInstrument` de los registros y `fc_instrumento` del historial. **Conexión guiada** (auditoría 2026-11-15): `components/device/pasos-conexion.tsx` muestra cuatro pasos (API → smart-monitor → reloj vinculado y transmitiendo → pulso en la muñeca) con `pasosConexion` (pura, `lib/reloj.ts`), marca el que falla y dice qué hacer con la URL real de smart-monitor (`puente.url_live`) y la que hay que escribir en el reloj (`puente.url_reloj_sugerida`); si el reloj no está vinculado lista los nombres que ve el servidor (`GET /reloj/tripulacion`) y «Este es mi reloj» llama a `POST /tripulantes/{id}/reloj/vinculo`. La vigencia de la lectura usa `recibido_hace_s` de la API (no la hora del reloj). El estado «Conectar» se recuerda en `localStorage` (`vigia:reloj`) y se reconecta solo al abrir.
 - Sigue el modelo de tres roles (`astronaut`, `cmo`, `surgeon`) y cinco perfiles de misión (`station`: 760, `transit`: 760, `transit-docked`: 527, `lunar`: 424, `mars`: 424 mmHg) con conversión de CO2 de ppm a mmHg según la presión total de cabina.
 - i18n: ningún texto visible es literal. `lib/strings.ts` da forma y tipos a las claves `web.*` de `packages/i18n` (español e inglés); el idioma se resuelve en el navegador (preferencia guardada o idioma del navegador) y cambiarlo recarga la página. Las fichas y los recordatorios se piden a la API con `?lang=` (traducciones en `packages/schemas/fichas_en`); los nombres de perfil salen de `web.S.profiles`. Los mensajes de tierra y los errores de la API siguen en español.
-- **Rutas por rol** (`lib/roles.ts`, `app/[rol]/`): `/` solo elige el rol; cada uno entra a su tablero: `/astronauta` (cuerpo, `/body` es el mismo, `/check-in`, `/trends`, `/environment`, `/alerts`, `/reports`, `/device`, `/about`), `/oficial` (tripulación: relojes y bandeja de avisos escalados; `/body`, `/alerts`, `/environment`, `/device`, `/about`) y `/medico` (informes en Tierra; `/body`, `/alerts`, `/environment`, `/about`). `/body` (solo oficial y médico) es el cuerpo de cada tripulante en solo lectura: `crew-body.tsx` pide `historial` ajeno (`cargarHistorialAjeno`, queda auditado como `lectura_ajena`) y lo muestra con `VerComo`; el astronauta ve el suyo (`/astronauta` y `/astronauta/body`), sin selector. shortcut: el médico actúa con el id del oficial médico hasta tener autenticación. El rol sale de la ruta (`role` en `useApp()`, sin selector); una pantalla que el rol no tiene da 404 (`lib/guardia.ts`; en export estático el estado HTTP es 200 con la página 404). Menú, avisos emergentes y banners de registro son del astronauta: el estado personal (logo, «Vigilar», toasts) no se muestra a los otros roles. Enlaces entre pantallas con `rutaDe(rol, seccion)`. Si cambias las rutas, actualiza `PANTALLAS` en `public/sw.js` (lo comprueba `lib/roles.test.ts`). shortcut: la ruta solo cambia la vista; el servidor no comprueba el rol hasta la autenticación (#46).
+- **Rutas por rol** (`lib/roles.ts`, `app/[rol]/`): `/` solo elige el rol; cada uno entra a su tablero: `/astronauta` (cuerpo, `/body` es el mismo, `/check-in`, `/trends`, `/environment`, `/alerts`, `/reports`, `/device`, `/about`), `/oficial` (tripulación: relojes y bandeja de avisos escalados; `/body`, `/ficha`, `/alerts`, `/environment`, `/device`, `/about`) y `/medico` (informes en Tierra; `/body`, `/ficha`, `/alerts`, `/environment`, `/about`). `/ficha` (solo oficial y médico) reutiliza `TrendsView` con el historial de cada tripulante elegido. `/body` (solo oficial y médico) es el cuerpo de cada tripulante en solo lectura: `crew-body.tsx` (`CuerpoTripulacion`, con la vista como parámetro) pide `historial` ajeno (`cargarHistorialAjeno`, queda auditado como `lectura_ajena`) y lo muestra con `VerComo`; el astronauta ve el suyo (`/astronauta` y `/astronauta/body`), sin selector. shortcut: el médico actúa con el id del oficial médico hasta tener autenticación. El rol sale de la ruta (`role` en `useApp()`, sin selector); una pantalla que el rol no tiene da 404 (`lib/guardia.ts`; en export estático el estado HTTP es 200 con la página 404). Menú, avisos emergentes y banners de registro son del astronauta: el estado personal (logo, «Vigilar», toasts) no se muestra a los otros roles. Enlaces entre pantallas con `rutaDe(rol, seccion)`. Si cambias las rutas, actualiza `PANTALLAS` en `public/sw.js` (lo comprueba `lib/roles.test.ts`). shortcut: la ruta solo cambia la vista; el servidor no comprueba el rol hasta la autenticación (#46).
 
 ## Relación con el informe
 
@@ -46,6 +46,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [app/[rol]/check-in/page.tsx](app/[rol]/check-in/page.tsx) | 7 | — |
 | [app/[rol]/device/page.tsx](app/[rol]/device/page.tsx) | 7 | — |
 | [app/[rol]/environment/page.tsx](app/[rol]/environment/page.tsx) | 7 | — |
+| [app/[rol]/ficha/page.tsx](app/[rol]/ficha/page.tsx) | 9 | — |
 | [app/[rol]/layout.tsx](app/[rol]/layout.tsx) | 9 | — |
 | [app/[rol]/page.tsx](app/[rol]/page.tsx) | 10 | — |
 | [app/[rol]/reports/page.tsx](app/[rol]/reports/page.tsx) | 7 | — |
@@ -67,7 +68,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 762 | — |
 | [components/checkin/controles.tsx](components/checkin/controles.tsx) | 141 | — |
 | [components/checkin/iconos.tsx](components/checkin/iconos.tsx) | 95 | Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
-| [components/crew/crew-body.tsx](components/crew/crew-body.tsx) | 75 | — |
+| [components/crew/crew-body.tsx](components/crew/crew-body.tsx) | 80 | — |
 | [components/crew/crew-view.tsx](components/crew/crew-view.tsx) | 22 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 338 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 62 | — |
@@ -88,7 +89,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/shared/states.tsx](components/shared/states.tsx) | 50 | — |
 | [components/shared/status.tsx](components/shared/status.tsx) | 73 | — |
 | [components/shell/alert-center.tsx](components/shell/alert-center.tsx) | 219 | — |
-| [components/shell/app-shell.tsx](components/shell/app-shell.tsx) | 283 | — |
+| [components/shell/app-shell.tsx](components/shell/app-shell.tsx) | 285 | — |
 | [components/shell/sw-register.tsx](components/shell/sw-register.tsx) | 15 | — |
 | [components/start/elegir-rol.tsx](components/start/elegir-rol.tsx) | 35 | — |
 | [components/trends/iconos.tsx](components/trends/iconos.tsx) | 46 | Iconos de la ficha del indicador, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
@@ -115,13 +116,13 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/guardia.ts](lib/guardia.ts) | 8 | — |
 | [lib/reloj.test.ts](lib/reloj.test.ts) | 79 | — |
 | [lib/reloj.ts](lib/reloj.ts) | 259 | Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con |
-| [lib/roles.test.ts](lib/roles.test.ts) | 46 | — |
+| [lib/roles.test.ts](lib/roles.test.ts) | 52 | — |
 | [lib/roles.ts](lib/roles.ts) | 27 | Quién usa la app lo dice la ruta: /astronauta, /oficial y /medico. Cada rol ve sus propias pantallas. |
 | [lib/sincronizacion.ts](lib/sincronizacion.ts) | 57 | — |
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 925 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/strings.ts](lib/strings.ts) | 928 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
 | [lib/types.ts](lib/types.ts) | 188 | — |
 | [lib/utils.ts](lib/utils.ts) | 10 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |
@@ -151,6 +152,10 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - función `Page`
 
 **app/[rol]/environment/page.tsx**
+
+- función `Page`
+
+**app/[rol]/ficha/page.tsx**
 
 - función `Page`
 
