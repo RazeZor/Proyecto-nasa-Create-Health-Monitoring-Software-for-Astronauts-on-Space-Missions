@@ -4,6 +4,7 @@
     "retardo_min": 12,
     "respuesta": "Recibido. Sigue con la ventana de sueño ampliada y vuelve a medir la FC mañana.",
     "contenido": {
+      "demo": true,
       "titulo": "Informe diario · Día 23",
       "resumen": "Estado general ámbar. Continúa la deriva de FC, sueño corto.",
       "lectura": "FC en reposo 68 lpm, sueño 5.8 h, SpO2 97 %",

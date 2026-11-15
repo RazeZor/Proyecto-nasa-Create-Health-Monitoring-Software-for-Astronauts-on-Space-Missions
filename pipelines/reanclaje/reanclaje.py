@@ -111,12 +111,15 @@ def validar(escenario):
 
 def construir(escenario):
     """Genera y guarda el gold del escenario. Una ventana sin curated (p. ej. GOES, que solo publica
-    las últimas 24 h) se omite y queda en `faltan`; si no hay datos de ninguna, no escribe nada."""
+    las últimas 24 h) se omite y queda en `faltan`; si no hay datos de ninguna, no escribe nada. DONKI ya
+    consultado sin eventos no es un hueco: una ventana tranquila es un dato."""
     validar(escenario)
     gold = {"escenario": escenario["nombre"], "ventanas": escenario["ventanas"],
             "serie5min": [], "diario": [], "eventos": [], "faltan": []}
     for v in escenario["ventanas"]:
         filas = datalake.read(v["fuente"], v["desde"], v["hasta"])
+        if not filas and v["fuente"] == "donki" and _donki_consultado():
+            continue  # DONKI consultado y sin eventos SEP en la ventana: es un resultado válido, no un hueco
         if not filas:
             print(f"aviso: no hay datos curated de {v['fuente']} en {v['desde']}..{v['hasta']}; se omite",
                   file=sys.stderr)
@@ -133,6 +136,11 @@ def construir(escenario):
     entrada = guardar(escenario["nombre"], gold, serie5min=len(gold["serie5min"]),
                       diario=len(gold["diario"]), eventos=len(gold["eventos"]), faltan=len(gold["faltan"]))
     return entrada
+
+
+def _donki_consultado():
+    """True si el datalake tiene al menos una ingesta de DONKI (una respuesta vacía también cuenta, §3.3)."""
+    return any(e["fuente"] == "donki" for e in datalake.manifest())
 
 
 def guardar(clave, datos, destino=None, **resumen):

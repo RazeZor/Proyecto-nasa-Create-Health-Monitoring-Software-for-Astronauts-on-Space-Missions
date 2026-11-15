@@ -1,0 +1,42 @@
+/**
+ * Marca VIGÍA («Centinela»), tal como la define docs/brand: el casco, la V con su cabeza y el punto de estado.
+ * El trazo hereda el color del texto; el punto toma el color del estado del sistema (normal, atención con aro,
+ * alerta con punto grande), igual que las variantes `vigia-simbolo-*` de la guía.
+ */
+import type { SVGProps } from "react"
+import type { Status } from "@/lib/types"
+import { cn } from "@/lib/utils"
+
+const PUNTO: Record<Status, string> = { ok: "text-status-ok", watch: "text-status-watch", act: "text-status-act" }
+
+export function Simbolo({ estado = "ok", className, ...p }: { estado?: Status } & SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 120 120" fill="none" aria-hidden className={className} {...p}>
+      <path d="M106.98 42.9A50 50 0 1 1 77.1 13.02" stroke="currentColor" strokeWidth={8} strokeLinecap="round" />
+      <path d="M36 36L60 88L84 36" stroke="currentColor" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="60" cy="38" r="8.5" fill="currentColor" />
+      <g className={PUNTO[estado]}>
+        <circle cx="95.36" cy="24.64" r={estado === "act" ? 14 : 8} fill="currentColor" />
+        {estado === "watch" && <circle cx="95.36" cy="24.64" r="14" stroke="currentColor" strokeWidth={3} />}
+      </g>
+    </svg>
+  )
+}
+
+/** Palabra VIGÍA en trazados (Space Grotesk Bold): no depende de que la fuente haya cargado. */
+export function Palabra({ className, ...p }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="148 22 205 64" fill="currentColor" role="img" aria-label="VIGÍA" className={className} {...p}>
+      <path d="M161.99 83.73 149.92 36.27H159.14L169.18 77.97H170.12L180.16 36.27H189.38L177.31 83.73Z M204.57 83.73V36.27H213.52V83.73Z M248.37 84.68Q243.48 84.68 239.52 82.48Q235.55 80.27 233.21 76.03Q230.87 71.8 230.87 65.7V54.3Q230.87 45.15 236.03 40.24Q241.18 35.32 249.99 35.32Q258.74 35.32 263.52 39.97Q268.3 44.61 268.3 52.54V52.81H259.49V52.27Q259.49 49.76 258.43 47.73Q257.38 45.69 255.28 44.51Q253.18 43.32 249.99 43.32Q245.25 43.32 242.54 46.24Q239.82 49.15 239.82 54.17V65.83Q239.82 70.78 242.54 73.8Q245.25 76.81 250.13 76.81Q255.01 76.81 257.25 74.24Q259.49 71.66 259.49 67.73V67.05H248.23V59.46H268.3V83.73H260.03V79.19H258.81Q258.33 80.34 257.28 81.63Q256.23 82.92 254.13 83.8Q252.03 84.68 248.37 84.68Z M286.33 83.73V36.27H295.28V83.73ZM285.52 32.34 290.27 23.52H300.17L293.11 32.34Z M310.47 83.73 322.95 36.27H338.54L351.02 83.73H341.79L339.22 73.29H322.27L319.69 83.73ZM324.37 65.02H337.12L331.35 41.9H330.13Z" />
+    </svg>
+  )
+}
+
+export function Logo({ estado, className }: { estado?: Status; className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-2.5", className)}>
+      <Simbolo estado={estado} className="h-full w-auto" />
+      <Palabra className="hidden h-[52%] w-auto sm:block" />
+    </span>
+  )
+}

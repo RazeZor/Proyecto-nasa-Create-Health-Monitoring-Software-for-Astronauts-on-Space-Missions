@@ -197,5 +197,12 @@ class Registro(unittest.TestCase):
         self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/reportes", headers=h).json()[0]["estado"], "respondido")
 
 
+    def test_reenviar_una_alerta_no_duplica_el_aviso(self):
+        a, b = self.alerta().json(), self.alerta().json()
+        self.assertEqual(a, b)
+        self.assertIsNotNone(a["escalamiento_id"])
+        self.assertEqual(len(self.c.get("/escalamientos", headers=self.como(self.med)).json()), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

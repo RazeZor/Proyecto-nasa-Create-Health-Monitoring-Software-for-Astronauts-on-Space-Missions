@@ -1,6 +1,11 @@
 import type { Metadata, Viewport } from 'next'
 import { AppProvider } from '@/components/app-context'
 import { AppShell } from '@/components/shell/app-shell'
+import { SwRegister } from '@/components/shell/sw-register'
+import '@fontsource-variable/space-grotesk'
+import '@fontsource/ibm-plex-mono/400.css'
+import '@fontsource/ibm-plex-mono/500.css'
+import '@fontsource/ibm-plex-mono/600.css'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -9,25 +14,25 @@ export const metadata: Metadata = {
     'Prototipo de apoyo a la decisión para que los astronautas monitoricen su salud en misiones largas con retardo de comunicación.',
   icons: {
     icon: [
-      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
-      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
     ],
-    apple: '/apple-icon.png',
+    apple: '/icono-app-180.png',
   },
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'dark light',
-  themeColor: '#11161f',
+  colorScheme: 'light dark',
+  themeColor: '#F2F5FA',
   width: 'device-width',
   initialScale: 1,
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className="dark" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body className="font-sans antialiased">
+        <SwRegister />
         <AppProvider>
           <AppShell>{children}</AppShell>
         </AppProvider>

@@ -1,0 +1,18 @@
+{
+  "id": "temperatura_central",
+  "nombre": "Core body temperature",
+  "que_es": "Temperature of the inside of the body, not of the skin.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Core temperature thermometer with the method stated, at rest and at least 30 minutes after exercise. Do not use skin temperature.",
+    "transito": "Core temperature thermometer with the method stated, at rest and at least 30 minutes after exercise. Do not use skin temperature.",
+    "superficie": "Core temperature thermometer with the method stated, at rest and at least 30 minutes after exercise. Do not use skin temperature."
+  },
+  "por_que": "A ground-based fever threshold gives false positives in flight: reduced gravity limits convection and evaporation.",
+  "referencia_en_vuelo": "Resting core temperature rises by about 1 °C after 2.5 months on the ISS and can exceed 40 °C during exercise.",
+  "cuando_avisar": "Extreme band of layer A (35.0 °C or less). 39.1 °C or more adds 2 points; 35.1 to 36.0 and 38.1 to 39.0 add 1 point only if it also departs from the profile baseline.",
+  "prevencion": "Cabin thermal control (about 20-25 °C and 30-60% humidity), with more airflow in the exercise area to avoid heat pockets.",
+  "fuentes": [
+    "Royal College of Physicians: NEWS2 scoring table",
+    "VIGÍA technical report, §2.4"
+  ]
+}

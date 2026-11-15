@@ -1,10 +1,14 @@
 /**
- * Motor híbrido de VIGÍA (informe §5.1): capa A (NEWS2), capa B (desviación personal con MAD),
- * capa C (CUSUM) y regla de contexto (CO2 + síntomas). Puro: sin IO y sin dependencias.
- * Es el port 1:1 de `evaluar_tripulante` en pipelines/reanclaje/simulacion.py; el test de
- * paridad lo compara con `fixtures/caso-referencia.json`. Si cambias una regla, cámbiala en ambos.
+ * Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD),
+ * capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Puro: sin IO y sin dependencias.
+ * Es el port 1:1 de `evaluar_tripulante` en pipelines/reanclaje/simulacion.py; el test de paridad lo compara
+ * con `fixtures/caso-referencia.json`. Si cambias una regla, cámbiala en ambos.
+ *
+ * Solo aquí (no en Python, que siempre evalúa series completas): lecturas con valores ausentes (`null`),
+ * tripulantes sin línea base de tierra y cambios de instrumento (anexo A.6).
  */
 
+/** Pisos de dispersión del motor. Los desplazamientos son supuestos del simulador: el motor no los usa. */
 export const SUPUESTOS = {
   fc_desplazamiento_lpm: 3.0,
   sueno_desplazamiento_h: -0.7,
@@ -19,24 +23,55 @@ export const CUSUM_K = 0.75
 export const CUSUM_H = 5.0
 export const CUSUM_DIA_INICIO = 21
 export const CO2_LIMITE_MMHG = 3.0
-/** Días con el instrumento nuevo que forman la línea base en vuelo tras un cambio de instrumento (anexo A.6). */
-export const DIAS_VENTANA_REINICIO = 7
+export const PROTONES_TORMENTA_PFU = 10.0
+// Línea base de tierra a vuelo (§5.2)
+export const DIA_FIN_ADAPTACION = 14
+export const DIAS_TRANSICION = 7
+export const VENTANA_DIA_INICIO = 8
+export const VENTANA_MAX_LECTURAS = 14
+export const VENTANA_REZAGO_DIAS = 3
+export const VENTANA_MIN_LECTURAS = 5
+/** Días que tarda un indicador en volver a tener referencia tras un cambio de instrumento (anexo A.6). */
+export const DIAS_VENTANA_REINICIO = VENTANA_MIN_LECTURAS + VENTANA_REZAGO_DIAS
 
+export type IndicadorB = "fc" | "pas" | "sueno" | "animo" | "glucosa"
+type CampoB = "fc_reposo_lpm" | "pas_mmHg" | "sueno_h" | "animo_1_10" | "glucosa_mg_dl"
+const INDICADORES_B: [IndicadorB, CampoB, number][] = [
+  ["fc", "fc_reposo_lpm", Z_UMBRAL_FISIOLOGICO],
+  ["pas", "pas_mmHg", Z_UMBRAL_FISIOLOGICO],
+  ["sueno", "sueno_h", Z_UMBRAL_CONDUCTUAL],
+  ["animo", "animo_1_10", Z_UMBRAL_CONDUCTUAL],
+  ["glucosa", "glucosa_mg_dl", Z_UMBRAL_FISIOLOGICO],
+]
+/** Indicadores semanales: su persistencia son dos medidas seguidas y un día sin medida no la rompe. */
+const SEMANALES: ReadonlySet<IndicadorB> = new Set<IndicadorB>(["glucosa"])
+/** Sentido que vigila la capa C: FC al alza; sueño y ánimo a la baja. */
+const SENTIDO_C: Partial<Record<IndicadorB, number>> = { fc: 1, sueno: -1, animo: -1 }
+
+/** Lectura de un día. Un valor `null` es una medida que ese día no se tomó: no puntúa ni alerta. */
 export interface Lectura {
   dia_mision: number
-  fc_reposo_lpm: number
-  pas_mmHg: number
-  spo2_pct: number
-  temp_central_c: number
-  sueno_h: number
-  animo_1_10: number
+  fc_reposo_lpm: number | null
+  pas_mmHg: number | null
+  spo2_pct: number | null
+  temp_central_c: number | null
+  sueno_h: number | null
+  animo_1_10: number | null
+  /** Semanal: ausente o null los días que no se mide. */
+  glucosa_mg_dl?: number | null
   sintomas: string[]
   durante_tormenta: boolean
 }
 export interface Tripulante { id: string; lecturas: Lectura[] }
-export interface EntornoDia { co2_mmhg_max_horario?: number; modo_tormenta?: boolean }
+/** Entorno del día: CO2 ya en presión parcial (mmHg) y flujo de protones de >=10 MeV. */
+export interface EntornoDia {
+  co2_mmhg_max_horario?: number | null
+  flujo_protones_10mev_pfu?: number | null
+  /** Tormenta declarada por otra fuente (evento SEP de DONKI) aunque no haya flujo medido. */
+  modo_tormenta?: boolean
+}
 export type Capa = "A" | "B" | "C" | "contexto"
-/** Desde `dia_mision` la FC en reposo se mide con otro instrumento (manual ↔ reloj, o otro reloj). */
+/** Desde `dia_mision` el indicador se mide con otro instrumento (manual ↔ reloj, u otro reloj). */
 export interface CambioInstrumento { dia_mision: number; indicador: "fc" }
 export interface OpcionesMotor { cambiosInstrumento?: CambioInstrumento[] }
 export interface Alerta {
@@ -46,12 +81,15 @@ export interface Alerta {
   nivel: "ambar" | "rojo"
   indicador: string
   valor: number | null
+  /** Solo el rojo de la capa A sale solo hacia el oficial médico (§5.4). */
   escalada_auto: boolean
+  /** `tripulacion`: dato ambiental que se comparte con todos, sin datos personales. */
+  ambito: "personal" | "tripulacion"
+  /** Calculada en modo adaptación (días 1 a 14): se muestra, no alerta. */
+  informativa: boolean
 }
-
-/** w(d) = 1 - exp(-d / tau) para días de vuelo (d >= 1); 0 antes. */
-export const factorAdaptacion = (dia: number, tau = SUPUESTOS.tau_adaptacion_dias) =>
-  dia <= 0 ? 0 : 1 - Math.exp(-dia / tau)
+/** Referencia vigente de un indicador en un día; `null` si aún no hay con qué comparar. */
+export interface Referencia { dia_mision: number; centro: number; dispersion: number; z: number | null; peso_vuelo: number }
 
 export function mediana(valores: number[]): number {
   const v = [...valores].sort((a, b) => a - b)
@@ -59,136 +97,193 @@ export function mediana(valores: number[]): number {
   return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2
 }
 
-/** [mediana, MAD sin el factor 1,4826 con piso MAD_MIN]. */
-export function madBruto(valores: number[], minimo: number): [number, number] {
+/** [mediana, MAD] sin el factor 1,4826 y sin piso. */
+function medianaMad(valores: number[]): [number, number] {
   const med = mediana(valores)
-  return [med, Math.max(mediana(valores.map((v) => Math.abs(v - med))), minimo)]
+  return [med, mediana(valores.map((v) => Math.abs(v - med)))]
 }
 
-export function puntosNews2(fc: number, pas: number, spo2: number, temp: number) {
+/** [mediana, MAD sin el factor 1,4826 con piso MAD_MIN]. */
+export function madBruto(valores: number[], minimo: number): [number, number] {
+  const [med, mad] = medianaMad(valores)
+  return [med, Math.max(mad, minimo)]
+}
+
+/** w(d) de §5.2: 0 en adaptación o con menos de 5 lecturas en vuelo; luego sube hasta 1 en 7 días. */
+export function pesoVuelo(dia: number, nVentana: number): number {
+  if (dia <= DIA_FIN_ADAPTACION || nVentana < VENTANA_MIN_LECTURAS) return 0
+  return Math.min(1, (dia - DIA_FIN_ADAPTACION) / DIAS_TRANSICION)
+}
+
+/** Puntos NEWS2 de los parámetros medidos; los `null` no puntúan. */
+export function puntosNews2(fc: number | null, pas: number | null, spo2: number | null, temp: number | null) {
   let pts = 0
   let maxIndividual = 0
   const sumar = (p: number) => {
     pts += p
     maxIndividual = Math.max(maxIndividual, p)
   }
-  if (fc <= 40 || fc >= 131) sumar(3)
-  else if (fc >= 111) sumar(2)
-  else if ((fc >= 41 && fc <= 50) || (fc >= 91 && fc <= 110)) sumar(1)
-
-  if (pas <= 90 || pas >= 220) sumar(3)
-  else if (pas >= 91 && pas <= 100) sumar(2)
-  else if (pas >= 101 && pas <= 110) sumar(1)
-
-  if (spo2 <= 91) sumar(3)
-  else if (spo2 >= 92 && spo2 <= 93) sumar(2)
-  else if (spo2 >= 94 && spo2 <= 95) sumar(1)
-
-  if (temp <= 35.0) sumar(3)
-  else if (temp >= 39.1) sumar(2)
-  else if ((temp >= 35.1 && temp <= 36.0) || (temp >= 38.1 && temp <= 39.0)) sumar(1)
-
+  if (fc !== null) {
+    if (fc <= 40 || fc >= 131) sumar(3)
+    else if (fc >= 111) sumar(2)
+    else if (fc <= 50 || fc >= 91) sumar(1)
+  }
+  if (pas !== null) {
+    if (pas <= 90 || pas >= 220) sumar(3)
+    else if (pas <= 100) sumar(2)
+    else if (pas <= 110) sumar(1)
+  }
+  if (spo2 !== null) {
+    if (spo2 <= 91) sumar(3)
+    else if (spo2 <= 93) sumar(2)
+    else if (spo2 <= 95) sumar(1)
+  }
+  if (temp !== null) {
+    if (temp <= 35.0) sumar(3)
+    else if (temp >= 39.1) sumar(2)
+    else if (temp <= 36.0 || temp >= 38.1) sumar(1)
+  }
   return { pts, maxIndividual }
 }
 
 const redondear = (x: number, d: number) => Math.round(x * 10 ** d) / 10 ** d
 
-/** Alertas de un tripulante: línea base con los días <= 0 (prevuelo) y evaluación de los días >= 1. */
+/**
+ * Centro y dispersión vigentes (§5.2): mezcla de la línea base de tierra y la ventana en vuelo. La ventana
+ * toma hasta 14 lecturas desde el día 8 y termina 3 días antes de `dia`, sin los días excluidos. Sin línea
+ * base de tierra (tripulante sin prevuelo o tras un cambio de instrumento) vale solo la ventana, cuando llega
+ * a 5 lecturas; antes no hay referencia.
+ */
+function referencia(
+  dia: number, tierra: [number, number] | null, historia: [number, number][], excluidos: Set<number>, piso: number,
+): { centro: number; dispersion: number; w: number } | null {
+  const ventana = historia
+    .filter(([j]) => j >= VENTANA_DIA_INICIO && j <= dia - VENTANA_REZAGO_DIAS && !excluidos.has(j))
+    .map(([, v]) => v)
+    .slice(-VENTANA_MAX_LECTURAS)
+  if (tierra === null) {
+    if (ventana.length < VENTANA_MIN_LECTURAS) return null
+    const [med, mad] = medianaMad(ventana)
+    return { centro: med, dispersion: Math.max(mad, piso), w: 1 }
+  }
+  const w = pesoVuelo(dia, ventana.length)
+  const [medT, madT] = tierra
+  if (w === 0) return { centro: medT, dispersion: Math.max(madT, piso), w }
+  const [medV, madV] = medianaMad(ventana)
+  return { centro: (1 - w) * medT + w * medV, dispersion: Math.max((1 - w) * madT + w * madV, piso), w }
+}
+
+/**
+ * Alertas y referencias de un tripulante: línea base de tierra con los días <= 0 (prevuelo) y evaluación de
+ * los días >= 1. Las referencias sirven para dibujar la banda personal en las tendencias.
+ */
+export function analizarTripulante(
+  tripulante: Tripulante,
+  entornoPorDia: Record<number, EntornoDia | undefined>,
+  opciones: OpcionesMotor = {},
+): { alertas: Alerta[]; referencias: Record<IndicadorB, Referencia[]> } {
+  const lecturas = [...tripulante.lecturas].sort((a, b) => a.dia_mision - b.dia_mision)
+  const prevuelo = lecturas.filter((r) => r.dia_mision <= 0)
+  const vuelo = lecturas.filter((r) => r.dia_mision >= 1)
+  const piso = SUPUESTOS.mad_min
+
+  const tierra = {} as Record<IndicadorB, [number, number] | null>
+  const historia = {} as Record<IndicadorB, [number, number][]>
+  const excluidos = {} as Record<IndicadorB, Set<number>>
+  const consecB = {} as Record<IndicadorB, number>
+  const referencias = {} as Record<IndicadorB, Referencia[]>
+  for (const [ind, campo] of INDICADORES_B) {
+    const valores = prevuelo.map((r) => r[campo]).filter((v): v is number => v != null)
+    tierra[ind] = valores.length > 0 ? medianaMad(valores) : null
+    historia[ind] = []
+    excluidos[ind] = new Set()
+    consecB[ind] = 0
+    referencias[ind] = []
+  }
+  const cusum: Partial<Record<IndicadorB, number>> = { fc: 0, sueno: 0, animo: 0 }
+  // A.6: tras un cambio de instrumento el indicador no es comparable con su historia. Se descartan su línea
+  // base de tierra y su ventana, y sus capas B y C quedan en pausa hasta que el instrumento nuevo junta su
+  // propia ventana. La capa A no cambia: los límites clínicos son absolutos.
+  const cambios = new Map<number, IndicadorB[]>()
+  for (const c of opciones.cambiosInstrumento ?? []) cambios.set(c.dia_mision, [...(cambios.get(c.dia_mision) ?? []), c.indicador])
+
+  const alertas: Alerta[] = []
+  const nueva = (
+    d: number, capa: Capa, nivel: Alerta["nivel"], indicador: string, valor: number | null,
+    extra: Partial<Pick<Alerta, "escalada_auto" | "ambito" | "informativa">> = {},
+  ) => alertas.push({
+    dia_mision: d, tripulante_id: tripulante.id, capa, nivel, indicador, valor,
+    escalada_auto: false, ambito: "personal", informativa: false, ...extra,
+  })
+
+  for (const r of vuelo) {
+    const d = r.dia_mision
+    const env = entornoPorDia[d] ?? {}
+    const flujo = env.flujo_protones_10mev_pfu ?? null
+    const tormenta = Boolean(env.modo_tormenta) || (flujo !== null && flujo >= PROTONES_TORMENTA_PFU)
+
+    // Capa A: clínica NEWS2
+    const { pts, maxIndividual } = puntosNews2(r.fc_reposo_lpm, r.pas_mmHg, r.spo2_pct, r.temp_central_c)
+    if (pts >= 5 || maxIndividual === 3) nueva(d, "A", "rojo", "news2", pts, { escalada_auto: true })
+    else if (pts >= 3) nueva(d, "A", "ambar", "news2", pts)
+
+    for (const ind of cambios.get(d) ?? []) {
+      tierra[ind] = null
+      historia[ind] = []
+      consecB[ind] = 0
+      if (ind in cusum) cusum[ind] = 0
+    }
+
+    // Capas B y C: desviación y deriva contra la referencia vigente
+    const adaptacion = d <= DIA_FIN_ADAPTACION
+    for (const [ind, campo, umbral] of INDICADORES_B) {
+      const valor = r[campo] ?? null
+      if (valor === null) {
+        if (!SEMANALES.has(ind)) consecB[ind] = 0 // un día sin medida rompe los "dos días seguidos"
+        continue
+      }
+      const ref = referencia(d, tierra[ind], historia[ind], excluidos[ind], piso[ind])
+      historia[ind].push([d, valor])
+      if (ref === null) continue
+      const z = (0.6745 * (valor - ref.centro)) / ref.dispersion
+      referencias[ind].push({ dia_mision: d, centro: ref.centro, dispersion: ref.dispersion, z, peso_vuelo: ref.w })
+
+      if (Math.abs(z) >= umbral) {
+        consecB[ind] += 1
+        excluidos[ind].add(d)
+      } else consecB[ind] = 0
+      if (consecB[ind] >= DIAS_CONSECUTIVOS_B) nueva(d, "B", "ambar", ind, redondear(valor, 2), { informativa: adaptacion })
+
+      const sentido = SENTIDO_C[ind]
+      if (sentido !== undefined && d >= CUSUM_DIA_INICIO) {
+        const s = Math.max(0, (cusum[ind] ?? 0) + sentido * z - CUSUM_K)
+        cusum[ind] = s
+        if (s >= CUSUM_H) {
+          nueva(d, "C", "ambar", ind, redondear(s, 2))
+          excluidos[ind].add(d)
+          cusum[ind] = 0
+        }
+      }
+    }
+
+    // Contexto: el entorno explica el síntoma o pide refugio. Dato ambiental, no personal.
+    const co2 = env.co2_mmhg_max_horario ?? null
+    const co2Alto = co2 !== null && co2 > CO2_LIMITE_MMHG
+    if (co2Alto && r.sintomas.includes("cefalea")) nueva(d, "contexto", "ambar", "co2", co2, { ambito: "tripulacion" })
+    if (tormenta) nueva(d, "contexto", "ambar", "protones", flujo, { ambito: "tripulacion" })
+    // Síntoma reportado que el entorno medido no explica: ámbar personal, para que su zona del cuerpo lo muestre
+    for (const sintoma of r.sintomas) {
+      if (!(co2Alto && sintoma === "cefalea")) nueva(d, "contexto", "ambar", `sintoma_${sintoma}`, null)
+    }
+  }
+  return { alertas, referencias }
+}
+
+/** Solo las alertas (lo que compara el test de paridad con el motor de Python). */
 export function evaluarTripulante(
   tripulante: Tripulante,
   entornoPorDia: Record<number, EntornoDia | undefined>,
   opciones: OpcionesMotor = {},
 ): Alerta[] {
-  const lecturas = [...tripulante.lecturas].sort((a, b) => a.dia_mision - b.dia_mision)
-  const prevuelo = lecturas.filter((r) => r.dia_mision <= 0)
-  const vuelo = lecturas.filter((r) => r.dia_mision >= 1)
-  const piso = SUPUESTOS.mad_min
-  let [medFc, madFc] = madBruto(prevuelo.map((r) => r.fc_reposo_lpm), piso.fc)
-  // A.6: tras un cambio de instrumento la FC no es comparable con su línea base. Se pausa su capa B y C
-  // DIAS_VENTANA_REINICIO días, se forma una línea base en vuelo con el instrumento nuevo y se sigue contra ella
-  // (sin desplazamiento de adaptación: ya lo incluye). La capa A no cambia: los límites clínicos son absolutos.
-  // Sin cambios el motor es idéntico al simulador de Python (test de paridad).
-  const diasCambio = new Set((opciones.cambiosInstrumento ?? []).filter((c) => c.indicador === "fc").map((c) => c.dia_mision))
-  let ventanaFc: number[] | null = null
-  let desplazFc = SUPUESTOS.fc_desplazamiento_lpm
-  const [medPas, madPas] = madBruto(prevuelo.map((r) => r.pas_mmHg), piso.pas)
-  const [medSueno, madSueno] = madBruto(prevuelo.map((r) => r.sueno_h), piso.sueno)
-  const [medAnimo, madAnimo] = madBruto(prevuelo.map((r) => r.animo_1_10), piso.animo)
-
-  const alertas: Alerta[] = []
-  const consecB: Record<string, number> = { fc: 0, pas: 0, sueno: 0, animo: 0 }
-  const cusum: Record<string, number> = { fc: 0, pas: 0, sueno: 0, animo: 0, conductual: 0 }
-  const yaEmitidaC = new Set<string>()
-  const nueva = (d: number, capa: Capa, nivel: Alerta["nivel"], indicador: string, valor: number | null, escalada: boolean): Alerta => ({
-    dia_mision: d, tripulante_id: tripulante.id, capa, nivel, indicador, valor, escalada_auto: escalada,
-  })
-
-  for (const r of vuelo) {
-    const d = r.dia_mision
-    const w = factorAdaptacion(d)
-    const env = entornoPorDia[d] ?? {}
-    const tormenta = Boolean(env.modo_tormenta) || r.durante_tormenta
-
-    // Capa A: clínica
-    const { pts, maxIndividual } = puntosNews2(r.fc_reposo_lpm, r.pas_mmHg, r.spo2_pct, r.temp_central_c)
-    if (pts >= 5 || maxIndividual === 3) alertas.push(nueva(d, "A", "rojo", "news2", pts, tormenta))
-
-    if (diasCambio.has(d)) {
-      ventanaFc = []
-      consecB.fc = 0
-      cusum.fc = 0
-    }
-    const fcEnVentana = ventanaFc !== null
-    if (ventanaFc !== null) {
-      ventanaFc.push(r.fc_reposo_lpm)
-      if (ventanaFc.length >= DIAS_VENTANA_REINICIO) {
-        ;[medFc, madFc] = madBruto(ventanaFc, piso.fc)
-        desplazFc = 0
-        ventanaFc = null
-      }
-    }
-
-    // Capa B: desviación personal respecto a la referencia ajustada por w(d)
-    const zFc = fcEnVentana ? 0 : (0.6745 * (r.fc_reposo_lpm - (medFc + desplazFc * w))) / madFc
-    const zPas = (0.6745 * (r.pas_mmHg - (medPas + SUPUESTOS.pas_desplazamiento_mmHg * w))) / madPas
-    const zSueno = (0.6745 * (r.sueno_h - (medSueno + SUPUESTOS.sueno_desplazamiento_h * w))) / madSueno
-    const zAnimo = (0.6745 * (r.animo_1_10 - medAnimo)) / madAnimo
-    const margen = d <= 14 ? 1.15 : 1.0 // transición residual de los primeros 14 días
-    const paresB: [string, number, number, number][] = [
-      ["fc", zFc, Z_UMBRAL_FISIOLOGICO * margen, r.fc_reposo_lpm],
-      ["pas", zPas, Z_UMBRAL_FISIOLOGICO * margen, r.pas_mmHg],
-      ["sueno", zSueno, Z_UMBRAL_CONDUCTUAL * margen, r.sueno_h],
-      ["animo", zAnimo, Z_UMBRAL_CONDUCTUAL * margen, r.animo_1_10],
-    ]
-    for (const [ind, z, umbral, valor] of paresB) {
-      if (ind === "fc" && fcEnVentana) continue // la FC está formando su línea base en vuelo
-      consecB[ind] = Math.abs(z) >= umbral ? consecB[ind] + 1 : 0
-      if (consecB[ind] >= DIAS_CONSECUTIVOS_B) {
-        const rojo = Math.abs(z) >= umbral + 1.5 || tormenta
-        alertas.push(nueva(d, "B", rojo ? "rojo" : "ambar", ind, redondear(valor, 2), tormenta && rojo))
-      }
-    }
-
-    // Capa C: CUSUM desde el día 21 (deriva sostenida)
-    if (d >= CUSUM_DIA_INICIO) {
-      cusum.fc = fcEnVentana ? 0 : Math.max(0, cusum.fc + zFc - CUSUM_K)
-      cusum.pas = Math.max(0, cusum.pas - zPas - CUSUM_K)
-      cusum.sueno = Math.max(0, cusum.sueno - zSueno - CUSUM_K)
-      cusum.animo = Math.max(0, cusum.animo - zAnimo - CUSUM_K)
-      cusum.conductual = Math.max(0, cusum.conductual + (-zSueno - zAnimo) / Math.SQRT2 - CUSUM_K)
-      for (const ind of ["fc", "pas", "sueno", "animo", "conductual"]) {
-        const s = cusum[ind]
-        if (s >= CUSUM_H && !yaEmitidaC.has(ind)) {
-          yaEmitidaC.add(ind)
-          alertas.push(nueva(d, "C", s >= CUSUM_H * 1.5 ? "rojo" : "ambar", ind, redondear(s, 2), tormenta))
-        }
-      }
-    }
-
-    // Contexto ambiental: CO2 alto con síntomas compatibles
-    if ((env.co2_mmhg_max_horario ?? 0) >= CO2_LIMITE_MMHG && r.sintomas.some((s) => ["cefalea", "nausea", "mareo"].includes(s))) {
-      alertas.push(nueva(d, "contexto", "rojo", "co2", env.co2_mmhg_max_horario ?? null, true))
-    }
-  }
-  return alertas
+  return analizarTripulante(tripulante, entornoPorDia, opciones).alertas
 }

@@ -3,6 +3,7 @@
   python3 index.py build <escenario.json>   curated -> gold (ver escenarios/ejemplo.json)
   python3 index.py panel <escenario.json> [destino.json]   gold -> panel de entorno para la app
   python3 index.py simular [n_misiones]     genera caso_referencia.json y kpi.json en gold/
+  python3 index.py barrer [n_misiones]      barrido de k y h del CUSUM en gold/barrido.json
   python3 index.py manifest                 SHA-256 y tamaños de cada escenario generado
 """
 import json
@@ -26,6 +27,8 @@ if __name__ == "__main__":
         elif cmd == "simular":
             n = int(args[0]) if args else 500
             salida = simulacion.publicar_simulacion(n_misiones=n)
+        elif cmd == "barrer":
+            salida = simulacion.publicar_barrido(n_misiones=int(args[0]) if args else 200)
         elif cmd == "manifest":
             ruta = datalake.ROOT / "gold" / "manifest.json"
             salida = json.loads(ruta.read_text()) if ruta.exists() else {}

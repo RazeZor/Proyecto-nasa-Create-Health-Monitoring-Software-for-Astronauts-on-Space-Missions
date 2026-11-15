@@ -6,7 +6,6 @@ arquitectura) y comprueba su SHA-256 contra gold/manifest.json antes de servirlo
   uvicorn main:app --port 8000      (desde apps/api)
 """
 import asyncio
-import hashlib
 import json
 import os
 import sys
@@ -21,6 +20,10 @@ import puente_reloj  # noqa: E402
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
+from gold import DATALAKE_DEFECTO  # noqa: E402, F401
+from gold import carpeta as _gold  # noqa: E402, F401
+from gold import leer_verificado as _leer_gold_verificado  # noqa: E402
+from gold import manifiesto as _manifiesto  # noqa: E402
 from rutas_dashboard import router as rutas_dashboard  # noqa: E402
 
 from almacen import conectar, migrar  # noqa: E402
@@ -88,19 +91,6 @@ app.include_router(puente_reloj.router)
 @app.exception_handler(ValueError)
 def dato_invalido(_, e):
     return JSONResponse({"detail": t("api.error.dato_invalido", detalle=str(e))}, status_code=422)
-# shortcut: ruta por defecto al data/ del datalake local; en despliegue fijar DATALAKE_DIR
-DATALAKE_DEFECTO = Path(__file__).resolve().parents[2] / "pipelines" / "datalake" / "data"
-
-
-def _gold():
-    return Path(os.environ.get("DATALAKE_DIR") or DATALAKE_DEFECTO) / "gold"  # vacía = por defecto
-
-
-def _manifiesto():
-    ruta = _gold() / "manifest.json"
-    return json.loads(ruta.read_text()) if ruta.exists() else {}
-
-
 _PERFILES = Path(__file__).resolve().parents[2] / "packages" / "schemas" / "perfiles.json"
 
 
@@ -117,17 +107,6 @@ def _resumen_gold():
     if not paneles and not escenarios:
         return f"gold: vacío en {_gold()}; la pantalla de entorno saldrá sin datos (restaurar: docs/SETUP.md)"
     return f"gold en {_gold()} | paneles: {', '.join(paneles) or '-'} | escenarios: {', '.join(escenarios) or '-'}"
-
-
-def _leer_gold_verificado(clave, predicado, nombre_error=None):
-    entrada = _manifiesto().get(clave)  # la clave sale del manifiesto: no hay rutas arbitrarias
-    archivo = _gold() / f"{clave}.json"
-    if entrada is None or not predicado(entrada) or not archivo.exists():
-        raise HTTPException(404, t("api.error.gold_no_existe", nombre=nombre_error or clave))
-    contenido = archivo.read_bytes()
-    if hashlib.sha256(contenido).hexdigest() != entrada["sha256"]:
-        raise HTTPException(500, t("api.error.gold_alterado", nombre=nombre_error or clave))
-    return json.loads(contenido)
 
 
 def _cargar(nombre, es_panel):

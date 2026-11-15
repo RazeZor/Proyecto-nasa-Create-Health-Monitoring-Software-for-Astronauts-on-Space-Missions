@@ -1,0 +1,18 @@
+{
+  "id": "sintomas",
+  "nombre": "Symptoms",
+  "que_es": "Closed list of the day's symptoms: headache, nausea, dizziness, vision and rash.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Mark the day's symptoms on the closed list: headache, nausea, dizziness, vision, rash.",
+    "transito": "Mark the day's symptoms on the closed list: headache, nausea, dizziness, vision, rash.",
+    "superficie": "Mark the day's symptoms on the closed list: headache, nausea, dizziness, vision, rash."
+  },
+  "por_que": "Partially covers three HRP risks: neuro-ocular syndrome (vision), sensorimotor and vestibular function (nausea and dizziness, relevant on days 1 to 3) and altered immune response (rash).",
+  "referencia_en_vuelo": "Space motion sickness usually subsides in 2 or 3 days.",
+  "cuando_avisar": "Context rule: headache with cabin CO2 above 3 mmHg (one-hour average) generates an environment alert.",
+  "prevencion": "Ventilation and scrubbing of cabin CO2: keep its 7-day average below 2.5 mmHg and avoid peaks above 3 mmHg.",
+  "fuentes": [
+    "NASA HRP: Risks of Human Spaceflight",
+    "NASA OCHMO: CO2 technical brief (TB-004)"
+  ]
+}

@@ -1,5 +1,14 @@
 import { cn } from "@/lib/utils"
 
+/** La pista del interruptor, solo visual: quien la usa pone el botón (`role="switch"`) y el texto del estado. */
+export function SwitchTrack({ checked, className }: { checked: boolean; className?: string }) {
+  return (
+    <span aria-hidden className={cn("flex h-9 w-16 shrink-0 items-center rounded-full p-1 transition-colors duration-200", checked ? "bg-primary" : "bg-muted-foreground/30", className)}>
+      <span className={cn("size-7 rounded-full bg-background shadow transition-transform duration-200", checked && "translate-x-7")} />
+    </span>
+  )
+}
+
 export function Switch({ checked, onChange, labelledBy }: { checked: boolean; onChange: (v: boolean) => void; labelledBy: string }) {
   return (
     <button
@@ -8,11 +17,9 @@ export function Switch({ checked, onChange, labelledBy }: { checked: boolean; on
       aria-checked={checked}
       aria-labelledby={labelledBy}
       onClick={() => onChange(!checked)}
-      className="flex min-h-11 min-w-14 shrink-0 items-center"
+      className="flex min-h-14 min-w-16 shrink-0 items-center"
     >
-      <span className={cn("flex h-7 w-12 items-center rounded-full p-0.5 transition-colors", checked ? "bg-primary" : "bg-muted")}>
-        <span className={cn("size-6 rounded-full bg-background shadow transition-transform", checked && "translate-x-5")} />
-      </span>
+      <SwitchTrack checked={checked} />
     </button>
   )
 }

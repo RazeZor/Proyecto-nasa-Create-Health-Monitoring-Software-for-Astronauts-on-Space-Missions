@@ -1,0 +1,18 @@
+{
+  "id": "estado_animo",
+  "nombre": "Mood",
+  "que_es": "Self-rating of the day's mood, on a scale from 1 to 10.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Scale from 1 to 10 at the same time every day.",
+    "transito": "Scale from 1 to 10 at the same time every day.",
+    "superficie": "Scale from 1 to 10 at the same time every day."
+  },
+  "por_que": "HRP risk: behavioral changes and psychiatric disorders. Isolation and confinement disrupt mood, sleep and team cohesion.",
+  "referencia_en_vuelo": null,
+  "cuando_avisar": "Personal deviation (layer B, 3.0 or more two days in a row) or downward drift (layer C).",
+  "prevencion": "Meaningful activities, not just rest; the HRP is studying whether growing plants eases isolation.",
+  "fuentes": [
+    "NASA HRP: Risks of Human Spaceflight",
+    "VIGÍA technical report, §2.1 and §3.2"
+  ]
+}

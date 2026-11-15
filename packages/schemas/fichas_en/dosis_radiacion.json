@@ -1,0 +1,19 @@
+{
+  "id": "dosis_radiacion",
+  "nombre": "Radiation dose",
+  "que_es": "Accumulated radiation received by the crew, measured by the area dosimeter of the mission profile.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Area dosimeter of the profile.",
+    "transito": "Area dosimeter of the profile.",
+    "superficie": "Area dosimeter of the profile."
+  },
+  "por_que": "HRP risk: radiation-induced cancers. Feeds the accumulated dose counter of each profile.",
+  "referencia_en_vuelo": "On the ISS the effective dose accumulates at about 0.2 to 0.5 mSv per day, between 40 and 90 mSv in a typical six-month mission. Neutrons contribute about 30% and the detectors used do not separate that component.",
+  "cuando_avisar": "Career limit of 600 mSv and a limit of 250 mSv per solar particle event. A proton flux of 10 or more at ≥10 MeV activates storm mode.",
+  "prevencion": "Keep the dose as low as reasonably achievable (ALARA): storm shelter during proton events, passive shielding in the crew quarters and planning of extravehicular activities according to space weather.",
+  "fuentes": [
+    "NASA OCHMO: radiation protection technical brief",
+    "RadLab: Data API",
+    "NOAA SWPC: GOES proton flux"
+  ]
+}

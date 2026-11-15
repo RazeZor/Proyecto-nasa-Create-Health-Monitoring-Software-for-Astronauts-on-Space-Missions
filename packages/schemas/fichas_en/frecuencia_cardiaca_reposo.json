@@ -1,0 +1,18 @@
+{
+  "id": "frecuencia_cardiaca_reposo",
+  "nombre": "Resting heart rate",
+  "que_es": "Beats per minute with the body at rest.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Wrist or garment sensor. The day's resting value, never a single isolated reading.",
+    "transito": "Wrist or garment sensor. The day's resting value, never a single isolated reading.",
+    "superficie": "Wrist or garment sensor. The day's resting value, never a single isolated reading."
+  },
+  "por_que": "Monitors cardiovascular adaptations, one of the HRP risks.",
+  "referencia_en_vuelo": null,
+  "cuando_avisar": "Extreme band of layer A (40 bpm or less; 131 or more). Persistent deviation from the baseline (layer B, two days in a row) or upward drift (layer C).",
+  "prevencion": "Aerobic and resistance exercise according to the flight plan; it mitigates cardiovascular deconditioning without preventing it entirely.",
+  "fuentes": [
+    "Royal College of Physicians: NEWS2 scoring table",
+    "NASA HRP: Risks of Human Spaceflight"
+  ]
+}

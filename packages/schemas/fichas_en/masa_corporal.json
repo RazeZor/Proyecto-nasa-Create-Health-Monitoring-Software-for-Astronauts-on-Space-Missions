@@ -1,0 +1,18 @@
+{
+  "id": "masa_corporal",
+  "nombre": "Body mass",
+  "que_es": "Amount of matter in the body; in 0 g it is not weighed, its inertia is measured.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Inertial device (SLAMMD or BMMD), body rigid and secured to the guide arm. Note which one.",
+    "transito": "Same as on station.",
+    "superficie": "Scale with correction for local gravity."
+  },
+  "por_que": "HRP risk: inadequate food and nutrition.",
+  "referencia_en_vuelo": "In 25 crew members the mean loss was 4.4% according to BMMD and 2.8% according to SLAMMD; SLAMMD has an accuracy of 0.2 kg. Masses from different instruments are not compared without noting it.",
+  "cuando_avisar": "Sustained drift from the baseline (layer C).",
+  "prevencion": "Adequate energy and fluid intake, and foods that are varied and acceptable to the crew, to avoid weight loss in flight.",
+  "fuentes": [
+    "NASA HRP: Risks of Human Spaceflight",
+    "VIGÍA technical report, §2.4"
+  ]
+}

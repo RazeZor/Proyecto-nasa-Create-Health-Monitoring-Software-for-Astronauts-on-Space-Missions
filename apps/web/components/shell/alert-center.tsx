@@ -1,9 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { BellRing, Lock, OctagonAlert, Send, ShieldAlert, TriangleAlert, Users, X } from "lucide-react"
+import { ArrowRight, X } from "lucide-react"
+import { type Icono, IconoCampana, IconoCandado, IconoEscalada, IconoEscudoAviso, IconoTripulacion } from "@/components/alerts/iconos"
 import { useApp } from "@/components/app-context"
+import { STATUS_ICON } from "@/components/shared/status"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import { cn } from "@/lib/utils"
@@ -21,14 +24,14 @@ interface Toast {
   ttl: number
 }
 
-const KIND_STYLE: Record<Kind, { bar: string; icon: typeof BellRing; text: string }> = {
-  act: { bar: "bg-status-act", icon: OctagonAlert, text: "text-status-act" },
-  watch: { bar: "bg-status-watch", icon: TriangleAlert, text: "text-status-watch" },
-  env: { bar: "bg-status-act", icon: ShieldAlert, text: "text-status-act" },
-  reminder: { bar: "bg-primary", icon: BellRing, text: "text-primary" },
+const KIND_STYLE: Record<Kind, { bar: string; icon: Icono | (typeof STATUS_ICON)["act"]; text: string; disco: string }> = {
+  act: { bar: "bg-status-act", icon: STATUS_ICON.act, text: "text-status-act", disco: "bg-status-act/12 text-status-act" },
+  watch: { bar: "bg-status-watch", icon: STATUS_ICON.watch, text: "text-status-watch", disco: "bg-status-watch/12 text-status-watch" },
+  env: { bar: "bg-status-act", icon: IconoEscudoAviso, text: "text-status-act", disco: "bg-status-act/12 text-status-act" },
+  reminder: { bar: "bg-primary", icon: IconoCampana, text: "text-foreground", disco: "bg-muted text-foreground" },
 }
 
-const META_ICON: Record<Kind, typeof Send> = { act: Send, watch: Lock, env: Users, reminder: BellRing }
+const META_ICON: Record<Kind, Icono> = { act: IconoEscalada, watch: IconoCandado, env: IconoTripulacion, reminder: IconoCampana }
 
 const MAX_VISIBLE = 2
 
@@ -55,7 +58,7 @@ function playTone(urgent: boolean) {
 function speak(text: string) {
   if (!("speechSynthesis" in window)) return
   const u = new SpeechSynthesisUtterance(text)
-  u.lang = "es-ES"
+  u.lang = document.documentElement.lang === "en" ? "en-US" : "es-ES"
   window.speechSynthesis.speak(u)
 }
 
@@ -64,39 +67,56 @@ function ToastItem({ t, onDone }: { t: Toast; onDone: (id: string) => void }) {
   const Icon = style.icon
   const MetaIcon = META_ICON[t.kind]
   const urgent = t.kind === "act" || t.kind === "env"
+  // mientras el dedo está encima, el temporizador se detiene (con ratón o teclado ya lo hace la regla CSS de `.group`)
+  const [tocando, setTocando] = useState(false)
   return (
     <li
       role={urgent ? "alert" : "status"}
-      className="toast-enter group pointer-events-auto relative flex overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-lg shadow-black/20"
+      onPointerDown={() => setTocando(true)}
+      onPointerUp={() => setTocando(false)}
+      onPointerLeave={() => setTocando(false)}
+      onPointerCancel={() => setTocando(false)}
+      className="toast-enter group pointer-events-auto relative overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl shadow-black/20"
     >
-      <span aria-hidden className={cn("w-1.5 shrink-0", style.bar)} />
-      <div className="min-w-0 flex-1 py-3 pl-3 pr-1">
-        <p className="eyebrow flex items-center gap-1.5">
-          <Icon aria-hidden className={cn("size-3.5", style.text)} />
-          {S.toast.auto} · {t.stamp}
-        </p>
-        <p className={cn("mt-1 text-base font-semibold leading-snug", urgent && style.text)}>{t.title}</p>
-        <p className="mt-0.5 text-sm leading-relaxed">{t.body}</p>
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MetaIcon aria-hidden className="size-3.5" />
-          {t.meta}
-        </p>
-        <Link href={t.href} onClick={() => onDone(t.id)} className="mt-2 inline-flex min-h-9 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">
-          {S.toast.view}
-        </Link>
+      <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1.5", style.bar)} />
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5 pl-5 pr-2.5">
+        <span className={cn("flex size-12 shrink-0 items-center justify-center rounded-full", style.disco)}>
+          <Icon aria-hidden className="size-7" />
+        </span>
+        <div className="min-w-0 flex-1 basis-64">
+          <p className={cn("line-clamp-2 text-lg font-semibold leading-snug", urgent && style.text)}>
+            <span className="sr-only">{S.toast.auto}: </span>
+            {t.title}
+          </p>
+          <p className="line-clamp-2 text-base leading-snug">{t.body}</p>
+          <p className="mt-1 flex items-start gap-1.5 text-sm leading-snug text-muted-foreground">
+            <MetaIcon className="mt-0.5 size-4 shrink-0" />
+            <span>{t.meta} <span className="whitespace-nowrap font-mono">· {t.stamp}</span></span>
+          </p>
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          <Link
+            href={t.href}
+            onClick={() => onDone(t.id)}
+            className="flex min-h-14 items-center gap-2 rounded-full border border-input bg-card px-5 text-base font-semibold hover:bg-accent active:scale-[0.98]"
+          >
+            {S.toast.view}
+            <ArrowRight aria-hidden className="size-5" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => onDone(t.id)}
+            aria-label={S.toast.close}
+            className="flex size-14 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground active:scale-95"
+          >
+            <X aria-hidden className="size-7" />
+          </button>
+        </div>
       </div>
-      <button
-        type="button"
-        onClick={() => onDone(t.id)}
-        aria-label={S.toast.close}
-        className="flex size-11 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
-      >
-        <X aria-hidden className="size-4" />
-      </button>
       <span
         aria-hidden
-        className={cn("toast-timer absolute bottom-0 left-0 h-0.5 opacity-70", style.bar)}
-        style={{ ["--ttl" as string]: `${t.ttl}ms` }}
+        className={cn("toast-timer absolute bottom-0 left-0 h-1 opacity-70", style.bar)}
+        style={{ ["--ttl" as string]: `${t.ttl}ms`, ...(tocando ? { animationPlayState: "paused" } : {}) }}
         onAnimationEnd={() => onDone(t.id)}
       />
     </li>
@@ -106,12 +126,19 @@ function ToastItem({ t, onDone }: { t: Toast; onDone: (id: string) => void }) {
 export function AlertCenter() {
   const { day, voice, analisis } = useApp()
   const seen = useRef(new Set<string>())
-  const [toasts, setToasts] = useState<Toast[]>([])
+  // en la pantalla de registro el recordatorio sobra y taparía el cronómetro y el botón de confirmar
+  const ruta = usePathname() ?? ""
+  const enRegistro = ruta.startsWith("/check-in")
+  // `ocultos`: avisos que no caben en la pila; no se pierden de vista, se cuentan y se enlazan a Alertas
+  const [{ toasts, ocultos }, setPila] = useState<{ toasts: Toast[]; ocultos: number }>({ toasts: [], ocultos: 0 })
 
   const push = useCallback(
     (items: Toast[]) => {
       if (!items.length) return
-      setToasts((cur) => [...items, ...cur].slice(0, MAX_VISIBLE))
+      setPila((cur) => {
+        const todos = [...items, ...cur.toasts]
+        return { toasts: todos.slice(0, MAX_VISIBLE), ocultos: (cur.toasts.length ? cur.ocultos : 0) + Math.max(0, todos.length - MAX_VISIBLE) }
+      })
       const urgent = items.some((t) => t.kind === "act" || t.kind === "env")
       playTone(urgent)
       if (voice) items.forEach((t) => speak(`${t.title}. ${t.body}`))
@@ -119,32 +146,27 @@ export function AlertCenter() {
     [voice],
   )
 
-  const dismiss = useCallback((id: string) => setToasts((cur) => cur.filter((t) => t.id !== id)), [])
+  const dismiss = useCallback((id: string) => setPila((cur) => ({ ...cur, toasts: cur.toasts.filter((t) => t.id !== id) })), [])
 
   useEffect(() => {
     const fresh: Toast[] = []
-    if (analisis.storm(day) && !seen.current.has(`storm-${day}`)) {
-      seen.current.add(`storm-${day}`)
-      fresh.push({
-        id: `storm-${day}`, kind: "env", stamp: `${S.common.day} ${day}`,
-        title: S.toast.stormTitle, body: S.banners.stormDetail, meta: S.toast.crew, href: "/environment", ttl: 20000,
-      })
-    }
-    for (const a of analisis.alerts(day).filter((x) => x.day === day)) {
+    // la tormenta y el CO2 llegan como alertas de entorno del motor; las informativas (adaptación) no avisan
+    for (const a of analisis.alerts(day).filter((x) => x.day === day && !x.informative)) {
       if (seen.current.has(a.id)) continue
       seen.current.add(a.id)
-      const kind: Kind = a.layer === "context" ? "env" : a.status === "act" ? "act" : "watch"
+      const kind: Kind = a.scope === "crew" ? "env" : a.status === "act" ? "act" : "watch"
       fresh.push({
-        id: a.id, kind, stamp: `${S.common.day} ${a.day} · ${a.time}`,
-        title: `${S.status[a.status]} · ${a.indicator} ${a.value}`, body: a.action,
-        meta: kind === "act" ? S.toast.escalated : kind === "env" ? S.toast.crew : S.toast.private,
-        href: "/alerts", ttl: kind === "watch" ? 12000 : 20000,
+        id: a.id, kind, stamp: [`${S.common.day} ${a.day}`, a.time].filter(Boolean).join(" · "),
+        title: kind === "env" ? `${a.indicator}${a.value ? ` · ${a.value}` : ""}` : `${S.status[a.status]} · ${a.indicator} ${a.value}`, body: a.action,
+        meta: kind === "act" ? (a.escalates ? S.toast.escalated : S.toast.private) : kind === "env" ? S.toast.crew : S.toast.private,
+        href: kind === "env" ? "/environment" : "/alerts", ttl: kind === "watch" ? 12000 : 20000,
       })
     }
     push(fresh)
-  }, [day, push])
+  }, [day, push, analisis])
 
   useEffect(() => {
+    if (enRegistro) return
     const id = window.setTimeout(() => {
       store.listCheckIns().then((list) => {
         const last = list.at(-1)
@@ -159,15 +181,29 @@ export function AlertCenter() {
       })
     }, 8000)
     return () => window.clearTimeout(id)
-  }, [push])
+  }, [push, enRegistro])
 
+  // un aviso no repite lo que la pantalla abierta ya muestra entero: ni las alertas en Alertas ni el entorno en Entorno
+  const visibles = toasts.filter((t) =>
+    enRegistro ? t.kind !== "reminder" : ruta.startsWith("/alerts") ? t.kind !== "watch" && t.kind !== "act" : ruta.startsWith("/environment") ? t.kind !== "env" : true)
   return (
-    <section aria-label={S.toast.region} className="pointer-events-none fixed right-3 top-3 z-50 w-[min(24rem,calc(100vw-1.5rem))] md:right-5 md:top-20">
+    // franja baja y a la derecha: lejos de la barra superior y de la acción principal de cada pantalla; solo el aviso recibe toques
+    <section aria-label={S.toast.region} className="pointer-events-none fixed bottom-3 right-3 z-50 w-[min(38rem,calc(100vw-1.5rem))] md:bottom-5 md:right-5">
       <ol className="flex flex-col gap-2">
-        {toasts.map((t) => (
+        {visibles.map((t) => (
           <ToastItem key={t.id} t={t} onDone={dismiss} />
         ))}
       </ol>
+      {visibles.length > 0 && ocultos > 0 && (
+        <Link
+          href="/alerts"
+          onClick={() => setPila({ toasts: [], ocultos: 0 })}
+          className="pointer-events-auto ml-auto mt-2 flex min-h-12 w-fit items-center justify-center gap-2 rounded-full border border-border bg-popover px-5 text-base font-semibold text-popover-foreground shadow-lg shadow-black/20 hover:bg-accent active:scale-[0.98]"
+        >
+          {S.toast.more(ocultos)}
+          <ArrowRight aria-hidden className="size-5" />
+        </Link>
+      )}
     </section>
   )
 }

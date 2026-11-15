@@ -91,6 +91,16 @@ class Construir(unittest.TestCase):
         self.assertEqual(entrada["faltan"], 1)
         self.assertEqual(len(gold["serie5min"]), 2)
 
+    def test_donki_consultado_sin_eventos_es_un_resultado_valido(self):
+        donki = {**V, "fuente": "donki"}
+        rc.construir({"nombre": "t", "ventanas": [V, donki]})  # nunca se ingirió DONKI: es un hueco
+        gold = json.loads((rc.datalake.ROOT / "gold" / "t.json").read_text())
+        self.assertEqual(gold["faltan"], [donki])
+        (rc.datalake.ROOT / "manifest.json").write_text(json.dumps([{"fuente": "donki", "filas": 0}]))
+        rc.construir({"nombre": "t", "ventanas": [V, donki]})  # consultado y vacío: ventana tranquila
+        gold = json.loads((rc.datalake.ROOT / "gold" / "t.json").read_text())
+        self.assertEqual((gold["eventos"], gold["faltan"], len(gold["serie5min"])), ([], [], 2))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,17 @@
+{
+  "id": "glucosa",
+  "nombre": "Blood glucose",
+  "que_es": "Concentration of glucose in the blood.",
+  "como_se_mide_en_vuelo": {
+    "estacion": "Wearing gloves; prick with a lancet; the drop stays attached to the finger and is brought up to the strip so that it fills by capillary action. Gauze and biological waste bag at hand. Note the strip's enzyme.",
+    "transito": "Wearing gloves; prick with a lancet; the drop stays attached to the finger and is brought up to the strip so that it fills by capillary action. Gauze and biological waste bag at hand. Note the strip's enzyme.",
+    "superficie": "Wearing gloves; prick with a lancet; the drop stays attached to the finger and is brought up to the strip so that it fills by capillary action. Gauze and biological waste bag at hand. Note the strip's enzyme."
+  },
+  "por_que": "Measured every week. In 0 g the risk is floating biological material: ISS procedures require containment.",
+  "referencia_en_vuelo": "Glucose oxidase strips depend on the oxygen in the sample; glucose dehydrogenase strips do not. Outside 14.7 psia, dehydrogenase is preferred as a precaution, not as a demonstrated requirement.",
+  "cuando_avisar": "Personal deviation (layer B, 3.5 or more two days in a row).",
+  "prevencion": null,
+  "fuentes": [
+    "VIGÍA technical report, §2.4"
+  ]
+}

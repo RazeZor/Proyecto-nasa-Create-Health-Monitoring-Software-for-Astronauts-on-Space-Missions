@@ -2,60 +2,57 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  Bell, ChevronLeft, ChevronRight, ClipboardCheck, Info, LineChart, Menu, Moon, Orbit, Radio,
-  Send, ShieldAlert, Sun, User, Volume2, VolumeX, Watch, Sprout,
-} from "lucide-react"
+import { ChevronLeft, ChevronRight, Moon, ShieldAlert, Sprout, Sun, Volume2, VolumeX } from "lucide-react"
 import { useApp } from "@/components/app-context"
 import { formatDelay } from "@/components/shared/delay-countdown"
-import { STATUS_ICON, statusText } from "@/components/shared/status"
+import {
+  IconoAcerca, IconoAlertas, IconoCuerpo, IconoDispositivo, IconoEntorno, IconoInformes, IconoRegistro, IconoTendencias,
+} from "@/components/shared/iconos"
+import { Logo } from "@/components/shared/logo"
+import { STATUS_ICON, statusSurface, statusText } from "@/components/shared/status"
 import { AlertCenter } from "@/components/shell/alert-center"
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { isAdaptation } from "@/lib/engine"
-import { S } from "@/lib/strings"
-import type { ProfileId, Role } from "@/lib/types"
+import { cambiarIdioma, IDIOMA, S } from "@/lib/strings"
+import type { Mode, ProfileId, Role } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const NAV = [
-  { href: "/", label: S.nav.body, icon: User },
-  { href: "/check-in", label: S.nav.checkin, icon: ClipboardCheck },
-  { href: "/trends", label: S.nav.trends, icon: LineChart },
-  { href: "/environment", label: S.nav.environment, icon: Orbit },
-  { href: "/alerts", label: S.nav.alerts, icon: Bell },
-  { href: "/reports", label: S.nav.reports, icon: Send },
-  { href: "/device", label: S.nav.device, icon: Watch },
-  { href: "/about", label: S.nav.about, icon: Info },
+  { href: "/", label: S.nav.body, icon: IconoCuerpo },
+  { href: "/check-in", label: S.nav.checkin, icon: IconoRegistro },
+  { href: "/trends", label: S.nav.trends, icon: IconoTendencias },
+  { href: "/environment", label: S.nav.environment, icon: IconoEntorno },
+  { href: "/alerts", label: S.nav.alerts, icon: IconoAlertas },
+  { href: "/reports", label: S.nav.reports, icon: IconoInformes },
+  { href: "/device", label: S.nav.device, icon: IconoDispositivo },
+  { href: "/about", label: S.nav.about, icon: IconoAcerca },
 ]
-
-const code = (i: number) => String(i + 1).padStart(2, "0")
 
 function useActiveIndex() {
   const path = usePathname()
   return NAV.findIndex(({ href }) => (href === "/" ? path === "/" : path.startsWith(href)))
 }
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+/** Pestañas de sección: icono sobre etiqueta, del tamaño de un dedo; en pantallas estrechas se desplazan. */
+function NavLinks() {
   const activeIndex = useActiveIndex()
   return (
-    <nav aria-label={S.nav.label}>
-      <ul className="flex flex-col">
+    <nav aria-label={S.nav.label} className="min-w-0 flex-1 overflow-x-auto">
+      <ul className="flex items-stretch gap-1 px-2">
         {NAV.map(({ href, label, icon: Icon }, i) => {
           const active = i === activeIndex
           return (
             <li key={href}>
               <Link
                 href={href}
-                onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex min-h-12 items-center gap-3 border-l-2 border-transparent px-4 text-[0.95rem] font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                  active && "border-sidebar-primary bg-sidebar-accent text-sidebar-foreground",
+                  "group flex h-16 min-w-[4.75rem] flex-col items-center justify-center gap-0.5 rounded-2xl px-2 text-xs font-semibold transition-colors xl:min-w-[5.75rem] xl:text-[0.8rem]",
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <span aria-hidden className={cn("w-5 font-mono text-xs text-sidebar-foreground/45", active && "text-sidebar-primary")}>
-                  {code(i)}
+                <span className={cn("flex h-8 w-14 items-center justify-center rounded-full transition-colors", active ? "bg-primary text-primary-foreground shadow-sm" : "group-hover:bg-accent")}>
+                  <Icon className="size-[22px]" />
                 </span>
-                <Icon aria-hidden className={cn("size-[18px]", active && "text-sidebar-primary")} />
                 {label}
               </Link>
             </li>
@@ -66,17 +63,13 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
+/** Logotipo «Centinela»: su punto muestra el estado del sistema, como define la guía de marca. */
 function Brand() {
+  const { day, analisis } = useApp()
   return (
-    <div className="flex items-center gap-3 px-4">
-      <span className="flex size-10 items-center justify-center rounded-sm border border-sidebar-primary/50 text-sidebar-primary">
-        <Radio aria-hidden className="size-5" />
-      </span>
-      <div className="leading-tight">
-        <p className="font-mono text-lg font-semibold tracking-[0.2em] text-sidebar-foreground">{S.app.name}</p>
-        <p className="text-xs text-sidebar-foreground/60">{S.app.tagline}</p>
-      </div>
-    </div>
+    <Link href="/" aria-label={S.app.name} className="flex h-16 shrink-0 items-center pl-4 pr-2 md:pl-6">
+      <Logo estado={analisis.overall(day)} className="h-11" />
+    </Link>
   )
 }
 
@@ -85,161 +78,157 @@ function SystemStatus() {
   const overall = analisis.overall(day)
   const Icon = STATUS_ICON[overall]
   return (
-    <div className="mx-4 rounded-sm border border-sidebar-border p-3">
-      <p className="eyebrow !text-sidebar-foreground/55">{S.shell.system}</p>
-      <p className={cn("mt-1.5 flex items-center gap-2 font-mono text-lg font-semibold uppercase", statusText[overall])}>
-        <Icon aria-hidden className="size-5" />
-        {S.status[overall]}
-      </p>
-      <p className="mt-1 text-xs leading-relaxed text-sidebar-foreground/60">{S.statusLong[overall]}</p>
-    </div>
-  )
-}
-
-function Rail() {
-  return (
-    <div className="flex h-full flex-col gap-6 py-5">
-      <Brand />
-      <NavLinks />
-      <div className="mt-auto">
-        <SystemStatus />
-      </div>
-    </div>
+    <p title={S.statusLong[overall]} className={cn("hidden min-h-11 items-center gap-2 rounded-full border px-4 font-mono text-sm font-semibold uppercase md:flex", statusSurface[overall], statusText[overall])}>
+      <Icon aria-hidden className="size-5" />
+      <span className="sr-only">{S.shell.system}: </span>
+      {S.status[overall]}
+    </p>
   )
 }
 
 const selectCls =
-  "min-h-10 rounded-sm border border-input bg-card px-2.5 text-sm font-medium text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+  "min-h-10 rounded-xl border border-input bg-card px-2.5 text-sm font-medium text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+const botonCls = "flex size-11 items-center justify-center rounded-full border border-input bg-card hover:bg-accent"
 
-function Cell({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+/** `corta`: en pantallas medianas la etiqueta solo se anuncia (el propio control ya dice qué es). */
+function Cell({ label, children, className, corta }: { label: string; children: React.ReactNode; className?: string; corta?: boolean }) {
   return (
-    <div className={cn("flex flex-col justify-center gap-1 border-r border-border px-3 py-2 last:border-r-0", className)}>
-      <span className="eyebrow">{label}</span>
+    <label className={cn("flex items-center gap-2", className)}>
+      <span className={cn("eyebrow", corta && "sr-only 2xl:not-sr-only")}>{label}</span>
       {children}
-    </div>
+    </label>
   )
 }
 
 function TopBar() {
-  const { day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, voice, setVoice, catalogo, analisis } = useApp()
+  const { day, setDay, profile, setProfileId, role, setRole, theme, toggleTheme, voice, setVoice, catalogo, analisis, mode, setMode, online, pending } = useApp()
   const MISSION_DAYS = analisis.missionDays
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
-      <div className="flex flex-wrap items-stretch">
-        <Sheet>
-          <SheetTrigger
-            className="flex w-14 items-center justify-center border-r border-border lg:hidden"
-            aria-label={S.nav.openMenu}
+    <header className="border-b border-border bg-card shadow-sm">
+      <div className="flex items-center gap-1">
+        <Brand />
+        <NavLinks />
+        <div className="flex shrink-0 items-center gap-2 pr-4 md:pr-6">
+          <SystemStatus />
+          <button
+            type="button"
+            onClick={() => setVoice(!voice)}
+            aria-pressed={voice}
+            aria-label={S.toast.voiceLabel}
+            title={S.toast.voiceLabel}
+            className={cn(botonCls, voice && "border-primary bg-primary/10 text-primary")}
           >
-            <Menu aria-hidden className="size-5" />
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground">
-            <SheetTitle className="sr-only">{S.nav.label}</SheetTitle>
-            <Rail />
-          </SheetContent>
-        </Sheet>
+            {voice ? <Volume2 aria-hidden className="size-5" /> : <VolumeX aria-hidden className="size-5" />}
+          </button>
+          <button type="button" onClick={() => cambiarIdioma(IDIOMA === "es" ? "en" : "es")} aria-label={`${S.top.language}: ${IDIOMA === "es" ? "English" : "Español"}`} title={S.top.language} className={cn(botonCls, "font-mono text-sm font-bold uppercase")}>
+            {IDIOMA}
+          </button>
+          <button type="button" onClick={toggleTheme} aria-label={S.top.theme} className={botonCls}>
+            {theme === "dark" ? <Sun aria-hidden className="size-5" /> : <Moon aria-hidden className="size-5" />}
+          </button>
+        </div>
+      </div>
 
-        <Cell label={S.top.profile}>
-          <select className={selectCls} value={profile.id} onChange={(e) => setProfileId(e.target.value as ProfileId)}>
+      {/* Contexto de la misión: una sola franja, con la etiqueta al lado de cada control */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border bg-background/70 px-4 py-1.5 md:px-6">
+        <Cell label={S.top.profile} corta>
+          <select className={cn(selectCls, "max-w-44")} value={profile.id} onChange={(e) => setProfileId(e.target.value as ProfileId)}>
             {catalogo.perfiles.map((p) => (
               <option key={p.id} value={p.id}>{p.label}</option>
             ))}
           </select>
         </Cell>
 
-        <Cell label={S.top.missionDay}>
-          <div className="flex items-center" role="group" aria-label={S.top.missionDay}>
-            <button
-              type="button"
-              className="flex size-10 items-center justify-center rounded-sm border border-input hover:bg-accent disabled:opacity-40"
-              onClick={() => setDay(day - 1)}
-              disabled={day <= 1}
-              aria-label={S.top.prevDay}
-            >
-              <ChevronLeft aria-hidden className="size-4" />
+        <div className="flex items-center gap-2" role="group" aria-label={S.top.missionDay}>
+          <span className="eyebrow">{S.top.missionDay}</span>
+          <div className="flex items-center rounded-xl border border-input bg-card">
+            <button type="button" className="flex size-10 items-center justify-center rounded-l-xl hover:bg-accent disabled:opacity-40" onClick={() => setDay(day - 1)} disabled={day <= 1} aria-label={S.top.prevDay}>
+              <ChevronLeft aria-hidden className="size-5" />
             </button>
-            <p className="min-w-16 px-2 text-center font-mono text-lg tabular-nums" aria-live="polite">
+            <p className="min-w-16 px-1 text-center font-mono text-lg tabular-nums" aria-live="polite">
               <span className="sr-only">{S.common.day} </span>
               <span className="font-semibold">{String(day).padStart(2, "0")}</span>
               <span className="text-sm text-muted-foreground">/{MISSION_DAYS}</span>
             </p>
-            <button
-              type="button"
-              className="flex size-10 items-center justify-center rounded-sm border border-input hover:bg-accent disabled:opacity-40"
-              onClick={() => setDay(day + 1)}
-              disabled={day >= MISSION_DAYS}
-              aria-label={S.top.nextDay}
-            >
-              <ChevronRight aria-hidden className="size-4" />
-            </button>
-          </div>
-        </Cell>
-
-        <Cell label={S.top.delay}>
-          <p className="flex min-h-10 items-center font-mono text-lg font-semibold tabular-nums">
-            {formatDelay(profile.delayMinutes)}
-          </p>
-        </Cell>
-
-        <Cell label={S.shell.link} className="hidden xl:flex">
-          <p className="flex min-h-10 items-center gap-2 text-sm font-medium text-status-ok">
-            <span aria-hidden className="size-2 rounded-full bg-status-ok" />
-            {S.shell.linkValue}
-          </p>
-        </Cell>
-
-        <div className="ml-auto flex items-stretch border-l border-border">
-          <Cell label={S.top.viewAs}>
-            <select className={selectCls} value={role} onChange={(e) => setRole(e.target.value as Role)}>
-              {(Object.keys(S.roles) as Role[]).map((r) => (
-                <option key={r} value={r}>{S.roles[r]}</option>
-              ))}
-            </select>
-          </Cell>
-          <div className="flex items-center gap-1 px-2">
-            <button
-              type="button"
-              onClick={() => setVoice(!voice)}
-              aria-pressed={voice}
-              aria-label={S.toast.voiceLabel}
-              title={S.toast.voiceLabel}
-              className={cn(
-                "flex size-11 items-center justify-center rounded-sm border border-input hover:bg-accent",
-                voice && "border-primary bg-primary/10 text-primary",
-              )}
-            >
-              {voice ? <Volume2 aria-hidden className="size-5" /> : <VolumeX aria-hidden className="size-5" />}
-            </button>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={S.top.theme}
-              className="flex size-11 items-center justify-center rounded-sm border border-input hover:bg-accent"
-            >
-              {theme === "dark" ? <Sun aria-hidden className="size-5" /> : <Moon aria-hidden className="size-5" />}
+            <button type="button" className="flex size-10 items-center justify-center rounded-r-xl hover:bg-accent disabled:opacity-40" onClick={() => setDay(day + 1)} disabled={day >= MISSION_DAYS} aria-label={S.top.nextDay}>
+              <ChevronRight aria-hidden className="size-5" />
             </button>
           </div>
         </div>
+
+        <p className="flex items-center gap-2">
+          <span className="eyebrow">{S.top.delay}</span>
+          <span className="font-mono text-base font-semibold tabular-nums">{formatDelay(profile.delayMinutes)}</span>
+        </p>
+
+        <Cell label={S.top.mode} corta>
+          <select className={selectCls} value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
+            <option value="real">{S.top.modeReal}</option>
+            <option value="demo">{S.top.modeDemo}</option>
+          </select>
+        </Cell>
+
+        <p className={cn("flex items-center gap-2 text-sm font-medium", online ? "text-status-ok" : "text-status-watch")} role="status">
+          <span className="eyebrow hidden 2xl:inline">{S.shell.link}</span>
+          <span aria-hidden className={cn("size-2 rounded-full", online ? "bg-status-ok" : "bg-status-watch")} />
+          {online ? S.shell.linkOnline : S.shell.linkOffline}
+          {pending > 0 && <span className="font-mono text-xs text-muted-foreground">· {S.shell.pending(pending)}</span>}
+        </p>
+
+        <Cell label={S.top.viewAs} className="ml-auto">
+          <select className={cn(selectCls, "max-w-44")} value={role} onChange={(e) => setRole(e.target.value as Role)}>
+            {(Object.keys(S.roles) as Role[]).map((r) => (
+              <option key={r} value={r}>{S.roles[r]}</option>
+            ))}
+          </select>
+        </Cell>
       </div>
     </header>
   )
 }
 
 function Banners() {
-  const { day, analisis } = useApp()
+  const { day, analisis, mode, setMode, online, checkIns, catalogo } = useApp()
+  const tormenta = analisis.stormInfo(day)
+  const sinRegistros = mode === "real" && checkIns.length === 0 && catalogo.historial.lecturas.length === 0
   return (
     <>
-      {analisis.storm(day) && (
-        <div role="alert" className="flex items-start gap-3 border-b border-status-act/40 bg-status-act/12 px-4 py-3 md:px-8">
+      {mode === "demo" && (
+        <div role="status" className="flex items-center gap-3 border-b border-status-watch/40 bg-status-watch/10 px-4 py-1.5 md:px-6">
+          <p className="min-w-0 flex-1 truncate text-sm" title={S.banners.demoDetail}><span className="font-semibold">{S.banners.demo}.</span> <span className="text-muted-foreground">{S.banners.demoDetail}</span></p>
+          <button type="button" onClick={() => setMode("real")} className="min-h-9 shrink-0 rounded-full border border-input bg-card px-4 text-sm font-medium hover:bg-accent">{S.banners.demoExit}</button>
+        </div>
+      )}
+      {!online && (
+        <div role="status" className="flex items-start gap-3 border-b border-status-watch/40 bg-status-watch/10 px-4 py-3 md:px-6">
+          <div>
+            <p className="font-semibold">{S.banners.offline}</p>
+            <p className="text-sm text-muted-foreground">{S.banners.offlineDetail}</p>
+          </div>
+        </div>
+      )}
+      {sinRegistros && (
+        <div role="status" className="flex flex-wrap items-center gap-3 border-b border-primary/30 bg-primary/10 px-4 py-3 md:px-6">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">{S.banners.realEmpty}</p>
+            <p className="text-sm text-muted-foreground">{S.banners.realEmptyDetail}</p>
+          </div>
+          <Link href="/check-in" className="inline-flex min-h-10 items-center rounded-sm bg-primary px-4 text-sm font-semibold text-primary-foreground">{S.banners.realEmptyCta}</Link>
+          <button type="button" onClick={() => setMode("demo")} className="min-h-10 rounded-sm border border-input px-4 text-sm font-medium hover:bg-accent">{S.banners.realEmptyDemo}</button>
+        </div>
+      )}
+      {tormenta && (
+        <div role="alert" className="flex items-start gap-3 border-b border-status-act/40 bg-status-act/12 px-4 py-3 md:px-6">
           <ShieldAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-status-act" />
           <div>
             <p className="font-semibold text-status-act">{S.banners.storm}</p>
             <p className="text-sm">{S.banners.stormDetail}</p>
+            <p className="mt-1 font-mono text-xs text-muted-foreground">{S.banners.stormSource}: {tormenta.source}{tormenta.flux !== null ? ` · ${tormenta.flux} pfu` : ""}</p>
           </div>
         </div>
       )}
       {isAdaptation(day) && (
-        <div role="status" className="flex items-start gap-3 border-b border-primary/30 bg-primary/10 px-4 py-3 md:px-8">
+        <div role="status" className="flex items-start gap-3 border-b border-primary/30 bg-primary/10 px-4 py-3 md:px-6">
           <Sprout aria-hidden className="mt-0.5 size-5 shrink-0 text-primary" />
           <div>
             <p className="font-semibold">{S.banners.adaptation}</p>
@@ -251,37 +240,20 @@ function Banners() {
   )
 }
 
-function SectionCode() {
-  const i = useActiveIndex()
-  const { day } = useApp()
-  if (i < 0) return null
-  return (
-    <p className="eyebrow mb-2">
-      {S.app.name} / {code(i)} {NAV[i].label} · {S.common.day} {day}
-    </p>
-  )
-}
-
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh flex-col">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground">
         {S.app.skip}
       </a>
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:block">
-        <Rail />
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
-        <Banners />
-        <main id="main" className="flex-1 px-4 py-6 md:px-8 md:py-8">
-          <SectionCode />
-          {children}
-        </main>
-        <footer className="border-t border-border px-4 py-3 text-xs text-muted-foreground md:px-8">
-          {S.app.disclaimer}
-        </footer>
-      </div>
+      <TopBar />
+      <Banners />
+      <main id="main" className="flex-1 px-4 py-4 md:px-6">
+        {children}
+      </main>
+      <footer className="border-t border-border px-4 py-3 text-xs text-muted-foreground md:px-6">
+        {S.app.disclaimer}
+      </footer>
       <AlertCenter />
     </div>
   )

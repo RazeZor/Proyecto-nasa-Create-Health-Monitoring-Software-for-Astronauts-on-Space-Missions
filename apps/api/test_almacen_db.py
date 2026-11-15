@@ -60,16 +60,21 @@ class Esquema(unittest.TestCase):
             ruta, errores = Path(d) / "v.db", []
 
             def trabajo():
+                conn = conectar(ruta)
                 try:
-                    migrar(conectar(ruta))
+                    migrar(conn)
                 except Exception as e:  # noqa: BLE001
                     errores.append(repr(e))
+                finally:
+                    conn.close()  # en Windows un archivo abierto no se puede borrar
 
             hilos = [threading.Thread(target=trabajo) for _ in range(8)]
             [h.start() for h in hilos]
             [h.join() for h in hilos]
             self.assertEqual(errores, [])
-            self.assertEqual(migrar(conectar(ruta)), 3)
+            conn = conectar(ruta)
+            self.assertEqual(migrar(conn), 3)
+            conn.close()
 
     def test_migracion_fallida_no_deja_esquema_parcial(self):
         with tempfile.TemporaryDirectory() as d:

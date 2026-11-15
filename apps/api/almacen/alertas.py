@@ -48,9 +48,14 @@ def escalar(conn, alerta_id):
 
 
 def registrar_alerta(conn, tripulante_id, indicador, capa, nivel, valor, t_real, explicacion, regla_version, tramo=None):
-    """Guarda la alerta; una roja de la capa A escala en la misma transacción."""
+    """Guarda la alerta; una roja de la capa A escala en la misma transacción. Reenviar la misma (tripulante,
+    indicador, capa, t_real, valor) devuelve el id que ya tenía: la app reintenta sin duplicar avisos."""
     valor = _numero(valor)
     marca = t_mision(conn, tripulante_id, t_real)
+    repetida = conn.execute("SELECT id FROM alerta WHERE tripulante_id = ? AND indicador = ? AND capa = ? AND t_real = ? "
+                            "AND valor = ? ORDER BY id LIMIT 1", (tripulante_id, indicador, capa, t_real, valor)).fetchone()
+    if repetida:
+        return repetida[0]
     try:
         with conn:  # una sola transacción: si el escalamiento falla, tampoco queda la alerta
             alerta_id = conn.execute(
