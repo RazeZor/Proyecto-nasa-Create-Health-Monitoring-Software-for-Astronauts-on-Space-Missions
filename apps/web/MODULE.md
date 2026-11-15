@@ -67,7 +67,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 762 | — |
 | [components/checkin/controles.tsx](components/checkin/controles.tsx) | 141 | — |
 | [components/checkin/iconos.tsx](components/checkin/iconos.tsx) | 95 | Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
-| [components/crew/crew-body.tsx](components/crew/crew-body.tsx) | 72 | — |
+| [components/crew/crew-body.tsx](components/crew/crew-body.tsx) | 75 | — |
 | [components/crew/crew-view.tsx](components/crew/crew-view.tsx) | 22 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 338 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 62 | — |

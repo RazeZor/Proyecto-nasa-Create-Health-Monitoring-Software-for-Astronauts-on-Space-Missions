@@ -23,10 +23,13 @@ export function CuerpoTripulacion() {
   useEffect(() => {
     if (TRIPULANTE === null) return
     void leerTripulacion(TRIPULANTE).then((m) => {
-      setMiembros(m ?? [])
+      // shortcut: solo los astronautas con nombre (Sebastián, Fernando); el «astronauta» genérico del demo y los
+      // cargos de apoyo no tienen cuerpo propio que mirar
+      const astronautas = (m ?? []).filter((x) => x.rol === "astronauta" && x.alias !== x.rol)
+      setMiembros(astronautas)
       // shortcut: sin autenticación se consulta con el id del oficial médico (también como cirujano de vuelo); sesión real en #46
       setActor(m?.find((x) => x.rol === "oficial_medico")?.id ?? null)
-      setElegido((previo) => previo ?? m?.[0]?.id ?? null)
+      setElegido((previo) => previo ?? astronautas[0]?.id ?? null)
     })
   }, [])
 

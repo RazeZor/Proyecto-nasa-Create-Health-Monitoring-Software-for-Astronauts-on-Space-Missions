@@ -1762,7 +1762,7 @@
         },
         {
           "ruta": "apps/web/components/crew/crew-body.tsx",
-          "lineas": 72,
+          "lineas": 75,
           "descripcion": "",
           "test": false,
           "simbolos": [
