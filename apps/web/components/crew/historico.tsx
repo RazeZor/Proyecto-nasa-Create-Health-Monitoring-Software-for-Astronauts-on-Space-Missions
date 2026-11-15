@@ -31,9 +31,9 @@ export function Historico() {
     <div className="flex flex-col gap-4">
       <NavegadorDias dia={day} dias={dias} hoy={catalogo.historial.dia_actual} diasConAlerta={diasConAlerta} onCambiar={setDay} />
       <div className="grid gap-4 lg:grid-cols-[11rem_1fr] lg:items-start">
-        <div className="mx-auto w-44 lg:sticky lg:top-4">
-          <BodyStage className="h-72 w-full" estado={estadoEscena} marcadores={[]} onMarcador={() => {}} />
-          <div className="mt-3"><TrayectoriaMarte dia={day} mini /></div>
+        <div className="mx-auto flex w-44 flex-col items-center gap-3 min-[900px]:w-auto min-[900px]:flex-row min-[900px]:gap-6 lg:sticky lg:top-4 lg:w-44 lg:flex-col lg:gap-3">
+          <BodyStage className="h-72 w-44" estado={estadoEscena} marcadores={[]} onMarcador={() => {}} />
+          <div className="w-44"><TrayectoriaMarte dia={day} mini /></div>
         </div>
         <TrendsView />
       </div>

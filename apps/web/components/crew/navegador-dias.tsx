@@ -47,7 +47,7 @@ export function NavegadorDias({ dia, dias, hoy, diasConAlerta, onCambiar }: {
           {diasConAlerta.map((d) => (
             <span key={d} title={S.crew.alertDay} className="absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-status-watch" style={{ left: pos(d, dias) }} />
           ))}
-          <span className="absolute -top-4 -translate-x-1/2 text-xs font-semibold text-primary" style={{ left: pos(hoy, dias) }}>{S.crew.today}</span>
+          <span className="absolute -top-7 -translate-x-1/2 text-xs font-semibold text-primary" style={{ left: pos(hoy, dias) }}>{S.crew.today}</span>
           <span className="absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 bg-primary" style={{ left: pos(hoy, dias) }} />
         </div>
         <input
