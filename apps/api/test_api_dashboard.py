@@ -224,8 +224,8 @@ class Dashboard(unittest.TestCase):
         conn.close()
         (es,) = self.c.get(f"/tripulantes/{self.ana}/reportes", headers=self.h).json()
         (en,) = self.c.get(f"/tripulantes/{self.ana}/reportes?lang=en", headers=self.h).json()
-        self.assertEqual(es["contenido"]["titulo"], "Informe diario · Día 23")
-        self.assertEqual(en["contenido"]["titulo"], "Daily report · Day 23")
+        self.assertEqual(es["contenido"]["titulo"], "Informe diario · Día 113")
+        self.assertEqual(en["contenido"]["titulo"], "Daily report · Day 113")
         self.assertTrue(en["contenido"]["demo"])
         self.assertEqual(en["respuesta"], "Copy. Keep the extended sleep window and measure your HR again tomorrow.")
 
@@ -255,7 +255,7 @@ class Dashboard(unittest.TestCase):
         tr.sembrar_informes_demo(conn, self.ids)
         (f,) = cola.leer_reportes(conn, self.ana)
         conn.close()
-        self.assertEqual((f["estado"], f["contenido"]["titulo"]), ("respondido", "Informe diario · Día 23"))
+        self.assertEqual((f["estado"], f["contenido"]["titulo"]), ("respondido", "Informe diario · Día 113"))
 
 
 class Entorno(unittest.TestCase):

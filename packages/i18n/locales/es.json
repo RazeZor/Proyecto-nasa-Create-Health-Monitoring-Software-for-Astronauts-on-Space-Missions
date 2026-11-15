@@ -58,16 +58,20 @@
         "label": "Navegación principal"
       },
       "top": {
-        "profile": "Perfil de misión",
         "missionDay": "Día de misión",
         "prevDay": "Día de misión anterior",
         "nextDay": "Día de misión siguiente",
-        "delay": "Retardo de ida",
         "mode": "Datos",
         "modeReal": "Reales",
         "modeDemo": "Demo",
         "theme": "Cambiar tema claro u oscuro",
-        "language": "Idioma"
+        "language": "Idioma",
+        "vantageShip": "Desde la nave",
+        "vantageEarth": "Desde la Tierra",
+        "roundTrip": "Ida y vuelta",
+        "toEarth": "Mensaje a la Tierra",
+        "toShip": "Mensaje a la nave",
+        "mission": "Misión"
       },
       "banners": {
         "adaptation": "Modo adaptación (días 1-14): solo los límites de seguridad pueden alertar",
@@ -991,7 +995,10 @@
         "doseNote": "Modelo de escenario: radiación de fondo de unos 1,8 mSv al día más las tormentas solares. No es una medición.",
         "ua": "UA",
         "mkm": "millones de km",
-        "delayMean": "Retardo medio del viaje"
+        "delayMean": "Retardo medio del viaje",
+        "roundTrip": "Ida y vuelta de un mensaje hoy",
+        "bestRoundTrip": "Ida y vuelta más corta del viaje",
+        "bestDay": "día {dia}"
       }
     },
     "MOTOR": {

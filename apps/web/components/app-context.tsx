@@ -9,13 +9,12 @@ import { rolDeRuta } from "@/lib/roles"
 import { leerModo, store, usarModo } from "@/lib/storage"
 import { sincronizarAlertasRojas, sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
-import type { CheckInEntry, DeviceState, MissionProfile, Mode, ProfileId, Role } from "@/lib/types"
+import type { CheckInEntry, DeviceState, MissionProfile, Mode, Role } from "@/lib/types"
 
 interface AppState {
   day: number
   setDay: (d: number) => void
   profile: MissionProfile
-  setProfileId: (id: ProfileId) => void
   role: Role
   theme: "dark" | "light"
   toggleTheme: () => void
@@ -107,7 +106,6 @@ const CLAVE_RELOJ = "vigia:reloj"
 
 function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Catalogo; mode: Mode; setMode: (m: Mode) => void; recargar: () => void; children: React.ReactNode }) {
   const [day, setDayRaw] = useState(catalogo.historial.dia_actual)
-  const [profileId, setProfileId] = useState<ProfileId>("transit")
   // el rol sale de la ruta (/astronauta, /oficial, /medico); en el inicio, sin rol, rige el del astronauta
   const role: Role = rolDeRuta(usePathname() ?? "") ?? "astronaut"
   const [theme, setTheme] = useState<"dark" | "light">("light")
@@ -140,7 +138,8 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   const [escalations, setEscalations] = useState<Record<string, number | null>>({})
   const [navegadorEnLinea, setNavegadorEnLinea] = useState(true)
   const recargarRegistros = useCallback(async () => setCheckIns(await store.listCheckIns()), [])
-  const profile = catalogo.perfiles.find((p) => p.id === profileId) ?? catalogo.perfiles[1]
+  // un solo viaje: el tránsito a Marte (ya no se elige el perfil de misión)
+  const profile = catalogo.perfiles.find((p) => p.id === "transit") ?? catalogo.perfiles[1]
   const analisis = useMemo(() => analizar(checkIns, catalogo.historial, profile.cabinPressureMmHg), [checkIns, catalogo, profile.cabinPressureMmHg])
   const online = navegadorEnLinea && !catalogo.sinEnlace
 
@@ -230,7 +229,7 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   const hrEnVivo = device === "connected" ? (reloj?.reloj?.fc_lpm ?? null) : liveHr
 
   const value = useMemo(
-    () => ({ day, setDay, profile, setProfileId, role, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo, mode, setMode, online, pending, escalations }),
+    () => ({ day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo, mode, setMode, online, pending, escalations }),
     [mode, setMode, online, pending, escalations, day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, hrEnVivo, reloj, ordenReloj, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 
 export function formatDelay(minutes: number) {
   if (minutes < 1) return `${Math.max(1, Math.round(minutes * 60))} s`
+  if (minutes < 10) return `${minutes.toFixed(1)} min`
   return `${Math.round(minutes)} min`
 }
 

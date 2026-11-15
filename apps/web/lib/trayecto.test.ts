@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import type { EntornoHistorial } from "./catalogo.ts"
-import { lecturaDeTrayecto, posicionesDelViaje, retardoMedioMin } from "./trayecto.ts"
+import { lecturaDeTrayecto, idaYVuelta, mejorIdaYVuelta, posicionesDelViaje, retardoMedioMin } from "./trayecto.ts"
 
 const posicion = (dia: number, dist: number) => ({
   dia, x_ua: 0, y_ua: 0, dist_sol_ua: 1, dist_tierra_ua: dist, retardo_min: dist * 8.3167,
@@ -34,4 +34,12 @@ test("las posiciones salen en orden de día y sin los días vacíos", () => {
 test("el retardo medio es el promedio de todo el tránsito; sin posiciones no hay", () => {
   assert.ok(Math.abs(retardoMedioMin(entorno)! - (0.1 + 0.2) / 2 * 8.3167) < 1e-9)
   assert.equal(retardoMedioMin([{ dia_mision: 1 }]), null)
+})
+
+test("la ida y vuelta es el doble del retardo; el caso más optimista es el día de menor retardo", () => {
+  assert.equal(idaYVuelta(3.5), 7)
+  const mejor = mejorIdaYVuelta(entorno)!
+  assert.equal(mejor.dia, 1)
+  assert.ok(Math.abs(mejor.minutos - 2 * 0.1 * 8.3167) < 1e-9)
+  assert.equal(mejorIdaYVuelta([]), null)
 })

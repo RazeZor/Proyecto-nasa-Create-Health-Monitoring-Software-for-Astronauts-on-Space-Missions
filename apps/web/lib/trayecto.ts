@@ -32,3 +32,14 @@ export function retardoMedioMin(entorno: EntornoHistorial[]): number | null {
   const ps = posicionesDelViaje(entorno)
   return ps.length ? ps.reduce((s, p) => s + p.retardo_min, 0) / ps.length : null
 }
+
+/** Ida y vuelta de un mensaje (llega y su respuesta regresa) con un retardo de ida dado, en minutos. */
+export const idaYVuelta = (retardoMin: number): number => 2 * retardoMin
+
+/** El caso más optimista del viaje: el día de menor retardo y su ida y vuelta (min); null sin posiciones. */
+export function mejorIdaYVuelta(entorno: EntornoHistorial[]): { dia: number; minutos: number } | null {
+  const ps = posicionesDelViaje(entorno)
+  if (!ps.length) return null
+  const mejor = ps.reduce((a, b) => (b.retardo_min < a.retardo_min ? b : a))
+  return { dia: mejor.dia, minutos: idaYVuelta(mejor.retardo_min) }
+}

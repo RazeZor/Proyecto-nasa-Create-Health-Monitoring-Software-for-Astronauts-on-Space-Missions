@@ -58,16 +58,20 @@
         "label": "Main navigation"
       },
       "top": {
-        "profile": "Mission profile",
         "missionDay": "Mission day",
         "prevDay": "Previous mission day",
         "nextDay": "Next mission day",
-        "delay": "One-way delay",
         "mode": "Data",
         "modeReal": "Real",
         "modeDemo": "Demo",
         "theme": "Toggle light or dark theme",
-        "language": "Language"
+        "language": "Language",
+        "vantageShip": "From the ship",
+        "vantageEarth": "From Earth",
+        "roundTrip": "Round trip",
+        "toEarth": "Message to Earth",
+        "toShip": "Message to the ship",
+        "mission": "Mission"
       },
       "banners": {
         "adaptation": "Adaptation mode (days 1-14): only safety limits can raise alerts",
@@ -991,7 +995,10 @@
         "doseNote": "Scenario model: background radiation of about 1.8 mSv per day plus solar storms. Not a measurement.",
         "ua": "AU",
         "mkm": "million km",
-        "delayMean": "Average delay over the trip"
+        "delayMean": "Average delay over the trip",
+        "roundTrip": "Message round trip today",
+        "bestRoundTrip": "Shortest round trip of the voyage",
+        "bestDay": "day {dia}"
       }
     },
     "MOTOR": {

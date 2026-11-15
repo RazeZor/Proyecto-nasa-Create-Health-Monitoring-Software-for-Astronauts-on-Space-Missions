@@ -13,8 +13,9 @@ import { STATUS_ICON, statusSurface, statusText } from "@/components/shared/stat
 import { AlertCenter } from "@/components/shell/alert-center"
 import { isAdaptation } from "@/lib/engine"
 import { cambiarIdioma, IDIOMA, S } from "@/lib/strings"
+import { idaYVuelta } from "@/lib/trayecto"
 import { rolDeRuta, rutaDe, type Seccion } from "@/lib/roles"
-import type { Mode, ProfileId, Role } from "@/lib/types"
+import type { Mode, Role } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 type Pestana = { seccion: Seccion | null; label: string; icon: typeof IconoCuerpo }
@@ -123,7 +124,7 @@ function Cell({ label, children, className, corta }: { label: string; children: 
 
 function TopBar() {
   const rol = rolDeRuta(usePathname() ?? "")
-  const { day, profile, setProfileId, theme, toggleTheme, voice, setVoice, catalogo, analisis, mode, setMode, online, pending } = useApp()
+  const { day, profile, theme, toggleTheme, voice, setVoice, catalogo, analisis, mode, setMode, online, pending } = useApp()
   const MISSION_DAYS = analisis.missionDays
   return (
     <header className="border-b border-border bg-card shadow-sm">
@@ -153,13 +154,12 @@ function TopBar() {
 
       {/* Contexto de la misión: una sola franja, con la etiqueta al lado de cada control */}
       {rol && <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border bg-background/70 px-4 py-1.5 md:px-6">
-        <Cell label={S.top.profile} corta>
-          <select className={cn(selectCls, "max-w-44")} value={profile.id} onChange={(e) => setProfileId(e.target.value as ProfileId)}>
-            {catalogo.perfiles.map((p) => (
-              <option key={p.id} value={p.id}>{p.label}</option>
-            ))}
-          </select>
-        </Cell>
+        {/* Siempre el mismo viaje: un equipo rumbo a Marte, visto desde la nave (astronauta, oficial médico) o desde la Tierra (cirujano de vuelo) */}
+        <p className="flex items-center gap-2">
+          <span className="eyebrow">{S.top.mission}</span>
+          <span className="text-base font-semibold">{profile.label}</span>
+          <span className="rounded-full border border-border bg-card px-3 py-1 text-sm font-semibold">{rol === "surgeon" ? S.top.vantageEarth : S.top.vantageShip}</span>
+        </p>
 
         <div className="flex items-center gap-2" role="group" aria-label={S.top.missionDay}>
           <span className="eyebrow">{S.top.missionDay}</span>
@@ -172,8 +172,9 @@ function TopBar() {
         </div>
 
         <p className="flex items-center gap-2">
-          <span className="eyebrow">{S.top.delay}</span>
+          <span className="eyebrow">{rol === "surgeon" ? S.top.toShip : S.top.toEarth}</span>
           <span className="font-mono text-base font-semibold tabular-nums">{formatDelay(profile.delayMinutes)}</span>
+          <span className="text-sm text-muted-foreground">· {S.top.roundTrip} <span className="font-mono font-semibold tabular-nums text-foreground">{formatDelay(idaYVuelta(profile.delayMinutes))}</span></span>
         </p>
 
         <Cell label={S.top.mode} corta>

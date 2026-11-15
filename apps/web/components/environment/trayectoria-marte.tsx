@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import { useApp } from "@/components/app-context"
 import { formatDelay } from "@/components/shared/delay-countdown"
 import { Ayuda } from "@/components/shared/ayuda"
-import { lecturaDeTrayecto, posicionesDelViaje, retardoMedioMin } from "@/lib/trayecto"
+import { lecturaDeTrayecto, idaYVuelta, mejorIdaYVuelta, posicionesDelViaje, retardoMedioMin } from "@/lib/trayecto"
 import { S } from "@/lib/strings"
 import { cn } from "@/lib/utils"
 
@@ -29,6 +29,7 @@ export function TrayectoriaMarte({ dia, mini = false }: { dia: number; mini?: bo
   const restante = posiciones.filter((p) => p.dia >= dia)
   const total = catalogo.historial.dias_vuelo
   const medio = retardoMedioMin(entorno)
+  const mejor = mejorIdaYVuelta(entorno)
   const dist = `${lectura.distanciaTierraUa.toFixed(2)} ${S.trayecto.ua}`
   const retardo = formatDelay(Number(lectura.retardoMin.toFixed(1)))
   // la etiqueta de la nave va debajo: cerca de la llegada, Marte y la nave quedan casi juntos
@@ -56,6 +57,8 @@ export function TrayectoriaMarte({ dia, mini = false }: { dia: number; mini?: bo
     [S.trayecto.distEarth, `${dist} · ${lectura.distanciaTierraMKm.toFixed(0)} ${S.trayecto.mkm}`],
     [S.trayecto.distSun, `${lectura.distanciaSolUa.toFixed(2)} ${S.trayecto.ua}`],
     [S.trayecto.delay, retardo],
+    [S.trayecto.roundTrip, formatDelay(Number(idaYVuelta(lectura.retardoMin).toFixed(1)))],
+    ...(mejor ? [[S.trayecto.bestRoundTrip, `${formatDelay(Number(mejor.minutos.toFixed(2)))} · ${S.trayecto.bestDay(mejor.dia)}`] as [string, string]] : []),
     ...(medio !== null ? [[S.trayecto.delayMean, formatDelay(Number(medio.toFixed(1)))] as [string, string]] : []),
     ...(lectura.dosisAcumuladaMsv !== null ? [[S.trayecto.dose, `${lectura.dosisAcumuladaMsv.toFixed(0)} mSv`] as [string, string]] : []),
   ]

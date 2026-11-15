@@ -456,6 +456,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `guardar_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `higado` | constante | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `historial` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
+| `idaYVuelta` | constante | [apps/web/lib/trayecto.ts](../../apps/web/lib/trayecto.ts) |
 | `idioma_actual` | función | [packages/i18n/i18n.py](../../packages/i18n/i18n.py) |
 | `indicadorApi` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `indicadoresUi` | función | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
@@ -516,6 +517,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `mediana` | función | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `medidas` | función | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `medidas` | función | [pipelines/reanclaje/reanclaje.py](../../pipelines/reanclaje/reanclaje.py) |
+| `mejorIdaYVuelta` | función | [apps/web/lib/trayecto.ts](../../apps/web/lib/trayecto.ts) |
 | `mensajes` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `mensajesUi` | constante | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
 | `metadata` | constante | [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx) |
