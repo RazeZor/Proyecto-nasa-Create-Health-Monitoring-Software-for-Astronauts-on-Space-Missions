@@ -18,8 +18,9 @@ import random
 from pathlib import Path
 from statistics import median
 
-import reanclaje
 import trayectoria
+
+import reanclaje
 
 SEMILLA_DEFECTO = 2026
 SEMILLA_SECUNDARIA = 2027

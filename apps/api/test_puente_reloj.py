@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import socket
 import tempfile
 import time
 import unittest
@@ -428,7 +429,12 @@ class ExtremoAExtremo(Base):
             import websockets  # noqa: F401
         except ImportError:
             self.skipTest("websockets no está instalado")
-        puente = pr.Puente("ws://127.0.0.1:1/live", pr.EstadoReloj(), self.mapa)  # puerto cerrado
+        # Puerto cerrado: uno libre recién soltado. El puerto 1 no sirve: hay redes que lo filtran y la conexión
+        # no se rechaza, se queda esperando más que el límite de este test.
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            puerto = s.getsockname()[1]
+        puente = pr.Puente(f"ws://127.0.0.1:{puerto}/live", pr.EstadoReloj(), self.mapa)
 
         async def escenario():
             tarea = asyncio.create_task(puente.correr())

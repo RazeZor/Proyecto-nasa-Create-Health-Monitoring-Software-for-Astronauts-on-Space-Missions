@@ -5,7 +5,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import trayectoria  # noqa: E402
 from trayectoria import DIAS_TRANSITO, posicion  # noqa: E402
 
 
