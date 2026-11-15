@@ -543,6 +543,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ppmToMmHg` | constante | [apps/web/lib/utils.ts](../../apps/web/lib/utils.ts) |
 | `propio` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `propio_o_clinico` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
+| `propio_o_clinico_intradia` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
 | `publicar` | función | [pipelines/reanclaje/panel.py](../../pipelines/reanclaje/panel.py) |
 | `publicar_barrido` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |
 | `publicar_simulacion` | función | [pipelines/reanclaje/simulacion.py](../../pipelines/reanclaje/simulacion.py) |

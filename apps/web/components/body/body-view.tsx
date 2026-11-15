@@ -556,7 +556,9 @@ export function BodyView({ ajeno = false, tripulante = TRIPULANTE, actor = tripu
         </div>
 
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <p className="flex items-baseline gap-2">
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            {/* el valor que evalúa el motor; la última lectura de hoy es la marca «Ahora» del gráfico */}
+            <span className="eyebrow basis-full">{S.body.dayValue}</span>
             <span className="font-mono text-6xl font-semibold leading-none tabular-nums">{lectura.valor ?? "—"}</span>
             <span className="text-lg text-muted-foreground">{lectura.valor ? info.unit : ""}</span>
           </p>

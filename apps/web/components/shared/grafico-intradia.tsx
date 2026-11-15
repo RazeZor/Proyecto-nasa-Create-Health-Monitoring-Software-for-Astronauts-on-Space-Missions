@@ -51,7 +51,7 @@ export function GraficoIntradia({ puntos, unidad, color, banda, formato = String
         <line x1={x(ultimo.hora)} x2={x(ultimo.hora)} y1={ARR} y2={H - ABA} className="stroke-foreground/40" />
         <circle cx={x(ultimo.hora)} cy={y(ultimo.valor)} r={4} fill={color} className="stroke-card" strokeWidth={2} />
         <text x={Math.min(x(ultimo.hora), W - DER - 2)} y={ARR - 1} textAnchor="end" className="fill-foreground text-[9px] font-semibold">
-          {S.body.intradayNow} · {ultimo.hora} · {formato(ultimo.valor)}
+          {S.body.intradayNow} · {ultimo.hora} · {formato(ultimo.valor)} {unidad}
         </text>
       </svg>
     </figure>

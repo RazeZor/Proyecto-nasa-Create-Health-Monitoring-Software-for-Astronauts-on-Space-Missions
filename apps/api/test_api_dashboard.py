@@ -137,6 +137,15 @@ class Dashboard(unittest.TestCase):
         self.assertEqual(d["series"]["spo2_pct"], [{"hora": "08:10", "valor": 97.0}, {"hora": "20:40", "valor": 95.0}])
         self.assertEqual(d["series"]["fc_reposo_lpm"], [])
 
+    def test_el_sondeo_intradia_de_un_clinico_se_audita_una_vez_por_hora(self):
+        # el tiempo real pide los datos cada minuto: la auditoría debe decir quién miró a quién, no llenarse de repeticiones
+        for _ in range(3):
+            self.c.get(f"/tripulantes/{self.ana}/intradia", params={"modo": "demo"}, headers={"X-Tripulante": str(self.med)})
+        conn = conectar()
+        filas = conn.execute("SELECT actor_id, entidad, entidad_id FROM auditoria WHERE accion = 'lectura_ajena'").fetchall()
+        conn.close()
+        self.assertEqual([tuple(f) for f in filas], [(self.med, "intradia", self.ana)])
+
     def test_intradia_ajena_solo_para_clinicos(self):
         self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/intradia", params={"modo": "demo"},
                                     headers={"X-Tripulante": str(self.med)}).status_code, 200)

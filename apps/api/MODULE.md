@@ -22,7 +22,7 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 - La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).
 - El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.
 - Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests.
-- `GET /tripulantes/{id}/intradia?modo=real|demo` es el tiempo real (mismos permisos que `historial`): pulso, SpO2, temperatura y sistólica de un día por hora UTC. `real`: lecturas `Real` de ese día sin agrupar. `demo`: simuladas cada 15 min hasta `hasta` (por defecto ahora) alrededor del valor diario del caso de referencia, con semilla (tripulante, día, campo): siempre las mismas. La auditoría de un clínico queda como `lectura_ajena` de `historial`.
+- `GET /tripulantes/{id}/intradia?modo=real|demo` es el tiempo real (mismos permisos que `historial`): pulso, SpO2, temperatura y sistólica de un día por hora UTC. `real`: lecturas `Real` de ese día sin agrupar. `demo`: simuladas cada 15 min hasta `hasta` (por defecto ahora) alrededor del valor diario del caso de referencia, con semilla (tripulante, día, campo): siempre las mismas. La lectura de un clínico se audita como `lectura_ajena` de `intradia` una sola vez por hora y por (clínico, tripulante) (`propio_o_clinico_intradia`), porque la app la pide cada minuto; el `historial` se sigue auditando en cada consulta.
 - `GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del caso de referencia (`packages/engine/fixtures/caso-referencia.json`; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 27`) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).
 - `mensajes?modo=demo` añade el hilo de ejemplo; en real solo van las respuestas reales de tierra. Los mockups están en `demo/` (recordatorios, hilo, referencia de entorno, informe de ejemplo con `demo: true`). `GET /tripulacion` lista la tripulación de la misión de quien pregunta. `/fichas`, `/fichas/{id}` y `recordatorios` aceptan `lang=en`: las fichas toman los textos de `packages/schemas/fichas_en/<id>.json` (solo campos de texto y títulos de fuente; si falta la traducción se sirve en español).
 - Reloj (`puente_reloj.py`): se conecta al `/live` de smart-monitor (`SMART_URL`, por defecto `ws://127.0.0.1:8765/live`; `SMART_DESACTIVADO=1` lo apaga) como un panel, con reintentos 1→30 s, guarda en memoria el último estado por tripulante y persiste solo los chequeos válidos de **relojes vinculados** (FC en reposo y SpO2, `origen=sensor`, `metodo=galaxy_watch4:<dispositivo>`, `naturaleza=Real`), nunca las lecturas de 1 Hz (A.6). Los astronautas de prueba de la misión demo enlazan cada uno a su manera: Sebastián por alias (su reloj se llama «Sebastián») y Fernando por vínculo en `reloj_vinculo` (su reloj se llama «Galaxy Fernando»); los tests del puente no usan esos nombres. Vinculado = nombre en `SMART_TRIPULANTES`, en la tabla `reloj_vinculo` (migración 004; `POST`/`DELETE /tripulantes/{id}/reloj/vinculo`) o igual al `alias`. Nunca se guardan los nombres por defecto (`Tripulante XXXX`, `Tripulante previo`) ni los de un nombre con dos relojes conectados (queda un aviso `relojes_duplicados`); solo `SMART_AUTOREGISTRO=1` crea tripulantes nuevos. `chequeo_estado`/`chequeo_progreso` caducan a los 120 s y se limpian al desconectar; `history` reemplaza la serie sin repetir `t`; `resumen.notas` se funde con las notas en vivo; los avisos del servidor sin tripulante salen en `GET /reloj/estado` (`avisos`), junto con `ip_lan` y `url_reloj_sugerida` (`ws://<ip_lan>:8765/watch`; `SMART_IP_LAN` fuerza esa IP cuando el equipo tiene varias redes, por ejemplo el hotspot `umbra` para el reloj: ver `docs/SETUP.md` §8). `GET /tripulantes/{id}/reloj` da `recibido_hace_s` con el reloj del servidor (la vigencia no depende del `t` del reloj). Las escrituras SQLite van en `asyncio.to_thread`. `websockets` se importa solo al arrancar el puente (sin él, `error` lo dice). Un cambio aquí anota pendientes en smart-monitor (`tools/sincro-smart`).
@@ -57,7 +57,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
 | [main.py](main.py) | 233 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 594 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
-| [rutas_dashboard.py](rutas_dashboard.py) | 316 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
+| [rutas_dashboard.py](rutas_dashboard.py) | 339 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
 | [rutas_registro.py](rutas_registro.py) | 230 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |
@@ -66,7 +66,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 68 | — |
 | [test_api.py](test_api.py) | 144 | — |
-| [test_api_dashboard.py](test_api_dashboard.py) | 317 | — |
+| [test_api_dashboard.py](test_api_dashboard.py) | 326 | — |
 | [test_api_registro.py](test_api_registro.py) | 208 | — |
 | [test_puente_reloj.py](test_puente_reloj.py) | 448 | — |
 
@@ -174,11 +174,12 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 **rutas_dashboard.py**
 
 - función `propio_o_clinico(id: int, quien: int=Depends(actor), conn=Depends(conexion))`: El dueño, o el oficial médico de su misión: los clínicos ven el cuerpo completo de la tripulación y cada
+- función `propio_o_clinico_intradia(id: int, quien: int=Depends(actor), conn=Depends(conexion))`: Los mismos permisos, pero el tiempo real se consulta cada minuto: la lectura ajena se anota una vez por hora y
 - función `listar_fichas(lang: Literal['es', 'en']='es')`: Todas las fichas validadas (`packages/schemas/fichas`, esquema `ficha.schema.json`), en el orden del índice.
 - función `leer_ficha(id: str, lang: Literal['es', 'en']='es')`: Una ficha (`que_es`, `como_se_mide_en_vuelo` por perfil, `por_que`, `cuando_avisar`, `fuentes`...).
 - función `referencia_entorno(lang: Literal['es', 'en']='es')`: Límites de radiación y CO2, umbral de tormenta y fuentes del panel (`lang=en` en inglés).
 - función `historial(id: int=Depends(propio_o_clinico), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))`: Lo que evalúa el motor: `lecturas` por día de misión (días <= 0 = prevuelo) y `entorno_diario`. Con tu id, o con el
-- función `intradia(id: int=Depends(propio_o_clinico), modo: Literal['real', 'demo']='real', dia: int | None=None, hasta: str | None=Query(None, pattern='^([01]\\d|2[0-3]):[0-5]\\d$'), conn=Depends(conexion))`: Lo del tiempo real: pulso, SpO2, temperatura y presión sistólica de un día (`dia`, por defecto hoy) con su hora UTC
+- función `intradia(id: int=Depends(propio_o_clinico_intradia), modo: Literal['real', 'demo']='real', dia: int | None=None, hasta: str | None=Query(None, pattern='^([01]\\d|2[0-3]):[0-5]\\d$'), conn=Depends(conexion))`: Lo del tiempo real: pulso, SpO2, temperatura y presión sistólica de un día (`dia`, por defecto hoy) con su hora UTC
 - función `tripulacion_de_la_mision(quien: int=Depends(actor), conn=Depends(conexion))`: `{id, alias, rol}` de cada tripulante de la misión de quien pregunta (para saber quién es el oficial médico).
 - función `recordatorios(id: int=Depends(propio), lang: Literal['es', 'en']='es')`: Lista de textos (`lang=en` en inglés). Simulado: aún no hay plan de actividades a bordo.
 - función `mensajes(id: int=Depends(propio), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))`: `{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas de tierra a los reportes del tripulante.
@@ -236,7 +237,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_almacen_lecturas.py`: 9 pruebas en Lecturas (9)
 - `apps/api/test_almacen_tripulacion.py`: 9 pruebas en Tripulacion (9)
 - `apps/api/test_api.py`: 13 pruebas en Api (12), Entorno (1)
-- `apps/api/test_api_dashboard.py`: 24 pruebas en Dashboard (21), Entorno (3)
+- `apps/api/test_api_dashboard.py`: 25 pruebas en Dashboard (22), Entorno (3)
 - `apps/api/test_api_registro.py`: 19 pruebas en Registro (19)
 - `apps/api/test_puente_reloj.py`: 28 pruebas en Estado (12), Persistencia (7), Rutas (7), ExtremoAExtremo (2)
 <!-- CONTEXT:AUTO:END -->

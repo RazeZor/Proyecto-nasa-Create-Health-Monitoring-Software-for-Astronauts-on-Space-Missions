@@ -209,6 +209,7 @@ export const S = {
     lastDays: (n: string | number) => tx("web.S.body.lastDays", { n }),
     seeTrend: tx("web.S.body.seeTrend"),
     howToUse: tx("web.S.body.howToUse"),
+    dayValue: tx("web.S.body.dayValue"),
     intradayTitle: tx("web.S.body.intradayTitle"),
     intradayEmpty: tx("web.S.body.intradayEmpty"),
     intradayNow: tx("web.S.body.intradayNow"),

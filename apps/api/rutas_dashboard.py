@@ -34,18 +34,40 @@ CAMPO_DE_INDICADOR = {
 }
 
 
-def propio_o_clinico(id: int, quien: int = Depends(actor), conn=Depends(conexion)) -> int:
-    """El dueño, o el oficial médico de su misión: los clínicos ven el cuerpo completo de la tripulación y cada
-    lectura ajena queda en la auditoría. Cualquier otro recibe 403.
+def _propio_o_clinico(conn, quien, id):
+    """True si `quien` lee a otro tripulante como clínico; False si es el dueño. Cualquier otro: 403.
     shortcut: el cirujano de vuelo (Tierra) aún no es un tripulante; la web lo atiende con el id del oficial (#46)."""
     if id == quien:
-        return id
+        return False
     clinico = conn.execute(
         "SELECT 1 FROM tripulante a JOIN tripulante b ON b.mision_id = a.mision_id "
         "WHERE a.id = ? AND a.rol = 'oficial_medico' AND b.id = ?", (quien, id)).fetchone()
     if not clinico:
         raise HTTPException(403, t("api.error.sin_permiso"))
-    alertas.anotar(conn, quien, "lectura_ajena", "historial", id)
+    return True
+
+
+def propio_o_clinico(id: int, quien: int = Depends(actor), conn=Depends(conexion)) -> int:
+    """El dueño, o el oficial médico de su misión: los clínicos ven el cuerpo completo de la tripulación y cada
+    lectura ajena del historial queda en la auditoría. Cualquier otro recibe 403."""
+    if _propio_o_clinico(conn, quien, id):
+        alertas.anotar(conn, quien, "lectura_ajena", "historial", id)
+    return id
+
+
+VENTANA_AUDITORIA_INTRADIA = timedelta(hours=1)
+
+
+def propio_o_clinico_intradia(id: int, quien: int = Depends(actor), conn=Depends(conexion)) -> int:
+    """Los mismos permisos, pero el tiempo real se consulta cada minuto: la lectura ajena se anota una vez por hora y
+    por (clínico, tripulante), para que la auditoría diga quién miró a quién sin llenarse de repeticiones."""
+    if _propio_o_clinico(conn, quien, id):
+        desde = (datetime.now(timezone.utc) - VENTANA_AUDITORIA_INTRADIA).strftime(tripulacion.FORMATO)
+        reciente = conn.execute(
+            "SELECT 1 FROM auditoria WHERE accion = 'lectura_ajena' AND entidad = 'intradia' AND actor_id = ? "
+            "AND entidad_id = ? AND t_real >= ?", (quien, id, desde)).fetchone()
+        if not reciente:
+            alertas.anotar(conn, quien, "lectura_ajena", "intradia", id)
     return id
 
 
@@ -251,10 +273,11 @@ def _intradia_demo(id, dia, base, hasta):
 
 
 @router.get("/tripulantes/{id}/intradia", responses=ERRORES, summary="Lecturas de un día por hora")
-def intradia(id: int = Depends(propio_o_clinico), modo: Literal["real", "demo"] = "real", dia: int | None = None,
+def intradia(id: int = Depends(propio_o_clinico_intradia), modo: Literal["real", "demo"] = "real", dia: int | None = None,
              hasta: str | None = Query(None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$"), conn=Depends(conexion)):
     """Lo del tiempo real: pulso, SpO2, temperatura y presión sistólica de un día (`dia`, por defecto hoy) con su hora UTC
-    (`{hora: "HH:MM", valor}`). Los mismos permisos que el historial (el tuyo, o el de tu misión si eres clínico; auditado).
+    (`{hora: "HH:MM", valor}`). Los mismos permisos que el historial (el tuyo, o el de tu misión si eres clínico; auditado
+    una vez por hora).
 
     - `modo=real`: las lecturas `Real` de ese día, sin agrupar. Sin lecturas, listas vacías.
     - `modo=demo`: simuladas cada 15 min hasta `hasta` (por defecto la hora actual) alrededor del valor diario del

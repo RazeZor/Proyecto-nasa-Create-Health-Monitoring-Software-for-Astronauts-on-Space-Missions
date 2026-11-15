@@ -64,7 +64,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/app-context.tsx](components/app-context.tsx) | 257 | — |
 | [components/body/anatomia.ts](components/body/anatomia.ts) | 319 | Anatomía procedural del cuerpo 3D: todo se genera con matemáticas (campos de distancia con signo) y se |
 | [components/body/body-stage.tsx](components/body/body-stage.tsx) | 138 | — |
-| [components/body/body-view.tsx](components/body/body-view.tsx) | 634 | — |
+| [components/body/body-view.tsx](components/body/body-view.tsx) | 636 | — |
 | [components/body/ecg.tsx](components/body/ecg.tsx) | 82 | — |
 | [components/body/escena.ts](components/body/escena.ts) | 707 | Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del |
 | [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 762 | — |
@@ -131,7 +131,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 989 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/strings.ts](lib/strings.ts) | 990 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
 | [lib/types.ts](lib/types.ts) | 193 | — |
 | [lib/utils.ts](lib/utils.ts) | 10 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |
