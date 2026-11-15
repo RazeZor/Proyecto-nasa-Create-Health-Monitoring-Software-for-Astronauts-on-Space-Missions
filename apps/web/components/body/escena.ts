@@ -178,7 +178,7 @@ const SEPARACION_PX = 34 // distancia mínima entre dos marcadores en pantalla, 
 const SEPARACION_MAX_PX = 44 // lo máximo que un marcador se aparta de su órgano
 
 /** Aparta en pantalla los marcadores que quedan casi encima (el torso junta cinco): solo mueve el botón, no el órgano. */
-function separarMarcadores(proy: Proyeccion) {
+function separarMarcadores(proy: Proyeccion, ancho: number, alto: number) {
   const ids = (Object.keys(proy) as AnclaId[]).filter((id) => proy[id].frente)
   const origen = new Map(ids.map((id) => [id, { x: proy[id].x, y: proy[id].y }]))
   for (let vuelta = 0; vuelta < 8; vuelta++) {
@@ -198,6 +198,13 @@ function separarMarcadores(proy: Proyeccion) {
       const o = origen.get(id)!, p = proy[id]
       const dx = p.x - o.x, dy = p.y - o.y, d = Math.hypot(dx, dy)
       if (d > SEPARACION_MAX_PX) { p.x = o.x + (dx / d) * SEPARACION_MAX_PX; p.y = o.y + (dy / d) * SEPARACION_MAX_PX }
+    }
+  }
+  for (const id of ids) { // y ninguno queda cortado por el borde del lienzo
+    const p = proy[id]
+    if (p.x > 8 && p.y > 8 && p.x < ancho - 8 && p.y < alto - 8) {
+      p.x = Math.min(ancho - 20, Math.max(20, p.x))
+      p.y = Math.min(alto - 20, Math.max(20, p.y))
     }
   }
 }
@@ -671,7 +678,7 @@ export function crearEscena(
       p.y = (-tmp.y * 0.5 + 0.5) * alto
       p.frente = tmp.z < 1
     }
-    separarMarcadores(proy)
+    separarMarcadores(proy, ancho, alto)
     alCuadro(proy, ancho, alto)
   }
   cuadro = requestAnimationFrame(animar)
