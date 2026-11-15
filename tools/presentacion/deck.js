@@ -14,14 +14,14 @@ const img = (nombre, alternativas = []) => {
   return null
 }
 const SHOT = {
-  home: img("t3-deck-home-zona-ambar.png", ["t3-deck-home.png", "t3-demo-en-escritorio-home.png"]),
-  homeZona: img("t3-deck-home-zona-ambar.png", ["t3-deck-home.png", "t3-demo-en-escritorio-home.png"]),
-  checkin: img("t3-deck-check-in-paso.png", ["t3-deck-check-in.png", "t3-demo-en-escritorio-check-in.png"]),
-  environment: img("t4-deck-environment.png", ["t3-deck-environment.png", "demo-en-escritorio-environment.png"]),
-  alerts: img("t3-deck-alerts.png", ["demo-en-escritorio-alerts.png"]),
-  reports: img("t4-deck-reports.png", ["t3-deck-reports.png", "demo-en-escritorio-reports.png"]),
-  device: img("t4-deck-device.png", ["t3-deck-device.png", "demo-en-escritorio-device.png"]),
-  trends: img("t3-deck-trends.png", ["demo-en-escritorio-trends.png"]),
+  home: img("home-en.png", ["t3-deck-home-zona-ambar.png"]),
+  homeZona: img("home-en.png", ["t3-deck-home-zona-ambar.png"]),
+  checkin: img("check-in-en.png", ["t3-deck-check-in-paso.png"]),
+  environment: img("environment-en.png", ["t4-deck-environment.png"]),
+  alerts: img("alerts-en.png", ["t3-deck-alerts.png"]),
+  reports: img("reports-en.png", ["t4-deck-reports.png"]),
+  device: img("device-en.png", ["t4-deck-device.png"]),
+  trends: img("trends-en.png", ["t3-deck-trends.png"]),
 }
 const LOGO_OSCURO = path.join(MARCA, "logo-horizontal-oscuro.png") // para fondo oscuro
 const LOGO_CLARO = path.join(MARCA, "logo-horizontal-claro.png") // para fondo claro
@@ -234,6 +234,67 @@ function cierre(pres, C, seccion) {
   return s
 }
 
+
+// ── diferenciadores, cinco peligros y reloj (solo en el pitch) ─────────────────────────────────────────────────
+function diferenciadores(pres, C, seccion) {
+  const s = pres.addSlide({ masterName: "CLARA", sectionTitle: seccion })
+  titulo(s, "What makes VIGÍA different")
+  const tarjetas = [
+    ["Your own baseline, not a textbook range", "Median and MAD of your own readings, moving from pre-flight to in-flight. A drift a fixed terrestrial threshold never sees fires here; in 500 simulated missions the fixed threshold never did.", HEX.accent1],
+    ["The environment is inside the reasoning", "Real NASA and NOAA data decide: a headache with cabin CO2 above 3 mmHg is a crew environment alert; a DONKI particle event switches storm mode on. Not a dashboard next to the symptoms: part of the verdict.", HEX.accent2],
+    ["Decide on board, privately, offline", "Green and amber never leave the device; only a layer-A red reaches the medical officer with the minimum data. Service worker and local queues: the link can drop and the crew keeps deciding.", HEX.accent3],
+    ["Honest by design", "Every value says Real or Simulated with source and real date; an unmeasured value is 'no data', never 0 or 'all good'. Thresholds are prototype rules with cited sources, declared as such.", HEX.dk1],
+  ]
+  tarjetas.forEach(([t, d, color], i) => {
+    const x = 0.5 + (i % 2) * 4.6, y = 1.3 + Math.floor(i / 2) * 1.85
+    s.addShape(SH.roundRect, { x, y, w: 4.4, h: 1.7, fill: { color: HEX.lt1 }, line: { color: "D5DBE7", width: 0.75 }, rectRadius: 0.08 })
+    numero(s, i + 1, x + 0.15, y + 0.12, color)
+    s.addText(t, { x: x + 0.72, y: y + 0.1, w: 3.55, h: 0.5, fontSize: 13.5, bold: true, color, isTextBox: true, margin: 0, valign: "middle" })
+    s.addText(d, { x: x + 0.15, y: y + 0.65, w: 4.1, h: 1.0, fontSize: 10, color: HEX.dk1, isTextBox: true, margin: 0, valign: "top" })
+  })
+  s.addNotes("What makes us different: your own baseline instead of textbook ranges, the environment inside the verdict, decisions on board with privacy and offline, and honesty on every value.")
+  return s
+}
+function peligros(pres, C, seccion) {
+  const s = pres.addSlide({ masterName: "CLARA", sectionTitle: seccion })
+  titulo(s, "Five hazards, five answers, five environments")
+  const cab = (x) => ({ text: x, options: { bold: true, color: HEX.lt1, fill: { color: HEX.dk1 }, fontSize: 9 } })
+  const filas = [
+    ["Hazard (NASA HRP)", "What VIGÍA measures or reads", "Rule or layer", "What the astronaut gets"].map(cab),
+    ["Space radiation", "Ambient dose (RadLab), proton flux (GOES), SEP events (DONKI)", "Storm mode at ≥ 10 pfu or SEP; career dose budget", "Shelter recommendation for the whole crew; dose context on every alert"],
+    ["Isolation and confinement", "Mood (1–10) and sleep hours every day", "Layers B and C: personal deviation and slow downward drift", "An amber on mind and sleep days before a crisis, with a next step"],
+    ["Distance from Earth", "Mission profile delay (0 s to 22 min)", "Delay queue; decisions on board; red escalates automatically", "A verdict now, a report that reaches Earth when it can"],
+    ["Gravity fields", "Resting HR, blood pressure, SpO2, temperature", "In-flight baseline (days 1–14 adaptation, 21+ window); instrument change reset", "Adaptation is not an alarm; a real change is"],
+    ["Hostile closed environment", "Cabin CO2, temperature, humidity (EDA) + reported symptoms", "CO2 > 3 mmHg with headache = crew environment alert", "One alert for the crew, not a medical alert for one person"],
+  ]
+  s.addTable(filas, { x: 0.5, y: 1.2, w: 9, colW: [1.6, 2.5, 2.5, 2.4], fontSize: 8.5, color: HEX.dk1, border: { type: "solid", pt: 0.5, color: "D5DBE7" }, fill: { color: HEX.lt1 }, valign: "middle", rowH: 0.36 })
+  s.addText("Five mission profiles, and what changes in each", { x: 0.5, y: 3.68, w: 9, h: 0.3, fontSize: 11.5, bold: true, color: HEX.dk1, isTextBox: true, margin: 0 })
+  const perfiles = [["Station", "760 mmHg · < 1 s"], ["Transit", "760 mmHg · up to 22 min"], ["Docked / Gateway-like", "527 mmHg · 1.3 s"], ["Lunar surface", "424 mmHg · 1.3 s"], ["Mars surface", "424 mmHg · 3–22 min"]]
+  perfiles.forEach(([n, d], i) => {
+    const x = 0.5 + i * 1.84
+    s.addShape(SH.roundRect, { x, y: 4.0, w: 1.72, h: 0.62, fill: { color: HEX.lt1 }, line: { color: "D5DBE7", width: 0.75 }, rectRadius: 0.08 })
+    s.addText([{ text: n, options: { bold: true, breakLine: true } }, { text: d, options: { color: HEX.dk2 } }], { x: x + 0.1, y: 4.04, w: 1.52, h: 0.56, fontSize: 9, color: HEX.dk1, isTextBox: true, margin: 0, valign: "middle" })
+  })
+  s.addText("Cabin pressure converts the same CO2 ppm into a different partial pressure; the delay sets the report queue; the fact sheet changes how each measurement is taken (restraints in 0 g, seated on a surface).", { x: 0.5, y: 4.68, w: 9, h: 0.45, fontSize: 9.5, color: HEX.dk2, isTextBox: true, margin: 0 })
+  s.addNotes("Each of NASA HRP's five hazards has a measurement, a rule and an action in VIGÍA; the five mission profiles change pressure, delay and how you measure.")
+  return s
+}
+function reloj(pres, C, seccion) {
+  const s = pres.addSlide({ masterName: "CLARA", sectionTitle: seccion })
+  titulo(s, "A watch on the wrist: everything linked on board")
+  captura(s, SHOT.device, 0.5, 1.3, 4.3, "Device screen: watch connection in four steps")
+  s.addText("Galaxy Watch4 + smart-monitor + VIGÍA. The watch never sends data to Earth; privacy and escalation rules apply to it as to any reading.", { x: 0.5, y: 4.05, w: 4.3, h: 0.7, fontSize: 9.5, color: HEX.dk2, isTextBox: true, margin: 0 })
+  const bul = [
+    "We built the wearable side too: a Wear OS app for the Galaxy Watch4 and its server, smart-monitor (team repository), streaming heart rate at 1 Hz, a guided 60-second resting check with motion tolerance, SpO2 on demand and instrument-change notes.",
+    "VIGÍA's API listens to that server; the app only talks to the API. Connection guided in four steps (API → server → watch → wrist) and a 'This is my watch' button to link the name on the watch to the crew member.",
+    "What enters the engine: only valid checks (resting HR, SpO2), labelled galaxy_watch4:<device>. The 1 Hz stream stays in memory and never becomes a reading; the daily resting HR pre-fills the check-in, never an instant pulse.",
+    "Why it matters in space: measurements with no typing, the same instrument every day, and a baseline that resets when the instrument changes. One link from the wrist to the verdict, on board, without Earth.",
+  ]
+  s.addText(bul.map((x, i) => ({ text: x, options: { bullet: true, breakLine: i < bul.length - 1, paraSpaceAfter: 7 } })), { x: 5.1, y: 1.3, w: 4.4, h: 3.7, fontSize: 10.5, color: HEX.dk1, isTextBox: true, margin: 0, valign: "top" })
+  s.addNotes("We also built the wearable side: a Wear OS app and its server. Only valid checks enter the engine; the raw stream never leaves memory.")
+  return s
+}
+
 // ── demo oficial: 7 diapositivas ───────────────────────────────────────────────────────────────────────────────
 async function demo() {
   const { pres, C } = nuevaPres("VIGÍA · Project Demo (7 slides)")
@@ -295,6 +356,9 @@ async function pitch() {
     m.addText(d, { x: x + 0.15, y: y + 0.45, w: 4.1, h: 1.2, fontSize: 10.5, color: HEX.dk1, isTextBox: true, margin: 0, valign: "top" })
   })
   m.addNotes("Reglas de prototipo con fuente citada, no límites clínicos validados para vuelo. Escrito dos veces (Python y TypeScript) con test de paridad.")
+  diferenciadores(pres, C, "Pitch")
+  peligros(pres, C, "Pitch")
+  reloj(pres, C, "Pitch")
   datos(pres, C, "Pitch")
   resultados(pres, C, "Pitch")
   // usuarios e impacto

@@ -9,6 +9,7 @@ Genera las presentaciones de VIGÍA para NASA Space Apps (la demo oficial de 7 d
 
 - `deck.js` (pptxgenjs): `node deck.js <carpeta_capturas> <carpeta_marca> <salida> "[equipo]" "[integrantes]" "[evento]"`. Sin los tres últimos argumentos deja los marcadores `[TEAM NAME]`, `[Team members]` y `[Local Event]` en la portada. Los textos y cifras salen de `auditoria/DEMO.md`, `GUIONES.md` y `packages/engine/fixtures/kpi.json`: si cambian los KPI, cámbialos aquí a mano.
 - La demo oficial debe tener **como máximo 7 diapositivas** (regla de la guía de envío 2026): `demo()` crea exactamente 7; no añadas más sin quitar otra.
+- El pitch (`pitch()`, 15 diapositivas) añade tres que no caben en la demo: «Lo que nos diferencia», «Cinco peligros, cinco respuestas, cinco entornos» (tabla peligro → medida → regla → acción y los cinco perfiles) y «Un reloj en la muñeca» (app Wear OS + smart-monitor). `deck-es.js` es la misma presentación en español con las capturas `-es`; cualquier cambio de contenido se hace en los dos archivos.
 - Formas con `pres.ShapeType.roundRect` / `ellipse`, nunca el nombre como cadena: PowerPoint no abre el archivo si `prstGeom` lleva un valor inválido, aunque `validate.py` lo dé por bueno.
 - pptxgenjs en Windows escribe entradas de carpeta en el zip; `sin_carpetas.py <pptx…>` las quita (sin eso algunos servicios en la nube no abren el archivo).
 - `exportar.ps1 -Carpeta <dir> -Nombres "a,b"` exporta cada diapositiva a PNG con PowerPoint (COM) para revisarlas; necesita PowerPoint instalado. Es la revisión visual obligatoria antes de entregar.
@@ -34,8 +35,8 @@ tags: herramientas, presentacion, pptx, pptxgenjs, capturas, puppeteer, demo
 | --- | --- | --- |
 | [capturas-deck.js](capturas-deck.js) | 66 | — |
 | [capturas-finales.js](capturas-finales.js) | 76 | — |
-| [deck-es.js](deck-es.js) | 329 | — |
-| [deck.js](deck.js) | 327 | — |
+| [deck-es.js](deck-es.js) | 393 | — |
+| [deck.js](deck.js) | 391 | — |
 | [sin_carpetas.py](sin_carpetas.py) | 14 | — |
 
 ### Configuración y fuentes externas
