@@ -165,6 +165,7 @@ Configuración (variables de entorno; la API carga el `.env` de la raíz del rep
 | `SMART_DESACTIVADO=1` | apaga el puente (`configurado: false, desactivado: true`) |
 | `SMART_TRIPULANTES` | `"Sebastián=1,Ana=2"`: nombre del reloj → id. Se suma a los vínculos hechos por la API (tabla `reloj_vinculo`) |
 | `SMART_AUTOREGISTRO=1` | crea un tripulante nuevo (astronauta, primera misión) por cada nombre desconocido. Apagado por defecto: sin él un reloj sin vincular no escribe nada |
+| `SMART_IP_LAN` | IP de esta máquina que se sugiere al reloj en `url_reloj_sugerida` (y `ip_lan`). Úsala cuando el equipo tiene varias redes, por ejemplo un hotspot cerrado para el reloj (`192.168.137.1`) y otro WiFi con internet: sin ella el sistema elige la IP de salida a internet, que el reloj no alcanza |
 
 | Endpoint | Devuelve |
 | --- | --- |
