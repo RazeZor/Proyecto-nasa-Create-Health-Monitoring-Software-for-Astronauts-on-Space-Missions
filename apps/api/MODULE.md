@@ -58,7 +58,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
 | [main.py](main.py) | 233 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 594 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
-| [rutas_dashboard.py](rutas_dashboard.py) | 341 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
+| [rutas_dashboard.py](rutas_dashboard.py) | 342 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
 | [rutas_registro.py](rutas_registro.py) | 230 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 40 | — |

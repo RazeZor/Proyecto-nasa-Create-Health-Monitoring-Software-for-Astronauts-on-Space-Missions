@@ -23,7 +23,7 @@ ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA),
 - Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...`, `index.py simular [n]` e `index.py barrer [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.
 - `simulacion.py` implementa el protocolo de §5.5 tal cual: 14 días de prevuelo + 30 de misión, 4 tripulantes, y las anomalías A1 (deriva de sueño, FC y ánimo en trip-1, días 18 a 27), A2 (CO2 de 4,6 mmHg el día 12 con cefalea en trip-2 y trip-3) y A3 (200 pfu los días 22 y 23). El motor de referencia sigue §5.1 y §5.2 (línea base de tierra a vuelo; el detector no conoce los desplazamientos de `SUPUESTOS`, que solo usa el generador). Publica `gold/caso_referencia.json` y `gold/kpi.json` (detección por anomalía, días hasta la alerta, mitad de intensidad, alerta por azar, comparador de 91 lpm y falsas alarmas por tripulante y semana, con segunda semilla). `index.py barrer` publica `gold/barrido.json` (k y h del CUSUM). Las cifras del informe salen de aquí: si cambia una regla, se vuelve a correr y se actualiza el informe; no se ajustan parámetros para recuperar un número.
 - Escenarios que usa la app (la API los busca por nombre): `mision-real` es el entorno del modo real, anclado al día 1 de la misión (GOES y DONKI en su fecha real, y RadLab ALTEA-Survey y EDA RR-1 reanclados); `mision-vigia` es el del modo demo del viaje a Marte (RadLab en el día 40, EDA en el 60 —el pico de CO2 simulado—, DONKI en el 110 con los 14 eventos SEP de mayo de 2024, justo antes de la tormenta simulada de los días 112 y 113, y GOES en el 128, cerca del día actual 130). El servicio de GOES solo guarda 24 horas: hay que reingerir y republicar (`index.py panel`) para que el modo real avance. Una ventana de DONKI ya consultada y sin eventos es un resultado válido (no va a `faltan`); cualquier otra ventana sin datos sí.
-- Viaje a Marte (`trayectoria.py` + `generar_caso_viaje`): `posicion(dia)` calcula una transferencia de Hohmann Tierra→Marte (órbitas circulares coplanares, semieje 1,262 UA, 259 días; Kepler por Newton) y da la posición de la nave, la Tierra y Marte, la distancia a la Tierra y el retardo (distancia × 499 s/UA; 13 min al llegar). El caso (`python3 index.py viaje` → `packages/engine/fixtures/caso-viaje.json`, ~330 KB compacto) usa el mismo generador con `dias_vuelo = 259` y `ANOMALIAS_VIAJE` (A2 día 60; A1 días 100–109; A3 días 112–113), más `dosis_msv_dia` y `dosis_acumulada_msv` por día (fondo ≈ 1,8 mSv/día de MSL RAD y +3 mSv por día de tormenta, supuesto de escenario) y la `trayectoria` completa. El caso de 30 días sigue siendo el fixture de paridad; el de 259 también lo pasa el motor TS. shortcut: sin efemérides reales.
+- Viaje a Marte (`trayectoria.py` + `generar_caso_viaje`): `posicion(dia)` calcula una transferencia de Hohmann Tierra→Marte (órbitas circulares coplanares, semieje 1,262 UA, 259 días; Kepler por Newton) y da la posición de la nave, la Tierra y Marte, la distancia a la Tierra y el retardo (distancia × 499 s/UA; 13 min al llegar). El caso (`python3 index.py viaje` → `packages/engine/fixtures/caso-viaje.json`, ~330 KB compacto) usa el mismo generador con `dias_vuelo = 259` y `ANOMALIAS_VIAJE` (A2 día 60; A1 días 100–109; A3 días 131–132, la tormenta solar real del 23-ene-2012), más `dosis_msv_dia` y `dosis_acumulada_msv` por día (fondo ≈ 1,8 mSv/día de MSL RAD y +3 mSv por día de tormenta, supuesto de escenario) y la `trayectoria` completa. El caso de 30 días sigue siendo el fixture de paridad; el de 259 también lo pasa el motor TS. **Calendario real:** el viaje parte el 15-sep-2011 (`INICIO_MISION`, día 1) y llega el día 259 (30-may-2012); el escenario `mision-vigia` ancla RadLab y DONKI a esas fechas (`dia_mision: 1` en 2011-09-15), así que los eventos SEP reales caen en su día verdadero (p. ej. días 8, 131–135). CO2 (EDA) y protones GOES no tienen datos en esas fechas: siguen simulados y rotulados. La dosis del viaje es simulada (MSL RAD): ALTEA mide en la ISS, no en tránsito. shortcut: sin efemérides reales.
 
 ## Relación con el informe
 
@@ -44,10 +44,10 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 | [index.py](index.py) | 43 | CLI del ETL de reanclaje. |
 | [panel.py](panel.py) | 83 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
 | [reanclaje.py](reanclaje.py) | 161 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
-| [simulacion.py](simulacion.py) | 597 | Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5). |
+| [simulacion.py](simulacion.py) | 601 | Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5). |
 | [test_panel.py](test_panel.py) | 76 | — |
 | [test_reanclaje.py](test_reanclaje.py) | 106 | — |
-| [test_simulacion.py](test_simulacion.py) | 205 | — |
+| [test_simulacion.py](test_simulacion.py) | 208 | — |
 | [test_trayectoria.py](test_trayectoria.py) | 47 | — |
 | [trayectoria.py](trayectoria.py) | 46 | Trayectoria de la nave en el tránsito Tierra→Marte (diseño: docs/superpowers/specs/2026-11-15-viaje-a-marte-design.md). |
 
@@ -109,6 +109,6 @@ python3 index.py manifest                 SHA-256 y tamaños de cada escenario g
 
 - `pipelines/reanclaje/test_panel.py`: 7 pruebas en Panel (6), Publicar (1)
 - `pipelines/reanclaje/test_reanclaje.py`: 10 pruebas en Pasos (6), Construir (4)
-- `pipelines/reanclaje/test_simulacion.py`: 22 pruebas en Simulacion (3), Reglas (13), FixtureDelMotor (1), CasoViaje (5)
+- `pipelines/reanclaje/test_simulacion.py`: 23 pruebas en Simulacion (3), Reglas (13), FixtureDelMotor (1), CasoViaje (6)
 - `pipelines/reanclaje/test_trayectoria.py`: 6 pruebas en TrayectoriaTest (6)
 <!-- CONTEXT:AUTO:END -->

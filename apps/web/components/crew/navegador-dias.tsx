@@ -10,8 +10,9 @@ const pos = (d: number, dias: number) => `${((d - 1) / Math.max(dias - 1, 1)) * 
  * Navegador de días de misión para pantalla táctil: el día grande con saltos de 1 y 7, y debajo la línea del viaje con lo
  * recorrido, la marca de «hoy» (el día actual del viaje, al que se vuelve con un toque) y los días con alerta, en ámbar o rojo según su gravedad (todo lo demás, en verde).
  */
-export function NavegadorDias({ dia, dias, hoy, alertas, onCambiar }: {
+export function NavegadorDias({ dia, dias, hoy, fecha, alertas, onCambiar }: {
   dia: number
+  fecha?: string
   dias: number
   hoy: number
   alertas: { dia: number; estado: "watch" | "act" }[]
@@ -28,6 +29,7 @@ export function NavegadorDias({ dia, dias, hoy, alertas, onCambiar }: {
             <span className="sr-only">{S.common.day} </span>
             <span className="text-2xl font-semibold">{String(dia).padStart(2, "0")}</span>
             <span className="text-sm text-muted-foreground">/{dias}</span>
+            {fecha && <span className="block text-xs text-muted-foreground">{fecha}</span>}
           </p>
           <button type="button" className={boton} onClick={() => onCambiar(dia + 1)} disabled={dia >= dias} aria-label={S.top.nextDay}><ChevronRight aria-hidden className="size-5" /></button>
           <button type="button" className={boton} onClick={() => onCambiar(dia + 7)} disabled={dia >= dias} aria-label={S.crew.forward7}><ChevronsRight aria-hidden className="size-5" /></button>

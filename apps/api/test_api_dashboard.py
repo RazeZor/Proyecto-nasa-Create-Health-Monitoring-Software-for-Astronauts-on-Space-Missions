@@ -54,7 +54,7 @@ class Dashboard(unittest.TestCase):
         r = self.c.get(f"/tripulantes/{self.ana}/historial?modo=demo", headers=self.h)
         self.assertEqual(r.status_code, 200)
         h = r.json()
-        self.assertEqual((h["modo"], h["naturaleza"], h["dias_vuelo"], h["dia_actual"]), ("demo", "Simulado", 259, 130))
+        self.assertEqual((h["modo"], h["naturaleza"], h["dias_vuelo"], h["dia_actual"]), ("demo", "Simulado", 259, 135))
         self.assertEqual(len(h["lecturas"]), 14 + 259)  # 14 de prevuelo + el tránsito completo
         self.assertEqual(len(h["entorno_diario"]), 259)
         dia60 = h["entorno_diario"][59]  # anomalía A2 inyectada: va rotulada Simulado
@@ -119,13 +119,13 @@ class Dashboard(unittest.TestCase):
         r = self.c.get(f"/tripulantes/{self.ana}/intradia", params={"modo": "demo", "hasta": "12:00"}, headers=self.h)
         self.assertEqual(r.status_code, 200)
         d = r.json()
-        self.assertEqual((d["dia"], d["naturaleza"]), (130, "Simulado"))
+        self.assertEqual((d["dia"], d["naturaleza"]), (135, "Simulado"))
         self.assertEqual(set(d["series"]), {"fc_reposo_lpm", "spo2_pct", "temp_central_c", "pas_mmHg"})
         fc = d["series"]["fc_reposo_lpm"]
         self.assertEqual([p["hora"] for p in fc[:3]] + [fc[-1]["hora"]], ["00:00", "00:15", "00:30", "12:00"])
         self.assertEqual(len(fc), 49)
         diario = self.c.get(f"/tripulantes/{self.ana}/historial", params={"modo": "demo"}, headers=self.h).json()
-        base = next(f for f in diario["lecturas"] if f["dia_mision"] == 130)
+        base = next(f for f in diario["lecturas"] if f["dia_mision"] == 135)
         for campo, margen in (("fc_reposo_lpm", 15), ("spo2_pct", 1.5), ("temp_central_c", 0.6), ("pas_mmHg", 15)):
             for p in d["series"][campo]:
                 self.assertLessEqual(abs(p["valor"] - base[campo]), margen, (campo, p))
@@ -224,8 +224,8 @@ class Dashboard(unittest.TestCase):
         conn.close()
         (es,) = self.c.get(f"/tripulantes/{self.ana}/reportes", headers=self.h).json()
         (en,) = self.c.get(f"/tripulantes/{self.ana}/reportes?lang=en", headers=self.h).json()
-        self.assertEqual(es["contenido"]["titulo"], "Informe diario · Día 113")
-        self.assertEqual(en["contenido"]["titulo"], "Daily report · Day 113")
+        self.assertEqual(es["contenido"]["titulo"], "Informe diario · Día 132")
+        self.assertEqual(en["contenido"]["titulo"], "Daily report · Day 132")
         self.assertTrue(en["contenido"]["demo"])
         self.assertEqual(en["respuesta"], "Copy. Keep the extended sleep window and measure your HR again tomorrow.")
 
@@ -255,7 +255,7 @@ class Dashboard(unittest.TestCase):
         tr.sembrar_informes_demo(conn, self.ids)
         (f,) = cola.leer_reportes(conn, self.ana)
         conn.close()
-        self.assertEqual((f["estado"], f["contenido"]["titulo"]), ("respondido", "Informe diario · Día 113"))
+        self.assertEqual((f["estado"], f["contenido"]["titulo"]), ("respondido", "Informe diario · Día 132"))
 
 
 class Entorno(unittest.TestCase):
@@ -319,9 +319,9 @@ class Entorno(unittest.TestCase):
         self.assertEqual(len(e), 259)
         self.assertEqual(e[19]["co2_origen"]["naturaleza"], "Real")  # sin anomalía ese día: manda la medición real
         self.assertEqual(e[12]["flujo_origen"]["naturaleza"], "Real")
-        # las anomalías inyectadas del viaje (A2 el día 60, A3 los días 112 y 113) son simuladas y rotuladas
+        # las anomalías inyectadas del viaje (A2 el día 60, A3 los días 131 y 132) son simuladas y rotuladas
         self.assertEqual((e[60]["co2_mmhg_max_horario"], e[60]["co2_origen"]["naturaleza"]), (4.6, "Simulado"))
-        self.assertEqual((e[112]["flujo_protones_10mev_pfu"], e[112]["flujo_origen"]["naturaleza"]), (200.0, "Simulado"))
+        self.assertEqual((e[131]["flujo_protones_10mev_pfu"], e[131]["flujo_origen"]["naturaleza"]), (200.0, "Simulado"))
         self.assertEqual(e[1]["co2_origen"]["naturaleza"], "Simulado")
         self.assertTrue(e[18]["modo_tormenta"])  # el evento SEP real de DONKI de este panel de prueba
 

@@ -87,7 +87,10 @@ A3_DIAS = (22, 23)
 A3_FLUJO_PFU = 200.0
 # Días de las tres anomalías de cada escenario: el de referencia (§5.5) y el viaje a Marte (docs/superpowers/specs)
 ANOMALIAS_REFERENCIA = {"a1": (A1_DIA_INICIO, A1_DIA_FIN), "a2": A2_DIA, "a3": A3_DIAS}
-ANOMALIAS_VIAJE = {"a1": (100, 109), "a2": 60, "a3": (112, 113)}
+# El viaje parte el 15-sep-2011 (día 1) y llega a la órbita de Marte el día 259 (30-may-2012): el calendario de los datos
+# reales (DONKI y RadLab, en el panel gold `mision-vigia`). A3 cae en la tormenta solar real del 23-ene-2012 (día 131).
+INICIO_MISION = "2011-09-15"
+ANOMALIAS_VIAJE = {"a1": (100, 109), "a2": 60, "a3": (131, 132)}
 # Dosis del viaje: radiación galáctica de fondo medida por MSL RAD en el tránsito (~1,8 mSv/día; Zeitlin et al. 2013);
 # la tormenta suma una dosis extra por día de evento (supuesto de escenario, detrás del blindaje de la cabina).
 DOSIS_FONDO_MSV_DIA = 1.8
@@ -436,6 +439,7 @@ def generar_caso_viaje(semilla=SEMILLA_DEFECTO):
         "semilla": semilla,
         "dias_prevuelo": DIAS_PREVUELO,
         "dias_vuelo": trayectoria.DIAS_TRANSITO,
+        "inicio_mision": INICIO_MISION,
         "naturaleza": "Simulado",
         "supuestos": SUPUESTOS,
         "entorno_diario": entorno,

@@ -32,7 +32,7 @@ export function Historico() {
   }, [analisis, catalogo.historial.dia_actual])
   return (
     <div className="flex flex-col gap-4">
-      <NavegadorDias dia={day} dias={dias} hoy={catalogo.historial.dia_actual} alertas={alertas} onCambiar={setDay} />
+      <NavegadorDias dia={day} dias={dias} hoy={catalogo.historial.dia_actual} fecha={catalogo.historial.entorno_diario.find((e) => e.dia_mision === day)?.fecha} alertas={alertas} onCambiar={setDay} />
       <div className="grid gap-4 lg:grid-cols-[11rem_1fr] lg:items-start">
         <div className="mx-auto flex w-44 flex-col items-center gap-3 min-[900px]:w-auto min-[900px]:flex-row min-[900px]:gap-6 lg:sticky lg:top-4 lg:w-44 lg:flex-col lg:gap-3">
           <BodyStage className="h-72 w-44" estado={estadoEscena} marcadores={[]} onMarcador={() => {}} />

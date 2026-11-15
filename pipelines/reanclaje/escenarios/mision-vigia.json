@@ -3,27 +3,15 @@
   "ventanas": [
     {
       "fuente": "radlab",
-      "desde": "2011-11-12T00:00:00Z",
-      "hasta": "2011-11-17T00:00:00Z",
-      "dia_mision": 40
-    },
-    {
-      "fuente": "eda",
-      "desde": "2014-09-21T00:00:00Z",
-      "hasta": "2014-09-26T00:00:00Z",
-      "dia_mision": 60
+      "desde": "2011-09-15T00:00:00Z",
+      "hasta": "2012-06-01T00:00:00Z",
+      "dia_mision": 1
     },
     {
       "fuente": "donki",
-      "desde": "2024-05-09T00:00:00Z",
-      "hasta": "2024-05-14T00:00:00Z",
-      "dia_mision": 110
-    },
-    {
-      "fuente": "goes",
-      "desde": "2026-11-14T00:00:00Z",
-      "hasta": "2026-11-16T00:00:00Z",
-      "dia_mision": 128
+      "desde": "2011-09-15T00:00:00Z",
+      "hasta": "2012-06-01T00:00:00Z",
+      "dia_mision": 1
     }
   ]
 }

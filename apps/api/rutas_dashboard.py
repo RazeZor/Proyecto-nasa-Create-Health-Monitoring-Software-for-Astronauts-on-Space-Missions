@@ -5,7 +5,7 @@ viven aquí (apps/api/demo/ y el caso del viaje a Marte del simulador) y se rotu
 import json
 import math
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -22,7 +22,7 @@ _FICHAS = _RAIZ / "packages" / "schemas" / "fichas"
 _FICHAS_EN = _RAIZ / "packages" / "schemas" / "fichas_en"
 _CASO = _RAIZ / "packages" / "engine" / "fixtures" / "caso-viaje.json"
 _DEMO = Path(__file__).resolve().parent / "demo"
-DIA_ACTUAL_DEMO = 130  # día de misión fijo del modo demo: a mitad del tránsito, con las tres anomalías (días 60, 100–109 y 112–113) ya visibles
+DIA_ACTUAL_DEMO = 135  # día de misión fijo del modo demo (27-ene-2012): con las tres anomalías (días 60, 100–109 y 131–132) y la tormenta solar real ya visibles
 DIAS_VUELO_MINIMO = 30  # eje de las gráficas en modo real mientras la misión es más corta
 ESCENARIO_ENTORNO = {"real": "mision-real", "demo": "mision-vigia"}  # paneles gold de pipelines/reanclaje/escenarios
 CO2_LIMITE_MMHG = 3.0
@@ -162,11 +162,12 @@ def _entorno_demo(caso, reales):
     """Escenario de demostración: el entorno simulado del viaje a Marte (con la posición de la nave y la dosis de cada día), con las mediciones reales del gold
     donde el escenario las trae. Las anomalías inyectadas (pico de CO2 y tormenta, §5.5) mandan y van `Simulado`."""
     salida = []
+    inicio = date.fromisoformat(caso["inicio_mision"])
     posiciones = {p["dia"]: p for p in caso.get("trayectoria", [])}
     for sim in caso["entorno_diario"]:
         d = sim["dia_mision"]
         real = reales.get(d, {})
-        e = {"dia_mision": d, "posicion": posiciones.get(d), "dosis_msv_dia": sim.get("dosis_msv_dia"),
+        e = {"dia_mision": d, "fecha": (inicio + timedelta(days=d - 1)).isoformat(), "posicion": posiciones.get(d), "dosis_msv_dia": sim.get("dosis_msv_dia"),
              "dosis_acumulada_msv": sim.get("dosis_acumulada_msv"), "co2_ppm_max_horario": None, "co2_mmhg_max_horario": sim["co2_mmhg_max_horario"],
              "co2_origen": {"naturaleza": "Simulado", "fuente": "Escenario de demostración", "fecha_real": None},
              "flujo_protones_10mev_pfu": sim["flujo_protones_10mev_pfu"],
@@ -235,7 +236,7 @@ def historial(id: int = Depends(propio_o_clinico), modo: Literal["real", "demo"]
         simulado = caso["tripulantes"][(id - 1) % len(caso["tripulantes"])]
         return {**comun, "naturaleza": caso["naturaleza"], "dias_prevuelo": caso["dias_prevuelo"],
                 "dias_vuelo": caso["dias_vuelo"], "dia_actual": DIA_ACTUAL_DEMO,
-                "entorno_diario": _entorno_demo(caso, reales), "lecturas": simulado["lecturas"]}
+                "inicio_mision": caso["inicio_mision"], "entorno_diario": _entorno_demo(caso, reales), "lecturas": simulado["lecturas"]}
     ahora = datetime.now(timezone.utc).strftime(tripulacion.FORMATO)
     dia_actual = tripulacion.dia_de_vuelo(conn, id, ahora) or 1
     filas = _lecturas_reales(conn, id)

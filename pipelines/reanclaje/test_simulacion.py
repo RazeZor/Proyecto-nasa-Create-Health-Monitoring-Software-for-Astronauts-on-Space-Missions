@@ -182,13 +182,16 @@ class CasoViaje(unittest.TestCase):
     def test_caso_viaje_es_determinista(self):
         self.assertEqual(self.caso, simulacion.generar_caso_viaje())
 
+    def test_el_viaje_lleva_su_calendario_real(self):
+        self.assertEqual(self.caso["inicio_mision"], "2011-09-15")
+
     def test_anomalias_del_viaje_en_su_dia(self):
         esperadas = self.caso["alertas_esperadas"]
         self.assertTrue(any(a["tripulante_id"] == "trip-1" and a["capa"] in ("B", "C") and 100 <= a["dia_mision"] <= 115
                             for a in esperadas))
         self.assertEqual(sorted(a["tripulante_id"] for a in esperadas if a["dia_mision"] == 60 and a["indicador"] == "co2"),
                          ["trip-2", "trip-3"])
-        self.assertTrue(any(a["indicador"] == "protones" and a["dia_mision"] == 112 for a in esperadas))
+        self.assertTrue(any(a["indicador"] == "protones" and a["dia_mision"] == 131 for a in esperadas))
 
     def test_dosis_acumulada_crece_y_cuadra(self):
         acumuladas = [e["dosis_acumulada_msv"] for e in self.caso["entorno_diario"]]

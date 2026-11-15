@@ -40,6 +40,8 @@ export interface OrigenDato { naturaleza: "Real" | "Simulado"; fuente: string; f
 export interface EventoSep { sepID: string; t_real: string; link: string | null; fuente: string }
 export interface EntornoHistorial {
   dia_mision: number
+  /** Fecha UTC (YYYY-MM-DD) del día de misión; solo en el viaje de la demo. */
+  fecha?: string
   /** CO2 real de cabina en ppm (EDA): se convierte a mmHg con la presión del perfil. */
   co2_ppm_max_horario?: number | null
   /** CO2 simulado, ya en mmHg. */
@@ -71,6 +73,8 @@ export interface Historial {
   dias_prevuelo: number
   dias_vuelo: number
   dia_actual: number
+  /** Fecha UTC (YYYY-MM-DD) del día 1 del viaje; solo en la demo. */
+  inicio_mision?: string
   /** Panel gold del que sale el entorno; null si el ETL aún no lo publicó. */
   escenario_entorno?: string | null
   aviso_entorno?: string | null

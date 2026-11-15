@@ -75,7 +75,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/crew/crew-view.tsx](components/crew/crew-view.tsx) | 22 | — |
 | [components/crew/historico.tsx](components/crew/historico.tsx) | 45 | — |
 | [components/crew/modo-animado.tsx](components/crew/modo-animado.tsx) | 67 | — |
-| [components/crew/navegador-dias.tsx](components/crew/navegador-dias.tsx) | 68 | — |
+| [components/crew/navegador-dias.tsx](components/crew/navegador-dias.tsx) | 70 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 345 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 62 | — |
 | [components/device/iconos.tsx](components/device/iconos.tsx) | 117 | Iconos e ilustración de la pantalla Dispositivo, con el lenguaje de `components/shared/iconos.tsx`: |
@@ -114,7 +114,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/api-registro.test.ts](lib/api-registro.test.ts) | 69 | — |
 | [lib/api-registro.ts](lib/api-registro.ts) | 161 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
 | [lib/catalogo.test.ts](lib/catalogo.test.ts) | 42 | — |
-| [lib/catalogo.ts](lib/catalogo.ts) | 234 | Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de |
+| [lib/catalogo.ts](lib/catalogo.ts) | 238 | Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de |
 | [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
 | [lib/cola.ts](lib/cola.ts) | 50 | Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local. |
 | [lib/ejes.test.ts](lib/ejes.test.ts) | 7 | — |

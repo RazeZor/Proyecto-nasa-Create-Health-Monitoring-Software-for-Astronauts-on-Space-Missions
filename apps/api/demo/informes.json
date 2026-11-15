@@ -5,21 +5,21 @@
     "respuesta": "Recibido. Sigue con la ventana de sueño ampliada y vuelve a medir la FC mañana.",
     "contenido": {
       "demo": true,
-      "titulo": "Informe diario · Día 113",
+      "titulo": "Informe diario · Día 132",
       "resumen": "Estado general ámbar. Continúa la deriva de FC, sueño corto.",
       "lectura": "FC en reposo 68 lpm, sueño 5.8 h, SpO2 97 %",
       "linea_base": "Banda de FC en vuelo 56-64 lpm",
       "entorno": "Flujo de protones 64 pfu (en descenso), CO2 1.4 mmHg",
-      "accion": "Refugio de 6 h el día 112. Ventana de sueño ampliada planificada."
+      "accion": "Refugio de 6 h el día 131. Ventana de sueño ampliada planificada."
     },
     "respuesta_en": "Copy. Keep the extended sleep window and measure your HR again tomorrow.",
     "contenido_en": {
-      "titulo": "Daily report · Day 113",
+      "titulo": "Daily report · Day 132",
       "resumen": "Overall status amber. HR drift continues, short sleep.",
       "lectura": "Resting HR 68 bpm, sleep 5.8 h, SpO2 97 %",
       "linea_base": "In-flight HR band 56–64 bpm",
       "entorno": "Proton flux 64 pfu (decreasing), CO2 1.4 mmHg",
-      "accion": "6-hour shelter on day 112. Extended sleep window planned."
+      "accion": "6-hour shelter on day 131. Extended sleep window planned."
     }
   }
 ]
