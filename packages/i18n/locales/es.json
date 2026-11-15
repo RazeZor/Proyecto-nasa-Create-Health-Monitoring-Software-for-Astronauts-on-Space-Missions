@@ -936,7 +936,8 @@
         "modo": "Modo de vista",
         "modoReal": "Tiempo real",
         "modoHistorico": "Histórico",
-        "minicuerpo": "Estado del cuerpo en el día elegido"
+        "minicuerpo": "Estado del cuerpo en el día elegido",
+        "girar": "Girar el cuerpo"
       }
     },
     "MOTOR": {

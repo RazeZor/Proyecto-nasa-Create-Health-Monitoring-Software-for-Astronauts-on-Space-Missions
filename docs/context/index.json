@@ -1622,7 +1622,7 @@
         },
         {
           "ruta": "apps/web/components/body/escena.ts",
-          "lineas": 663,
+          "lineas": 665,
           "descripcion": "Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del",
           "test": false,
           "simbolos": [
@@ -1784,7 +1784,7 @@
         },
         {
           "ruta": "apps/web/components/crew/historico.tsx",
-          "lineas": 57,
+          "lineas": 59,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -3333,7 +3333,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 933,
+          "lineas": 934,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [

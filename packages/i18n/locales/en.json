@@ -936,7 +936,8 @@
         "modo": "View mode",
         "modoReal": "Real time",
         "modoHistorico": "History",
-        "minicuerpo": "Body status on the chosen day"
+        "minicuerpo": "Body status on the chosen day",
+        "girar": "Rotate the body"
       }
     },
     "MOTOR": {

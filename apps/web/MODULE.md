@@ -63,13 +63,13 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/body/body-stage.tsx](components/body/body-stage.tsx) | 131 | — |
 | [components/body/body-view.tsx](components/body/body-view.tsx) | 592 | — |
 | [components/body/ecg.tsx](components/body/ecg.tsx) | 82 | — |
-| [components/body/escena.ts](components/body/escena.ts) | 663 | Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del |
+| [components/body/escena.ts](components/body/escena.ts) | 665 | Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del |
 | [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 762 | — |
 | [components/checkin/controles.tsx](components/checkin/controles.tsx) | 141 | — |
 | [components/checkin/iconos.tsx](components/checkin/iconos.tsx) | 95 | Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/crew/crew-body.tsx](components/crew/crew-body.tsx) | 101 | — |
 | [components/crew/crew-view.tsx](components/crew/crew-view.tsx) | 22 | — |
-| [components/crew/historico.tsx](components/crew/historico.tsx) | 57 | — |
+| [components/crew/historico.tsx](components/crew/historico.tsx) | 59 | — |
 | [components/device/device-view.tsx](components/device/device-view.tsx) | 338 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 62 | — |
 | [components/device/iconos.tsx](components/device/iconos.tsx) | 117 | Iconos e ilustración de la pantalla Dispositivo, con el lenguaje de `components/shared/iconos.tsx`: |
@@ -122,7 +122,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 933 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/strings.ts](lib/strings.ts) | 934 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
 | [lib/types.ts](lib/types.ts) | 188 | — |
 | [lib/utils.ts](lib/utils.ts) | 10 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |

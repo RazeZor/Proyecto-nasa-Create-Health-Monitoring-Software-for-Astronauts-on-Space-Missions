@@ -30,6 +30,8 @@ export interface EstadoEscena {
   vista: Vista | null
   calientes: ZonaCaliente[]
   quieto: boolean
+  /** Giro fijo de la cámara en radianes: sin balanceo ni arrastre (el minicuerpo del histórico lo gira un deslizador). */
+  giroFijo?: number
 }
 export type Proyeccion = Record<AnclaId, { x: number; y: number; frente: boolean }>
 
@@ -507,7 +509,7 @@ export function crearEscena(
     canvas.setPointerCapture(e.pointerId)
   }
   const alMover = (e: PointerEvent) => {
-    if (!arrastre) return
+    if (!arrastre || estado.giroFijo !== undefined) return
     giroUsuario = arrastre.giro - (e.clientX - arrastre.x) * 0.009
     ultimoToque = performance.now()
   }
@@ -608,16 +610,16 @@ export function crearEscena(
 
     // cámara: viaja al encuadre de la vista; en reposo se balancea para que el volumen se lea
     if (!arrastre && ahora - ultimoToque > 3500) giroUsuario += (0 - giroUsuario) * (1 - Math.exp(-dt * 1.5))
-    const vaiven = estado.quieto || arrastre ? 0 : Math.sin(reloj * 0.42) * (estado.vista ? 0.2 : 0.5)
+    const vaiven = estado.quieto || arrastre || estado.giroFijo !== undefined ? 0 : Math.sin(reloj * 0.42) * (estado.vista ? 0.2 : 0.5)
     // el cuerpo entero debe caber también en lienzos estrechos
     const tan = Math.tan((FOV * Math.PI) / 360)
     const ajuste = estado.vista ? 1 : Math.max(1, 1.0 / (2 * GENERAL.distancia * tan * camara.aspect))
     const obj = (estado.vista && objetivos[estado.vista]) || vista.objetivo
     cam.objetivo.lerp(tmp.set(obj[0], obj[1], obj[2]), k)
     cam.distancia += (vista.distancia * ajuste - cam.distancia) * k
-    cam.giro += (vista.giro - cam.giro) * k
+    cam.giro += ((estado.giroFijo ?? vista.giro) - cam.giro) * k
     cam.alzado += (vista.alzado - cam.alzado) * k
-    const giro = cam.giro + giroUsuario + vaiven
+    const giro = cam.giro + (estado.giroFijo !== undefined ? 0 : giroUsuario) + vaiven
     camara.position.set(
       cam.objetivo.x + Math.sin(giro) * Math.cos(cam.alzado) * cam.distancia,
       cam.objetivo.y + Math.sin(cam.alzado) * cam.distancia,
