@@ -568,7 +568,8 @@
         "surgeonEmpty": "No report has arrived yet.",
         "summaryReal": "Overall status {estado}. Sent from {perfil} with the profile one-way delay ({retardo}).",
         "offline": "No link with the API: showing the last queue read. New reports need a link.",
-        "oneWayHintReal": "How long a message takes to reach Earth from {perfil}. The report is delivered once that time has passed."
+        "oneWayHintReal": "How long a message takes to reach Earth from {perfil}. The report is delivered once that time has passed.",
+        "needCheckIn": "No check-in today: complete your daily check-in before queuing a report to Earth."
       },
       "device": {
         "title": "Device",

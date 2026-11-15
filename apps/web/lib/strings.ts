@@ -564,6 +564,7 @@ export const S = {
     threadEmpty: tx("web.S.reports.threadEmpty"),
     surgeonEmpty: tx("web.S.reports.surgeonEmpty"),
     offline: tx("web.S.reports.offline"),
+    needCheckIn: tx("web.S.reports.needCheckIn"),
     summaryReal: (estado: string | number, perfil: string | number, retardo: string | number) => tx("web.S.reports.summaryReal", { estado, perfil, retardo }),
   },
   device: {

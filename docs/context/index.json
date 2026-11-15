@@ -623,7 +623,7 @@
         },
         {
           "ruta": "apps/api/rutas_registro.py",
-          "lineas": 214,
+          "lineas": 227,
           "descripcion": "Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md).",
           "test": false,
           "simbolos": [
@@ -750,8 +750,8 @@
             {
               "nombre": "listar_reportes",
               "tipo": "función",
-              "firma": "listar_reportes(id: int=Depends(propio), conn=Depends(conexion))",
-              "doc": "Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null)."
+              "firma": "listar_reportes(id: int=Depends(propio), lang: Literal['es', 'en']='es', conn=Depends(conexion))",
+              "doc": "Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null). Con `lang=en`"
             },
             {
               "nombre": "avanzar",
@@ -891,7 +891,7 @@
         },
         {
           "ruta": "apps/api/test_api_dashboard.py",
-          "lineas": 240,
+          "lineas": 250,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -1936,7 +1936,7 @@
         },
         {
           "ruta": "apps/web/components/reports/reports-view.tsx",
-          "lineas": 268,
+          "lineas": 272,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2403,7 +2403,7 @@
         },
         {
           "ruta": "apps/web/lib/api-registro.ts",
-          "lineas": 159,
+          "lineas": 160,
           "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
           "test": false,
           "simbolos": [
@@ -3140,7 +3140,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 907,
+          "lineas": 908,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [

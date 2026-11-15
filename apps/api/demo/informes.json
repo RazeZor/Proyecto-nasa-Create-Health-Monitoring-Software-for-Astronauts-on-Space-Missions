@@ -12,6 +12,14 @@
       "entorno": "Flujo de protones 64 pfu (en descenso), CO2 1.4 mmHg",
       "accion": "Refugio de 6 h el día 22. Ventana de sueño ampliada planificada."
     },
-    "respuesta_en": "Copy. Keep the extended sleep window and measure your HR again tomorrow."
+    "respuesta_en": "Copy. Keep the extended sleep window and measure your HR again tomorrow.",
+    "contenido_en": {
+      "titulo": "Daily report · Day 23",
+      "resumen": "Overall status amber. HR drift continues, short sleep.",
+      "lectura": "Resting HR 68 bpm, sleep 5.8 h, SpO2 97 %",
+      "linea_base": "In-flight HR band 56–64 bpm",
+      "entorno": "Proton flux 64 pfu (decreasing), CO2 1.4 mmHg",
+      "accion": "6-hour shelter on day 22. Extended sleep window planned."
+    }
   }
 ]

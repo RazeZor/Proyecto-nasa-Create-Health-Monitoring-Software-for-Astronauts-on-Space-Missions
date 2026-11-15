@@ -135,6 +135,16 @@ class Dashboard(unittest.TestCase):
         self.assertIn("Copy. Keep the extended sleep window and measure your HR again tomorrow.", demo_en)
         self.assertNotIn("Recibido. Sigue con la ventana de sueño ampliada y vuelve a medir la FC mañana.", demo_en)
 
+    def test_informe_de_ejemplo_en_ingles(self):
+        conn = conectar()
+        tr.sembrar_informes_demo(conn, self.ids)
+        conn.close()
+        (es,) = self.c.get(f"/tripulantes/{self.ana}/reportes", headers=self.h).json()
+        (en,) = self.c.get(f"/tripulantes/{self.ana}/reportes?lang=en", headers=self.h).json()
+        self.assertEqual(es["contenido"]["titulo"], "Informe diario · Día 23")
+        self.assertEqual(en["contenido"]["titulo"], "Daily report · Day 23")
+        self.assertTrue(en["contenido"]["demo"])
+
     def test_referencia_y_aviso_del_entorno_en_ingles(self):
         en = self.c.get("/entorno/referencia?lang=en").json()
         es = self.c.get("/entorno/referencia").json()

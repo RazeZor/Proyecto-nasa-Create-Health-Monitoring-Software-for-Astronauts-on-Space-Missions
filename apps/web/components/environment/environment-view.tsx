@@ -418,7 +418,7 @@ export function EnvironmentView() {
           {gold && (
             <div className="min-w-0">
               <h3 className="text-lg font-semibold">{S.env.scenario} · <span className="font-mono">{gold.escenario}</span></h3>
-              <p className="mt-1.5 text-pretty text-base leading-relaxed text-muted-foreground">{gold.aviso}</p>
+              <p className="mt-1.5 text-pretty text-base leading-relaxed text-muted-foreground">{catalogo.historial.aviso_entorno ?? gold.aviso}</p>
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full min-w-[30rem] text-left text-base">
                   <caption className="eyebrow pb-2 text-left">{S.env.windows}</caption>

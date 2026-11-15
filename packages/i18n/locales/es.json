@@ -568,7 +568,8 @@
         "surgeonEmpty": "Aún no ha llegado ningún informe.",
         "summaryReal": "Estado general {estado}. Enviado desde {perfil} con el retardo de ida del perfil ({retardo}).",
         "offline": "Sin enlace con la API: se muestra la última cola leída. Los informes nuevos necesitan enlace.",
-        "oneWayHintReal": "Lo que tarda un mensaje en llegar a Tierra desde {perfil}. El informe se entrega cuando pasa ese tiempo."
+        "oneWayHintReal": "Lo que tarda un mensaje en llegar a Tierra desde {perfil}. El informe se entrega cuando pasa ese tiempo.",
+        "needCheckIn": "Hoy no hay registro: haz tu registro diario antes de encolar un informe a Tierra."
       },
       "device": {
         "title": "Dispositivo",

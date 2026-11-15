@@ -159,6 +159,9 @@ export function ReportsView() {
   // lo que aún viaja va arriba: es lo que el tripulante está esperando ver avanzar
   const listado = surgeon ? llegados : [...recientes.filter((r) => !haLlegado(r)), ...llegados]
 
+  // en modo real no se envía a tierra un informe de un día sin registro: no habría nada que informar
+  const sinRegistroHoy = mode === "real" && !analisis.vitals(day).some((x) => x.day === day)
+
   async function queue() {
     setEncolando(true)
     // el informe lleva lo que pide §6.1: lectura, línea base, entorno y acción, todo del día y con su procedencia
@@ -200,7 +203,7 @@ export function ReportsView() {
     <div className="mx-auto max-w-7xl">
       <PageHeader title={S.reports.title} subtitle={surgeon ? S.reports.surgeonNote : S.reports.subtitle}>
         {!surgeon && (
-          <button type="button" onClick={queue} disabled={encolando}
+          <button type="button" onClick={queue} disabled={encolando || sinRegistroHoy} title={sinRegistroHoy ? S.reports.needCheckIn : undefined}
             className="inline-flex min-h-14 items-center gap-3 rounded-full bg-primary px-7 text-lg font-semibold text-primary-foreground transition-transform hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60">
             <IconoSobre className="size-6" />
             {encolando ? S.reports.sending : S.reports.send}
@@ -209,6 +212,7 @@ export function ReportsView() {
       </PageHeader>
       {fallo && <p role="alert" className="mb-5 rounded-2xl border border-status-act/40 bg-status-act/12 p-4 text-base font-medium">{S.reports.sendFailed}</p>}
       {sinEnlace && <p role="status" className="mb-5 rounded-2xl border border-border bg-muted p-4 text-base font-medium">{S.reports.offline}</p>}
+      {sinRegistroHoy && !surgeon && <p role="status" className="mb-5 rounded-2xl border border-border bg-muted p-4 text-base">{S.reports.needCheckIn}</p>}
 
       {/* El enlace de un vistazo: cuánto tarda un mensaje, qué viaja y qué espera respuesta */}
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-4 rounded-3xl border border-border bg-card px-5 py-4 shadow-sm">
