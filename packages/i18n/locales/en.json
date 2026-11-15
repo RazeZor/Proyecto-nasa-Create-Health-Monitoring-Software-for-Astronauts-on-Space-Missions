@@ -931,7 +931,11 @@
         "navBody": "Bodies",
         "fichaTitle": "Medical history",
         "fichaSubtitle": "Each crew member's history: their indicators day by day against their own baseline. Read-only; every lookup is audited.",
-        "navFicha": "History"
+        "navFicha": "History",
+        "modo": "View mode",
+        "modoReal": "Real time",
+        "modoHistorico": "History",
+        "minicuerpo": "Body status on the chosen day"
       }
     },
     "MOTOR": {

@@ -1,10 +1,13 @@
 "use client"
 
-import { type ReactNode, useEffect, useState } from "react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 import { useApp, VerComo } from "@/components/app-context"
 import { BodyView } from "@/components/body/body-view"
+import { Historico } from "@/components/crew/historico"
 import { EmptyState, LoadingState, PageHeader } from "@/components/shared/states"
 import { leerTripulacion } from "@/lib/api-registro"
+import { rutaDe } from "@/lib/roles"
 import { cargarHistorialAjeno, type Historial } from "@/lib/catalogo"
 import { TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
@@ -12,14 +15,10 @@ import { cn } from "@/lib/utils"
 
 type Miembro = { id: number; alias: string; rol: string }
 
-/** Una vista cualquiera (cuerpo, ficha histórica) con los datos de cada tripulante, para el oficial médico y el cirujano
- * de vuelo: solo lectura y auditado en el servidor. Por defecto, el cuerpo. */
-export function CuerpoTripulacion({ titulo = S.crew.bodyTitle, subtitulo = S.crew.bodySubtitle, vista = <BodyView ajeno /> }: {
-  titulo?: string
-  subtitulo?: string
-  vista?: ReactNode
-}) {
-  const { mode } = useApp()
+/** Cuerpo de cada tripulante, para el oficial médico y el cirujano de vuelo: solo lectura y auditado en el servidor.
+ * `real`: su cuerpo hoy; `historico`: el día de misión que se elija, con minimapa y tendencias. */
+export function CuerpoTripulacion({ modo = "real" }: { modo?: "real" | "historico" }) {
+  const { mode, role } = useApp()
   const [miembros, setMiembros] = useState<Miembro[] | null>(null)
   const [actor, setActor] = useState<number | null>(null)
   const [elegido, setElegido] = useState<number | null>(null)
@@ -50,7 +49,21 @@ export function CuerpoTripulacion({ titulo = S.crew.bodyTitle, subtitulo = S.cre
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
-      <PageHeader title={titulo} subtitle={subtitulo} />
+      <PageHeader title={modo === "real" ? S.crew.bodyTitle : S.crew.fichaTitle} subtitle={modo === "real" ? S.crew.bodySubtitle : S.crew.fichaSubtitle} />
+      {role && (
+        <nav aria-label={S.crew.modo} className="flex w-fit rounded-full border border-border bg-card p-1">
+          {([["real", S.crew.modoReal, "body"], ["historico", S.crew.modoHistorico, "ficha"]] as const).map(([m, etiqueta, seccion]) => (
+            <Link
+              key={m}
+              href={rutaDe(role, seccion)}
+              aria-current={modo === m ? "page" : undefined}
+              className={cn("min-h-10 rounded-full px-4 py-2 text-sm font-semibold", modo === m ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
+            >
+              {etiqueta}
+            </Link>
+          ))}
+        </nav>
+      )}
       {miembros === null ? <LoadingState /> : miembros.length === 0 ? <EmptyState message={S.crew.bodyError} /> : (
         <div role="radiogroup" aria-label={S.crew.pick} className="flex flex-wrap gap-2">
           {miembros.map((m) => (
@@ -72,9 +85,17 @@ export function CuerpoTripulacion({ titulo = S.crew.bodyTitle, subtitulo = S.cre
       )}
       {historial === undefined ? (miembros?.length ? <LoadingState /> : null) : historial === null ? <EmptyState message={S.crew.bodyError} /> : (
         <VerComo key={elegido} historial={historial}>
-          {vista}
+          {modo === "real" ? <HoyDelTripulante /> : <Historico />}
         </VerComo>
       )}
     </div>
   )
+}
+
+/** En tiempo real el cuerpo es el de hoy: el día de misión vuelve al actual del tripulante. */
+function HoyDelTripulante() {
+  const { setDay, catalogo } = useApp()
+  const hoy = catalogo.historial.dia_actual
+  useEffect(() => setDay(hoy), [setDay, hoy])
+  return <BodyView ajeno />
 }

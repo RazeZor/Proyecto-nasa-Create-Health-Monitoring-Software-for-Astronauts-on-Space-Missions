@@ -126,6 +126,10 @@ export const S = {
     fichaTitle: tx("web.S.crew.fichaTitle"),
     fichaSubtitle: tx("web.S.crew.fichaSubtitle"),
     navFicha: tx("web.S.crew.navFicha"),
+    modo: tx("web.S.crew.modo"),
+    modoReal: tx("web.S.crew.modoReal"),
+    modoHistorico: tx("web.S.crew.modoHistorico"),
+    minicuerpo: tx("web.S.crew.minicuerpo"),
   },
   roles: {
     astronaut: tx("web.S.roles.astronaut"),

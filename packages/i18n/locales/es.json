@@ -931,7 +931,11 @@
         "navBody": "Cuerpos",
         "fichaTitle": "Ficha histórica",
         "fichaSubtitle": "El histórico de cada tripulante: sus indicadores día a día frente a su propia línea base. Es de solo lectura y cada consulta queda en la auditoría.",
-        "navFicha": "Ficha"
+        "navFicha": "Ficha",
+        "modo": "Modo de vista",
+        "modoReal": "Tiempo real",
+        "modoHistorico": "Histórico",
+        "minicuerpo": "Estado del cuerpo en el día elegido"
       }
     },
     "MOTOR": {

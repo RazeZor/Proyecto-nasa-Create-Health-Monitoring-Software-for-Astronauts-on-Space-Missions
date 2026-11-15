@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronLeft, ChevronRight, Moon, ShieldAlert, Sprout, Sun, Volume2, VolumeX } from "lucide-react"
+import { Moon, ShieldAlert, Sprout, Sun, Volume2, VolumeX } from "lucide-react"
 import { useApp } from "@/components/app-context"
 import { formatDelay } from "@/components/shared/delay-countdown"
 import {
@@ -33,7 +33,6 @@ const NAV: Record<Role, Pestana[]> = {
   cmo: [
     { seccion: null, label: S.crew.title, icon: IconoDispositivo },
     { seccion: "body", label: S.crew.navBody, icon: IconoCuerpo },
-    { seccion: "ficha", label: S.crew.navFicha, icon: IconoTendencias },
     { seccion: "alerts", label: S.nav.alerts, icon: IconoAlertas },
     { seccion: "environment", label: S.nav.environment, icon: IconoEntorno },
     { seccion: "device", label: S.nav.device, icon: IconoDispositivo },
@@ -42,7 +41,6 @@ const NAV: Record<Role, Pestana[]> = {
   surgeon: [
     { seccion: null, label: S.nav.reports, icon: IconoInformes },
     { seccion: "body", label: S.crew.navBody, icon: IconoCuerpo },
-    { seccion: "ficha", label: S.crew.navFicha, icon: IconoTendencias },
     { seccion: "alerts", label: S.nav.alerts, icon: IconoAlertas },
     { seccion: "environment", label: S.nav.environment, icon: IconoEntorno },
     { seccion: "about", label: S.nav.about, icon: IconoAcerca },
@@ -125,7 +123,7 @@ function Cell({ label, children, className, corta }: { label: string; children: 
 
 function TopBar() {
   const rol = rolDeRuta(usePathname() ?? "")
-  const { day, setDay, profile, setProfileId, theme, toggleTheme, voice, setVoice, catalogo, analisis, mode, setMode, online, pending } = useApp()
+  const { day, profile, setProfileId, theme, toggleTheme, voice, setVoice, catalogo, analisis, mode, setMode, online, pending } = useApp()
   const MISSION_DAYS = analisis.missionDays
   return (
     <header className="border-b border-border bg-card shadow-sm">
@@ -165,19 +163,12 @@ function TopBar() {
 
         <div className="flex items-center gap-2" role="group" aria-label={S.top.missionDay}>
           <span className="eyebrow">{S.top.missionDay}</span>
-          <div className="flex items-center rounded-xl border border-input bg-card">
-            <button type="button" className="flex size-10 items-center justify-center rounded-l-xl hover:bg-accent disabled:opacity-40" onClick={() => setDay(day - 1)} disabled={day <= 1} aria-label={S.top.prevDay}>
-              <ChevronLeft aria-hidden className="size-5" />
-            </button>
-            <p className="min-w-16 px-1 text-center font-mono text-lg tabular-nums" aria-live="polite">
-              <span className="sr-only">{S.common.day} </span>
-              <span className="font-semibold">{String(day).padStart(2, "0")}</span>
-              <span className="text-sm text-muted-foreground">/{MISSION_DAYS}</span>
-            </p>
-            <button type="button" className="flex size-10 items-center justify-center rounded-r-xl hover:bg-accent disabled:opacity-40" onClick={() => setDay(day + 1)} disabled={day >= MISSION_DAYS} aria-label={S.top.nextDay}>
-              <ChevronRight aria-hidden className="size-5" />
-            </button>
-          </div>
+          {/* Solo muestra el día; elegir otro día es del modo Histórico (crew-body.tsx). */}
+          <p className="flex h-10 min-w-16 items-center justify-center rounded-xl border border-input bg-card px-3 font-mono text-lg tabular-nums" aria-live="polite">
+            <span className="sr-only">{S.common.day} </span>
+            <span className="font-semibold">{String(day).padStart(2, "0")}</span>
+            <span className="text-sm text-muted-foreground">/{MISSION_DAYS}</span>
+          </p>
         </div>
 
         <p className="flex items-center gap-2">
