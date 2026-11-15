@@ -49,6 +49,8 @@ export interface ZoneResult {
 
 export interface Alert {
   id: string
+  /** Indicador del motor que la produjo (fc, pas, news2, sueno, co2, sintoma_cefalea…). */
+  key?: string
   day: number
   time: string
   /** Hora del registro del tripulante que la produjo; null si viene solo del historial. */

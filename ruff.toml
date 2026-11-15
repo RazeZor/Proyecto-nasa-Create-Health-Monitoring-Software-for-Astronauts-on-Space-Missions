@@ -10,3 +10,8 @@ ignore = ["E501"]
 [lint.isort]
 # apps/api importa sus módulos hermanos (`almacen`, `main`) y packages/i18n por sys.path
 known-first-party = ["almacen", "main", "rutas_registro", "datalake", "reanclaje", "i18n"]
+
+[lint.per-file-ignores]
+# Guiones de un solo uso que generaron apps/web/public/modelos/cuerpo.glb: se conservan tal como se ejecutaron
+# (procedencia del modelo). Solo se les perdonan reglas de estilo, no las que atrapan errores (F, imports).
+"tools/modelo-anatomico/*.py" = ["E701", "E702", "E741"]

@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --color-status-ok: var(--status-ok);
   --color-status-watch: var(--status-watch);
@@ -50,81 +50,98 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Colores de la marca VIGÍA (docs/brand/README.md): Noche #0B1020 y Casco #F2F5FA como tinta y fondo, y los tres
+ * estados Normal / Atención / Alerta. Sobre fondo claro los estados van un punto más oscuros que en la guía para
+ * que el texto pequeño cumpla contraste AA; los rellenos y el punto del logotipo usan el tono de la guía.
+ */
 :root {
   color-scheme: light;
-  --background: oklch(0.962 0.006 85);
-  --foreground: oklch(0.2 0.015 260);
-  --card: oklch(0.99 0.003 85);
-  --card-foreground: oklch(0.2 0.015 260);
-  --popover: oklch(0.995 0.002 85);
-  --popover-foreground: oklch(0.2 0.015 260);
-  --primary: oklch(0.42 0.13 258);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.93 0.006 85);
-  --secondary-foreground: oklch(0.25 0.015 260);
-  --muted: oklch(0.93 0.006 85);
-  --muted-foreground: oklch(0.43 0.015 260);
-  --accent: oklch(0.92 0.01 85);
-  --accent-foreground: oklch(0.2 0.015 260);
-  --destructive: oklch(0.52 0.2 27);
-  --border: oklch(0.85 0.008 85);
-  --input: oklch(0.8 0.01 85);
-  --ring: oklch(0.42 0.13 258);
-  --status-ok: oklch(0.47 0.12 155);
-  --status-watch: oklch(0.52 0.13 65);
-  --status-act: oklch(0.52 0.2 27);
-  --chart-1: oklch(0.42 0.13 258);
-  --chart-2: oklch(0.5 0.13 155);
-  --chart-3: oklch(0.55 0.13 65);
-  --chart-4: oklch(0.53 0.2 25);
-  --chart-5: oklch(0.55 0.1 290);
-  --radius: 0.3rem;
-  --sidebar: oklch(0.2 0.015 260);
-  --sidebar-foreground: oklch(0.94 0.006 85);
-  --sidebar-primary: oklch(0.82 0.09 230);
-  --sidebar-primary-foreground: oklch(0.18 0.015 260);
-  --sidebar-accent: oklch(0.27 0.016 260);
-  --sidebar-accent-foreground: oklch(0.96 0.006 85);
-  --sidebar-border: oklch(0.3 0.015 260);
-  --sidebar-ring: oklch(0.82 0.09 230);
+  --background: #F2F5FA;
+  --foreground: #0B1020;
+  --card: #FFFFFF;
+  --card-foreground: #0B1020;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B1020;
+  --primary: #0B1020;
+  --primary-foreground: #F2F5FA;
+  --secondary: #E6EBF3;
+  --secondary-foreground: #1B2338;
+  --muted: #E9EEF5;
+  --muted-foreground: #525D75;
+  --accent: #E1E8F2;
+  --accent-foreground: #0B1020;
+  --destructive: #D93A40;
+  --border: #D9E0EB;
+  --input: #C3CCDB;
+  --ring: #0B1020;
+  --status-ok: #0C8F5B;
+  --status-watch: #B06F00;
+  --status-act: #D2343A;
+  --marca-ok: #12A86B;
+  --marca-watch: #D98A00;
+  --marca-act: #D93A40;
+  --escenario-centro: #FFFFFF;
+  --escenario-borde: #DCE6F4;
+  --escenario-trama: rgb(11 16 32 / 0.05);
+  --chart-1: #2456D6;
+  --chart-2: #12A86B;
+  --chart-3: #D98A00;
+  --chart-4: #D93A40;
+  --chart-5: #7A5AE0;
+  --radius: 0.7rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0B1020;
+  --sidebar-primary: #0B1020;
+  --sidebar-primary-foreground: #F2F5FA;
+  --sidebar-accent: #E9EEF5;
+  --sidebar-accent-foreground: #0B1020;
+  --sidebar-border: #D9E0EB;
+  --sidebar-ring: #0B1020;
 }
 
 .dark {
   color-scheme: dark;
-  --background: oklch(0.155 0.01 260);
-  --foreground: oklch(0.95 0.005 85);
-  --card: oklch(0.19 0.012 260);
-  --card-foreground: oklch(0.95 0.005 85);
-  --popover: oklch(0.22 0.014 260);
-  --popover-foreground: oklch(0.95 0.005 85);
-  --primary: oklch(0.82 0.09 230);
-  --primary-foreground: oklch(0.17 0.012 260);
-  --secondary: oklch(0.25 0.013 260);
-  --secondary-foreground: oklch(0.92 0.005 85);
-  --muted: oklch(0.24 0.012 260);
-  --muted-foreground: oklch(0.74 0.01 260);
-  --accent: oklch(0.27 0.015 260);
-  --accent-foreground: oklch(0.95 0.005 85);
-  --destructive: oklch(0.7 0.19 25);
-  --border: oklch(0.31 0.012 260);
-  --input: oklch(0.36 0.012 260);
-  --ring: oklch(0.82 0.09 230);
-  --status-ok: oklch(0.78 0.15 155);
-  --status-watch: oklch(0.83 0.15 80);
-  --status-act: oklch(0.7 0.19 25);
-  --chart-1: oklch(0.8 0.1 215);
-  --chart-2: oklch(0.78 0.15 155);
-  --chart-3: oklch(0.83 0.15 80);
-  --chart-4: oklch(0.7 0.19 25);
-  --chart-5: oklch(0.72 0.12 290);
-  --sidebar: oklch(0.18 0.02 255);
-  --sidebar-foreground: oklch(0.95 0.008 240);
-  --sidebar-primary: oklch(0.8 0.1 215);
-  --sidebar-primary-foreground: oklch(0.18 0.02 255);
-  --sidebar-accent: oklch(0.26 0.025 250);
-  --sidebar-accent-foreground: oklch(0.95 0.008 240);
-  --sidebar-border: oklch(0.3 0.02 255);
-  --sidebar-ring: oklch(0.8 0.1 215);
+  --background: #0B1020;
+  --foreground: #F2F5FA;
+  --card: #131A2E;
+  --card-foreground: #F2F5FA;
+  --popover: #18203A;
+  --popover-foreground: #F2F5FA;
+  --primary: #F2F5FA;
+  --primary-foreground: #0B1020;
+  --secondary: #1C2540;
+  --secondary-foreground: #E4E9F2;
+  --muted: #1A2238;
+  --muted-foreground: #A3AEC4;
+  --accent: #212B48;
+  --accent-foreground: #F2F5FA;
+  --destructive: #E5484D;
+  --border: #283250;
+  --input: #344061;
+  --ring: #F2F5FA;
+  --status-ok: #3DDC97;
+  --status-watch: #F5A623;
+  --status-act: #F0666A;
+  --marca-ok: #3DDC97;
+  --marca-watch: #F5A623;
+  --marca-act: #E5484D;
+  --escenario-centro: #1B2747;
+  --escenario-borde: #0B1020;
+  --escenario-trama: rgb(242 245 250 / 0.05);
+  --chart-1: #6FA0FF;
+  --chart-2: #3DDC97;
+  --chart-3: #F5A623;
+  --chart-4: #F0666A;
+  --chart-5: #A88BFF;
+  --sidebar: #0F1528;
+  --sidebar-foreground: #F2F5FA;
+  --sidebar-primary: #F2F5FA;
+  --sidebar-primary-foreground: #0B1020;
+  --sidebar-accent: #1C2540;
+  --sidebar-accent-foreground: #F2F5FA;
+  --sidebar-border: #283250;
+  --sidebar-ring: #F2F5FA;
 }
 
 @layer base {
@@ -151,6 +168,39 @@
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
+
+/* Pantalla del cuerpo 3D */
+.escenario {
+  background:
+    linear-gradient(var(--escenario-trama) 1px, transparent 1px) 0 0 / 100% 44px,
+    linear-gradient(90deg, var(--escenario-trama) 1px, transparent 1px) 0 0 / 44px 100%,
+    radial-gradient(ellipse 75% 65% at 50% 42%, var(--escenario-centro), var(--escenario-borde));
+}
+@keyframes onda-dolor {
+  from { transform: scale(0.45); opacity: 0.95; }
+  to { transform: scale(1.9); opacity: 0; }
+}
+.onda-dolor { animation: onda-dolor 1.6s ease-out infinite; }
+@keyframes latido {
+  0%, 100% { transform: scale(1); }
+  12% { transform: scale(1.22); }
+  24% { transform: scale(0.98); }
+  36% { transform: scale(1.12); }
+  50% { transform: scale(1); }
+}
+.latido { animation: latido 1s ease-in-out infinite; transform-origin: center; }
+@keyframes linea-guia { to { stroke-dashoffset: -18; } }
+.linea-guia { stroke-dasharray: 3 6; opacity: 0.75; animation: linea-guia 0.9s linear infinite; }
+@keyframes panel-detalle {
+  from { opacity: 0; transform: translateX(1.25rem); }
+  to { opacity: 1; transform: none; }
+}
+.panel-detalle { animation: panel-detalle 320ms ease-out; }
+@keyframes titulo-organo {
+  from { opacity: 0; transform: translateY(-0.5rem) scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+.titulo-organo { animation: titulo-organo 380ms 250ms ease-out both; }
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(1.5rem); }

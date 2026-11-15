@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { estadoReporte, type ReporteServidor } from "@/lib/cola"
+import { cn } from "@/lib/utils"
 
 export function formatDelay(minutes: number) {
   if (minutes < 1) return `${Math.max(1, Math.round(minutes * 60))} s`
@@ -24,9 +25,10 @@ export function useReportState(createdAt: number, delayMinutes: number, servidor
   return e
 }
 
-export function DelayCountdown({ remainingMs, label }: { remainingMs: number; label: string }) {
+/** Cuenta atrás mm:ss. Por defecto es pequeña; `className` la agranda donde es el dato principal. */
+export function DelayCountdown({ remainingMs, label, className }: { remainingMs: number; label: string; className?: string }) {
   return (
-    <span className="font-mono text-sm tabular-nums" aria-live="off">
+    <span className={cn("tabular-nums", className ?? "font-mono text-sm")} aria-live="off">
       <span className="sr-only">{label} </span>
       {fmt(remainingMs)}
     </span>

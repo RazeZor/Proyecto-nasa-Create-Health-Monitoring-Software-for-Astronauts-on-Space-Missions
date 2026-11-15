@@ -3,7 +3,9 @@
  * - Navegación: red primero para tomar el último despliegue; sin red, la copia guardada.
  * - Recursos con huella (/_next/static): caché primero, son inmutables.
  * - La API (/vigia-api) no se intercepta: la app guarda su propia copia del catálogo y su cola de envíos. */
-const CACHE = "vigia-carcasa-v1"
+const CACHE = "vigia-carcasa-v2"
+// Recursos que la carcasa necesita y no llevan huella: el modelo anatómico del cuerpo 3D.
+const RECURSOS = ["/modelos/cuerpo.glb"]
 const PANTALLAS = ["/", "/check-in", "/trends", "/environment", "/alerts", "/reports", "/device", "/about"]
 
 async function guardarPantalla(cache, ruta) {
@@ -17,7 +19,10 @@ async function guardarPantalla(cache, ruta) {
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE).then((cache) => Promise.all(PANTALLAS.map((p) => guardarPantalla(cache, p).catch(() => undefined)))).then(() => self.skipWaiting()),
+    caches.open(CACHE).then((cache) => Promise.all([
+      ...PANTALLAS.map((p) => guardarPantalla(cache, p).catch(() => undefined)),
+      ...RECURSOS.map((r) => cache.add(r).catch(() => undefined)),
+    ])).then(() => self.skipWaiting()),
   )
 })
 

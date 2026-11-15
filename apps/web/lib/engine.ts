@@ -29,6 +29,8 @@ const ZONA: Record<string, ZoneId | null> = {
   // síntomas sin causa ambiental (informe §3.2): neuro-oculares y vestibulares a la cabeza; inmunes a sangre e inmunidad
   sintoma_cefalea: "head", sintoma_mareo: "head", sintoma_vision: "head", sintoma_nausea: "head", sintoma_erupcion: "blood",
 }
+/** Indicador del motor -> indicador de la interfaz al que señala su alerta. */
+const DE_MOTOR: Record<string, IndicatorId> = { fc: "restingHr", pas: "systolic", sueno: "sleepH", animo: "mood", glucosa: "glucose" }
 const PREFIJO_SINTOMA = "sintoma_"
 const ZONAS: ZoneId[] = ["head", "heart", "bone", "blood", "mind"]
 const SINTOMA = vocabulario.sintomas as Record<Symptom, string>
@@ -108,7 +110,7 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
       const zona = ZONA[a.indicador] ?? "head"
       const t = creado.get(a.dia_mision)
       return {
-        id: `al-${a.dia_mision}-${capa}-${a.indicador}`, day: a.dia_mision, time: t ? new Date(t).toISOString().slice(11, 16) : "",
+        id: `al-${a.dia_mision}-${capa}-${a.indicador}`, key: a.indicador, day: a.dia_mision, time: t ? new Date(t).toISOString().slice(11, 16) : "",
         createdAt: t ?? null, status: "watch", layer: capa, zone: zona,
         indicator: `${MOTOR.sintoma}: ${ui ? S.symptoms[ui] : codigo}`, value: "", clinicalBand: MOTOR.bandaSintoma, cause: MOTOR.causaSintoma,
         action: MOTOR.accionSintoma[zona === "blood" ? "blood" : "head"], scope: "personal", informative: false, escalates: false,
@@ -125,6 +127,7 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
     const t = creado.get(a.dia_mision)
     return {
       id: `al-${a.dia_mision}-${capa}-${a.indicador}`,
+      key: a.indicador,
       day: a.dia_mision,
       time: t ? new Date(t).toISOString().slice(11, 16) : "",
       createdAt: t ?? null,
@@ -196,6 +199,30 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
     })
   }
 
+  /**
+   * Estado de cada indicador ese día, con la misma regla de vigencia que las zonas. Las capas B y C y la glucosa
+   * señalan su indicador; la capa A (NEWS2) es una suma, así que señala los parámetros que puntúan en ella.
+   */
+  const indicatorStatus = (day: number): Record<IndicatorId, Status> => {
+    const r: Record<IndicatorId, Status> = { restingHr: "ok", systolic: "ok", spo2: "ok", tempC: "ok", sleepH: "ok", mood: "ok", glucose: "ok", massKg: "ok" }
+    const subir = (id: IndicatorId, s: Status) => {
+      if (rank[s] > rank[r[id]]) r[id] = s
+    }
+    for (const a of todas) {
+      if (a.informative || !(a.day === day || (a.day === day - 1 && a.layer !== "A"))) continue
+      const directo = a.key ? DE_MOTOR[a.key] : undefined
+      if (directo) subir(directo, a.status)
+      if (a.key !== "news2") continue
+      const l = porDia.get(a.day)
+      if (!l) continue
+      if (puntosNews2(l.fc_reposo_lpm, null, null, null).pts > 0) subir("restingHr", a.status)
+      if (puntosNews2(null, l.pas_mmHg, null, null).pts > 0) subir("systolic", a.status)
+      if (puntosNews2(null, null, l.spo2_pct, null).pts > 0) subir("spo2", a.status)
+      if (puntosNews2(null, null, null, l.temp_central_c).pts > 0) subir("tempC", a.status)
+    }
+    return r
+  }
+
   const overall = (day: number): Status => worst(zones(day).map((z) => z.status))
   /** Tormenta del día y de dónde sale: evento SEP real de DONKI, flujo medido o anomalía simulada. */
   const stormInfo = (day: number) => {
@@ -219,7 +246,7 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
     const mmHg = ENTORNO[day]?.co2_mmhg_max_horario ?? null
     return e && mmHg !== null ? { mmHg, ppm: e.co2_ppm_max_horario ?? null, source: textoOrigen(e.co2_origen), simulated: e.co2_origen?.naturaleza !== "Real" } : null
   }
-  return { alerts, vitals, zones, overall, band, storm, stormInfo, co2, hasData, missionDays: MISSION_DAYS, cambiosInstrumento, real: historial.modo === "real" }
+  return { alerts, vitals, zones, indicatorStatus, overall, band, storm, stormInfo, co2, hasData, missionDays: MISSION_DAYS, cambiosInstrumento, real: historial.modo === "real" }
 }
 
 /**
