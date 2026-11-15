@@ -45,26 +45,26 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [app/check-in/page.tsx](app/check-in/page.tsx) | 5 | — |
 | [app/device/page.tsx](app/device/page.tsx) | 5 | — |
 | [app/environment/page.tsx](app/environment/page.tsx) | 5 | — |
-| [app/layout.tsx](app/layout.tsx) | 42 | — |
+| [app/layout.tsx](app/layout.tsx) | 43 | — |
 | [app/manifest.ts](app/manifest.ts) | 21 | — |
 | [app/page.tsx](app/page.tsx) | 5 | — |
 | [app/reports/page.tsx](app/reports/page.tsx) | 5 | — |
 | [app/trends/page.tsx](app/trends/page.tsx) | 5 | — |
-| [components/about/about-view.tsx](components/about/about-view.tsx) | 231 | — |
+| [components/about/about-view.tsx](components/about/about-view.tsx) | 234 | — |
 | [components/about/iconos.tsx](components/about/iconos.tsx) | 63 | Iconos de la pantalla Acerca de, con el lenguaje de `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/alerts/alerts-view.tsx](components/alerts/alerts-view.tsx) | 432 | — |
 | [components/alerts/iconos.tsx](components/alerts/iconos.tsx) | 92 | Iconos de las alertas y de los avisos emergentes: privacidad (quién lo ve) y tipo de aviso. Mismo lenguaje que |
-| [components/app-context.tsx](components/app-context.tsx) | 218 | — |
+| [components/app-context.tsx](components/app-context.tsx) | 226 | — |
 | [components/body/anatomia.ts](components/body/anatomia.ts) | 319 | Anatomía procedural del cuerpo 3D: todo se genera con matemáticas (campos de distancia con signo) y se |
 | [components/body/body-figure.tsx](components/body/body-figure.tsx) | 298 | — |
 | [components/body/body-stage.tsx](components/body/body-stage.tsx) | 132 | — |
-| [components/body/body-view.tsx](components/body/body-view.tsx) | 585 | — |
+| [components/body/body-view.tsx](components/body/body-view.tsx) | 588 | — |
 | [components/body/ecg.tsx](components/body/ecg.tsx) | 82 | — |
 | [components/body/escena.ts](components/body/escena.ts) | 663 | Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del |
-| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 760 | — |
+| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 761 | — |
 | [components/checkin/controles.tsx](components/checkin/controles.tsx) | 141 | — |
 | [components/checkin/iconos.tsx](components/checkin/iconos.tsx) | 95 | Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
-| [components/device/device-view.tsx](components/device/device-view.tsx) | 331 | — |
+| [components/device/device-view.tsx](components/device/device-view.tsx) | 340 | — |
 | [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 62 | — |
 | [components/device/iconos.tsx](components/device/iconos.tsx) | 117 | Iconos e ilustración de la pantalla Dispositivo, con el lenguaje de `components/shared/iconos.tsx`: |
 | [components/device/reloj-extras.tsx](components/device/reloj-extras.tsx) | 144 | — |
@@ -72,7 +72,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/environment/environment-view.tsx](components/environment/environment-view.tsx) | 466 | — |
 | [components/environment/iconos.tsx](components/environment/iconos.tsx) | 65 | Iconos de la pantalla Entorno, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/reports/iconos.tsx](components/reports/iconos.tsx) | 51 | Iconos de los informes: los dos extremos del enlace (nave y Tierra) y el mensaje que viaja entre ellos. Mismo |
-| [components/reports/reports-view.tsx](components/reports/reports-view.tsx) | 264 | — |
+| [components/reports/reports-view.tsx](components/reports/reports-view.tsx) | 267 | — |
 | [components/reports/trayecto.tsx](components/reports/trayecto.tsx) | 74 | — |
 | [components/shared/delay-countdown.tsx](components/shared/delay-countdown.tsx) | 36 | — |
 | [components/shared/iconos.tsx](components/shared/iconos.tsx) | 140 | Iconos propios de VIGÍA, dibujados para esta aplicación (no vienen de una librería). Mismo lenguaje en todos: |
@@ -81,8 +81,8 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/shared/logo.tsx](components/shared/logo.tsx) | 42 | Marca VIGÍA («Centinela»), tal como la define docs/brand: el casco, la V con su cabeza y el punto de estado. |
 | [components/shared/states.tsx](components/shared/states.tsx) | 50 | — |
 | [components/shared/status.tsx](components/shared/status.tsx) | 73 | — |
-| [components/shell/alert-center.tsx](components/shell/alert-center.tsx) | 209 | — |
-| [components/shell/app-shell.tsx](components/shell/app-shell.tsx) | 260 | — |
+| [components/shell/alert-center.tsx](components/shell/alert-center.tsx) | 212 | — |
+| [components/shell/app-shell.tsx](components/shell/app-shell.tsx) | 267 | — |
 | [components/shell/sw-register.tsx](components/shell/sw-register.tsx) | 15 | — |
 | [components/trends/iconos.tsx](components/trends/iconos.tsx) | 46 | Iconos de la ficha del indicador, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/trends/resumen.ts](components/trends/resumen.ts) | 44 | — |
@@ -90,14 +90,14 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/ui/badge.tsx](components/ui/badge.tsx) | 51 | — |
 | [components/ui/button.tsx](components/ui/button.tsx) | 57 | — |
 | [components/ui/card.tsx](components/ui/card.tsx) | 102 | — |
-| [components/ui/dialog.tsx](components/ui/dialog.tsx) | 160 | — |
+| [components/ui/dialog.tsx](components/ui/dialog.tsx) | 161 | — |
 | [components/ui/popover.tsx](components/ui/popover.tsx) | 89 | — |
-| [components/ui/sheet.tsx](components/ui/sheet.tsx) | 138 | — |
+| [components/ui/sheet.tsx](components/ui/sheet.tsx) | 139 | — |
 | [components/ui/slider.tsx](components/ui/slider.tsx) | 51 | — |
 | [lib/alertas-sync.test.ts](lib/alertas-sync.test.ts) | 52 | — |
 | [lib/alertas-sync.ts](lib/alertas-sync.ts) | 35 | Núcleo puro del escalamiento de alertas rojas (§5.4): sin red ni almacenamiento, que se inyectan. |
-| [lib/api-registro.test.ts](lib/api-registro.test.ts) | 54 | — |
-| [lib/api-registro.ts](lib/api-registro.ts) | 157 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
+| [lib/api-registro.test.ts](lib/api-registro.test.ts) | 61 | — |
+| [lib/api-registro.ts](lib/api-registro.ts) | 159 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
 | [lib/catalogo.test.ts](lib/catalogo.test.ts) | 35 | — |
 | [lib/catalogo.ts](lib/catalogo.ts) | 204 | Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de |
 | [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
@@ -111,7 +111,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 873 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/strings.ts](lib/strings.ts) | 880 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
 | [lib/types.ts](lib/types.ts) | 188 | — |
 | [lib/utils.ts](lib/utils.ts) | 10 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |
@@ -427,6 +427,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - constante `capaApi`
 - constante `perfilApi`
 - constante `retardoMin`
+- constante `retardoEnvio`
 - constante `tReal`
 - función `lecturasDeCheckIn`
 - constante `sintomasDeCheckIn`
@@ -585,7 +586,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `NEXT_PUBLIC_VIGIA_API_URL`, `NEXT_PUBLIC_VIGIA_MODO`, `NEXT_PUBLIC_VIGIA_TRIPULANTE`, `NODE_ENV`, `VIGIA_API_INTERNA`
+- Variables de entorno: `NEXT_PUBLIC_VIGIA_API_URL`, `NEXT_PUBLIC_VIGIA_MODO`, `NEXT_PUBLIC_VIGIA_PUBLICO`, `NEXT_PUBLIC_VIGIA_TRIPULANTE`, `NODE_ENV`, `VIGIA_API_INTERNA`
 
 ### Dependencias
 

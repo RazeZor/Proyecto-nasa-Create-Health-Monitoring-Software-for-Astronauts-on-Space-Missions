@@ -25,6 +25,9 @@
       "linea_base_no_existe": "there is no baseline for that indicator and origin",
       "reloj_sin_conexion": "the watch server is not connected (check SMART_URL and that smart-monitor is running)",
       "reloj_sin_tripulante": "the watch server does not know this crew member (check SMART_TRIPULANTES or the name on the watch)"
+    },
+    "autor": {
+      "cirujano": "Flight Surgeon"
     }
   },
   "web": {
@@ -32,7 +35,7 @@
       "app": {
         "name": "VIGÍA",
         "tagline": "Crew self-health monitor",
-        "disclaimer": "Decision-support prototype. Not a medical device. Environmental data labeled “Real” are NASA and NOAA measurements; in demo mode crew physiology is simulated.",
+        "disclaimer": "Decision-support prototype. Not a medical device. Thresholds are prototype rules with cited sources, not clinically validated flight limits. Environmental data labeled “Real” are NASA and NOAA measurements; in demo mode crew physiology is simulated.",
         "skip": "Skip to main content"
       },
       "nav": {
@@ -74,7 +77,9 @@
         "realEmptyCta": "Do my check-in",
         "realEmptyDemo": "View demo mode",
         "offline": "No link to the API: working from the local copy",
-        "offlineDetail": "You can check in and view your status and alerts. Pending check-ins and notices are sent automatically when the link returns."
+        "offlineDetail": "You can check in and view your status and alerts. Pending check-ins and notices are sent automatically when the link returns.",
+        "publicShared": "Public demonstration site.",
+        "publicSharedDetail": "On this site real mode uses a test crew member shared by every visitor: what you log is visible to others and you may see other people's entries. Do not enter personal data."
       },
       "status": {
         "ok": "OK",
@@ -205,7 +210,8 @@
           "mood": "How you feel today, from 1 to 10.",
           "glucose": "Sugar available in the blood.",
           "massKg": "Your weight: reflects muscle and bone."
-        }
+        },
+        "remindersExample": "Example reminders: no on-board activity plan is connected yet."
       },
       "checkin": {
         "title": "Daily check-in",
@@ -550,7 +556,9 @@
         "journey": "Report journey from the ship to Earth",
         "sending": "Queueing…",
         "threadEmpty": "No messages yet.",
-        "surgeonEmpty": "No report has arrived yet."
+        "surgeonEmpty": "No report has arrived yet.",
+        "summaryReal": "Overall status {estado}. Sent from {perfil} with the profile one-way delay ({retardo}).",
+        "offline": "No link with the API: showing the last queue read. New reports need a link."
       },
       "device": {
         "title": "Device",
@@ -654,7 +662,9 @@
         "off": "Off",
         "export": "Export data",
         "exportDesc": "The watch readings in a CSV file.",
-        "instrumentTitle": "Instrument change"
+        "instrumentTitle": "Instrument change",
+        "bpm": "bpm",
+        "simulatorRealHint": "Demo mode only. In real mode VIGÍA never invents a pulse."
       },
       "catalog": {
         "hazards": {
@@ -682,17 +692,38 @@
         "challenge": "NASA Space Apps Challenge 2026 · Challenge “Create Health Monitoring Software for Astronauts on Space Missions”",
         "notDevice": "Not a medical device",
         "facts": {
-          "checkin": { "v": "< 90 s", "l": "daily check-in" },
-          "delay": { "v": "22 min", "l": "maximum one-way delay" },
-          "layers": { "v": "3 layers", "l": "of detection, plus the environment" },
-          "offline": { "v": "Offline", "l": "everything runs on board" }
+          "checkin": {
+            "v": "< 90 s",
+            "l": "daily check-in"
+          },
+          "delay": {
+            "v": "22 min",
+            "l": "maximum one-way delay"
+          },
+          "layers": {
+            "v": "3 layers",
+            "l": "of detection, plus the environment"
+          },
+          "offline": {
+            "v": "Offline",
+            "l": "everything runs on board"
+          }
         },
         "how": "How it decides",
         "howLead": "Three questions about each check-in, from the most urgent to the most subtle, with the environment as context.",
         "steps": {
-          "log": { "t": "You check in", "d": "Heart rate, blood pressure, SpO₂, temperature, sleep, mood and symptoms, in under 90 seconds." },
-          "compare": { "t": "VIGÍA compares", "d": "Against clinical limits, your own baseline and the measured environment." },
-          "act": { "t": "You know what to do", "d": "Green, amber or red status, the reason and the next step." }
+          "log": {
+            "t": "You check in",
+            "d": "Heart rate, blood pressure, SpO₂, temperature, sleep, mood and symptoms, in under 90 seconds."
+          },
+          "compare": {
+            "t": "VIGÍA compares",
+            "d": "Against clinical limits, your own baseline and the measured environment."
+          },
+          "act": {
+            "t": "You know what to do",
+            "d": "Green, amber or red status, the reason and the next step."
+          }
         },
         "layerQ": {
           "A": "Is any value in the danger zone?",
@@ -701,7 +732,7 @@
           "context": "Does the environment explain it?"
         },
         "layerHow": {
-          "A": "NEWS2 clinical bands, a terrestrial clinical standard. Red on an extreme band or a total of 5 or more; amber on 3 or 4.",
+          "A": "NEWS2 per-parameter bands (Royal College of Physicians), a terrestrial standard, with our own aggregation cut-offs, more conservative than the RCP triggers: red on an extreme band or a total of 5 or more; amber on 3 or 4. Prototype rules pending review by a flight surgeon.",
           "B": "Compares each reading with your own baseline using a modified z-score (median and MAD, a robust measure of how much you usually vary). It alerts when it happens two days in a row.",
           "C": "Adds up each day's small changes (one-sided CUSUM) to reveal a trend no single day shows. Active from day 21.",
           "context": "A headache with cabin CO₂ above 3 mmHg is an environment alert for the crew, not a medical alert. A solar particle event switches on storm mode."
@@ -734,26 +765,56 @@
         "results": "Simulation results",
         "resultsLead": "500 simulated missions with anomalies and 500 control missions (seed 2026). Not clinical performance.",
         "kpis": {
-          "drift": { "v": "99.8 %", "l": "Slow drift detected (sleep −0.2 h/day, HR +1 bpm/day, mood −0.15/day), median 8 days after onset" },
-          "half": { "v": "17.8 %", "l": "The same drift at half intensity" },
-          "fixed": { "v": "Never", "l": "A fixed terrestrial threshold (HR ≥ 91 bpm) fired" },
-          "rules": { "v": "100 %", "l": "CO₂ + headache and solar storm rules (deterministic)" },
-          "false": { "v": "< 0.001", "l": "False alarms per crew member per week" }
+          "drift": {
+            "v": "99.8 %",
+            "l": "Slow drift detected (sleep −0.2 h/day, HR +1 bpm/day, mood −0.15/day), median 8 days after onset"
+          },
+          "half": {
+            "v": "17.8 %",
+            "l": "The same drift at half intensity"
+          },
+          "fixed": {
+            "v": "Never",
+            "l": "A fixed terrestrial threshold (HR ≥ 91 bpm) fired"
+          },
+          "rules": {
+            "v": "100 %",
+            "l": "CO₂ + headache and solar storm rules (deterministic)"
+          },
+          "false": {
+            "v": "< 0.001",
+            "l": "False alarms per crew member per week"
+          }
         },
         "resultsCaveat": "These numbers are optimistic: the simulated noise is Gaussian and the generator was written by the same team. They show that the engine sees a drift that a fixed threshold misses, not how it would perform on real crews.",
         "limits": "Declared limits",
         "limitsList": {
-          "phys": "Crew physiology in demo mode is simulated; no real astronaut data is used. Clinical thresholds come from NEWS2, a terrestrial standard, and need review by a flight surgeon.",
+          "phys": "Crew physiology in demo mode is simulated; no real astronaut data is used. Clinical bands come from NEWS2, a terrestrial standard, and the aggregation cut-offs are ours; both need review by a flight surgeon.",
           "rad": "Radiation is ambient dose from an area detector, not personal dose. GOES measures at geostationary orbit: it indicates severity and timing, not crew dose.",
           "todo": "Not yet implemented: body mass in layer C, the in-flight metrology correction of layer A, the PVT-B vigilance test, camera input, storage encryption and crew authentication."
         },
         "sources": "Sources",
         "sourcesList": {
-          "goes": { "t": "GOES · NOAA SWPC", "d": "Proton flux" },
-          "donki": { "t": "DONKI · NASA CCMC", "d": "Solar particle events" },
-          "radlab": { "t": "RadLab · ALTEA-Survey (ISS)", "d": "Ambient radiation dose" },
-          "eda": { "t": "EDA · Rodent Research-1 (ISS)", "d": "Cabin CO₂, temperature and humidity" },
-          "news2": { "t": "NEWS2", "d": "Clinical bands of layer A" }
+          "goes": {
+            "t": "GOES · NOAA SWPC",
+            "d": "Proton flux"
+          },
+          "donki": {
+            "t": "DONKI · NASA CCMC",
+            "d": "Solar particle events"
+          },
+          "radlab": {
+            "t": "RadLab · ALTEA-Survey (ISS)",
+            "d": "Ambient radiation dose"
+          },
+          "eda": {
+            "t": "EDA · Rodent Research-1 (ISS)",
+            "d": "Cabin CO₂, temperature and humidity"
+          },
+          "news2": {
+            "t": "NEWS2",
+            "d": "Clinical bands of layer A"
+          }
         },
         "sourcesNote": "Full references are in the technical report of the repository.",
         "ai": "Use of AI",
@@ -833,12 +894,12 @@
         "glucosa": "mg/dL"
       },
       "banda": {
-        "A": "NEWS2 of 5 or more, or one parameter in its extreme range",
+        "A": "NEWS2 band total of 5 or more, or one parameter in its extreme range (VIGÍA cut-off)",
         "B": "Outside your personal band two days in a row",
         "C": "Cumulative drift over several days (CUSUM of 5 or more)",
         "context": "Environment rule"
       },
-      "bandaAAmbar": "NEWS2 of 3 or 4",
+      "bandaAAmbar": "NEWS2 band total of 3 or 4 (VIGÍA cut-off)",
       "bandaContexto": {
         "co2": "CO2 above 3 mmHg (1 h average) with headache",
         "protones": "Flux of 10 pfu or more at ≥10 MeV, or SEP event"

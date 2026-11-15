@@ -17,7 +17,7 @@ Halfway to Mars a message to the flight surgeon takes up to 22 minutes each way 
 
 1. **Daily check-in in under 90 seconds:** heart rate, blood pressure, SpO2, temperature, sleep, mood and symptoms, each with its unit and plain "how to measure in this mission profile" and "why it matters" instructions.
 2. **Three-layer hybrid engine** ([packages/engine](packages/engine/MODULE.md)):
-   - **A – clinical safety:** NEWS2 bands. Red on an extreme band or a total of 5+, amber on 3–4.
+   - **A – clinical safety:** NEWS2 per-parameter bands (Royal College of Physicians, 2017) on heart rate, blood pressure, SpO2 and temperature, with our own aggregation cut-offs, more conservative than the RCP triggers: red on an extreme band (3 points in one parameter) or a total of 5+, amber on 3–4. Prototype rules, not clinically validated flight limits.
    - **B – personal deviation:** modified z-score (median and MAD) against the astronaut's own baseline, two days in a row (weekly glucose: two readings in a row).
    - **C – slow drift:** one-sided CUSUM from day 21.
    - The baseline moves from **pre-flight to in-flight** (days 1–14 adaptation, 15–20 blend, 21+ in-flight window with a 3-day lag).
@@ -96,10 +96,15 @@ Conventions and architecture (in Spanish): [AGENTS.md](AGENTS.md), [docs/ARQUITE
 
 ## Declared limits
 
-- Crew physiology in demo mode is simulated; no real astronaut data is used. Clinical thresholds come from NEWS2, a terrestrial standard, and need review by a flight surgeon.
+- Crew physiology in demo mode is simulated; no real astronaut data is used. Clinical bands come from NEWS2, a terrestrial standard, and the aggregation cut-offs are ours; both need review by a flight surgeon. Every threshold is a prototype rule with a cited source, not a clinically validated flight-medicine limit.
+- The simulator's in-flight shifts (resting HR +3 bpm, systolic −4 mmHg, sleep −0.7 h) are a stress scenario for the detector, not a reproduction of the literature: Norsk et al. 2015 found 24-h heart rate unchanged and systolic pressure −8 mmHg on the ISS; Barger et al. 2014 report 6.1 h of sleep.
 - Radiation is ambient dose from an area detector, not personal dose. GOES measures at geostationary orbit: it indicates severity and timing, not crew dose.
 - Not yet implemented: body mass in layer C, the in-flight metrology correction of layer A, the PVT-B vigilance test, camera input, storage encryption and crew authentication.
 
+## Official challenge resources
+
+The five resources listed on the challenge page shaped the design: NASA HRP [5 Hazards of Human Spaceflight](https://www.nasa.gov/hrp/hazards/) (structure of the body figure and label of each alert), [Risks of Human Spaceflight](https://www.nasa.gov/hrp/risks/) (coverage table of the 17 risks in the report, §3.2), [Ongoing HRP Research in Space](https://www.nasa.gov/hrp/ongoing-hrp-research/) (what is measured in flight today), CSA [Monitoring radiation for astronaut health](https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp) (dose module and its declared limit) and CSA [Why do we conduct science experiments in space?](https://www.asc-csa.gc.ca/eng/iss/science/why-do-we-conduct-science-experiments-in-space.asp) (Earth impact). Datasets were located through [NASA OSDR](https://osdr.nasa.gov/) and the [NASA Life Sciences Portal](https://nlsp.nasa.gov/).
+
 ## Use of AI
 
-We used an AI assistant (Claude, by Anthropic) to research public NASA, CSA and NOAA sources, to draft documentation and to help write and review code. Sources were checked by the team and are cited in the report. No AI-generated images or videos are used.
+We used AI coding assistants (Claude, by Anthropic, through Claude Code; OpenAI Codex as an independent reviewer) to research public NASA, CSA and NOAA sources, to draft and review documentation and to help write, review and test code. Problem framing, indicators, engine rules, data sources and design decisions are the team's; sources were checked by the team and are cited in the report. No AI-generated images, video or audio are used; no NASA logos or identifiers are used.

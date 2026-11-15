@@ -15,7 +15,7 @@
     "entorno_cerrado"
   ],
   "referencia_en_vuelo": "En esa atmósfera la presión inspirada de O2 es de 128 mmHg, equivalente a unos 1 220 m de altitud. La evidencia terrestre indica que la frente se afecta menos que el dedo por la vasoconstricción periférica.",
-  "cuando_avisar": "Tramo extremo de la capa A (91 % o menos). De 92 a 95 % suma puntos solo si además se aparta de la línea base del perfil.",
+  "cuando_avisar": "Tramo extremo de la capa A (91 % o menos). De 92 a 93 % suma 2 puntos y de 94 a 95 % suma 1 punto a la capa A, según NEWS2. La comparación con la línea base del perfil (corrección metrológica, informe §5.1) está pendiente.",
   "prevencion": "Control de la atmósfera de cabina para mantener la presión parcial de oxígeno dentro de los límites de NASA-STD-3001, con monitoreo continuo.",
   "capa_motor": "A",
   "fuentes": [
@@ -26,6 +26,10 @@
     {
       "titulo": "NASA HRP: Risks of Human Spaceflight",
       "url": "https://www.nasa.gov/hrp/risks/"
+    },
+    {
+      "titulo": "Conkin y colaboradores (2017), Aerospace Medicine and Human Performance: oximetría de pulso en microgravedad",
+      "url": null
     },
     {
       "titulo": "Informe técnico VIGÍA, §2.4",

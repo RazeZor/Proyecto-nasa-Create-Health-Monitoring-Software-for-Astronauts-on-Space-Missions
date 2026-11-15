@@ -187,7 +187,7 @@ export async function cargarCatalogo(tripulante: number, modo: Mode = "real"): P
       pedir<ReferenciaEntorno>("/entorno/referencia"),
       pedir<Historial>(`/tripulantes/${tripulante}/historial?modo=${modo}`, tripulante),
       pedir<string[]>(`/tripulantes/${tripulante}/recordatorios?lang=${IDIOMA}`, tripulante),
-      pedir<MensajeApi[]>(`/tripulantes/${tripulante}/mensajes?modo=${modo}`, tripulante),
+      pedir<MensajeApi[]>(`/tripulantes/${tripulante}/mensajes?modo=${modo}&lang=${IDIOMA}`, tripulante),
     ])
     const crudo: CatalogoCrudo = { perfiles, fichas, entorno, historial, recordatorios, mensajes }
     const catalogo = armar(crudo, false)

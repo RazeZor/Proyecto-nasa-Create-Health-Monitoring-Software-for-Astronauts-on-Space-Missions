@@ -113,6 +113,25 @@ class Dashboard(unittest.TestCase):
         textos = [m["texto"] for m in self.c.get(f"/tripulantes/{self.ana}/mensajes", headers=self.h).json()]
         self.assertIn("Recibido, sigue el protocolo.", textos)
 
+    def test_el_hilo_real_no_mezcla_respuestas_de_demo_ni_al_reves(self):
+        conn = conectar()
+        tr.sembrar_informes_demo(conn, self.ids)  # lo que siembra `sembrar`: un informe demo ya respondido
+        rid = cola.encolar_reporte(conn, self.ana, T, 0, {"titulo": "Informe real", "demo": True})
+        cola.avanzar_cola(conn, T)
+        cola.responder_reporte(conn, rid, "Respuesta a un informe de demo.", T)
+        rid2 = cola.encolar_reporte(conn, self.ana, T, 0, {"titulo": "Informe real"})
+        cola.avanzar_cola(conn, T)
+        cola.responder_reporte(conn, rid2, "Respuesta a un informe real.", T)
+        conn.close()
+        real = self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=real", headers=self.h).json()
+        self.assertEqual([m["texto"] for m in real], ["Respuesta a un informe real."])
+        demo = [m["texto"] for m in self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=demo", headers=self.h).json()]
+        self.assertIn("Respuesta a un informe de demo.", demo)
+        self.assertNotIn("Respuesta a un informe real.", demo)
+        en = self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=real&lang=en", headers=self.h).json()
+        self.assertEqual([m["autor"] for m in en], ["Flight Surgeon"])
+        self.assertEqual(self.c.get(f"/tripulantes/{self.ana}/mensajes?modo=demo&lang=en", headers=self.h).json()[0]["autor"], "You")
+
     def test_reporte_guarda_y_devuelve_su_contenido(self):
         contenido = {"titulo": "Informe diario · Día 24", "resumen": "Ámbar", "lectura": "FC 70 lpm"}
         r = self.c.post(f"/tripulantes/{self.ana}/reportes", headers=self.h,

@@ -1,7 +1,7 @@
 // Pruebas del cliente de registro: node --test apps/web/lib/api-registro.test.ts (Node 22.18+, sin dependencias)
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { capaApi, indicadorApi, lecturasDeCheckIn, nivelApi, perfilApi, reporteDeServidor, retardoMin, sintomasDeCheckIn, tReal } from "./api-registro.ts"
+import { capaApi, indicadorApi, lecturasDeCheckIn, nivelApi, perfilApi, reporteDeServidor, retardoEnvio, retardoMin, sintomasDeCheckIn, tReal } from "./api-registro.ts"
 import type { CheckInEntry } from "./types.ts"
 
 const base = {
@@ -17,6 +17,13 @@ test("traduce claves y niveles al vocabulario de la API", () => {
   assert.equal(capaApi("context"), "contexto")
   assert.equal(perfilApi("transit-docked"), "transito")
   assert.deepEqual([retardoMin("station"), retardoMin("lunar"), retardoMin("mars")], [0, 0, 22])
+})
+
+test("el informe viaja con el retardo del perfil en modo real y se acorta a 1 min solo en demo", () => {
+  assert.deepEqual([retardoEnvio("real", "mars"), retardoEnvio("real", "transit"), retardoEnvio("real", "station")], [22, 12, 0])
+  assert.deepEqual([retardoEnvio("demo", "mars"), retardoEnvio("demo", "station")], [1, 0])
+  // el tránsito acoplado (tipo Gateway) está a ~1,3 s de luz: su retardo en minutos es 0, no el del tránsito a Marte
+  assert.equal(retardoEnvio("real", "transit-docked"), 0)
 })
 
 test("t_real sale canónico, sin milisegundos", () => {

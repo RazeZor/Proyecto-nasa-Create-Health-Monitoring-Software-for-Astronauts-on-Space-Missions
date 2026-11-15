@@ -1,3 +1,6 @@
+"use client"
+
+// Cliente: los textos salen de `S`, que resuelve el idioma en el navegador; en el servidor saldría siempre en español.
 import { ArrowRight } from "lucide-react"
 import { IconoCapas, IconoDatos, IconoLimites, IconoPrivacidad, IconoResultados, IconoSinConexion } from "@/components/about/iconos"
 import { ICONO_INDICADOR, IconoAlertas, IconoCuerpo, IconoEntorno, IconoInformes, IconoRegistro, IconoTendencias, type Icono } from "@/components/shared/iconos"

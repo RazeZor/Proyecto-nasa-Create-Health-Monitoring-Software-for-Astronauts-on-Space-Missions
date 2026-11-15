@@ -20,7 +20,7 @@ Cada objetivo y cada consideración del enunciado tiene una respuesta concreta e
 | Datos por cualquier entrada \(teclado, clics, imágenes de cámara\) que representen un indicador con su unidad | Objetivo | Registro diario con unidades visibles \(mmHg, latidos por minuto, mg/dL, °C, horas\); imagen de cámara como extensión | Sí, sin cámara |
 | Usar recursos públicos para decidir qué indicadores sirven, cuáles se miden en el espacio, por qué hace falta el examen, cómo los afectan los peligros, cuándo avisar a la tripulación o al médico de vuelo y qué prevención existe | Objetivo | Ficha de cada indicador con esos seis campos, cada uno con su fuente \(sección 3\.2\) | Sí |
 | Interfaz clara; se sugiere una figura humana en la que se hace clic para ver función y estado de cada parte | Objetivo | Figura humana interactiva como pantalla principal, coloreada por sistema | Sí |
-| Información para distintos entornos: nave, estación, róver, base planetaria | Consideración | Perfil de misión que cambia retardo, gravedad y fuente de dosis | Tres perfiles |
+| Información para distintos entornos: nave, estación, róver, base planetaria | Consideración | Perfil de misión que cambia retardo, gravedad y fuente de dosis | Cinco perfiles |
 | Recordar al astronauta que tome medidas o complete acciones de rutina | Consideración | Recordatorios del registro diario y de repetición de medidas | Sí |
 | Ludificación, gráficas de indicadores en el tiempo, código de colores | Consideración | Gráficas de tendencia, verde, ámbar y rojo, rachas de registro | Gráficas y colores; rachas si hay tiempo |
 | Instrucciones y explicaciones simples de medidas, indicadores y riesgos | Consideración | Guía de "cómo medir" y "por qué importa" en cada indicador | Sí |
@@ -75,7 +75,7 @@ Tres hechos fijan la magnitud:
 | Solución actual | Qué hace | Cuello de botella |
 | --- | --- | --- |
 | Kit BP/ECG de la ISS | Mide ECG, frecuencia cardíaca y presión arterial | Voluminoso, pesado y de alto consumo según el propio equipo ExMC de la NASA |
-| Bio\-Monitor / Astroskin \(CSA\) | Camiseta con sensores: ECG y pulso, presión arterial, respiración, temperatura de piel, SpO₂ y actividad; en la ISS desde 2019 | Diseñada para enviar datos a tierra, donde los científicos los analizan\. Batería de unas 48 horas |
+| Bio\-Monitor / Astroskin \(CSA\) | Camiseta con sensores: ECG y pulso, presión arterial, respiración, temperatura de piel, SpO₂ y actividad; en la ISS desde 2018 | Diseñada para enviar datos a tierra, donde los científicos los analizan\. Batería de unas 48 horas |
 | Conferencias médicas privadas con el médico de vuelo | Interpretación clínica desde tierra | Depende de comunicación casi instantánea; no escala a Marte |
 | EIMO \(NASA HRP, elemento ExMC\) | Concepto de operaciones para autonomía médica | Es un marco y requisitos fundacionales, no un producto que la tripulación use hoy |
 | Prototipos de otros equipos de este reto \(repositorios públicos 2026\) | Tableros de signos vitales con semáforo; algunos comparan reglas terrestres con reglas adaptadas al espacio | Usan umbrales poblacionales fijos; el entorno, cuando aparece, va en un panel aparte y no entra al razonamiento |
@@ -263,7 +263,7 @@ ppCO2 (mmHg) = ppm * presion_total_cabina (mmHg) / 1 000 000
 | --- | --- | --- | --- | --- | --- |
 | Estación \(ISS\) | 14,7 psia \(760 mmHg\) | 21 % | 0 g | 3 950 ppm | Atmósfera nominal de la ISS |
 | Tránsito | 14,7 psia \(760 mmHg\) | 21 % | 0 g | 3 950 ppm | Valor previsto para el hábitat de tránsito a Marte |
-| Tránsito, acoplado o en preparación de salida | 10,2 psia \(527 mmHg\) | 26,5 % | 0 g | 5 690 ppm | Atmósfera de Gateway y de preparación escalonada |
+| Tránsito, acoplado o en preparación de salida | 10,2 psia \(527 mmHg\) | 26,5 % | 0 g | 5 690 ppm | Atmósfera de Gateway en preparación de salida \(su nominal es 14,7 psia\) y de preparación escalonada |
 | Superficie lunar | 8,2 psia \(424 mmHg\) | 34 % | 0,165 g | 7 070 ppm | Atmósfera de exploración para misiones con salidas frecuentes |
 | Superficie marciana | 8,2 psia \(424 mmHg\) | 34 % | 0,38 g | 7 070 ppm | Atmósfera de exploración |
 
@@ -280,6 +280,8 @@ La presión es un parámetro configurable del perfil, no una constante del códi
   "superficie_marciana": { "presion_cabina_mmHg": 424, "o2_pct": 34.0, "g_rel": 0.38,  "co2_unidad": "ppm", "co2_limite_mmHg": 3.0, "masa_metodo": "gravimetrica", "retardo_s": [180, 1320] }
 }
 ```
+
+El campo `retardo\_s` es el tiempo de luz por trayecto, en segundos\. Para la Luna, de 1 a 3 s es solo ese tiempo \(la ida ronda 1,3 s\); operativamente la NASA prevé de 5 a 12 s en Artemis, por procesamiento y relevo\. Es un valor del perfil, no del código, y se ajusta sin tocarlo\.
 
 Dos correcciones más que dependen del perfil:
 
@@ -374,7 +376,7 @@ Lectura del diagrama: los datos ambientales entran una sola vez, ya limpios; tod
 | Sincronización | Cola de reportes con el retardo del día de misión | Guardar y reenviar; la aplicación nunca espera a tierra |
 | Vista de tierra | El médico de vuelo lee reportes y responde | Segunda pantalla de la demo |
 
-**Dos componentes de interfaz\.** La figura humana es un SVG con zonas por sistema \(cabeza y ojos, corazón y vasos, hueso y músculo, sangre e inmunidad, mente y sueño\); su color sale del motor\. Las fichas de indicador son un archivo JSON con los seis campos que pide el reto y la URL de la fuente, de modo que la interfaz nunca muestra una afirmación sin origen\.
+**Dos componentes de interfaz\.** La figura humana es un cuerpo 3D anatómico \(three\.js, modelo BodyParts3D con licencia CC BY 4\.0, en `apps/web/public/modelos/cuerpo\.glb`\) con zonas por sistema \(cabeza y ojos, corazón y vasos, hueso y músculo, sangre e inmunidad, mente y sueño\); su color sale del motor\. Sin WebGL se muestra un respaldo SVG 2D con las mismas zonas\. Las fichas de indicador son un archivo JSON con los seis campos que pide el reto y la URL de la fuente, de modo que la interfaz nunca muestra una afirmación sin origen\.
 
 ### 4\.3 Stack recomendado
 
@@ -407,7 +409,7 @@ VIGÍA no diagnostica: detecta desviaciones, las pone en contexto y propone el s
 
 | Capa | Variables | Regla | Resultado |
 | --- | --- | --- | --- |
-| A\. Seguridad clínica \(umbral fijo\) | SpO2, temperatura, presión arterial sistólica, frecuencia cardíaca | Tramos de NEWS2 \(Royal College of Physicians, 2017\) | Rojo si un parámetro cae en su tramo extremo o la suma es 5 o más; ámbar si la suma es 3 o 4 |
+| A\. Seguridad clínica \(umbral fijo\) | SpO2, temperatura, presión arterial sistólica, frecuencia cardíaca | Tramos por parámetro de NEWS2 \(Royal College of Physicians, 2017\) sobre 4 de sus 7 parámetros; cortes de agregación propios, más conservadores que los del RCP | Rojo si un parámetro cae en su tramo extremo \(3 puntos\) o la suma es 5 o más; ámbar si la suma es 3 o 4\. Reglas de prototipo, pendientes de revisión por un cirujano de vuelo |
 | B\. Desviación personal \(robusta\) | Frecuencia cardíaca en reposo, presión sistólica, glucosa, sueño, ánimo | Puntuación z modificada frente a la línea base vigente, dos días seguidos \(glucosa, semanal: dos medidas seguidas\) | Ámbar |
 | C\. Deriva lenta \(CUSUM\) | Frecuencia cardíaca en reposo \(al alza\), sueño y ánimo \(a la baja\) | Suma acumulada unilateral con k = 0,75 y h = 5 | Ámbar |
 | Contexto | Síntomas y entorno | CO2 por encima de 3 mmHg con cefalea; flujo de protones de 10 o más en ≥10 MeV o evento SEP de DONKI | Alerta de entorno \(ámbar, para toda la tripulación\); modo tormenta\. Un síntoma que el entorno no explica da un ámbar personal en su zona del cuerpo |
@@ -425,7 +427,9 @@ VIGÍA no diagnostica: detecta desviaciones, las pone en contexto y propone el s
 
 Esta capa está activa desde el primer día y no depende de ninguna línea base\. NEWS2 es un estándar terrestre para adultos hospitalizados y la temperatura se refiere a temperatura corporal, no de piel; se adopta como piso de seguridad hasta que un médico de vuelo fije los valores operativos\.
 
-**Corrección metrológica de la capa A\.** Tres de sus cuatro parámetros se desplazan en vuelo por razones físicas, no patológicas \(sección 2\.4\): la presión sistólica baja entre 8 y 10 mmHg, la temperatura central en reposo sube cerca de 1 °C y la SpO2 de reposo baja en atmósfera de exploración\. Eso acerca valores normales de vuelo a los tramos de 1 punto \(sistólica de 101 a 110, temperatura de 38,1 a 39,0, SpO2 de 94 a 95\)\. La regla de diseño es: los tramos extremos, de 3 puntos, se aplican sin cambio en todos los perfiles porque son el piso de seguridad; los tramos de 1 y 2 puntos solo suman cuando la lectura además se aparta de la línea base del perfil\. El motor de referencia en Python aún aplica NEWS2 sin esta corrección, porque su escenario simulado no incluye esos desplazamientos; es el primer cambio pendiente del motor\.
+**Qué es de NEWS2 y qué es propio\.** Los tramos por parámetro coinciden con la tabla oficial del RCP\. Los cortes de agregación no: NEWS2 \(RCP, Chart 2\) define 0 a 4 como riesgo bajo, un 3 en un solo parámetro como bajo\-medio \(revisión urgente\), 5 a 6 como medio y 7 o más como alto, sobre siete parámetros\. VIGÍA aplica cortes propios, más conservadores, sobre cuatro de ellos \(no registra frecuencia respiratoria, nivel de conciencia ni oxígeno suplementario\): un 3 aislado o una suma de 5 ya es rojo, y 3 o 4 es ámbar\. Son reglas de prototipo que un cirujano de vuelo debe revisar antes de cualquier uso real\.
+
+**Corrección metrológica de la capa A\.** Tres de sus cuatro parámetros se desplazan en vuelo por razones físicas, no patológicas \(sección 2\.4\): la presión sistólica baja entre 8 y 10 mmHg, la temperatura central en reposo sube cerca de 1 °C y la SpO2 de reposo baja en atmósfera de exploración\. Eso acerca valores normales de vuelo a los tramos de 1 punto \(sistólica de 101 a 110, temperatura de 38,1 a 39,0, SpO2 de 94 a 95\)\. La regla de diseño es: los tramos extremos, de 3 puntos, se aplican sin cambio en todos los perfiles porque son el piso de seguridad; los tramos de 1 y 2 puntos solo suman cuando la lectura además se aparta de la línea base del perfil\. Ningún motor \(ni el de referencia en Python ni el de la aplicación web\) aplica todavía esta corrección: hoy los tramos de 1 y 2 puntos suman en todos los perfiles, y las fichas de SpO2 y temperatura lo declaran pendiente\. Es el primer cambio pendiente del motor\.
 
 **Capa B: puntuación z modificada\.** Para una lectura *x*, con la mediana y la desviación absoluta mediana \(MAD\) de la línea base vigente:
 
@@ -435,7 +439,7 @@ M = 0,6745 * (x - mediana) / MAD
 
 El umbral no es uniforme\. Para variables fisiológicas \(frecuencia cardíaca, presión y glucosa\) es |M| de 3,5 o más, el valor de Iglewicz y Hoaglin\. Para variables conductuales autorreportadas \(sueño, ánimo\) es 3,0\. En ambos casos se exige persistencia de dos días, y cada variable tiene un piso de dispersión para que una línea base muy estable no convierta ruido en alerta\. SpO2 y temperatura no pasan por esta capa: su rango fisiológico es estrecho y solo responden a la capa A\.
 
-**Capa C: CUSUM\.** Acumula desviaciones pequeñas y sostenidas en un solo sentido\. Solo se activa cuando la línea base ya es por completo de vuelo \(día 21 en adelante\), porque durante la transición el desplazamiento propio de la adaptación la dispararía\. Al emitir una alerta, la suma vuelve a cero\. Los parámetros k = 0,75 y h = 5 se contrastan con un barrido de nueve combinaciones \(`index\.py barrer`, publicado en `gold/barrido\.json`\)\.
+**Capa C: CUSUM\.** Acumula desviaciones pequeñas y sostenidas en un solo sentido\. Solo se activa cuando la línea base ya es por completo de vuelo \(día 21 en adelante\), porque durante la transición el desplazamiento propio de la adaptación la dispararía\. Al emitir una alerta, la suma vuelve a cero\. Los parámetros k = 0,75 y h = 5 se ajustaron en la simulación con un barrido de nueve combinaciones \(`index\.py barrer`, publicado en `gold/barrido\.json`\), no salen de la literatura: la práctica habitual es k = 0,5 y h de 4 a 5 \(Page, 1954\)\.
 
 ### 5\.2 Línea base: de tierra a vuelo
 
@@ -511,7 +515,7 @@ El módulo `pipelines/reanclaje/simulacion\.py` \(`index\.py simular`\) genera m
 | A2\. Cefalea por pico de CO2 | Máximo horario de CO2 de 4,6 mmHg; dos tripulantes reportan cefalea | Día 12 \(modo adaptación\) | Alerta de entorno para ambos, no dos alertas médicas |
 | A3\. Tormenta solar | Flujo de 200 partículas en ≥10 MeV, dos días | Día 22 | Modo tormenta el mismo día |
 
-Supuestos del escenario, todos declarados en el archivo de resultados: desplazamiento sostenido en vuelo de \+3 lpm, −0,7 h de sueño y −4 mmHg; adaptación aguda que decae con constante de 4 días\.
+Supuestos del escenario, todos declarados en el archivo de resultados: desplazamiento sostenido en vuelo de \+3 lpm, −0,7 h de sueño y −4 mmHg; adaptación aguda que decae con constante de 4 días\. Son un escenario de estrés del generador, no una reproducción de la literatura \(sección 5\.6\)\.
 
 **Resultados del motor de referencia** \(500 misiones con anomalías y 500 de control, semilla 2026\):
 
@@ -546,6 +550,8 @@ Supuestos del escenario, todos declarados en el archivo de resultados: desplazam
 | Escalamiento automático | Pérdida de confianza si se percibe como vigilancia | Dato mínimo, transparencia y consentimiento previo \(sección 5\.4\) |
 | Uso como dispositivo médico | Riesgo regulatorio y ético | Aviso permanente: prototipo de apoyo a la decisión |
 | Caída o cambio de una API | Demo rota | JSON precargados con fecha y huella |
+
+**Los desplazamientos del generador no reproducen la literatura\.** El simulador impone en vuelo \+3 lpm de frecuencia cardíaca en reposo, −4 mmHg de sistólica y −0,7 h de sueño, con una adaptación que decae con constante de 4 días\. La evidencia dice otra cosa: Norsk y colaboradores \(J Physiol, 2015\) no hallaron cambio en la frecuencia cardíaca de 24 horas y midieron −8 mmHg de sistólica; Barger y colaboradores \(Lancet Neurology, 2014\) dan 6,09 h de sueño en la ISS\. El \+3 lpm no tiene respaldo y la constante de 4 días es una elección de diseño\. Esos valores se declaran como **escenario de estrés del generador**: un desplazamiento sostenido que el detector debe absorber sin alertar, no una fisiología de adaptación\. Los KPI de la sección 5\.5 no se recalcularon con otros valores\.
 
 ## 6\. Impacto, usuarios objetivo y casos de uso
 
@@ -627,13 +633,13 @@ El prototipo demuestra el ciclo completo \(capturar, contextualizar, decidir, re
 | Privacidad por defecto y escalamiento de alertas rojas | Imprescindible | Sí |
 | Modo sin conexión | Imprescindible | Sí |
 | Cola de reportes con retardo y vista de tierra | Imprescindible | Sí |
-| Tres perfiles de misión \(estación, tránsito, superficie\) | Alta | No |
+| Cinco perfiles de misión \(estación, tránsito, tránsito acoplado, superficie lunar, superficie marciana\) | Alta | No |
 | Recordatorios de medición | Alta | No |
 | Prueba de vigilancia PVT\-B | Si hay tiempo | No |
 | Rachas de registro | Si hay tiempo | No |
 | Lectura de sensor por Bluetooth; entrada por cámara | Si hay tiempo | No |
 
-**Estado al 15 de noviembre de 2026\.** Todas las funciones imprescindibles y los perfiles de misión están implementados y cubiertos por pruebas\. Quedan declarados como pendientes: la masa corporal en la capa C, la corrección metrológica de la capa A \(sección 5\.1\), el reinicio de la línea base de SpO2 al cambiar de perfil, la corrección de masa por gravedad local, la prueba PVT\-B, las rachas de registro, la entrada por cámara, el cifrado del almacén y la autenticación de tripulantes\. La interfaz y las fichas de indicador están en español e inglés\.
+**Estado al 15 de noviembre de 2026\.** Todas las funciones imprescindibles y los cinco perfiles de misión están implementados\. Hay pruebas automáticas del motor \(paridad con el caso de referencia\), de la API, de la sincronización y de los contratos de datos; no las hay del servicio worker \(modo sin conexión\), del cuerpo 3D ni de la interfaz, que se verifican a mano\. Quedan declarados como pendientes: la masa corporal en la capa C, la corrección metrológica de la capa A \(sección 5\.1\), el reinicio de la línea base de SpO2 al cambiar de perfil, la corrección de masa por gravedad local, la prueba PVT\-B, las rachas de registro, la entrada por cámara, el cifrado del almacén y la autenticación de tripulantes\. La interfaz y las fichas de indicador están en español e inglés\.
 
 Regla de coherencia: el resumen ejecutivo, el resumen del formulario y los guiones solo nombran funciones imprescindibles\. Si una función imprescindible no llega a la entrega, se retira de esos textos antes de enviar\.
 
@@ -665,7 +671,7 @@ Cada lectura se cruza con el entorno medido\. Usamos datos abiertos reales: dosi
 
 Una figura humana interactiva muestra el estado de cada sistema, y cada indicador trae instrucciones simples de cómo medirlo y por qué importa\. El resultado es un estado verde, ámbar o rojo con su explicación, una acción recomendada y un reporte que viaja a tierra respetando el retardo de comunicación\. Los datos de salud son privados por defecto; solo una alerta roja de seguridad avisa de forma automática al oficial médico de la tripulación\.
 
-Los datos fisiológicos del prototipo son simulados; los ambientales son mediciones reales\. VIGÍA es una herramienta de apoyo a la decisión, no un dispositivo médico\. La misma arquitectura sirve a misiones análogas y a comunidades remotas en la Tierra\.
+La aplicación arranca en modo real: solo muestra lo que el tripulante ingresa o lo que mide el reloj\. El modo demo muestra un tripulante simulado de 30 días, rotulado como tal\. Los datos ambientales son mediciones reales\. VIGÍA es una herramienta de apoyo a la decisión, no un dispositivo médico\. La misma arquitectura sirve a misiones análogas y a comunidades remotas en la Tierra\.
 
 ### 8\.2 Project Summary, versión en inglés
 
@@ -679,7 +685,7 @@ Every reading is joined with the measured environment\. We use real open data: r
 
 A clickable body figure shows the status of each system, and every indicator comes with plain instructions on how to measure it and why it matters\. The output is a green, amber or red status with its explanation, a recommended action and a report that travels to the ground under the mission's communication delay\. Health data is private by default; only a red safety alert automatically notifies the crew medical officer\.
 
-Crew physiological data in the prototype is simulated; environmental data is real\. VIGÍA is a decision\-support prototype, not a medical device\. The same architecture serves analog missions and remote communities on Earth\.
+In real mode VIGÍA shows only what the crew member enters or the watch measures; demo mode shows a simulated 30\-day crew member, labelled as such\. Environmental data is real\. VIGÍA is a decision\-support prototype, not a medical device\. The same architecture serves analog missions and remote communities on Earth\.
 
 **Límite de extensión\.** La guía de entrega no publica límite de palabras ni de caracteres para el resumen; el formulario mismo lo dirá al pegar\. Este texto ronda las 290 palabras y cada párrafo se sostiene solo, así que se recorta desde el final sin reescribir\.
 
@@ -1001,8 +1007,8 @@ Cada afirmación con cifra del informe sale de una de estas fuentes, consultadas
 
 | Fuente | Qué respalda |
 | --- | --- |
-| Royal College of Physicians: NEWS2, tabla de puntuación | Tramos clínicos de la capa A |
-| NASA OCHMO: resumen técnico de CO2 \(TB\-004\) y NASA\-STD\-3001, volumen 2, sección 6 | Límite de 3 mmHg en promedio de una hora; cefaleas entre 2,8 y 4,5 mmHg |
+| Royal College of Physicians: NEWS2, tabla de puntuación y Chart 2 \(umbrales y disparadores\), https://www\.rcp\.ac\.uk/media/2acdezkd/news2\-chart\-2\_news\-thresholds\-and\-triggers\_0\.pdf | Tramos clínicos por parámetro de la capa A\. Los cortes de agregación del RCP \(0 a 4 bajo; 3 aislado bajo\-medio; 5 a 6 medio; 7 o más alto\) son los que VIGÍA sustituye por cortes propios más conservadores |
+| NASA OCHMO: resumen técnico de CO2 \(TB\-004\), resumen técnico de ECLSS \(https://www\.nasa\.gov/wp\-content/uploads/2023/07/eclss\-technical\-brief\-ochmo\.pdf\) y NASA\-STD\-3001, volumen 2, sección 6; Law y colaboradores, J Occup Environ Med \(2014\), DOI 10\.1097/JOM\.0000000000000158 | Límite de 3 mmHg en promedio de una hora, que mantiene la incidencia de cefalea por debajo del 1,4 % \(OCHMO\); las probabilidades de cefalea se duplican por cada mmHg adicional de CO2 \(Law 2014\) |
 | Williams y colaboradores, CMAJ: aclimatación al vuelo espacial | Caída de 17 % del volumen plasmático en 24 horas; mareo espacial de 1 a 2 días |
 | NASA Open APIs: DONKI | Parámetros startDate y endDate; valores por defecto |
 | Iglewicz y Hoaglin, How to Detect and Handle Outliers \(1993\) | Puntuación z modificada y umbral de 3,5 |
@@ -1018,7 +1024,7 @@ Cada afirmación con cifra del informe sale de una de estas fuentes, consultadas
 | NASA NTRS: Designing an Exploration Atmosphere Prebreathe Protocol \(20140012830\) | Hipoxia equivalente a 1 220 m |
 | NASA HRP: Risk of Reduced Crew Health and Performance Due to Hypoxia | Brecha ExAtm6: efecto desconocido de la atmósfera de exploración sobre el equipo médico |
 | NASA/TP\-2010\-216134: Recommendations for Exploration Spacecraft Internal Atmospheres | Atmósferas nominales por vehículo: tránsito a Marte y módulos de superficie |
-| NASA NTRS: ICES\-2022\-196, hábitat de tránsito | 14,7 psia en tránsito a Marte; 10,2 psia y 26 % en Gateway |
+| NASA NTRS: ICES\-2022\-196, hábitat de tránsito | 14,7 psia en tránsito a Marte; 10,2 psia y 26,5 % en Gateway |
 | NASA NTRS: ICES\-2022\-45, equipos a presión reducida | 8,2 psia y O2 de 33,7 % o más para misiones con salidas frecuentes |
 | NASA OCHMO: resumen técnico de CO2 \(TB\-004\) | Límite de CO2 expresado como presión parcial |
 | NASA OCHMO: Longitudinal Health Surveillance | Medición de masa corporal en vuelo como parte de la vigilancia |

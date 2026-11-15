@@ -216,15 +216,20 @@ def recordatorios(id: int = Depends(propio), lang: Literal["es", "en"] = "es"):
 
 
 @router.get("/tripulantes/{id}/mensajes", responses=ERRORES, summary="Hilo con tierra")
-def mensajes(id: int = Depends(propio), modo: Literal["real", "demo"] = "real", conn=Depends(conexion)):
-    """`{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas reales de tierra a los reportes del
-    tripulante; en `modo=demo`, además, el hilo de ejemplo."""
-    hilo = _json(_DEMO / "mensajes.json") if modo == "demo" else []
+def mensajes(id: int = Depends(propio), modo: Literal["real", "demo"] = "real", lang: Literal["es", "en"] = "es",
+             conn=Depends(conexion)):
+    """`{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas de tierra a los reportes del tripulante.
+    Los reportes de demo (`contenido.demo`, también los que siembra `sembrar`) solo salen en `modo=demo`, que añade
+    además el hilo de ejemplo; en `modo=real` solo las respuestas a reportes reales. `lang=en` traduce autor e hilo."""
+    hilo = _json(_DEMO / ("mensajes.en.json" if lang == "en" else "mensajes.json")) if modo == "demo" else []
     dia_tope = DIA_ACTUAL_DEMO if modo == "demo" else 10**6
     for r in cola.leer_reportes(conn, id):
+        es_demo = bool((r["contenido"] or {}).get("demo"))
+        if es_demo != (modo == "demo"):
+            continue
         if r["estado"] == "respondido":
             dia = tripulacion.dia_de_vuelo(conn, id, r["llega_t_real"]) or 1
-            hilo.append({"id": f"r{r['id']}", "de": "surgeon", "autor": "Cirujano de Vuelo",
+            hilo.append({"id": f"r{r['id']}", "de": "surgeon", "autor": t("api.autor.cirujano", lang),
                          # en modo demo la UI vive en el día de demo: la respuesta real se ancla a él
                          "dia": min(dia, dia_tope), "hora": r["llega_t_real"][11:16], "texto": r["respuesta"]})
     return hilo

@@ -7,7 +7,7 @@ import { IconoEspera, IconoNave, IconoRespuesta, IconoSobre, IconoTierra, IconoV
 import { Trayecto } from "@/components/reports/trayecto"
 import { formatDelay, useReportState } from "@/components/shared/delay-countdown"
 import { EmptyState, PageHeader } from "@/components/shared/states"
-import { encolarReporte, listarReportes, reporteDeServidor, responderReporte, retardoMin } from "@/lib/api-registro"
+import { encolarReporte, listarReportes, reporteDeServidor, responderReporte, retardoEnvio } from "@/lib/api-registro"
 import { estadoReporte, type ReporteServidor } from "@/lib/cola"
 import { S } from "@/lib/strings"
 import { TRIPULANTE } from "@/lib/sincronizacion"
@@ -131,8 +131,10 @@ export function ReportsView() {
   const tripulante = TRIPULANTE ?? 1
   const [cola, setCola] = useState<ReporteServidor[] | null>(null)
   const [fallo, setFallo] = useState(false)
+  const [sinEnlace, setSinEnlace] = useState(false)
   const [encolando, setEncolando] = useState(false)
-  const leer = useCallback(() => listarReportes(tripulante).then(setCola), [tripulante])
+  // sin red la API no responde: se avisa y se conserva lo último leído, nunca se muestra una cola vacía falsa
+  const leer = useCallback(() => listarReportes(tripulante).then((c) => { setSinEnlace(c === null); if (c !== null) setCola(c) }), [tripulante])
   useEffect(() => {
     leer()
     const id = window.setInterval(leer, 3000)
@@ -162,7 +164,7 @@ export function ReportsView() {
     const v = analisis.vitals(day).find((x) => x.day === day)
     const medida = (valor: number | null | undefined, unidad: string) => (valor == null ? null : `${valor} ${unidad}`)
     const lectura = v
-      ? [medida(v.restingHr, "lpm"), medida(v.systolic, "mmHg"), medida(v.spo2, "% SpO2"), medida(v.tempC, "°C"),
+      ? [medida(v.restingHr, catalogo.indicadores.restingHr.unit), medida(v.systolic, "mmHg"), medida(v.spo2, "% SpO2"), medida(v.tempC, "°C"),
           v.sleepH == null ? null : `${S.reports.sleep} ${v.sleepH} h`, v.mood == null ? null : `${S.reports.mood} ${v.mood}/10`].filter(Boolean).join(" · ")
       : S.reports.noReading
     const banda = analisis.band("restingHr").findLast((b) => b.day <= day)
@@ -176,10 +178,10 @@ export function ReportsView() {
       tormenta ? `${S.reports.stormOn} (${tormenta.source})` : null,
     ].filter(Boolean).join(" · ") || S.reports.noEnvironment
     const alerta = analisis.alerts(day).find((a) => a.day === day && !a.informative)
-    // demo: el retardo real del perfil se acorta a 1 min
-    const id = await encolarReporte(profile.id, new Date().toISOString(), tripulante, Math.min(retardoMin(profile.id), 1), {
+    // modo real: el retardo del perfil; demo: se acorta a 1 min para ver la cola avanzar
+    const id = await encolarReporte(profile.id, new Date().toISOString(), tripulante, retardoEnvio(mode, profile.id), {
       titulo: S.reports.dailyTitle(day),
-      resumen: S.reports.summary(S.status[analisis.overall(day)], profile.label, formatDelay(profile.delayMinutes)),
+      resumen: (mode === "demo" ? S.reports.summary : S.reports.summaryReal)(S.status[analisis.overall(day)], profile.label, formatDelay(profile.delayMinutes)),
       lectura,
       linea_base: lineaBase,
       entorno,
@@ -205,6 +207,7 @@ export function ReportsView() {
         )}
       </PageHeader>
       {fallo && <p role="alert" className="mb-5 rounded-2xl border border-status-act/40 bg-status-act/12 p-4 text-base font-medium">{S.reports.sendFailed}</p>}
+      {sinEnlace && <p role="status" className="mb-5 rounded-2xl border border-border bg-muted p-4 text-base font-medium">{S.reports.offline}</p>}
 
       {/* El enlace de un vistazo: cuánto tarda un mensaje, qué viaja y qué espera respuesta */}
       <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-4 rounded-3xl border border-border bg-card px-5 py-4 shadow-sm">

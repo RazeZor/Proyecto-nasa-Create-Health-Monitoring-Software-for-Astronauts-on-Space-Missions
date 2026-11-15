@@ -36,8 +36,8 @@ function useActiveIndex() {
 function NavLinks() {
   const activeIndex = useActiveIndex()
   return (
-    <nav aria-label={S.nav.label} className="min-w-0 flex-1 overflow-x-auto">
-      <ul className="flex items-stretch gap-1 px-2">
+    <nav aria-label={S.nav.label} className="min-w-0 flex-1 sm:overflow-x-auto">
+      <ul className="flex flex-wrap items-stretch justify-center gap-1 px-2 sm:flex-nowrap sm:justify-start">
         {NAV.map(({ href, label, icon: Icon }, i) => {
           const active = i === activeIndex
           return (
@@ -191,6 +191,8 @@ function Banners() {
   const { day, analisis, mode, setMode, online, checkIns, catalogo } = useApp()
   const tormenta = analisis.stormInfo(day)
   const sinRegistros = mode === "real" && checkIns.length === 0 && catalogo.historial.lecturas.length === 0
+  // sitio público de la hackatón: el modo real usa un tripulante de prueba compartido por todos los visitantes
+  const publico = process.env.NEXT_PUBLIC_VIGIA_PUBLICO === "1" && mode === "real"
   return (
     <>
       {mode === "demo" && (
@@ -205,6 +207,11 @@ function Banners() {
             <p className="font-semibold">{S.banners.offline}</p>
             <p className="text-sm text-muted-foreground">{S.banners.offlineDetail}</p>
           </div>
+        </div>
+      )}
+      {publico && (
+        <div role="note" className="border-b border-border bg-muted px-4 py-2 text-sm md:px-6">
+          <span className="font-semibold">{S.banners.publicShared}</span> <span className="text-muted-foreground">{S.banners.publicSharedDetail}</span>
         </div>
       )}
       {sinRegistros && (

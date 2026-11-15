@@ -512,6 +512,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `responderReporte` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `responder_reporte` | función | [apps/api/almacen/cola.py](../../apps/api/almacen/cola.py) |
 | `resumir` | función | [apps/web/components/trends/resumen.ts](../../apps/web/components/trends/resumen.ts) |
+| `retardoEnvio` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `retardoMin` | constante | [apps/web/lib/api-registro.ts](../../apps/web/lib/api-registro.ts) |
 | `rinones` | constante | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
 | `ruta_por_defecto` | función | [apps/api/almacen/db.py](../../apps/api/almacen/db.py) |

@@ -22,6 +22,8 @@ export const nivelApi = (s: Status): string => vocabulario.niveles[s]
 export const capaApi = (c: Layer): string => vocabulario.capas[c]
 export const perfilApi = (p: ProfileId): string => vocabulario.perfiles[p]
 export const retardoMin = (p: ProfileId): number => vocabulario.retardo_min[p]
+/** Retardo con el que se encola un informe: el del perfil en modo real; en demo se acorta a 1 min para ver la cola avanzar. */
+export const retardoEnvio = (modo: "real" | "demo", p: ProfileId): number => (modo === "demo" ? Math.min(retardoMin(p), 1) : retardoMin(p))
 
 /** `t_real` canónico de la API: UTC sin milisegundos (YYYY-MM-DDTHH:MM:SSZ). */
 export const tReal = (iso: string): string => new Date(iso).toISOString().replace(/\.\d{3}Z$/, "Z")
@@ -86,13 +88,13 @@ export async function encolarReporte(perfil: ProfileId, creado: string, tripulan
   }
 }
 
-/** Reportes propios con su estado en la cola; lista vacía si no hay red. */
-export async function listarReportes(tripulante: number): Promise<ReporteServidor[]> {
+/** Reportes propios con su estado en la cola; `null` si no hay red o la API falla (nunca se finge una cola vacía). */
+export async function listarReportes(tripulante: number): Promise<ReporteServidor[] | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reportes`, { headers: { "X-Tripulante": String(tripulante) } })
-    return res.ok ? ((await res.json()) as ReporteServidor[]) : []
+    return res.ok ? ((await res.json()) as ReporteServidor[]) : null
   } catch {
-    return []
+    return null
   }
 }
 

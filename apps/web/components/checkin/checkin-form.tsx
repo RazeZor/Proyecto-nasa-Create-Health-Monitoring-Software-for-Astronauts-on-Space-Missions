@@ -30,8 +30,9 @@ type MedidaId = IndicatorId | "symptoms"
 /** Orden del flujo: lo diario primero, lo semanal al final. */
 const MEDIDAS: MedidaId[] = ["restingHr", "systolic", "spo2", "tempC", "sleepH", "mood", "symptoms", "glucose", "massKg"]
 const SEMANALES: MedidaId[] = ["glucose", "massKg"]
-/** Ánimo y molestias siempre se guardan (como antes): no tienen «no medí hoy». */
-const SIN_OMITIR: MedidaId[] = ["mood", "symptoms"]
+/** Las molestias siempre se guardan (una lista vacía es un dato). El ánimo, como el resto, solo si se confirma:
+ * el 7 de partida nunca se guarda solo (en modo real nada se inventa). */
+const SIN_OMITIR: MedidaId[] = ["symptoms"]
 const REVISION = MEDIDAS.length
 type Estado = "pendiente" | "medido" | "omitido"
 
@@ -207,7 +208,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
     spo2: texto("spo2"),
     tempC: texto("temp"),
     sleepH: texto("sleep"),
-    mood: String(mood),
+    mood: medido("mood") ? String(mood) : null,
     symptoms: symptoms.length ? String(symptoms.length) : medido("symptoms") ? S.checkin.symptomsNone : null,
     glucose: texto("glucose"),
     massKg: texto("mass"),
@@ -267,7 +268,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
       systolic: guardar.sys, diastolic: guardar.dia,
       spo2: guardar.spo2, spo2Site: spo2FromWatch ? WRIST : spo2Site, spo2FromWatch,
       tempC: guardar.temp, tempMethod,
-      sleepH: guardar.sleep, mood, symptoms,
+      sleepH: guardar.sleep, mood: medido("mood") ? mood : null, symptoms,
       glucose: guardar.glucose, glucoseEnzyme: enzyme,
       massKg: guardar.mass, massMethod,
     }

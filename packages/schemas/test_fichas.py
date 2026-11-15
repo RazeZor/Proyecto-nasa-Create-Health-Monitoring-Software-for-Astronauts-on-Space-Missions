@@ -37,14 +37,10 @@ class Fichas(unittest.TestCase):
                                "frecuencia_cardiaca_reposo", "sueno", "estado_animo", "glucosa",
                                "masa_corporal", "sintomas", "dosis_radiacion"})
 
-
-if __name__ == "__main__":
-    unittest.main()
-
     def test_las_traducciones_al_ingles_siguen_a_su_ficha(self):
         # el inglés es secundario: puede faltar una ficha, pero la que esté no inventa campos ni cambia la estructura
-        textos = {"id", "nombre", "que_es", "como_se_mide_en_vuelo", "por_que", "referencia_en_vuelo", "cuando_avisar",
-                  "prevencion", "fuentes"}
+        textos = {"id", "nombre", "unidad", "que_es", "como_se_mide_en_vuelo", "por_que", "referencia_en_vuelo",
+                  "cuando_avisar", "prevencion", "fuentes"}
         for p in sorted((RAIZ / "packages" / "schemas" / "fichas_en").glob("*.json")):
             en = json.loads(p.read_text(encoding="utf-8"))
             es = json.loads((FICHAS / p.name).read_text(encoding="utf-8"))
@@ -55,3 +51,6 @@ if __name__ == "__main__":
             for campo in ("referencia_en_vuelo", "prevencion"):
                 self.assertEqual(en[campo] is None, es[campo] is None, f"{p.name}: {campo}")
 
+
+if __name__ == "__main__":
+    unittest.main()

@@ -83,9 +83,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
 function Estado({ mensaje, detalle, reintentar }: { mensaje: string; detalle?: string; reintentar?: () => void }) {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center" role={reintentar ? "alert" : "status"}>
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center" role={reintentar ? "alert" : "status"} aria-busy={!reintentar}>
+      {!reintentar && (
+        <span className="flex items-center gap-3 font-semibold tracking-wide" aria-hidden>
+          <span className="size-3 animate-pulse rounded-full bg-primary" />
+          VIGÍA
+        </span>
+      )}
       <p className="text-lg font-semibold">{mensaje}</p>
       {detalle && <p className="max-w-md text-sm text-muted-foreground">{detalle}</p>}
+      {reintentar && <p className="max-w-md text-xs text-muted-foreground">{S.app.disclaimer}</p>}
       {reintentar && (
         <button type="button" onClick={reintentar} className="min-h-11 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground">
           {S.common.retry}
@@ -191,8 +198,9 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
     [],
   )
 
-  // Simulador: solo cuando no hay reloj real transmitiendo.
-  const simulando = simulator && device !== "connected"
+  // Simulador: solo en modo demo y cuando no hay reloj real transmitiendo. En modo real nunca se inventa un pulso
+  // («nothing is simulated», readme): el interruptor de /device no tiene efecto ahí.
+  const simulando = mode === "demo" && simulator && device !== "connected"
   useEffect(() => {
     if (!simulando) {
       setLiveHr(null)

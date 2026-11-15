@@ -132,7 +132,7 @@ export interface CheckInEntry {
   tempC: number | null
   tempMethod: string
   sleepH: number | null
-  mood: number
+  mood: number | null
   symptoms: Symptom[]
   glucose: number | null
   glucoseEnzyme: string

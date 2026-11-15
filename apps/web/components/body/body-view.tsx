@@ -197,6 +197,8 @@ export function BodyView() {
   /** true cuando el lienzo ya muestra el modelo anatómico real (uno solo: no hay selector de modelo corporal). */
   const [modeloReal, setModeloReal] = useState<boolean | null>(null) // null: aún cargando
   const since = useSinceLastCheckIn()
+  /** Modo real sin un solo registro: no se afirma «todo en orden» de lo que nadie midió. */
+  const sinDatos = mode === "real" && since === null && catalogo.historial.lecturas.length === 0
   const OverallIcon = STATUS_ICON[overall]
   const driver = zones.find((z) => z.status === overall && z.layer)
   const hoy = analisis.vitals(day).find((v) => v.day === day)
@@ -268,7 +270,7 @@ export function BodyView() {
       }}
     />
   )
-  const procedencia = <ProvenanceTag provenance={{ kind: mode === "real" ? "measured" : "simulated" }} />
+  const procedencia = sinDatos ? null : <ProvenanceTag provenance={{ kind: mode === "real" ? "measured" : "simulated" }} />
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
@@ -281,9 +283,9 @@ export function BodyView() {
           </span>
           <div className="min-w-0">
             <p className="eyebrow">{S.body.overall} · {S.common.day} {day}</p>
-            <h1 id="overall" className={cn("text-3xl font-bold leading-tight md:text-4xl", statusText[overall])}>{S.body.headline[overall]}</h1>
+            <h1 id="overall" className={cn("text-3xl font-bold leading-tight md:text-4xl", sinDatos ? "text-muted-foreground" : statusText[overall])}>{sinDatos ? S.body.never : S.body.headline[overall]}</h1>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-pretty text-sm md:text-base">
-              {S.statusLong[overall]}
+              {sinDatos ? S.banners.realEmptyDetail : S.statusLong[overall]}
               {driver?.layer && (
                 <button type="button" onClick={() => elegir({ tipo: "zona", id: driver.zone })} className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-current/30 bg-card/70 px-3 text-sm font-semibold">
                   {S.zones[driver.zone]} <ArrowRight aria-hidden className="size-4" />
@@ -423,6 +425,7 @@ export function BodyView() {
         <h2 id="rem-h" className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <ListChecks aria-hidden className="size-4" /> {S.body.reminders}
         </h2>
+        <p className="mt-1 text-xs text-muted-foreground">{S.body.remindersExample}</p>
         <ul className="mt-2 grid gap-x-8 gap-y-1.5 text-sm md:grid-cols-2">
           {catalogo.recordatorios.map((r) => (
             <li key={r} className="flex gap-2">

@@ -36,6 +36,9 @@ const META_ICON: Record<Kind, Icono> = { act: IconoEscalada, watch: IconoCandado
 const MAX_VISIBLE = 2
 
 function playTone(urgent: boolean) {
+  // sin un gesto previo del usuario el navegador bloquea el audio y la vibración y lo registra como error:
+  // el aviso visual basta hasta entonces
+  if (!(navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation?.hasBeenActive) return
   try {
     const ctx = new AudioContext()
     const tones = urgent ? [880, 660, 880] : [660]

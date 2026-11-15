@@ -1,0 +1,26 @@
+[
+  {
+    "id": "t1",
+    "de": "astronaut",
+    "autor": "You",
+    "dia": 22,
+    "hora": "15:10",
+    "texto": "Sheltering for the SPE. I feel fine, slept badly the last two nights."
+  },
+  {
+    "id": "t2",
+    "de": "surgeon",
+    "autor": "Flight Surgeon",
+    "dia": 22,
+    "hora": "15:41",
+    "texto": "Copy. Stay in the shelter until the flux drops below 10 pfu. Add a sleep note to tomorrow's report."
+  },
+  {
+    "id": "t3",
+    "de": "surgeon",
+    "autor": "Flight Surgeon",
+    "dia": 23,
+    "hora": "09:05",
+    "texto": "I see your HR trend. No action from the ground for now; follow the drift protocol on your Body screen."
+  }
+]
