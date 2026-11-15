@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, ChevronRight, ListChecks, Rotate3d } from "lucide-react"
 import { useApp } from "@/components/app-context"
 import type { AnclaId } from "@/components/body/anatomia"
-import { RuedaGiro } from "@/components/shared/rueda-giro"
+import { GiroBotones } from "@/components/shared/giro-botones"
 import { BodyStage, type Marcador } from "@/components/body/body-stage"
 import { Ecg } from "@/components/body/ecg"
 import type { Proyeccion, Vista, ZonaCaliente } from "@/components/body/escena"
@@ -368,7 +368,7 @@ export function BodyView({ ajeno = false }: { ajeno?: boolean }) {
               </span>
             </p>
           )}
-          {ajeno && <RuedaGiro grados={grados} onChange={setGrados} etiqueta={S.crew.girar} className="absolute bottom-3 right-3" />}
+          {ajeno && <GiroBotones grados={grados} onChange={setGrados} className="absolute bottom-3 right-3" />}
           {general ? (
             <p className="pointer-events-none absolute inset-x-0 bottom-7 text-center text-sm font-medium text-muted-foreground">{S.body.tapHint}</p>
           ) : (

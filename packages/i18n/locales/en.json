@@ -937,7 +937,10 @@
         "modoReal": "Real time",
         "modoHistorico": "History",
         "minicuerpo": "Body status on the chosen day",
-        "girar": "Rotate the body (drag the wheel or use the arrow keys)"
+        "girar": "Rotate the body",
+        "girarIzquierda": "Rotate left (hold)",
+        "girarDerecha": "Rotate right (hold)",
+        "deFrente": "Face front"
       }
     },
     "MOTOR": {

@@ -131,6 +131,9 @@ export const S = {
     modoHistorico: tx("web.S.crew.modoHistorico"),
     minicuerpo: tx("web.S.crew.minicuerpo"),
     girar: tx("web.S.crew.girar"),
+    girarIzquierda: tx("web.S.crew.girarIzquierda"),
+    girarDerecha: tx("web.S.crew.girarDerecha"),
+    deFrente: tx("web.S.crew.deFrente"),
   },
   roles: {
     astronaut: tx("web.S.roles.astronaut"),

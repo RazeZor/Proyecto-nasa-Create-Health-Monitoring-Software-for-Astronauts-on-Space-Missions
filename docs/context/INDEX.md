@@ -116,6 +116,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Fichas` | clase | [packages/schemas/test_fichas.py](../../packages/schemas/test_fichas.py) |
 | `FixtureDelMotor` | clase | [pipelines/reanclaje/test_simulacion.py](../../pipelines/reanclaje/test_simulacion.py) |
 | `Generador` | clase | [tools/contextgen/test_contextgen.py](../../tools/contextgen/test_contextgen.py) |
+| `GiroBotones` | función | [apps/web/components/shared/giro-botones.tsx](../../apps/web/components/shared/giro-botones.tsx) |
 | `HUECO_MS` | constante | [apps/web/lib/reloj.ts](../../apps/web/lib/reloj.ts) |
 | `HealthStore` | interfaz | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
 | `Historial` | interfaz | [apps/web/lib/catalogo.ts](../../apps/web/lib/catalogo.ts) |
@@ -263,7 +264,6 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `ResumenDiarioEtl` | interfaz | [apps/web/lib/etl-client.ts](../../apps/web/lib/etl-client.ts) |
 | `Role` | tipo | [apps/web/lib/types.ts](../../apps/web/lib/types.ts) |
 | `RootLayout` | función | [apps/web/app/layout.tsx](../../apps/web/app/layout.tsx) |
-| `RuedaGiro` | función | [apps/web/components/shared/rueda-giro.tsx](../../apps/web/components/shared/rueda-giro.tsx) |
 | `Rutas` | clase | [apps/api/test_puente_reloj.py](../../apps/api/test_puente_reloj.py) |
 | `S` | constante | [apps/web/lib/strings.ts](../../apps/web/lib/strings.ts) |
 | `SECCIONES` | constante | [apps/web/lib/roles.ts](../../apps/web/lib/roles.ts) |
