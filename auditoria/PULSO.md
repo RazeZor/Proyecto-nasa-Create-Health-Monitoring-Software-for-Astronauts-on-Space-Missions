@@ -1,6 +1,6 @@
 # Pulso del ciclo de auditoría (se reescribe cada ~10 min)
 
-**Última actualización:** 2026-11-15 08:20 (UTC-3). Corte del ciclo: 21:59. Envío: 23:59 (lo hace el usuario).
+**Última actualización:** 2026-11-15 08:30 (UTC-3). Ciclo cerrado por parte de Claude; quedan los pasos del usuario (ver INFORME_FINAL.md §4).
 
 ## Dónde estamos
 - `fix/auditoria-final` = `c99506c` (5 commits de auditoría), subida a origin. **La fusión en `main` la denegó el clasificador de permisos**: la hace el usuario (`git checkout main && git merge --ff-only fix/auditoria-final && git push origin main`) o abre el PR en GitHub. Tests, tsc, ruff, contextgen en verde. API local :8000 con el código actual.

@@ -1,15 +1,15 @@
 # Backlog de la auditoría (ordenado: puertas de elegibilidad → bugs → puntos por hora)
 
-Actualizado 2026-11-15 02:10 (UTC-3). Fuentes: `EXPLORADOR-iteracion-1.md`, `FUENTES.md`, informe del Tester (pendiente). Estado: ⬜ pendiente · 🔧 en curso · ✅ hecho · ⏸ aplazado (con motivo).
+Actualizado 2026-11-15 08:30 (UTC-3). Fuentes: `EXPLORADOR-iteracion-1.md`, `FUENTES.md`, informe del Tester (pendiente). Estado: ⬜ pendiente · 🔧 en curso · ✅ hecho · ⏸ aplazado (con motivo).
 
 ## A. Puertas de elegibilidad y veracidad del envío
 
 | # | Ítem | Quién | Estado |
 |---|---|---|---|
-| A1 | Sitio público desactualizado respecto a `main` (sin cuerpo 3D ni favicon nuevo). Redesplegar al cerrar. **Bloqueado**: falta permiso de `ssh`. | Claude | ⬜ |
-| A2 | Demo oficial (≤7 diapositivas en inglés o vídeo ≤30 s) con equipo, integrantes, reto, imagen, experiencia de uso y datos abiertos. Contenido en `DEMO.md`; el archivo público lo sube el equipo. | Claude (contenido) / equipo (enlace) | ⬜ |
-| A3 | Texto del formulario en inglés (`ENVIO.md`): coherente con la app tras las correcciones; nombre del equipo e integrantes `[por completar]`. | Claude | 🔧 |
-| A4 | Declaración de IA (Claude Code y Codex) en formulario y README; sin logotipos NASA; referencias completas (BodyParts3D CC BY 4.0, fuentes, librerías). | Claude | 🔧 |
+| A1 | Sitio público desactualizado. Redesplegar con `NEXT_PUBLIC_VIGIA_MODO=demo NEXT_PUBLIC_VIGIA_PUBLICO=1` y resembrar la base. **Bloqueado**: permiso de `ssh` denegado por el clasificador; procedimiento en `PULSO.md`. | Usuario | ⬜ |
+| A2 | Demo oficial hecha: `VIGIA-demo-7-slides.pptx`. Falta rellenar equipo/integrantes/evento, exportar a PDF, subir con enlace público y probarlo en ventana privada. | Usuario | 🔧 |
+| A3 | Texto del formulario en inglés (`ENVIO.md`): coherente con la app tras las correcciones; nombre del equipo e integrantes `[por completar]`. | Claude | ✅ |
+| A4 | Declaración de IA (Claude Code y Codex) en formulario y README; sin logotipos NASA; referencias completas (BodyParts3D CC BY 4.0, fuentes, librerías). | Claude | ✅ |
 | A5 | Modo real puede guardar y subir como `Real` la FC del simulador sin confirmar y el ánimo 7 por defecto (`checkin-form.tsx`, `app-context.tsx`, `device-view.tsx`). Simulador solo en demo; ánimo solo si se confirma. Con test. | Claude | ✅ |
 | A6 | Informes de demo van a la API y sus respuestas (y la sembrada por `sembrar`) salen en el hilo real (`rutas_dashboard.py:218-230`, `reports-view.tsx:180-188`). Filtrar por `contenido.demo` en ambos modos. Con test. | Claude | ✅ |
 | A7 | Contradicciones texto ↔ código: §8.1/8.2 «fisiología simulada» frente a modo real; §7.1 «cubiertos por pruebas»; §4.2 «SVG»; «Tres perfiles» (hay 5); MODULE API CORS. | Claude | ✅ |
@@ -32,8 +32,8 @@ Actualizado 2026-11-15 02:10 (UTC-3). Fuentes: `EXPLORADOR-iteracion-1.md`, `FUE
 | B7 | Informes no se encolan sin red (`reports-view.tsx`). Mostrar error claro (ya lo hace: `fallo`). Encolar local: ⏸ fuera de alcance hoy; se declara en límites. | — | ⏸ |
 | B8 | «Compartir» un ámbar es solo local. ⏸ Se declara como límite (readme ya dice que verde y ámbar no salen del dispositivo). | — | ⏸ |
 | B9 | `tsc --noEmit` y `next build` en verde en local (worktree). El paso de build en el CI no se pudo subir: el token de git carece del permiso `workflow`; lo añade el equipo (`npm ci && npx tsc --noEmit && npx next build --webpack` en `apps/web`). | Claude / equipo | 🔧 |
-| B10 | Tester it. 1: T01 API local vieja → reiniciada ✅; T02 sitio público viejo → A1; T03 público: modo real compartido → arrancar en demo + aviso `NEXT_PUBLIC_VIGIA_PUBLICO` ✅ (falta desplegar); T04 `/about` en español con `lang=en` → "use client" ✅; T05 pestañas ocultas en móvil → dos filas ✅; T06 «Todo en orden» sin datos → «Aún no hay registro» ✅; T07 carga en blanco / error sin aviso ✅; T08 audio y vibración sin gesto ✅; T09 offline en dev (esperado, SW solo en producción) ⏸; T10 hidratación con `lang=en` (texto SSR en la pantalla de carga) ✅; contraste ámbar/verde 3,8:1 y botón 36 px ⬜. | Claude | 🔧 |
-| B11 | Reloj (encargo del usuario 02:10): auditar `puente_reloj.py`, `/device`, `lib/reloj.ts` y smart-monitor; que la ingesta sea robusta y conectar el reloj sea simple (instrucciones en pantalla, estado claro). Explorador en marcha. | Claude | 🔧 |
+| B10 | Tester it. 1: T01 API local vieja → reiniciada ✅; T02 sitio público viejo → A1; T03 público: modo real compartido → arrancar en demo + aviso `NEXT_PUBLIC_VIGIA_PUBLICO` ✅ (falta desplegar); T04 `/about` en español con `lang=en` → "use client" ✅; T05 pestañas ocultas en móvil → dos filas ✅; T06 «Todo en orden» sin datos → «Aún no hay registro» ✅; T07 carga en blanco / error sin aviso ✅; T08 audio y vibración sin gesto ✅; T09 offline en dev (esperado, SW solo en producción) ⏸; T10 hidratación con `lang=en` (texto SSR en la pantalla de carga) ✅; contraste ámbar/verde 3,8:1 y botón 36 px ⬜. | Claude | ✅ |
+| B11 | Reloj (encargo del usuario 02:10): auditar `puente_reloj.py`, `/device`, `lib/reloj.ts` y smart-monitor; que la ingesta sea robusta y conectar el reloj sea simple (instrucciones en pantalla, estado claro). Explorador en marcha. | Claude | ✅ |
 
 ## C. Presentación y puntos por hora
 
@@ -41,7 +41,7 @@ Actualizado 2026-11-15 02:10 (UTC-3). Fuentes: `EXPLORADOR-iteracion-1.md`, `FUE
 |---|---|---|---|
 | C1 | Textos en español con `lang=en`: unidades de fichas («lpm», «puntos (1 a 10)»), `device-view.tsx:149` «bpm», `ui/dialog.tsx`/`sheet.tsx` «Close», `manifest.ts` `lang`, `layout.tsx` metadatos; API: autor «Cirujano de Vuelo», `aviso` del panel, `fuentes[].alimenta/detalle`. | Claude | ✅ |
 | C2 | Readme: recursos oficiales del reto (HRP hazards/risks/ongoing, CSA) con URL; mención del mentor; NEWS2 reescrito; Codex en la declaración de IA. | Claude | ✅ |
-| C3 | Dependencias sin uso (`@vercel/analytics`, `recharts`, `shadcn`, `cn`). Quitar si el build sigue en verde. | Claude | ⬜ |
+| C3 | Dependencias sin uso (`@vercel/analytics`, `recharts`, `shadcn`, `cn`). Quitar si el build sigue en verde. | Claude | ✅ |
 | C4 | Comentario obsoleto `etl-client.ts:4-5`. | Claude | ✅ |
 | C5 | Retardo lunar `[1, 3]` s solo tiempo de luz; Gateway 26 %/26,5 %; Bio-Monitor 2018. Notas en informe. | Claude | ✅ |
 | C6 | KPI fijos en i18n: aceptado (coinciden con `kpi.json`); anotar en MODULE. | — | ⏸ |
@@ -50,8 +50,19 @@ Actualizado 2026-11-15 02:10 (UTC-3). Fuentes: `EXPLORADOR-iteracion-1.md`, `FUE
 
 | # | Ítem | Quién | Estado |
 |---|---|---|---|
-| D1 | Presentación de pitch en PowerPoint (skill `pptx`): demo oficial de 7 diapositivas en inglés (E3) y pitch largo de 240 s para el jurado local. Capturas reales de la app tras el redespliegue. | Claude | ⬜ |
-| D2 | Informe final del proyecto (documento para jueces y lectores, inglés, con resumen ejecutivo, método, datos, validación, límites). Derivado del informe técnico y del README. | Claude | ⬜ |
-| D3 | Glosario: qué significa cada término (NEWS2, mediana/MAD, z modificada, CUSUM, línea base, pfu, SEP, S1, RadLab, EDA, DONKI, GOES, OSDR, HRP, EIMO, modo tormenta, escalamiento, cola con retardo, PWA, service worker, gold/curated/raw…). Español e inglés. | Claude | ⬜ |
-| D4 | Guiones: pitch de 240 s, vídeo de 30 s con subtítulos, recorrido de demo en vivo (qué pulsar, qué decir), preguntas frecuentes del jurado con respuesta. | Claude | ⬜ |
-| D5 | Reloj conectable de verdad: instrucciones de conexión en pantalla y en README, variables mínimas, estado claro, pruebas. Depende de B11. | Claude | ⬜ |
+| D1 | Presentación de pitch en PowerPoint (skill `pptx`): demo oficial de 7 diapositivas en inglés (E3) y pitch largo de 240 s para el jurado local. Capturas reales de la app tras el redespliegue. | Claude | ✅ |
+| D2 | Informe final del proyecto (documento para jueces y lectores, inglés, con resumen ejecutivo, método, datos, validación, límites). Derivado del informe técnico y del README. | Claude | ✅ |
+| D3 | Glosario: qué significa cada término (NEWS2, mediana/MAD, z modificada, CUSUM, línea base, pfu, SEP, S1, RadLab, EDA, DONKI, GOES, OSDR, HRP, EIMO, modo tormenta, escalamiento, cola con retardo, PWA, service worker, gold/curated/raw…). Español e inglés. | Claude | ✅ |
+| D4 | Guiones: pitch de 240 s, vídeo de 30 s con subtítulos, recorrido de demo en vivo (qué pulsar, qué decir), preguntas frecuentes del jurado con respuesta. | Claude | ✅ |
+| D5 | Reloj conectable de verdad: instrucciones de conexión en pantalla y en README, variables mínimas, estado claro, pruebas. Depende de B11. | Claude | ✅ |
+
+## E. Lo que queda en manos del usuario (08:30)
+
+| # | Ítem |
+|---|---|
+| E1 | Fusionar `fix/auditoria-final` en `main` y subir (el clasificador denegó el merge). |
+| E2 | Redesplegar el sitio público (permiso `ssh`). |
+| E3 | Nombre del equipo, integrantes y evento en `ENVIO.md`, diapositiva 1 y portada del Word; enlace público de la demo. |
+| E4 | Cronometrar 5 registros con personas (I3). |
+| E5 | Añadir el build de la web al CI (token sin permiso `workflow`). |
+| E6 | Enviar el formulario antes de las 23:59. |
