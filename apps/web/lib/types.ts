@@ -141,25 +141,6 @@ export interface CheckInEntry {
   status: Status
 }
 
-export interface EnvDay {
-  day: number
-  doseMSv: number
-  cumulativeMSv: number
-  protonPfu: number
-  co2Ppm: number
-  cabinTempC: number
-  humidityPct: number
-}
-
-export interface SolarEvent {
-  id: string
-  day: number
-  peakPfu: number
-  classLabel: string
-  provenance: Provenance
-  note: string
-}
-
 export type ReportState = "queued" | "sent" | "arrived"
 
 export interface Report {

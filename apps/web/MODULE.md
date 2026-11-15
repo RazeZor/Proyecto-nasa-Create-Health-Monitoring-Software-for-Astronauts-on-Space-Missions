@@ -78,7 +78,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/device/iconos.tsx](components/device/iconos.tsx) | 117 | Iconos e ilustración de la pantalla Dispositivo, con el lenguaje de `components/shared/iconos.tsx`: |
 | [components/device/pasos-conexion.tsx](components/device/pasos-conexion.tsx) | 98 | — |
 | [components/device/reloj-extras.tsx](components/device/reloj-extras.tsx) | 144 | — |
-| [components/device/switch.tsx](components/device/switch.tsx) | 25 | — |
+| [components/device/switch.tsx](components/device/switch.tsx) | 10 | — |
 | [components/environment/environment-view.tsx](components/environment/environment-view.tsx) | 469 | — |
 | [components/environment/iconos.tsx](components/environment/iconos.tsx) | 65 | Iconos de la pantalla Entorno, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/reports/iconos.tsx](components/reports/iconos.tsx) | 51 | Iconos de los informes: los dos extremos del enlace (nave y Tierra) y el mensaje que viaja entre ellos. Mismo |
@@ -102,13 +102,9 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/trends/iconos.tsx](components/trends/iconos.tsx) | 46 | Iconos de la ficha del indicador, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/trends/resumen.ts](components/trends/resumen.ts) | 44 | — |
 | [components/trends/trends-view.tsx](components/trends/trends-view.tsx) | 274 | — |
-| [components/ui/badge.tsx](components/ui/badge.tsx) | 51 | — |
 | [components/ui/button.tsx](components/ui/button.tsx) | 57 | — |
-| [components/ui/card.tsx](components/ui/card.tsx) | 102 | — |
 | [components/ui/dialog.tsx](components/ui/dialog.tsx) | 161 | — |
 | [components/ui/popover.tsx](components/ui/popover.tsx) | 89 | — |
-| [components/ui/sheet.tsx](components/ui/sheet.tsx) | 139 | — |
-| [components/ui/slider.tsx](components/ui/slider.tsx) | 51 | — |
 | [lib/alertas-sync.test.ts](lib/alertas-sync.test.ts) | 52 | — |
 | [lib/alertas-sync.ts](lib/alertas-sync.ts) | 35 | Núcleo puro del escalamiento de alertas rojas (§5.4): sin red ni almacenamiento, que se inyectan. |
 | [lib/api-registro.test.ts](lib/api-registro.test.ts) | 69 | — |
@@ -119,7 +115,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/cola.ts](lib/cola.ts) | 50 | Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local. |
 | [lib/engine.test.ts](lib/engine.test.ts) | 172 | — |
 | [lib/engine.ts](lib/engine.ts) | 294 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más |
-| [lib/etl-client.ts](lib/etl-client.ts) | 166 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
+| [lib/etl-client.ts](lib/etl-client.ts) | 126 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
 | [lib/guardia.ts](lib/guardia.ts) | 8 | — |
 | [lib/lectura-humana.test.ts](lib/lectura-humana.test.ts) | 64 | — |
 | [lib/lectura-humana.ts](lib/lectura-humana.ts) | 99 | Lectura en lenguaje llano de las medidas de un día, para el informe diario a Tierra (§6.1). |
@@ -131,9 +127,9 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 990 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
-| [lib/types.ts](lib/types.ts) | 193 | — |
-| [lib/utils.ts](lib/utils.ts) | 10 | — |
+| [lib/strings.ts](lib/strings.ts) | 966 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/types.ts](lib/types.ts) | 174 | — |
+| [lib/utils.ts](lib/utils.ts) | 6 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |
 | [postcss.config.mjs](postcss.config.mjs) | 8 | @type {import('postcss-load-config').Config} |
 | [public/sw.js](public/sw.js) | 76 | Service worker de VIGÍA: deja la aplicación disponible sin enlace (informe §4.2, "todo funciona sin enlace"). |
@@ -351,7 +347,6 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 **components/device/switch.tsx**
 
 - función `SwitchTrack`
-- función `Switch`
 
 **components/environment/environment-view.tsx**
 
@@ -564,12 +559,8 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - interfaz `CabinaPanelEtl`
 - interfaz `EventoDonkiEtl`
 - interfaz `PanelEntornoEtl`
-- interfaz `ResumenDiarioEtl`
 - interfaz `KpiSimulacionEtl`
-- función `verificarSaludApi`
-- función `listarPanelesGold`
 - función `cargarPanelGold`
-- función `cargarEscenarioDiario`
 - función `cargarKpiSimulacion`
 
 **lib/guardia.ts**
@@ -678,8 +669,6 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - interfaz `IndicatorInfo`
 - interfaz `BandPoint`
 - interfaz `CheckInEntry`
-- interfaz `EnvDay`
-- interfaz `SolarEvent`
 - tipo `ReportState`
 - interfaz `Report`
 - interfaz `ThreadMessage`
@@ -688,7 +677,6 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 **lib/utils.ts**
 
 - función `cn`
-- constante `ppmToMmHg`
 
 ### Configuración y fuentes externas
 
@@ -697,7 +685,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 ### Dependencias
 
 - Internas: `../../../packages/engine/engine.ts`, `../../../packages/engine/fixtures/caso-referencia.json`, `../../../packages/i18n/i18n.ts`, `./alertas-sync`, `./alertas-sync.ts`, `./api-registro`, `./api-registro.ts`, `./catalogo.ts`, `./cola.ts`, `./engine.ts`, `./globals.css`, `./lectura-humana.ts`, `./reloj.ts`, `./roles.ts`, `./sincronizar`, `./sincronizar.ts`, `./storage`, `./storage.ts`, `./strings`, `./strings.ts`, `./types`, `./types.ts`, `./vocabulario.json`
-- Externas: `@/components/about/about-view`, `@/components/about/iconos`, `@/components/alerts/alerts-view`, `@/components/alerts/iconos`, `@/components/app-context`, `@/components/body/anatomia`, `@/components/body/body-stage`, `@/components/body/body-view`, `@/components/body/ecg`, `@/components/body/escena`, `@/components/checkin/checkin-form`, `@/components/checkin/controles`, `@/components/checkin/iconos`, `@/components/crew/crew-body`, `@/components/crew/crew-view`, `@/components/crew/historico`, `@/components/device/device-view`, `@/components/device/fc-chart`, `@/components/device/iconos`, `@/components/device/pasos-conexion`, `@/components/device/reloj-extras`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/environment/iconos`, `@/components/reports/iconos`, `@/components/reports/reports-view`, `@/components/reports/trayecto`, `@/components/shared/ayuda`, `@/components/shared/delay-countdown`, `@/components/shared/giro-botones`, `@/components/shared/grafico-intradia`, `@/components/shared/iconos`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/logo`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/shell/sw-register`, `@/components/start/elegir-rol`, `@/components/trends/descomposicion`, `@/components/trends/iconos`, `@/components/trends/resumen`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/lib/alertas-sync`, `@/lib/api-registro`, `@/lib/catalogo`, `@/lib/cola`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/guardia`, `@/lib/lectura-humana`, `@/lib/reloj`, `@/lib/roles`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/types`, `@/lib/utils`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/merge-props`, `@base-ui/react/popover`, `@base-ui/react/slider`, `@base-ui/react/use-render`, `@fontsource-variable/space-grotesk`, `@fontsource/ibm-plex-mono/400.css`, `@fontsource/ibm-plex-mono/500.css`, `@fontsource/ibm-plex-mono/600.css`, `class-variance-authority`, `clsx`, `cn`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`, `three`, `three/examples/jsm/loaders/GLTFLoader.js`, `three/examples/jsm/utils/BufferGeometryUtils.js`
+- Externas: `@/components/about/about-view`, `@/components/about/iconos`, `@/components/alerts/alerts-view`, `@/components/alerts/iconos`, `@/components/app-context`, `@/components/body/anatomia`, `@/components/body/body-stage`, `@/components/body/body-view`, `@/components/body/ecg`, `@/components/body/escena`, `@/components/checkin/checkin-form`, `@/components/checkin/controles`, `@/components/checkin/iconos`, `@/components/crew/crew-body`, `@/components/crew/crew-view`, `@/components/crew/historico`, `@/components/device/device-view`, `@/components/device/fc-chart`, `@/components/device/iconos`, `@/components/device/pasos-conexion`, `@/components/device/reloj-extras`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/environment/iconos`, `@/components/reports/iconos`, `@/components/reports/reports-view`, `@/components/reports/trayecto`, `@/components/shared/ayuda`, `@/components/shared/delay-countdown`, `@/components/shared/giro-botones`, `@/components/shared/grafico-intradia`, `@/components/shared/iconos`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/logo`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/shell/sw-register`, `@/components/start/elegir-rol`, `@/components/trends/descomposicion`, `@/components/trends/iconos`, `@/components/trends/resumen`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/lib/alertas-sync`, `@/lib/api-registro`, `@/lib/catalogo`, `@/lib/cola`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/guardia`, `@/lib/lectura-humana`, `@/lib/reloj`, `@/lib/roles`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/types`, `@/lib/utils`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/popover`, `@fontsource-variable/space-grotesk`, `@fontsource/ibm-plex-mono/400.css`, `@fontsource/ibm-plex-mono/500.css`, `@fontsource/ibm-plex-mono/600.css`, `class-variance-authority`, `clsx`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`, `three`, `three/examples/jsm/loaders/GLTFLoader.js`, `three/examples/jsm/utils/BufferGeometryUtils.js`
 - Biblioteca estándar: `node:assert/strict`, `node:fs`, `node:test`
 
 ### Tests

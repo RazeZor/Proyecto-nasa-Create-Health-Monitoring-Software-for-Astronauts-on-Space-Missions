@@ -1933,7 +1933,7 @@
         },
         {
           "ruta": "apps/web/components/device/switch.tsx",
-          "lineas": 25,
+          "lineas": 10,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1941,12 +1941,6 @@
               "nombre": "SwitchTrack",
               "tipo": "función",
               "firma": "SwitchTrack",
-              "doc": ""
-            },
-            {
-              "nombre": "Switch",
-              "tipo": "función",
-              "firma": "Switch",
               "doc": ""
             }
           ]
@@ -2496,22 +2490,8 @@
           ]
         },
         {
-          "ruta": "apps/web/components/ui/badge.tsx",
-          "lineas": 51,
-          "descripcion": "",
-          "test": false,
-          "simbolos": []
-        },
-        {
           "ruta": "apps/web/components/ui/button.tsx",
           "lineas": 57,
-          "descripcion": "",
-          "test": false,
-          "simbolos": []
-        },
-        {
-          "ruta": "apps/web/components/ui/card.tsx",
-          "lineas": 102,
           "descripcion": "",
           "test": false,
           "simbolos": []
@@ -2526,20 +2506,6 @@
         {
           "ruta": "apps/web/components/ui/popover.tsx",
           "lineas": 89,
-          "descripcion": "",
-          "test": false,
-          "simbolos": []
-        },
-        {
-          "ruta": "apps/web/components/ui/sheet.tsx",
-          "lineas": 139,
-          "descripcion": "",
-          "test": false,
-          "simbolos": []
-        },
-        {
-          "ruta": "apps/web/components/ui/slider.tsx",
-          "lineas": 51,
           "descripcion": "",
           "test": false,
           "simbolos": []
@@ -2963,7 +2929,7 @@
         },
         {
           "ruta": "apps/web/lib/etl-client.ts",
-          "lineas": 166,
+          "lineas": 126,
           "descripcion": "Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -3016,39 +2982,15 @@
               "doc": ""
             },
             {
-              "nombre": "ResumenDiarioEtl",
-              "tipo": "interfaz",
-              "firma": "ResumenDiarioEtl",
-              "doc": ""
-            },
-            {
               "nombre": "KpiSimulacionEtl",
               "tipo": "interfaz",
               "firma": "KpiSimulacionEtl",
               "doc": ""
             },
             {
-              "nombre": "verificarSaludApi",
-              "tipo": "función",
-              "firma": "verificarSaludApi",
-              "doc": ""
-            },
-            {
-              "nombre": "listarPanelesGold",
-              "tipo": "función",
-              "firma": "listarPanelesGold",
-              "doc": ""
-            },
-            {
               "nombre": "cargarPanelGold",
               "tipo": "función",
               "firma": "cargarPanelGold",
-              "doc": ""
-            },
-            {
-              "nombre": "cargarEscenarioDiario",
-              "tipo": "función",
-              "firma": "cargarEscenarioDiario",
               "doc": ""
             },
             {
@@ -3505,7 +3447,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 990,
+          "lineas": 966,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
@@ -3537,7 +3479,7 @@
         },
         {
           "ruta": "apps/web/lib/types.ts",
-          "lineas": 193,
+          "lineas": 174,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -3638,18 +3580,6 @@
               "doc": ""
             },
             {
-              "nombre": "EnvDay",
-              "tipo": "interfaz",
-              "firma": "EnvDay",
-              "doc": ""
-            },
-            {
-              "nombre": "SolarEvent",
-              "tipo": "interfaz",
-              "firma": "SolarEvent",
-              "doc": ""
-            },
-            {
               "nombre": "ReportState",
               "tipo": "tipo",
               "firma": "ReportState",
@@ -3677,7 +3607,7 @@
         },
         {
           "ruta": "apps/web/lib/utils.ts",
-          "lineas": 10,
+          "lineas": 6,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -3685,12 +3615,6 @@
               "nombre": "cn",
               "tipo": "función",
               "firma": "cn",
-              "doc": ""
-            },
-            {
-              "nombre": "ppmToMmHg",
-              "tipo": "constante",
-              "firma": "ppmToMmHg",
               "doc": ""
             }
           ]

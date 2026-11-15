@@ -30,11 +30,11 @@ export interface EstadoEscena {
   vista: Vista | null
   calientes: ZonaCaliente[]
   quieto: boolean
-  /** Giro fijo de la cámara en radianes: sin balanceo ni arrastre (el minicuerpo del histórico lo gira un deslizador). */
+  /** Giro fijo de la cámara en radianes: sin balanceo ni arrastre (el minicuerpo del histórico es una miniatura fija). */
   giroFijo?: number
-  /** Giro extra en radianes que se suma al de la cámara (el deslizador del cuerpo en tiempo real). */
+  /** Giro extra en radianes que se suma al de la cámara (los botones de giro del cuerpo en tiempo real). */
   giroExtra?: number
-  /** Sin el balanceo en reposo: el cuerpo solo gira cuando se le gira (arrastre o deslizador). */
+  /** Sin el balanceo en reposo: el cuerpo solo gira cuando se le gira (con los botones de giro). */
   sinBalanceo?: boolean
   /** El arrastre del lienzo no gira el cuerpo (solo la rueda de fuera). */
   sinArrastre?: boolean

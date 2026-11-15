@@ -90,17 +90,6 @@ export interface PanelEntornoEtl {
   eventos: EventoDonkiEtl[]
 }
 
-export interface ResumenDiarioEtl {
-  dia_mision: number
-  fuente: "goes" | "radlab" | "eda"
-  serie: string
-  variable: string
-  max: number
-  bins: number
-  dosis?: number
-  max_prom_horario?: number
-}
-
 export interface KpiSimulacionEtl {
   protocolo: string
   semilla_principal: number
@@ -124,41 +113,12 @@ async function getJson<T>(ruta: string): Promise<T | null> {
   }
 }
 
-export async function verificarSaludApi(): Promise<boolean> {
-  const res = await getJson<{ estado: string }>("/salud")
-  return res?.estado === "ok"
-}
-
-export async function listarPanelesGold(): Promise<{ lista: string[]; enVivo: boolean }> {
-  const remotos = await getJson<string[]>("/paneles")
-  if (remotos && remotos.length > 0) {
-    return { lista: remotos, enVivo: true }
-  }
-  return { lista: [], enVivo: false }
-}
-
 export async function cargarPanelGold(nombre: string): Promise<{ panel: PanelEntornoEtl | null; enVivo: boolean }> {
   const remoto = await getJson<PanelEntornoEtl>(`/paneles/${encodeURIComponent(nombre)}`)
   if (remoto) {
     return { panel: remoto, enVivo: true }
   }
   return { panel: null, enVivo: false }
-}
-
-export async function cargarEscenarioDiario(
-  nombre: string,
-  filtro?: { fuente?: string; variable?: string },
-): Promise<{ diario: ResumenDiarioEtl[]; enVivo: boolean }> {
-  const params = new URLSearchParams()
-  if (filtro?.fuente) params.set("fuente", filtro.fuente)
-  if (filtro?.variable) params.set("variable", filtro.variable)
-  const qs = params.toString()
-  const ruta = `/escenarios/${encodeURIComponent(nombre)}/diario${qs ? `?${qs}` : ""}`
-  const remoto = await getJson<ResumenDiarioEtl[]>(ruta)
-  if (remoto) {
-    return { diario: remoto, enVivo: true }
-  }
-  return { diario: [], enVivo: false }
 }
 
 export async function cargarKpiSimulacion(): Promise<KpiSimulacionEtl | null> {

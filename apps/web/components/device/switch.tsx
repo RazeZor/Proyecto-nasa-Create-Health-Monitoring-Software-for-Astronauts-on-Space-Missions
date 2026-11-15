@@ -8,18 +8,3 @@ export function SwitchTrack({ checked, className }: { checked: boolean; classNam
     </span>
   )
 }
-
-export function Switch({ checked, onChange, labelledBy }: { checked: boolean; onChange: (v: boolean) => void; labelledBy: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-labelledby={labelledBy}
-      onClick={() => onChange(!checked)}
-      className="flex min-h-14 min-w-16 shrink-0 items-center"
-    >
-      <SwitchTrack checked={checked} />
-    </button>
-  )
-}
