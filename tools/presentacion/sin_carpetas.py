@@ -1,4 +1,8 @@
-import sys, zipfile, shutil, os
+import os
+import shutil
+import sys
+import zipfile
+
 for ruta in sys.argv[1:]:
     tmp = ruta + ".tmp"
     with zipfile.ZipFile(ruta) as zin, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
