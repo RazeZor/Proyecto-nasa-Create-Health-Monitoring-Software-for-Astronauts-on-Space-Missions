@@ -153,6 +153,8 @@ export const S = {
     source: "Fuente",
     noData: "Aún no hay lecturas para este indicador.",
     layersFired: "Capas activadas",
+    serverBaseline: (origen: string, med: number, mad: number, n: number) =>
+      `Línea base SQLite (${origen}): mediana ${med} · MAD ${mad} (n=${n})`,
   },
   env: {
     title: "Entorno",
@@ -210,6 +212,13 @@ export const S = {
     band: "Banda clínica",
     empty: "Aún no hay alertas. Cuando se active una capa, aparecerá aquí.",
     cmoNote: "Vista del Oficial Médico: alertas compartidas contigo o escaladas automáticamente.",
+    serverSynced: (n: number) => `${n} alertas registradas en SQLite`,
+    escalationsReceived: "Bandeja de escalamientos recibidos (dato mínimo §5.4)",
+    escalationsOwn: "Registro de transparencia: avisos escalados desde tu dispositivo",
+    contextLabel: "Contexto del tripulante",
+    contextPlaceholder: "Añadir contexto una sola vez (ej. medición tras ejercicio)...",
+    sendContext: "Guardar contexto",
+    contextError: "No se pudo guardar el contexto en la API.",
   },
   reports: {
     title: "Informes",
@@ -219,6 +228,10 @@ export const S = {
     sendFailed: "No se pudo encolar el informe: la API no respondió. Inténtalo de nuevo.",
     thread: "Conversación con el Cirujano de Vuelo",
     send: "Encolar informe de hoy",
+    advanceQueue: "Avanzar cola (entregar pendientes)",
+    replyPlaceholder: "Escribe la indicación médica para el tripulante...",
+    sendReply: "Enviar respuesta",
+    replyFailed: "No se pudo guardar la respuesta en la API.",
     queued: "En cola",
     sent: "En tránsito",
     arrived: "Recibido",

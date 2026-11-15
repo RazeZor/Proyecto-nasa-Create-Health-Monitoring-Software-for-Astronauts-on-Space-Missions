@@ -143,9 +143,34 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial) {
     ]
   }
 
+  const lineasBaseServidor = () => {
+    const pre = lecturas.filter((l) => l.dia_mision <= 0)
+    const vuelo = lecturas.filter((l) => l.dia_mision >= 1 && l.dia_mision <= ADAPTATION_END_DAY)
+    const piso = SUPUESTOS.mad_min
+    const r2 = (n: number) => Math.round(n * 100) / 100
+    const specs: [IndicatorId, (l: Lectura) => number, number][] = [
+      ["restingHr", (l) => l.fc_reposo_lpm, piso.fc],
+      ["systolic", (l) => l.pas_mmHg, piso.pas],
+      ["sleepH", (l) => l.sueno_h, piso.sueno],
+      ["mood", (l) => l.animo_1_10, piso.animo],
+    ]
+    const resultado: { indicador: IndicatorId; origen: "tierra" | "vuelo"; mediana: number; mad: number; n: number; desde: string; hasta: string }[] = []
+    for (const [indicador, leer, minMad] of specs) {
+      if (pre.length > 0) {
+        const [med, mad] = madBruto(pre.map(leer), minMad)
+        resultado.push({ indicador, origen: "tierra", mediana: r2(med), mad: r2(mad), n: pre.length, desde: "2026-10-31T00:00:00Z", hasta: "2026-11-13T00:00:00Z" })
+      }
+      if (vuelo.length > 0) {
+        const [med, mad] = madBruto(vuelo.map(leer), minMad)
+        resultado.push({ indicador, origen: "vuelo", mediana: r2(med), mad: r2(mad), n: vuelo.length, desde: "2026-11-14T00:00:00Z", hasta: "2026-11-27T00:00:00Z" })
+      }
+    }
+    return resultado
+  }
+
   const overall = (day: number): Status => worst(zones(day).map((z) => z.status))
   const storm = (day: number) => Boolean(ENTORNO[day]?.modo_tormenta)
-  return { alerts, vitals, zones, overall, baselines, storm, missionDays: MISSION_DAYS, cambiosInstrumento }
+  return { alerts, alertasMotor, lineasBaseServidor, vitals, zones, overall, baselines, storm, missionDays: MISSION_DAYS, cambiosInstrumento }
 }
 
 /**

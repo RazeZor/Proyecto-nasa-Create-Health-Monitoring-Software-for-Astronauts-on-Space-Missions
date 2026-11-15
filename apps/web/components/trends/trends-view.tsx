@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useApp } from "@/components/app-context"
 import { IndicatorCard } from "@/components/shared/indicator-card"
 import { LineChart } from "@/components/shared/line-chart"
 import { EmptyState, PageHeader } from "@/components/shared/states"
 import { LayerChip, ProvenanceTag } from "@/components/shared/status"
+import { leerLineaBase, type LineaBaseServidor } from "@/lib/api-registro"
 import { BASELINE_SWITCH_DAY } from "@/lib/engine"
+import { TRIPULANTE } from "@/lib/sincronizacion"
 import { S } from "@/lib/strings"
 import type { IndicatorId } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -17,6 +19,21 @@ export function TrendsView() {
   const INDICATORS = catalogo.indicadores
   const IDS = Object.keys(INDICATORS) as IndicatorId[]
   const [id, setId] = useState<IndicatorId>("restingHr")
+  const [lbTierra, setLbTierra] = useState<LineaBaseServidor | null>(null)
+  const [lbVuelo, setLbVuelo] = useState<LineaBaseServidor | null>(null)
+  const tripulante = TRIPULANTE ?? 1
+
+  useEffect(() => {
+    let vivo = true
+    Promise.all([leerLineaBase(tripulante, id, "tierra"), leerLineaBase(tripulante, id, "vuelo")]).then(([t, v]) => {
+      if (!vivo) return
+      setLbTierra(t)
+      setLbVuelo(v)
+    })
+    return () => {
+      vivo = false
+    }
+  }, [tripulante, id, analisis])
   const info = INDICATORS[id]
   const points = analisis.vitals(day)
     .map((v) => ({ day: v.day, value: v[id] as number | undefined }))
@@ -58,6 +75,16 @@ export function TrendsView() {
         )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <ProvenanceTag provenance={{ kind: "simulated" }} />
+          {lbTierra && (
+            <span className="rounded-md border border-border bg-muted/40 px-2 py-0.5 font-mono text-xs text-muted-foreground">
+              {S.trends.serverBaseline("tierra", lbTierra.mediana, lbTierra.mad, lbTierra.n)}
+            </span>
+          )}
+          {lbVuelo && (
+            <span className="rounded-md border border-border bg-muted/40 px-2 py-0.5 font-mono text-xs text-muted-foreground">
+              {S.trends.serverBaseline("vuelo", lbVuelo.mediana, lbVuelo.mad, lbVuelo.n)}
+            </span>
+          )}
           {layers.length > 0 && (
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
               {S.trends.layersFired}: {layers.map((l) => <LayerChip key={l} layer={l} />)}

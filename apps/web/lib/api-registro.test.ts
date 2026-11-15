@@ -1,7 +1,22 @@
 // Pruebas del cliente de registro: node --test apps/web/lib/api-registro.test.ts (Node 22.18+, sin dependencias)
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { capaApi, indicadorApi, lecturasDeCheckIn, nivelApi, perfilApi, reporteDeServidor, retardoMin, sintomasDeCheckIn, tReal } from "./api-registro.ts"
+import {
+  alertaInDeMotor,
+  capaApi,
+  checkInsDeServidor,
+  diaDeTMision,
+  indicadorApi,
+  indicadorMotorApi,
+  lecturasDeCheckIn,
+  nivelApi,
+  perfilApi,
+  reporteDeServidor,
+  retardoMin,
+  sintomasDeCheckIn,
+  tReal,
+  tRealDeDia,
+} from "./api-registro.ts"
 import type { CheckInEntry } from "./types.ts"
 
 const base = {
@@ -51,4 +66,39 @@ test("reporteDeServidor: el contenido guardado en la API llega a la interfaz", (
 test("la SpO2 del reloj sube como sensor galaxy_watch4", () => {
   const l = lecturasDeCheckIn({ ...base, spo2FromWatch: true, spo2Site: "Muñeca" }).find((x) => x.indicador === "spo2")
   assert.deepEqual([l?.origen, l?.metodo], ["sensor", "galaxy_watch4"])
+})
+
+test("checkInsDeServidor reconstruye lecturas y síntomas por t_real", () => {
+  const reconstruidos = checkInsDeServidor(
+    [
+      { id: 1, tripulante_id: 1, indicador: "frecuencia_cardiaca_reposo", valor: 64, t_real: "2026-11-16T08:00:00Z", t_mision: "D003T08:00:00", origen: "sensor", metodo: "galaxy_watch4:gw-1", naturaleza: "Real" },
+      { id: 2, tripulante_id: 1, indicador: "spo2", valor: 96, t_real: "2026-11-16T08:00:00Z", t_mision: "D003T08:00:00", origen: "manual", metodo: "Dedo", naturaleza: "Simulado" },
+    ],
+    [{ id: 1, tripulante_id: 1, t_real: "2026-11-16T08:00:00Z", t_mision: "D003T08:00:00", codigo: "cefalea", gravedad: 1 }],
+  )
+  assert.equal(reconstruidos.length, 1)
+  assert.deepEqual(
+    [reconstruidos[0].day, reconstruidos[0].restingHr, reconstruidos[0].hrFromWatch, reconstruidos[0].spo2, reconstruidos[0].symptoms],
+    [3, 64, true, 96, ["headache"]],
+  )
+  assert.equal(diaDeTMision("D022T06:30:00"), 22)
+  assert.equal(tRealDeDia(1), "2026-11-14T06:30:00Z")
+})
+
+test("alertaInDeMotor traduce indicadores del motor al esquema de SQLite", () => {
+  assert.equal(indicadorMotorApi("fc"), "frecuencia_cardiaca_reposo")
+  assert.equal(indicadorMotorApi("conductual"), "sueno")
+  const dto = alertaInDeMotor({
+    dia_mision: 24,
+    tripulante_id: "yo",
+    capa: "C",
+    nivel: "ambar",
+    indicador: "fc",
+    valor: 6.46,
+    escalada_auto: false,
+  })
+  assert.deepEqual(
+    [dto.indicador, dto.capa, dto.nivel, dto.valor, dto.t_real, dto.regla_version],
+    ["frecuencia_cardiaca_reposo", "C", "ambar", 6.46, "2026-12-07T06:30:00Z", "1"],
+  )
 })
