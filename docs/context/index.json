@@ -4558,8 +4558,22 @@
       ],
       "archivos": [
         {
+          "ruta": "tools/presentacion/capturas-deck.js",
+          "lineas": 66,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
           "ruta": "tools/presentacion/capturas-finales.js",
           "lineas": 76,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/presentacion/deck-es.js",
+          "lineas": 329,
           "descripcion": "",
           "test": false,
           "simbolos": []

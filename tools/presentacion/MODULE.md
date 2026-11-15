@@ -32,7 +32,9 @@ tags: herramientas, presentacion, pptx, pptxgenjs, capturas, puppeteer, demo
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
+| [capturas-deck.js](capturas-deck.js) | 66 | — |
 | [capturas-finales.js](capturas-finales.js) | 76 | — |
+| [deck-es.js](deck-es.js) | 329 | — |
 | [deck.js](deck.js) | 327 | — |
 | [sin_carpetas.py](sin_carpetas.py) | 14 | — |
 
