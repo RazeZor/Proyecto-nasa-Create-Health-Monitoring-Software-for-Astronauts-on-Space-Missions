@@ -110,7 +110,7 @@ function portada(pres, C, seccion, subtitulo) {
 }
 function problema(pres, C, seccion) {
   const s = pres.addSlide({ masterName: "CLARA", sectionTitle: seccion })
-  titulo(s, "Halfway to Mars, your doctor is 22 minutes away")
+  titulo(s, "On the way to Mars, your doctor is up to 22 minutes away")
   vinetas(s, [
     "A message to the flight surgeon takes up to 22 minutes each way. Evacuation is not possible.",
     "NASA HRP's five hazards reinforce each other: radiation, isolation, distance, gravity, closed environment.",
@@ -126,7 +126,7 @@ function problema(pres, C, seccion) {
     { text: "Space radiation · Isolation and confinement · Distance from Earth · Gravity fields · Hostile closed environment", options: { color: HEX.dk2, breakLine: true } },
     { text: "They can bring immune changes, bone loss, cardiovascular events and behavioral health problems; on long missions the crew must spot these changes themselves.", options: { color: HEX.dk2 } },
   ], { x: 4.85, y: 3.25, w: 4.5, h: 1.5, fontSize: 11.5, valign: "top", isTextBox: true, margin: 0, paraSpaceAfter: 4 })
-  s.addNotes("You have a headache and feel dizzy. You text your doctor. The answer comes back in 44 minutes, if it comes. You are halfway to Mars.")
+  s.addNotes("You have a headache and feel dizzy. You text your doctor. The answer can take 44 minutes, if it comes. You are on a mission to Mars.")
   return s
 }
 function solucion(pres, C, seccion) {
@@ -153,9 +153,9 @@ function ejemplo(pres, C, seccion) {
   titulo(s, "The environment is part of the reasoning")
   captura(s, SHOT.alerts, 0.5, 1.3, 4.4, "Alerts screen: environment alert with source and real date")
   const bloques = [
-    ["Day 12 · CO2 + headache", "Cabin CO2 from NASA OSDR (EDA) is 4.6 mmHg, above the 3 mmHg limit (NASA-STD-3001). The headache becomes one environment alert for the whole crew, not a medical alert for one person.", HEX.accent2],
-    ["Day 22 · Storm mode", "A solar energetic particle event from NASA DONKI, with GOES proton flux at or above 10 pfu (NOAA S1), switches storm mode on: shelter recommended for everyone.", HEX.accent3],
-    ["Days 18–27 · Slow drift", "Sleep, resting HR and mood drift a little every day. A fixed terrestrial threshold never fires; the personal baseline and CUSUM do.", HEX.accent1],
+    ["Day 60 · CO2 + headache", "A simulated cabin CO2 spike reaches 4.6 mmHg, above the 3 mmHg limit (NASA-STD-3001). The headache becomes one environment alert for the whole crew, not a medical alert for one person.", HEX.accent2],
+    ["Day 131 · Storm mode", "The real solar particle event of 23 January 2012, from NASA DONKI, switches storm mode on: shelter recommended for everyone. A proton flux at or above 10 pfu (NOAA S1) does the same.", HEX.accent3],
+    ["Days 100–109 · Slow drift", "Sleep, resting HR and mood drift a little every day. A fixed terrestrial threshold never fires; the personal baseline and CUSUM do.", HEX.accent1],
   ]
   bloques.forEach(([t, d, color], i) => {
     const y = 1.3 + i * 1.22
@@ -173,9 +173,9 @@ function datos(pres, C, seccion) {
   const cab = (t) => ({ text: t, options: { bold: true, color: HEX.lt1, fill: { color: HEX.dk1 }, fontSize: 10 } })
   const filas = [
     [cab("Data"), cab("Source"), cab("Role in VIGÍA")],
-    ["Radiation dose (ALTEA-Survey, ISS, 2011)", "NASA OSDR · RadLab", "Ambient dose on the Environment screen"],
-    ["Cabin CO2, temperature, humidity (Rodent Research-1, ISS, 2014)", "NASA OSDR · EDA", "Headache + CO2 rule, converted with the cabin pressure of the profile"],
-    ["Solar energetic particle events (May 2024)", "NASA CCMC · DONKI", "Storm mode for the whole crew"],
+    ["Radiation dose (ALTEA-Survey, ISS, 2011)", "NASA OSDR · RadLab", "Ambient dose on the Environment screen (real mode)"],
+    ["Cabin CO2, temperature, humidity (Rodent Research-1, ISS, 2014)", "NASA OSDR · EDA", "Headache + CO2 rule in real mode, converted with the cabin pressure of the profile"],
+    ["Solar energetic particle events (2011–2012 in the demo, on their true dates)", "NASA CCMC · DONKI", "Storm mode for the whole crew"],
     ["Proton flux ≥10 MeV", "NOAA SWPC · GOES", "Storm severity (S1 = 10 pfu)"],
     ["Hazards, risks, ongoing research", "NASA HRP", "Body figure structure, indicator fact sheets"],
     ["Radiation monitoring, science in space", "CSA", "Dose module and its declared limits"],
@@ -319,7 +319,7 @@ async function pitch() {
   const g = pres.addSlide({ masterName: "OSCURA", sectionTitle: "Hook" })
   g.addText("22:00", { x: 0.5, y: 1.3, w: 9, h: 1.6, fontSize: 96, bold: true, color: HEX.accent5, align: "center", isTextBox: true, margin: 0, fontFace: "Courier New" })
   g.addText("minutes for your message to reach Earth. Then 22 more for the answer.", { x: 0.5, y: 3.0, w: 9, h: 0.6, fontSize: 20, color: HEX.lt2, align: "center", isTextBox: true, margin: 0 })
-  g.addText("You have a headache and feel dizzy. You are halfway to Mars.", { x: 0.5, y: 3.7, w: 9, h: 0.6, fontSize: 18, italic: true, color: HEX.accent6, align: "center", isTextBox: true, margin: 0 })
+  g.addText("You have a headache and feel dizzy. You are on your way to Mars.", { x: 0.5, y: 3.7, w: 9, h: 0.6, fontSize: 18, italic: true, color: HEX.accent6, align: "center", isTextBox: true, margin: 0 })
   g.addNotes("0:00–0:25. Pantalla negra con el contador. «Te duele la cabeza y estás mareada. Le escribes a tu médico. La respuesta llegará en 44 minutos, si llega.»")
   portada(pres, C, "Pitch", "Crew self-health monitor for long missions with communication delay")
   problema(pres, C, "Pitch")

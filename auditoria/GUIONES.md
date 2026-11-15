@@ -10,7 +10,7 @@ Reglas: cada dato real se nombra con su fuente; lo simulado se dice que es simul
 
 | Tiempo | Bloque | Qué se dice | Qué se ve |
 | --- | --- | --- | --- |
-| 0:00–0:25 | Gancho | «Te duele la cabeza y estás mareada. Le escribes a tu médico. La respuesta llegará en 44 minutos, si llega. Estás a medio camino de Marte.» | Pantalla negra con un contador de retardo que sube hasta 22:00 |
+| 0:00–0:25 | Gancho | «Te duele la cabeza y estás mareada. Le escribes a tu médico. La respuesta llegará en 44 minutos, si llega. Vas camino de Marte.» | Pantalla negra con un contador de retardo que sube hasta 22:00 |
 | 0:25–1:00 | Problema | «La NASA define cinco peligros del vuelo espacial que se potencian entre sí. En la Estación el modelo es estabilizar y regresar. En Marte no hay regreso: la tripulación decide sola. Los monitores actuales envían datos a tierra; no ayudan a decidir a bordo.» | Los cinco peligros; línea ISS (<1 s) → Luna (1,3 s) → Marte (3–22 min) |
 | 1:00–2:30 | Demo con datos NASA | «Esto es VIGÍA, en modo demo, con el wifi apagado. Registro diario en menos de 90 segundos [se completa un registro]. El cuerpo pasa a ámbar: *tu sueño y tu pulso llevan más de una semana derivando respecto a tu propia línea base; ningún límite clínico lo habría marcado*. Abrimos Entorno: dosis real de un detector de la ISS, RadLab de NASA OSDR; CO2 de cabina real de la Environmental Data Application; un evento de partículas solares real del catálogo DONKI activa el modo tormenta para toda la tripulación. Cada dato dice si es real o simulado, su fuente y su fecha. Una SpO2 roja avisa sola al oficial médico con el dato mínimo, y la astronauta ve exactamente qué salió. El informe llega a la vista de tierra tras el retardo.» | La app en vivo (ver recorrido §3) |
 | 2:30–3:20 | Impacto | «En 500 misiones simuladas el motor detectó la deriva en el 99,8 % de los casos, a los 8 días de mediana; el umbral fijo terrestre no se disparó nunca; menos de 0,001 falsas alarmas por tripulante y semana. Es simulación, no rendimiento clínico, y lo decimos. Lo usan tres personas: la astronauta, el oficial médico y el cirujano de vuelo. En la Tierra: bases antárticas, barcos, salud rural.» | Tres números grandes con la leyenda «simulación» |
@@ -18,7 +18,7 @@ Reglas: cada dato real se nombra con su fuente; lo simulado se dice que es simul
 
 **Diapositivas de apoyo del pitch (`VIGIA-pitch.pptx` / `VIGIA-pitch-es.pptx`, 15):** gancho 22:00 → portada → problema → solución → demo (registro y tendencias) → entorno en el razonamiento → demo (informes y reloj) → motor de tres capas → **lo que nos diferencia** (línea base propia, entorno en el veredicto, decidir a bordo en privado y sin conexión, honestidad) → **cinco peligros, cinco respuestas, cinco entornos** (peligro HRP → medida → regla → acción; perfiles con presión y retardo) → **un reloj en la muñeca** (app Wear OS + smart-monitor; solo entran chequeos válidos) → datos NASA → resultados → tres personas, cinco entornos → cierre. Las tres nuevas van dentro del bloque de impacto (2:30–3:20): una frase por diapositiva.
 
-**Versión en inglés de las frases clave** (si el jurado lo pide): "Halfway to Mars, a message to your doctor takes 22 minutes each way." · "VIGÍA lets astronauts evaluate their own health on board, offline." · "Clinical safety bands, your own baseline, and real NASA data." · "It tells you why, and what to do next." · "When Earth can't answer, you're not flying blind."
+**Versión en inglés de las frases clave** (si el jurado lo pide): "On the way to Mars, a message to your doctor can take 22 minutes each way." · "VIGÍA lets astronauts evaluate their own health on board, offline." · "Clinical safety bands, your own baseline, and real NASA data." · "It tells you why, and what to do next." · "When Earth can't answer, you're not flying blind."
 
 ---
 
@@ -27,7 +27,7 @@ Reglas: cada dato real se nombra con su fuente; lo simulado se dice que es simul
 | Tiempo | Subtítulo (inglés) | Imagen |
 | --- | --- | --- |
 | 0–3 s | "Team `[NAME]` · VIGÍA · Health Monitoring Software for Astronauts" | Título con logotipo |
-| 3–8 s | "Halfway to Mars, a message to your doctor takes 22 minutes each way." | Contador de retardo |
+| 3–8 s | "On the way to Mars, a message to your doctor can take 22 minutes each way." | Contador de retardo |
 | 8–14 s | "VIGÍA lets astronauts evaluate their own health on board, offline." | Registro diario con el icono de red apagado |
 | 14–22 s | "Clinical safety bands, your own baseline, and real NASA data: ISS radiation dose, cabin CO2, solar particle events." | Cuerpo en ámbar; Entorno con las fuentes RadLab, EDA, DONKI, GOES visibles |
 | 22–27 s | "It tells you why, and what to do next. Red alerts reach the medical officer with the minimum data." | Alerta con «Qué hacer»; informe en la cola |

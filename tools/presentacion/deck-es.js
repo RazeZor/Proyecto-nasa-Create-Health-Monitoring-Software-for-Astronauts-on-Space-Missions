@@ -128,7 +128,7 @@ function problema(pres, C, seccion) {
     { text: "Radiación espacial · Aislamiento y confinamiento · Distancia de la Tierra · Campos gravitatorios · Ambiente cerrado hostil", options: { color: HEX.dk2, breakLine: true } },
     { text: "Pueden provocar cambios inmunitarios, pérdida ósea, eventos cardiovasculares y problemas de salud conductual; en misiones largas la tripulación debe detectar estos cambios por sí misma.", options: { color: HEX.dk2 } },
   ], { x: 4.85, y: 3.25, w: 4.5, h: 1.5, fontSize: 11.5, valign: "top", isTextBox: true, margin: 0, paraSpaceAfter: 4 })
-  s.addNotes("Te duele la cabeza y estás mareada. Le escribes a tu médico. La respuesta llega en 44 minutos, si llega. Estás a mitad de camino a Marte.")
+  s.addNotes("Te duele la cabeza y estás mareada. Le escribes a tu médico. La respuesta llega en 44 minutos, si llega. Vas camino de Marte.")
   return s
 }
 function solucion(pres, C, seccion) {
@@ -155,9 +155,9 @@ function ejemplo(pres, C, seccion) {
   titulo(s, "El entorno es parte del razonamiento")
   captura(s, SHOT.alerts, 0.5, 1.3, 4.4, "Pantalla de alertas: alerta de entorno con fuente y fecha real")
   const bloques = [
-    ["Día 12 · CO2 + dolor de cabeza", "El CO2 de cabina de NASA OSDR (EDA) es de 4,6 mmHg, por encima del límite de 3 mmHg (NASA-STD-3001). El dolor de cabeza se convierte en una alerta de entorno para toda la tripulación, no en una alerta médica para una persona.", HEX.accent2],
-    ["Día 22 · Modo tormenta", "Un evento de partículas energéticas solares de NASA DONKI, con flujo de protones GOES igual o superior a 10 pfu (NOAA S1), activa el modo tormenta: refugio recomendado para todos.", HEX.accent3],
-    ["Días 18–27 · Deriva lenta", "El sueño, la FC en reposo y el ánimo derivan un poco cada día. Un umbral terrestre fijo nunca se dispara; la línea base personal y el CUSUM sí.", HEX.accent1],
+    ["Día 60 · CO2 + dolor de cabeza", "Un pico simulado de CO2 de cabina llega a 4,6 mmHg, por encima del límite de 3 mmHg (NASA-STD-3001). El dolor de cabeza se convierte en una alerta de entorno para toda la tripulación, no en una alerta médica para una persona.", HEX.accent2],
+    ["Día 131 · Modo tormenta", "El evento real de partículas solares del 23 de enero de 2012, de NASA DONKI, activa el modo tormenta: refugio recomendado para todos. Un flujo de protones igual o superior a 10 pfu (NOAA S1) hace lo mismo.", HEX.accent3],
+    ["Días 100–109 · Deriva lenta", "El sueño, la FC en reposo y el ánimo derivan un poco cada día. Un umbral terrestre fijo nunca se dispara; la línea base personal y el CUSUM sí.", HEX.accent1],
   ]
   bloques.forEach(([t, d, color], i) => {
     const y = 1.3 + i * 1.22
@@ -177,7 +177,7 @@ function datos(pres, C, seccion) {
     [cab("Dato"), cab("Fuente"), cab("Papel en VIGÍA")],
     ["Dosis de radiación (ALTEA-Survey, ISS, 2011)", "NASA OSDR · RadLab", "Dosis ambiental en la pantalla de Entorno"],
     ["CO2, temperatura y humedad de cabina (Rodent Research-1, ISS, 2014)", "NASA OSDR · EDA", "Regla dolor de cabeza + CO2, convertida con la presión de cabina del perfil"],
-    ["Eventos de partículas energéticas solares (mayo de 2024)", "NASA CCMC · DONKI", "Modo tormenta para toda la tripulación"],
+    ["Eventos de partículas energéticas solares (2011–2012 en la demo, en su fecha real)", "NASA CCMC · DONKI", "Modo tormenta para toda la tripulación"],
     ["Flujo de protones ≥10 MeV", "NOAA SWPC · GOES", "Severidad de la tormenta (S1 = 10 pfu)"],
     ["Peligros, riesgos, investigación en curso", "NASA HRP", "Estructura de la figura del cuerpo, fichas de los indicadores"],
     ["Monitoreo de radiación, ciencia en el espacio", "CSA", "Módulo de dosis y sus límites declarados"],
@@ -321,7 +321,7 @@ async function pitch() {
   const g = pres.addSlide({ masterName: "OSCURA", sectionTitle: "Gancho" })
   g.addText("22:00", { x: 0.5, y: 1.3, w: 9, h: 1.6, fontSize: 96, bold: true, color: HEX.accent5, align: "center", isTextBox: true, margin: 0, fontFace: "Courier New" })
   g.addText("minutos para que tu mensaje llegue a la Tierra. Y 22 más para la respuesta.", { x: 0.5, y: 3.0, w: 9, h: 0.6, fontSize: 20, color: HEX.lt2, align: "center", isTextBox: true, margin: 0 })
-  g.addText("Te duele la cabeza y estás mareada. Estás a mitad de camino a Marte.", { x: 0.5, y: 3.7, w: 9, h: 0.6, fontSize: 18, italic: true, color: HEX.accent6, align: "center", isTextBox: true, margin: 0 })
+  g.addText("Te duele la cabeza y estás mareada. Vas camino de Marte.", { x: 0.5, y: 3.7, w: 9, h: 0.6, fontSize: 18, italic: true, color: HEX.accent6, align: "center", isTextBox: true, margin: 0 })
   g.addNotes("0:00–0:25. Pantalla negra con el contador. «Te duele la cabeza y estás mareada. Le escribes a tu médico. La respuesta llegará en 44 minutos, si llega.»")
   portada(pres, C, "Pitch", "Monitor de autoevaluación de salud de la tripulación para misiones largas con retardo de comunicación")
   problema(pres, C, "Pitch")

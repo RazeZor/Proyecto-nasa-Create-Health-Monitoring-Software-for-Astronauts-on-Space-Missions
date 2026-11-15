@@ -19,7 +19,7 @@ Visual: app home screen (3D body, status green) with the VIGÍA logo. Footer: "D
 
 ## Slide 2 — The problem
 
-- Halfway to Mars a message to the flight surgeon takes **up to 22 minutes each way**. No evacuation.
+- On a mission to Mars a message to the flight surgeon can take **up to 22 minutes each way**. No evacuation.
 - NASA HRP's five hazards (radiation, isolation, distance, gravity, closed environment) reinforce each other.
 - Today's health software sends data to Earth. **The crew needs to decide on board.**
 
@@ -35,7 +35,7 @@ Visual: check-in screen + body screen with an amber zone open ("why" and "what t
 
 ## Slide 4 — How it works (one example)
 
-Day 12: the astronaut reports a headache. Cabin CO2 from NASA OSDR is 4.6 mmHg (> 3 mmHg, NASA-STD-3001). VIGÍA raises **one environment alert for the whole crew**, not a medical alert for one person. Day 22: a DONKI solar particle event and a GOES flux ≥ 10 pfu switch on **storm mode**. Days 18–27: sleep, resting HR and mood drift slowly; a fixed terrestrial threshold never fires, the personal baseline does.
+Day 60: the astronaut reports a headache. A simulated cabin CO2 spike reaches 4.6 mmHg (> 3 mmHg, NASA-STD-3001). VIGÍA raises **one environment alert for the whole crew**, not a medical alert for one person. Day 22: a DONKI solar particle event and a GOES flux ≥ 10 pfu switch on **storm mode**. Days 18–27: sleep, resting HR and mood drift slowly; a fixed terrestrial threshold never fires, the personal baseline does.
 
 Visual: Alerts screen with the environment alert (source and real date visible) and the trends chart with the personal band.
 
@@ -80,7 +80,7 @@ Credits: BodyParts3D © DBCLS, CC BY 4.0. Built with Next.js, three.js, FastAPI,
 | Time | Subtitle | Image |
 | --- | --- | --- |
 | 0–3 s | "Team `[NAME]` · VIGÍA · Health Monitoring Software for Astronauts" | Title card |
-| 3–8 s | "Halfway to Mars, a message to your doctor takes 22 minutes each way." | Delay counter |
+| 3–8 s | "On the way to Mars, a message to your doctor can take 22 minutes each way." | Delay counter |
 | 8–14 s | "VIGÍA lets astronauts evaluate their own health on board, offline." | Check-in in under 90 s |
 | 14–22 s | "Clinical safety bands, your own baseline, and real NASA data: ISS radiation dose, cabin CO2, solar particle events." | Body amber; Environment screen with sources |
 | 22–27 s | "It tells you why, and what to do next. Red alerts reach the medical officer with the minimum data." | Alert with next step; report in the queue |
