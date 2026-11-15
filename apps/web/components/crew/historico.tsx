@@ -1,19 +1,27 @@
 "use client"
 
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useMemo } from "react"
 import { useApp } from "@/components/app-context"
+import { BodyStage } from "@/components/body/body-stage"
 import { TrendsView } from "@/components/trends/trends-view"
-import { statusText } from "@/components/shared/status"
 import { S } from "@/lib/strings"
-import type { Status } from "@/lib/types"
-import { cn } from "@/lib/utils"
+import type { IndicatorId, Status } from "@/lib/types"
 
-const PUNTO: Record<Status, string> = { ok: "bg-status-ok", watch: "bg-status-watch", act: "bg-status-act" }
+const HEX: Record<Status, string> = { ok: "#16a34a", watch: "#f59e0b", act: "#ef4444" }
 
 /** Modo histórico de un tripulante: elige el día de misión, ve su cuerpo ese día en pequeño (minimapa) y sus tendencias. */
 export function Historico() {
-  const { day, setDay, analisis } = useApp()
+  const { day, setDay, analisis, sex, theme } = useApp()
   const dias = analisis.missionDays
+  // El cuerpo de ese día: cada indicador fuera de rango tiñe su órgano (el 3D de body-view, sin marcadores ni giro a la vista)
+  const estadoEscena = useMemo(() => {
+    const estados = analisis.indicatorStatus(day)
+    const lpm = analisis.vitals(day).find((v) => v.day === day)?.restingHr ?? null
+    const calientes = (Object.keys(estados) as IndicatorId[]).filter((id) => estados[id] !== "ok")
+      .map((id) => ({ ancla: id, color: HEX[estados[id]], radio: estados[id] === "act" ? 0.15 : 0.12 }))
+    return { sexo: sex, oscuro: theme === "dark", lpm, vista: null, calientes }
+  }, [analisis, day, sex, theme])
   const boton = "flex size-10 items-center justify-center hover:bg-accent disabled:opacity-40"
   return (
     <div className="flex flex-col gap-4">
@@ -35,16 +43,13 @@ export function Historico() {
           </div>
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[13rem_1fr] lg:items-start">
-        <ul aria-label={S.crew.minicuerpo} className="grid grid-cols-2 gap-2 rounded-3xl border border-border bg-card p-3 lg:sticky lg:top-4 lg:grid-cols-1">
-          {analisis.zones(day).map((z) => (
-            <li key={z.zone} className="flex items-center gap-2 text-sm font-semibold">
-              <span aria-hidden className={cn("size-3 shrink-0 rounded-full", PUNTO[z.status])} />
-              <span className="sr-only">{statusText[z.status]}: </span>
-              {S.zones[z.zone]}
-            </li>
-          ))}
-        </ul>
+      <div className="grid gap-4 lg:grid-cols-[11rem_1fr] lg:items-start">
+        <BodyStage
+          className="mx-auto h-72 w-44 lg:sticky lg:top-4"
+          estado={estadoEscena}
+          marcadores={[]}
+          onMarcador={() => {}}
+        />
         <TrendsView />
       </div>
     </div>
