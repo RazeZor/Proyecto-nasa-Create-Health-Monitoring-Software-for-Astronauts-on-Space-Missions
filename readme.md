@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/vigia-logo-horizontal-oscuro.svg">
+  <img src="docs/brand/svg/vigia-logo-horizontal-claro.svg" alt="VIGÍA" width="320">
+</picture>
+
 # VIGÍA
 
 **Crew self-health monitor for long missions with communication delay.** NASA Space Apps Challenge 2026, challenge *Create Health Monitoring Software for Astronauts on Space Missions*.

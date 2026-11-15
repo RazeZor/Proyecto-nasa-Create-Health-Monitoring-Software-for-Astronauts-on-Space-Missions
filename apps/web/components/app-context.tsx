@@ -99,7 +99,7 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   const [day, setDayRaw] = useState(catalogo.historial.dia_actual)
   const [profileId, setProfileId] = useState<ProfileId>("transit")
   const [role, setRole] = useState<Role>("astronaut")
-  const [theme, setTheme] = useState<"dark" | "light">("dark")
+  const [theme, setTheme] = useState<"dark" | "light">("light")
   const [device, setDeviceRaw] = useState<DeviceState>("disconnected")
   const [reloj, setReloj] = useState<RespuestaReloj | null>(null)
   const conectandoDesde = useRef(0)

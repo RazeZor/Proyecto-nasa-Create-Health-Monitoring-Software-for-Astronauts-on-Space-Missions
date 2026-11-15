@@ -896,10 +896,13 @@
       "modulo": "apps/web",
       "proposito": "Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo.",
       "puntos_clave": [
-        "Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + componentes UI accesibles (`components/ui/*`). Las gráficas son SVG propio (`components/shared/line-chart.tsx`).",
+        "Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + componentes UI accesibles (`components/ui/*`) + three.js (solo el cuerpo 3D). Las gráficas son SVG propio (`components/shared/line-chart.tsx`, con exploración táctil del día).",
+        "**Marca y sistema visual** (`docs/brand`, logotipo «Centinela»): tokens en `app/globals.css` (tinta Noche `#0B1020`, fondo Casco `#F2F5FA`, estados Normal/Atención/Alerta; tema claro por defecto), Space Grotesk e IBM Plex Mono empaquetadas con `@fontsource` (sin red). `components/shared/logo.tsx` dibuja el símbolo con el punto en el color del estado del sistema. Iconos propios en `components/shared/iconos.tsx` (y un `iconos.tsx` por pantalla); `lucide-react` solo para flechas y cierres. La navegación es una barra superior no fija (`components/shell/app-shell.tsx`), pensada para pantalla táctil de 19\": objetivos de 48–56 px o más y nada depende de `hover`.",
+        "**Cuerpo 3D** (`/`, `components/body/`): `escena.ts` (three.js, sin React) dibuja la piel translúcida y los órganos, late a los lpm del dato (`liveHr` del reloj o la FC en reposo del día; sin dato late tenue), y lleva la cámara al órgano de la vista elegida (un indicador o una zona). Carga `public/modelos/cuerpo.glb` (BodyParts3D, CC BY 4.0, varón adulto; atribución en `public/modelos/ATRIBUCION.md` y visible en el lienzo); si el archivo falta, genera una anatomía procedural (`anatomia.ts`: campos de distancia + «surface nets») con selector de modelo corporal. Sin WebGL se muestra la figura 2D (`body-figure.tsx`). `body-stage.tsx` pone los marcadores táctiles y avisa en cada cuadro de dónde cae cada ancla; `body-view.tsx` dibuja con eso las líneas guía de las tarjetas. El estado por indicador sale de `analisis.indicatorStatus(day)` (`lib/engine.ts`): B, C y glucosa señalan su indicador y la capa A (NEWS2) los parámetros que puntúan. Las zonas con indicadores fuera de rango y los síntomas del día tiñen la piel en su ancla.",
+        "**Registro guiado** (`components/checkin/`): una medida por paso con dial +/− y deslizador, sin teclado; cada dial arranca en el último valor conocido pero solo se guarda lo confirmado o ajustado (lo demás, `null`).",
         "**Dos modos de datos** (selector «Datos» de la barra superior; `lib/storage.ts`: `leerModo`, `usarModo`). `real` (por defecto; `NEXT_PUBLIC_VIGIA_MODO=demo` lo cambia): solo lo que el tripulante registra y el entorno medido; el registro se guarda en el día de misión de hoy y se sube a la API con `naturaleza: Real`. `demo`: tripulante simulado de 30 días con las anomalías de §5.5, todo rotulado; lo registrado en demo usa otro almacén (prefijo `vigia:` frente a `vigia:real:`) y **nunca** se sube ni escala. La API recibe el modo en `?modo=`.",
         "**La app solo conoce la API, pero abre sin ella**: perfiles, fichas, referencia de entorno, historial, recordatorios, mensajes e informes salen de `apps/api`. `lib/catalogo.ts` (`cargarCatalogo(tripulante, modo)`) los pide al arrancar y guarda una copia local; si la API no responde, abre con esa copia (`catalogo.sinEnlace`), muestra «sin enlace» y reintenta cada 30 s y al volver la red. Solo la primera apertura en un dispositivo necesita enlace. `lib/etl-client.ts` hace lo mismo con el panel de entorno. No hay datos de ejemplo en el cliente: los mockups viven en `apps/api/demo/`.",
-        "Sin conexión (§4.2): `public/sw.js` (escrito a mano, sin dependencias) guarda la carcasa (el HTML de las 8 pantallas y sus recursos de `/_next/static`) al instalarse; navegación con red primero y copia como respaldo; no intercepta `/vigia-api`. Se registra solo en producción (`components/shell/sw-register.tsx`). `app/manifest.ts` es el manifiesto. Si cambias las rutas, actualiza `PANTALLAS` en `sw.js`; si cambias la estrategia, sube la versión de `CACHE`.",
+        "Sin conexión (§4.2): `public/sw.js` (escrito a mano, sin dependencias) guarda la carcasa (el HTML de las 8 pantallas, sus recursos de `/_next/static` y el modelo `/modelos/cuerpo.glb`) al instalarse; navegación con red primero y copia como respaldo; no intercepta `/vigia-api`. Se registra solo en producción (`components/shell/sw-register.tsx`). `app/manifest.ts` es el manifiesto. Si cambias las rutas, actualiza `PANTALLAS` en `sw.js`; si cambias la estrategia, sube la versión de `CACHE`.",
         "Motor híbrido: `packages/engine` evalúa las capas A, B y C y las reglas de contexto. `lib/engine.ts` (`analizar(checkIns, historial, presionCabinaMmHg)`) lo aplica al historial de la API más los registros locales; `AppProvider` lo recalcula en `analisis` al guardar un registro o cambiar de perfil. **El entorno entra al motor**: el CO2 real llega en ppm y se convierte con la presión de cabina del perfil activo (cambiar de perfil puede cambiar la alerta, §3.3); la tormenta sale del flujo (>= 10 pfu) o de un evento SEP real de DONKI. Cada alerta de entorno lleva su procedencia (`source`: Real o Simulado, fuente y fecha real). Una medida no tomada es `null`, nunca 0. Las alertas `informative` (capa B en adaptación) se muestran pero no cambian el estado ni avisan. La banda personal de las tendencias es la referencia del motor día a día (`analisis.band`).",
         "Privacidad y escalamiento (§5.4): solo el rojo de la capa A sale del dispositivo. `lib/alertas-sync.ts` (núcleo puro) y `sincronizarAlertasRojas` envían a `POST /tripulantes/{id}/alertas` el dato mínimo (indicador, valor, hora y tramo) de los rojos sobre registros propios, sin duplicar y reintentando sin red. `/alerts` muestra lo que salió de verdad (`GET .../escalamientos`), deja añadir contexto una vez y, como oficial médico, lee su bandeja real (`GET /escalamientos`). Verde y ámbar no salen; tras 3 días en ámbar se recomienda compartir. Las alertas de entorno se rotulan «compartida con la tripulación». En modo demo el escalamiento se rotula como simulado.",
         "Llamadas a la API: `lib/catalogo.ts`, `lib/etl-client.ts` y `lib/api-registro.ts` usan `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA` (se lee al compilar; por defecto `http://127.0.0.1:8000`). En la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa. La vista de entorno consume `/paneles`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` sin generar series sintéticas.",
@@ -1001,7 +1004,7 @@
         },
         {
           "ruta": "apps/web/app/layout.tsx",
-          "lineas": 39,
+          "lineas": 42,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1027,7 +1030,7 @@
         },
         {
           "ruta": "apps/web/app/manifest.ts",
-          "lineas": 19,
+          "lineas": 21,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1083,7 +1086,7 @@
         },
         {
           "ruta": "apps/web/components/about/about-view.tsx",
-          "lineas": 50,
+          "lineas": 231,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1096,8 +1099,52 @@
           ]
         },
         {
+          "ruta": "apps/web/components/about/iconos.tsx",
+          "lineas": 63,
+          "descripcion": "Iconos de la pantalla Acerca de, con el lenguaje de `components/shared/iconos.tsx`: rejilla de 24 px,",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "IconoPrivacidad",
+              "tipo": "constante",
+              "firma": "IconoPrivacidad",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoSinConexion",
+              "tipo": "constante",
+              "firma": "IconoSinConexion",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoCapas",
+              "tipo": "constante",
+              "firma": "IconoCapas",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoDatos",
+              "tipo": "constante",
+              "firma": "IconoDatos",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoResultados",
+              "tipo": "constante",
+              "firma": "IconoResultados",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoLimites",
+              "tipo": "constante",
+              "firma": "IconoLimites",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/alerts/alerts-view.tsx",
-          "lineas": 204,
+          "lineas": 432,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1105,6 +1152,86 @@
               "nombre": "AlertsView",
               "tipo": "función",
               "firma": "AlertsView",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/alerts/iconos.tsx",
+          "lineas": 92,
+          "descripcion": "Iconos de las alertas y de los avisos emergentes: privacidad (quién lo ve) y tipo de aviso. Mismo lenguaje que",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Icono",
+              "tipo": "tipo",
+              "firma": "Icono",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoCandado",
+              "tipo": "constante",
+              "firma": "IconoCandado",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoCompartida",
+              "tipo": "constante",
+              "firma": "IconoCompartida",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoEscalada",
+              "tipo": "constante",
+              "firma": "IconoEscalada",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoTripulacion",
+              "tipo": "constante",
+              "firma": "IconoTripulacion",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoMatraz",
+              "tipo": "constante",
+              "firma": "IconoMatraz",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoReloj",
+              "tipo": "constante",
+              "firma": "IconoReloj",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoInfo",
+              "tipo": "constante",
+              "firma": "IconoInfo",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoCalma",
+              "tipo": "constante",
+              "firma": "IconoCalma",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoEscudoAviso",
+              "tipo": "constante",
+              "firma": "IconoEscudoAviso",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoCampana",
+              "tipo": "constante",
+              "firma": "IconoCampana",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoVisto",
+              "tipo": "constante",
+              "firma": "IconoVisto",
               "doc": ""
             }
           ]
@@ -1136,6 +1263,152 @@
           ]
         },
         {
+          "ruta": "apps/web/components/body/anatomia.ts",
+          "lineas": 319,
+          "descripcion": "Anatomía procedural del cuerpo 3D: todo se genera con matemáticas (campos de distancia con signo) y se",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Vec3",
+              "tipo": "tipo",
+              "firma": "Vec3",
+              "doc": ""
+            },
+            {
+              "nombre": "Sdf",
+              "tipo": "tipo",
+              "firma": "Sdf",
+              "doc": ""
+            },
+            {
+              "nombre": "Sexo",
+              "tipo": "tipo",
+              "firma": "Sexo",
+              "doc": ""
+            },
+            {
+              "nombre": "Malla",
+              "tipo": "interfaz",
+              "firma": "Malla",
+              "doc": ""
+            },
+            {
+              "nombre": "smin",
+              "tipo": "constante",
+              "firma": "smin",
+              "doc": ""
+            },
+            {
+              "nombre": "elipsoide",
+              "tipo": "función",
+              "firma": "elipsoide",
+              "doc": ""
+            },
+            {
+              "nombre": "conoRedondo",
+              "tipo": "función",
+              "firma": "conoRedondo",
+              "doc": ""
+            },
+            {
+              "nombre": "union",
+              "tipo": "función",
+              "firma": "union",
+              "doc": ""
+            },
+            {
+              "nombre": "Medidas",
+              "tipo": "interfaz",
+              "firma": "Medidas",
+              "doc": ""
+            },
+            {
+              "nombre": "medidas",
+              "tipo": "función",
+              "firma": "medidas",
+              "doc": ""
+            },
+            {
+              "nombre": "cuerpo",
+              "tipo": "función",
+              "firma": "cuerpo",
+              "doc": ""
+            },
+            {
+              "nombre": "corazon",
+              "tipo": "función",
+              "firma": "corazon",
+              "doc": ""
+            },
+            {
+              "nombre": "pulmones",
+              "tipo": "función",
+              "firma": "pulmones",
+              "doc": ""
+            },
+            {
+              "nombre": "cerebro",
+              "tipo": "función",
+              "firma": "cerebro",
+              "doc": ""
+            },
+            {
+              "nombre": "higado",
+              "tipo": "constante",
+              "firma": "higado",
+              "doc": ""
+            },
+            {
+              "nombre": "estomago",
+              "tipo": "constante",
+              "firma": "estomago",
+              "doc": ""
+            },
+            {
+              "nombre": "pancreas",
+              "tipo": "constante",
+              "firma": "pancreas",
+              "doc": ""
+            },
+            {
+              "nombre": "rinones",
+              "tipo": "constante",
+              "firma": "rinones",
+              "doc": ""
+            },
+            {
+              "nombre": "ojos",
+              "tipo": "constante",
+              "firma": "ojos",
+              "doc": ""
+            },
+            {
+              "nombre": "mallar",
+              "tipo": "función",
+              "firma": "mallar",
+              "doc": ""
+            },
+            {
+              "nombre": "trazados",
+              "tipo": "función",
+              "firma": "trazados",
+              "doc": ""
+            },
+            {
+              "nombre": "ANCLAS",
+              "tipo": "constante",
+              "firma": "ANCLAS",
+              "doc": ""
+            },
+            {
+              "nombre": "AnclaId",
+              "tipo": "tipo",
+              "firma": "AnclaId",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/body/body-figure.tsx",
           "lineas": 298,
           "descripcion": "",
@@ -1156,8 +1429,28 @@
           ]
         },
         {
+          "ruta": "apps/web/components/body/body-stage.tsx",
+          "lineas": 132,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Marcador",
+              "tipo": "interfaz",
+              "firma": "Marcador",
+              "doc": ""
+            },
+            {
+              "nombre": "BodyStage",
+              "tipo": "función",
+              "firma": "BodyStage",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/body/body-view.tsx",
-          "lineas": 271,
+          "lineas": 585,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1170,8 +1463,66 @@
           ]
         },
         {
+          "ruta": "apps/web/components/body/ecg.tsx",
+          "lineas": 82,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Ecg",
+              "tipo": "función",
+              "firma": "Ecg",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/body/escena.ts",
+          "lineas": 663,
+          "descripcion": "Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Vista",
+              "tipo": "tipo",
+              "firma": "Vista",
+              "doc": ""
+            },
+            {
+              "nombre": "ZonaCaliente",
+              "tipo": "interfaz",
+              "firma": "ZonaCaliente",
+              "doc": ""
+            },
+            {
+              "nombre": "EstadoEscena",
+              "tipo": "interfaz",
+              "firma": "EstadoEscena",
+              "doc": ""
+            },
+            {
+              "nombre": "Proyeccion",
+              "tipo": "tipo",
+              "firma": "Proyeccion",
+              "doc": ""
+            },
+            {
+              "nombre": "crearEscena",
+              "tipo": "función",
+              "firma": "crearEscena",
+              "doc": ""
+            },
+            {
+              "nombre": "Escena",
+              "tipo": "tipo",
+              "firma": "Escena",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/checkin/checkin-form.tsx",
-          "lineas": 315,
+          "lineas": 760,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1184,8 +1535,84 @@
           ]
         },
         {
+          "ruta": "apps/web/components/checkin/controles.tsx",
+          "lineas": 141,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Dial",
+              "tipo": "función",
+              "firma": "Dial",
+              "doc": ""
+            },
+            {
+              "nombre": "Opciones",
+              "tipo": "función",
+              "firma": "Opciones",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/checkin/iconos.tsx",
+          "lineas": 95,
+          "descripcion": "Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px,",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ICONO_SINTOMA",
+              "tipo": "constante",
+              "firma": "ICONO_SINTOMA",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoMolestias",
+              "tipo": "constante",
+              "firma": "IconoMolestias",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoHecho",
+              "tipo": "constante",
+              "firma": "IconoHecho",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoSinMedir",
+              "tipo": "constante",
+              "firma": "IconoSinMedir",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoPendiente",
+              "tipo": "constante",
+              "firma": "IconoPendiente",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoCrono",
+              "tipo": "constante",
+              "firma": "IconoCrono",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoMenos",
+              "tipo": "constante",
+              "firma": "IconoMenos",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoMas",
+              "tipo": "constante",
+              "firma": "IconoMas",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/device/device-view.tsx",
-          "lineas": 160,
+          "lineas": 331,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1199,10 +1626,16 @@
         },
         {
           "ruta": "apps/web/components/device/fc-chart.tsx",
-          "lineas": 46,
+          "lineas": 62,
           "descripcion": "",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "COLOR_PULSO",
+              "tipo": "constante",
+              "firma": "COLOR_PULSO",
+              "doc": ""
+            },
             {
               "nombre": "FcChart",
               "tipo": "función",
@@ -1212,8 +1645,58 @@
           ]
         },
         {
+          "ruta": "apps/web/components/device/iconos.tsx",
+          "lineas": 117,
+          "descripcion": "Iconos e ilustración de la pantalla Dispositivo, con el lenguaje de `components/shared/iconos.tsx`:",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "IconoSimulador",
+              "tipo": "constante",
+              "firma": "IconoSimulador",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoMovimiento",
+              "tipo": "constante",
+              "firma": "IconoMovimiento",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoDescarga",
+              "tipo": "constante",
+              "firma": "IconoDescarga",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoTripulacion",
+              "tipo": "constante",
+              "firma": "IconoTripulacion",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoChequeo",
+              "tipo": "constante",
+              "firma": "IconoChequeo",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoPunto",
+              "tipo": "constante",
+              "firma": "IconoPunto",
+              "doc": ""
+            },
+            {
+              "nombre": "RelojIlustracion",
+              "tipo": "función",
+              "firma": "RelojIlustracion",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/device/reloj-extras.tsx",
-          "lineas": 107,
+          "lineas": 144,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1233,10 +1716,16 @@
         },
         {
           "ruta": "apps/web/components/device/switch.tsx",
-          "lineas": 18,
+          "lineas": 25,
           "descripcion": "",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "SwitchTrack",
+              "tipo": "función",
+              "firma": "SwitchTrack",
+              "doc": ""
+            },
             {
               "nombre": "Switch",
               "tipo": "función",
@@ -1247,7 +1736,7 @@
         },
         {
           "ruta": "apps/web/components/environment/environment-view.tsx",
-          "lineas": 269,
+          "lineas": 466,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1260,8 +1749,102 @@
           ]
         },
         {
+          "ruta": "apps/web/components/environment/iconos.tsx",
+          "lineas": 65,
+          "descripcion": "Iconos de la pantalla Entorno, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px,",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "IconoTormenta",
+              "tipo": "constante",
+              "firma": "IconoTormenta",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoCo2",
+              "tipo": "constante",
+              "firma": "IconoCo2",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoDosis",
+              "tipo": "constante",
+              "firma": "IconoDosis",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoHumedad",
+              "tipo": "constante",
+              "firma": "IconoHumedad",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoPresion",
+              "tipo": "constante",
+              "firma": "IconoPresion",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoDatos",
+              "tipo": "constante",
+              "firma": "IconoDatos",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/reports/iconos.tsx",
+          "lineas": 51,
+          "descripcion": "Iconos de los informes: los dos extremos del enlace (nave y Tierra) y el mensaje que viaja entre ellos. Mismo",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Icono",
+              "tipo": "tipo",
+              "firma": "Icono",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoNave",
+              "tipo": "constante",
+              "firma": "IconoNave",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoTierra",
+              "tipo": "constante",
+              "firma": "IconoTierra",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoSobre",
+              "tipo": "constante",
+              "firma": "IconoSobre",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoRespuesta",
+              "tipo": "constante",
+              "firma": "IconoRespuesta",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoEspera",
+              "tipo": "constante",
+              "firma": "IconoEspera",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoVisto",
+              "tipo": "constante",
+              "firma": "IconoVisto",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/reports/reports-view.tsx",
-          "lineas": 149,
+          "lineas": 264,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1274,8 +1857,22 @@
           ]
         },
         {
+          "ruta": "apps/web/components/reports/trayecto.tsx",
+          "lineas": 74,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Trayecto",
+              "tipo": "función",
+              "firma": "Trayecto",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/shared/delay-countdown.tsx",
-          "lineas": 34,
+          "lineas": 36,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1300,8 +1897,76 @@
           ]
         },
         {
+          "ruta": "apps/web/components/shared/iconos.tsx",
+          "lineas": 140,
+          "descripcion": "Iconos propios de VIGÍA, dibujados para esta aplicación (no vienen de una librería). Mismo lenguaje en todos:",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Icono",
+              "tipo": "tipo",
+              "firma": "Icono",
+              "doc": ""
+            },
+            {
+              "nombre": "ICONO_INDICADOR",
+              "tipo": "constante",
+              "firma": "ICONO_INDICADOR",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoCuerpo",
+              "tipo": "constante",
+              "firma": "IconoCuerpo",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoRegistro",
+              "tipo": "constante",
+              "firma": "IconoRegistro",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoTendencias",
+              "tipo": "constante",
+              "firma": "IconoTendencias",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoEntorno",
+              "tipo": "constante",
+              "firma": "IconoEntorno",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoAlertas",
+              "tipo": "constante",
+              "firma": "IconoAlertas",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoInformes",
+              "tipo": "constante",
+              "firma": "IconoInformes",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoDispositivo",
+              "tipo": "constante",
+              "firma": "IconoDispositivo",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoAcerca",
+              "tipo": "constante",
+              "firma": "IconoAcerca",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/shared/indicator-card.tsx",
-          "lineas": 38,
+          "lineas": 66,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1315,7 +1980,7 @@
         },
         {
           "ruta": "apps/web/components/shared/line-chart.tsx",
-          "lineas": 82,
+          "lineas": 262,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1323,6 +1988,32 @@
               "nombre": "LineChart",
               "tipo": "función",
               "firma": "LineChart",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/shared/logo.tsx",
+          "lineas": 42,
+          "descripcion": "Marca VIGÍA («Centinela»), tal como la define docs/brand: el casco, la V con su cabeza y el punto de estado.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Simbolo",
+              "tipo": "función",
+              "firma": "Simbolo",
+              "doc": ""
+            },
+            {
+              "nombre": "Palabra",
+              "tipo": "función",
+              "firma": "Palabra",
+              "doc": ""
+            },
+            {
+              "nombre": "Logo",
+              "tipo": "función",
+              "firma": "Logo",
               "doc": ""
             }
           ]
@@ -1405,7 +2096,7 @@
         },
         {
           "ruta": "apps/web/components/shell/alert-center.tsx",
-          "lineas": 167,
+          "lineas": 209,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1419,7 +2110,7 @@
         },
         {
           "ruta": "apps/web/components/shell/app-shell.tsx",
-          "lineas": 329,
+          "lineas": 260,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1446,8 +2137,66 @@
           ]
         },
         {
+          "ruta": "apps/web/components/trends/iconos.tsx",
+          "lineas": 46,
+          "descripcion": "Iconos de la ficha del indicador, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px,",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "IconoQueEs",
+              "tipo": "constante",
+              "firma": "IconoQueEs",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoPorQue",
+              "tipo": "constante",
+              "firma": "IconoPorQue",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoRiesgo",
+              "tipo": "constante",
+              "firma": "IconoRiesgo",
+              "doc": ""
+            },
+            {
+              "nombre": "IconoPrevencion",
+              "tipo": "constante",
+              "firma": "IconoPrevencion",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/trends/resumen.ts",
+          "lineas": 44,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Lugar",
+              "tipo": "tipo",
+              "firma": "Lugar",
+              "doc": ""
+            },
+            {
+              "nombre": "Resumen",
+              "tipo": "interfaz",
+              "firma": "Resumen",
+              "doc": ""
+            },
+            {
+              "nombre": "resumir",
+              "tipo": "función",
+              "firma": "resumir",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/trends/trends-view.tsx",
-          "lineas": 73,
+          "lineas": 266,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1822,14 +2571,14 @@
         },
         {
           "ruta": "apps/web/lib/engine.test.ts",
-          "lineas": 151,
+          "lineas": 172,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/engine.ts",
-          "lineas": 252,
+          "lineas": 279,
           "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más",
           "test": false,
           "simbolos": [
@@ -2269,7 +3018,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 589,
+          "lineas": 873,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
@@ -2301,7 +3050,7 @@
         },
         {
           "ruta": "apps/web/lib/types.ts",
-          "lineas": 186,
+          "lineas": 188,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2475,7 +3224,7 @@
         },
         {
           "ruta": "apps/web/public/sw.js",
-          "lineas": 64,
+          "lineas": 69,
           "descripcion": "Service worker de VIGÍA: deja la aplicación disponible sin enlace (informe §4.2, \"todo funciona sin enlace\").",
           "test": false,
           "simbolos": []
@@ -3488,6 +4237,171 @@
               "nombre": "Generador",
               "tipo": "clase",
               "firma": "Generador(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modulo": "tools/modelo-anatomico",
+      "proposito": "Guiones que generaron el modelo anatómico del cuerpo 3D de la app (`apps/web/public/modelos/cuerpo.glb`, `cuerpo.json` y `ATRIBUCION.md`) a partir de los OBJ originales de BodyParts3D. Se guardan para que el modelo sea reproducible y su procedencia, verificable.",
+      "puntos_clave": [
+        "Fuente: **BodyParts3D** (DBCLS, Japón), release 4.0 (árbol IS-A, OBJ con reducción del 99 %) y los cinco lóbulos pulmonares de la release 3.0, porque la 4.0 no trae el parénquima. Licencia CC BY 4.0; la atribución exigida va en `ATRIBUCION.md` y se muestra en el lienzo de la app.",
+        "Los originales **no están en el repo** (cientos de MB): se descargan de <https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html> y se descomprimen en una carpeta de trabajo (`obj/isa_BP3D_4.0_obj_99/` y `obj3/`).",
+        "Orden: `indice.py <carpeta de OBJ> <dir_trabajo>/indice.tsv`, luego `python -I construir.py <dir_trabajo> <dir_salida>` (escribe `cuerpo.glb`, `cuerpo.json` y `piezas.json`) y `atribucion.py <dir_trabajo> <destino>` (lee `<dir_trabajo>/salida/`). Dependencias en `requirements.txt` (numpy, scipy, fast-simplification); usar un entorno virtual.",
+        "Coordenadas de salida, las que espera `apps/web/components/body/escena.ts`: metros, +Y arriba, +Z frente, +X izquierda del sujeto, pies en y = 0, estatura 1,78 m. Es una rotación propia del sistema de origen (mm, +X izquierda, −Y frente, +Z arriba), sin espejo: el hígado queda en −X y el corazón en +X.",
+        "Una malla por grupo con nombre fijo (`piel`, `corazon`, `pulmones`, `cerebro`, `higado`, `estomago`, `pancreas`, `rinones`, `intestino`, `huesos`, `arterias`, `venas`, `ojos`): la escena las busca por ese nombre. `piezas.json` lista los identificadores FMA que entran en cada grupo.",
+        "GLB sin Draco ni meshopt (no hay que servir decodificadores sin conexión); normales cuantizadas con `KHR_mesh_quantization`. Objetivo de peso: 6 MB o menos (hoy 4,2 MB, unos 293 000 triángulos).",
+        "Los pulmones se encogen un 6 % y bajan 5 mm para encajar con la release 4.0; aun así se solapan algo con el corazón y las costillas.",
+        "Son guiones de un solo uso, conservados tal como se ejecutaron: `ruff.toml` les perdona solo reglas de estilo. No tienen tests; la comprobación es `gltf-transform validate` y mirar el resultado en la app."
+      ],
+      "tags": [
+        "herramientas",
+        "modelo-3d",
+        "anatomía",
+        "bodyparts3d",
+        "glb",
+        "three.js",
+        "atribución",
+        "licencia"
+      ],
+      "env": [],
+      "archivos": [
+        {
+          "ruta": "tools/modelo-anatomico/atribucion.py",
+          "lineas": 54,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/modelo-anatomico/construir.py",
+          "lineas": 345,
+          "descripcion": "Genera cuerpo.glb + cuerpo.json para VIGÍA a partir de los OBJ originales de BodyParts3D.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "por_nombre",
+              "tipo": "función",
+              "firma": "por_nombre(patron, excluye=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "clase_isa",
+              "tipo": "función",
+              "firma": "clase_isa(nombres)",
+              "doc": ""
+            },
+            {
+              "nombre": "sin_duplicados",
+              "tipo": "función",
+              "firma": "sin_duplicados(fjs)",
+              "doc": "BodyParts3D repite algunas piezas con otro identificador (misma caja y volumen): deja una."
+            },
+            {
+              "nombre": "cargar",
+              "tipo": "función",
+              "firma": "cargar(rutas)",
+              "doc": ""
+            },
+            {
+              "nombre": "normales_cara",
+              "tipo": "función",
+              "firma": "normales_cara(v, f)",
+              "doc": ""
+            },
+            {
+              "nombre": "filtrar_exterior",
+              "tipo": "función",
+              "firma": "filtrar_exterior(v, f, vox, cierre=0)",
+              "doc": "Deja solo las caras que dan al exterior del conjunto (quita cavidades y tabiques internos)."
+            },
+            {
+              "nombre": "quitar_migas",
+              "tipo": "función",
+              "firma": "quitar_migas(v, f, min_caras, min_diag)",
+              "doc": ""
+            },
+            {
+              "nombre": "simplificar",
+              "tipo": "función",
+              "firma": "simplificar(v, f, objetivo)",
+              "doc": ""
+            },
+            {
+              "nombre": "normales_suaves",
+              "tipo": "función",
+              "firma": "normales_suaves(v, f)",
+              "doc": ""
+            },
+            {
+              "nombre": "normalizar",
+              "tipo": "función",
+              "firma": "normalizar(v)",
+              "doc": ""
+            },
+            {
+              "nombre": "alinear",
+              "tipo": "función",
+              "firma": "alinear()",
+              "doc": ""
+            },
+            {
+              "nombre": "vista",
+              "tipo": "función",
+              "firma": "vista(datos, destino)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/modelo-anatomico/indice.py",
+          "lineas": 15,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/modelo-anatomico/util_malla.py",
+          "lineas": 51,
+          "descripcion": "Utilidades de malla sin dependencias pesadas: lectura OBJ, soldadura, componentes conexas, volumen.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "leer_obj",
+              "tipo": "función",
+              "firma": "leer_obj(ruta)",
+              "doc": ""
+            },
+            {
+              "nombre": "soldar",
+              "tipo": "función",
+              "firma": "soldar(v, f, tol=0.001)",
+              "doc": "Une vértices coincidentes (tolerancia en las unidades de la malla) y quita caras degeneradas."
+            },
+            {
+              "nombre": "compactar",
+              "tipo": "función",
+              "firma": "compactar(v, f)",
+              "doc": ""
+            },
+            {
+              "nombre": "componentes",
+              "tipo": "función",
+              "firma": "componentes(v, f)",
+              "doc": ""
+            },
+            {
+              "nombre": "volumen",
+              "tipo": "función",
+              "firma": "volumen(v, f)",
+              "doc": ""
+            },
+            {
+              "nombre": "area",
+              "tipo": "función",
+              "firma": "area(v, f)",
               "doc": ""
             }
           ]

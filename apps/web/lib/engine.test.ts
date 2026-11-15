@@ -26,6 +26,27 @@ test("sin registros, el escenario de partida da la deriva A1 (capas B y C) dentr
   assert.equal(a.alerts(17).filter((x) => x.scope === "personal").length, 0) // lo de después del día no se ve
 })
 
+test("el estado por indicador señala el parámetro que puntúa en la capa A y deja en verde los demás", () => {
+  const a = analizar([entrada(10, { spo2: 89 })])
+  const e = a.indicatorStatus(10)
+  assert.equal(e.spo2, "act")
+  assert.equal(e.restingHr, "ok")
+  assert.equal(e.tempC, "ok")
+  assert.equal(e.massKg, "ok") // sin capa en el motor: nunca alerta
+  assert.ok(Object.values(analizar([]).indicatorStatus(5)).every((s) => s === "ok")) // adaptación: lo informativo no cuenta
+})
+
+test("el estado por indicador coincide con el de su zona cuando la deriva es de un solo indicador", () => {
+  const a = analizar([])
+  for (const dia of [20, 24, 27]) {
+    const zonas = a.zones(dia)
+    const e = a.indicatorStatus(dia)
+    // ninguna zona de indicadores queda peor que el peor de sus indicadores (salvo por síntomas o entorno, que no son indicadores)
+    const peorMente = [e.sleepH, e.mood].includes("act") ? "act" : [e.sleepH, e.mood].includes("watch") ? "watch" : "ok"
+    assert.equal(zonas.find((z) => z.zone === "mind")?.status, peorMente)
+  }
+})
+
 test("un registro con SpO2 de 89 % el día 10 dispara la capa A, escala y pone el corazón en acción", () => {
   const a = analizar([entrada(10, { spo2: 89 })])
   const hit = a.alerts(10).find((x) => x.layer === "A")

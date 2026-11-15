@@ -21,7 +21,7 @@ export function StatusBadge({ status, size = "md", className }: { status: Status
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-sm border font-mono font-semibold uppercase tracking-wider",
+        "inline-flex items-center gap-1.5 rounded-full border font-mono font-semibold uppercase tracking-wider",
         statusSurface[status],
         statusText[status],
         size === "sm" && "px-2 py-0.5 text-xs",

@@ -7,10 +7,13 @@ Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva p
 
 ## Puntos clave
 
-- Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + componentes UI accesibles (`components/ui/*`). Las gráficas son SVG propio (`components/shared/line-chart.tsx`).
+- Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + componentes UI accesibles (`components/ui/*`) + three.js (solo el cuerpo 3D). Las gráficas son SVG propio (`components/shared/line-chart.tsx`, con exploración táctil del día).
+- **Marca y sistema visual** (`docs/brand`, logotipo «Centinela»): tokens en `app/globals.css` (tinta Noche `#0B1020`, fondo Casco `#F2F5FA`, estados Normal/Atención/Alerta; tema claro por defecto), Space Grotesk e IBM Plex Mono empaquetadas con `@fontsource` (sin red). `components/shared/logo.tsx` dibuja el símbolo con el punto en el color del estado del sistema. Iconos propios en `components/shared/iconos.tsx` (y un `iconos.tsx` por pantalla); `lucide-react` solo para flechas y cierres. La navegación es una barra superior no fija (`components/shell/app-shell.tsx`), pensada para pantalla táctil de 19": objetivos de 48–56 px o más y nada depende de `hover`.
+- **Cuerpo 3D** (`/`, `components/body/`): `escena.ts` (three.js, sin React) dibuja la piel translúcida y los órganos, late a los lpm del dato (`liveHr` del reloj o la FC en reposo del día; sin dato late tenue), y lleva la cámara al órgano de la vista elegida (un indicador o una zona). Carga `public/modelos/cuerpo.glb` (BodyParts3D, CC BY 4.0, varón adulto; atribución en `public/modelos/ATRIBUCION.md` y visible en el lienzo); si el archivo falta, genera una anatomía procedural (`anatomia.ts`: campos de distancia + «surface nets») con selector de modelo corporal. Sin WebGL se muestra la figura 2D (`body-figure.tsx`). `body-stage.tsx` pone los marcadores táctiles y avisa en cada cuadro de dónde cae cada ancla; `body-view.tsx` dibuja con eso las líneas guía de las tarjetas. El estado por indicador sale de `analisis.indicatorStatus(day)` (`lib/engine.ts`): B, C y glucosa señalan su indicador y la capa A (NEWS2) los parámetros que puntúan. Las zonas con indicadores fuera de rango y los síntomas del día tiñen la piel en su ancla.
+- **Registro guiado** (`components/checkin/`): una medida por paso con dial +/− y deslizador, sin teclado; cada dial arranca en el último valor conocido pero solo se guarda lo confirmado o ajustado (lo demás, `null`).
 - **Dos modos de datos** (selector «Datos» de la barra superior; `lib/storage.ts`: `leerModo`, `usarModo`). `real` (por defecto; `NEXT_PUBLIC_VIGIA_MODO=demo` lo cambia): solo lo que el tripulante registra y el entorno medido; el registro se guarda en el día de misión de hoy y se sube a la API con `naturaleza: Real`. `demo`: tripulante simulado de 30 días con las anomalías de §5.5, todo rotulado; lo registrado en demo usa otro almacén (prefijo `vigia:` frente a `vigia:real:`) y **nunca** se sube ni escala. La API recibe el modo en `?modo=`.
 - **La app solo conoce la API, pero abre sin ella**: perfiles, fichas, referencia de entorno, historial, recordatorios, mensajes e informes salen de `apps/api`. `lib/catalogo.ts` (`cargarCatalogo(tripulante, modo)`) los pide al arrancar y guarda una copia local; si la API no responde, abre con esa copia (`catalogo.sinEnlace`), muestra «sin enlace» y reintenta cada 30 s y al volver la red. Solo la primera apertura en un dispositivo necesita enlace. `lib/etl-client.ts` hace lo mismo con el panel de entorno. No hay datos de ejemplo en el cliente: los mockups viven en `apps/api/demo/`.
-- Sin conexión (§4.2): `public/sw.js` (escrito a mano, sin dependencias) guarda la carcasa (el HTML de las 8 pantallas y sus recursos de `/_next/static`) al instalarse; navegación con red primero y copia como respaldo; no intercepta `/vigia-api`. Se registra solo en producción (`components/shell/sw-register.tsx`). `app/manifest.ts` es el manifiesto. Si cambias las rutas, actualiza `PANTALLAS` en `sw.js`; si cambias la estrategia, sube la versión de `CACHE`.
+- Sin conexión (§4.2): `public/sw.js` (escrito a mano, sin dependencias) guarda la carcasa (el HTML de las 8 pantallas, sus recursos de `/_next/static` y el modelo `/modelos/cuerpo.glb`) al instalarse; navegación con red primero y copia como respaldo; no intercepta `/vigia-api`. Se registra solo en producción (`components/shell/sw-register.tsx`). `app/manifest.ts` es el manifiesto. Si cambias las rutas, actualiza `PANTALLAS` en `sw.js`; si cambias la estrategia, sube la versión de `CACHE`.
 - Motor híbrido: `packages/engine` evalúa las capas A, B y C y las reglas de contexto. `lib/engine.ts` (`analizar(checkIns, historial, presionCabinaMmHg)`) lo aplica al historial de la API más los registros locales; `AppProvider` lo recalcula en `analisis` al guardar un registro o cambiar de perfil. **El entorno entra al motor**: el CO2 real llega en ppm y se convierte con la presión de cabina del perfil activo (cambiar de perfil puede cambiar la alerta, §3.3); la tormenta sale del flujo (>= 10 pfu) o de un evento SEP real de DONKI. Cada alerta de entorno lleva su procedencia (`source`: Real o Simulado, fuente y fecha real). Una medida no tomada es `null`, nunca 0. Las alertas `informative` (capa B en adaptación) se muestran pero no cambian el estado ni avisan. La banda personal de las tendencias es la referencia del motor día a día (`analisis.band`).
 - Privacidad y escalamiento (§5.4): solo el rojo de la capa A sale del dispositivo. `lib/alertas-sync.ts` (núcleo puro) y `sincronizarAlertasRojas` envían a `POST /tripulantes/{id}/alertas` el dato mínimo (indicador, valor, hora y tramo) de los rojos sobre registros propios, sin duplicar y reintentando sin red. `/alerts` muestra lo que salió de verdad (`GET .../escalamientos`), deja añadir contexto una vez y, como oficial médico, lee su bandeja real (`GET /escalamientos`). Verde y ámbar no salen; tras 3 días en ámbar se recomienda compartir. Las alertas de entorno se rotulan «compartida con la tripulación». En modo demo el escalamiento se rotula como simulado.
 - Llamadas a la API: `lib/catalogo.ts`, `lib/etl-client.ts` y `lib/api-registro.ts` usan `/vigia-api` en el mismo origen; `next.config.mjs` lo reenvía a `VIGIA_API_INTERNA` (se lee al compilar; por defecto `http://127.0.0.1:8000`). En la LAN solo se expone el puerto 3000, sin CORS ni preflight de red privada. `NEXT_PUBLIC_VIGIA_API_URL` salta el proxy con una URL directa. La vista de entorno consume `/paneles`, `/escenarios/{nombre}/diario` y `/simulacion/kpi` sin generar series sintéticas.
@@ -42,32 +45,48 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [app/check-in/page.tsx](app/check-in/page.tsx) | 5 | — |
 | [app/device/page.tsx](app/device/page.tsx) | 5 | — |
 | [app/environment/page.tsx](app/environment/page.tsx) | 5 | — |
-| [app/layout.tsx](app/layout.tsx) | 39 | — |
-| [app/manifest.ts](app/manifest.ts) | 19 | — |
+| [app/layout.tsx](app/layout.tsx) | 42 | — |
+| [app/manifest.ts](app/manifest.ts) | 21 | — |
 | [app/page.tsx](app/page.tsx) | 5 | — |
 | [app/reports/page.tsx](app/reports/page.tsx) | 5 | — |
 | [app/trends/page.tsx](app/trends/page.tsx) | 5 | — |
-| [components/about/about-view.tsx](components/about/about-view.tsx) | 50 | — |
-| [components/alerts/alerts-view.tsx](components/alerts/alerts-view.tsx) | 204 | — |
+| [components/about/about-view.tsx](components/about/about-view.tsx) | 231 | — |
+| [components/about/iconos.tsx](components/about/iconos.tsx) | 63 | Iconos de la pantalla Acerca de, con el lenguaje de `components/shared/iconos.tsx`: rejilla de 24 px, |
+| [components/alerts/alerts-view.tsx](components/alerts/alerts-view.tsx) | 432 | — |
+| [components/alerts/iconos.tsx](components/alerts/iconos.tsx) | 92 | Iconos de las alertas y de los avisos emergentes: privacidad (quién lo ve) y tipo de aviso. Mismo lenguaje que |
 | [components/app-context.tsx](components/app-context.tsx) | 218 | — |
+| [components/body/anatomia.ts](components/body/anatomia.ts) | 319 | Anatomía procedural del cuerpo 3D: todo se genera con matemáticas (campos de distancia con signo) y se |
 | [components/body/body-figure.tsx](components/body/body-figure.tsx) | 298 | — |
-| [components/body/body-view.tsx](components/body/body-view.tsx) | 271 | — |
-| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 315 | — |
-| [components/device/device-view.tsx](components/device/device-view.tsx) | 160 | — |
-| [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 46 | — |
-| [components/device/reloj-extras.tsx](components/device/reloj-extras.tsx) | 107 | — |
-| [components/device/switch.tsx](components/device/switch.tsx) | 18 | — |
-| [components/environment/environment-view.tsx](components/environment/environment-view.tsx) | 269 | — |
-| [components/reports/reports-view.tsx](components/reports/reports-view.tsx) | 149 | — |
-| [components/shared/delay-countdown.tsx](components/shared/delay-countdown.tsx) | 34 | — |
-| [components/shared/indicator-card.tsx](components/shared/indicator-card.tsx) | 38 | — |
-| [components/shared/line-chart.tsx](components/shared/line-chart.tsx) | 82 | — |
+| [components/body/body-stage.tsx](components/body/body-stage.tsx) | 132 | — |
+| [components/body/body-view.tsx](components/body/body-view.tsx) | 585 | — |
+| [components/body/ecg.tsx](components/body/ecg.tsx) | 82 | — |
+| [components/body/escena.ts](components/body/escena.ts) | 663 | Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del |
+| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 760 | — |
+| [components/checkin/controles.tsx](components/checkin/controles.tsx) | 141 | — |
+| [components/checkin/iconos.tsx](components/checkin/iconos.tsx) | 95 | Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
+| [components/device/device-view.tsx](components/device/device-view.tsx) | 331 | — |
+| [components/device/fc-chart.tsx](components/device/fc-chart.tsx) | 62 | — |
+| [components/device/iconos.tsx](components/device/iconos.tsx) | 117 | Iconos e ilustración de la pantalla Dispositivo, con el lenguaje de `components/shared/iconos.tsx`: |
+| [components/device/reloj-extras.tsx](components/device/reloj-extras.tsx) | 144 | — |
+| [components/device/switch.tsx](components/device/switch.tsx) | 25 | — |
+| [components/environment/environment-view.tsx](components/environment/environment-view.tsx) | 466 | — |
+| [components/environment/iconos.tsx](components/environment/iconos.tsx) | 65 | Iconos de la pantalla Entorno, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
+| [components/reports/iconos.tsx](components/reports/iconos.tsx) | 51 | Iconos de los informes: los dos extremos del enlace (nave y Tierra) y el mensaje que viaja entre ellos. Mismo |
+| [components/reports/reports-view.tsx](components/reports/reports-view.tsx) | 264 | — |
+| [components/reports/trayecto.tsx](components/reports/trayecto.tsx) | 74 | — |
+| [components/shared/delay-countdown.tsx](components/shared/delay-countdown.tsx) | 36 | — |
+| [components/shared/iconos.tsx](components/shared/iconos.tsx) | 140 | Iconos propios de VIGÍA, dibujados para esta aplicación (no vienen de una librería). Mismo lenguaje en todos: |
+| [components/shared/indicator-card.tsx](components/shared/indicator-card.tsx) | 66 | — |
+| [components/shared/line-chart.tsx](components/shared/line-chart.tsx) | 262 | — |
+| [components/shared/logo.tsx](components/shared/logo.tsx) | 42 | Marca VIGÍA («Centinela»), tal como la define docs/brand: el casco, la V con su cabeza y el punto de estado. |
 | [components/shared/states.tsx](components/shared/states.tsx) | 50 | — |
 | [components/shared/status.tsx](components/shared/status.tsx) | 73 | — |
-| [components/shell/alert-center.tsx](components/shell/alert-center.tsx) | 167 | — |
-| [components/shell/app-shell.tsx](components/shell/app-shell.tsx) | 329 | — |
+| [components/shell/alert-center.tsx](components/shell/alert-center.tsx) | 209 | — |
+| [components/shell/app-shell.tsx](components/shell/app-shell.tsx) | 260 | — |
 | [components/shell/sw-register.tsx](components/shell/sw-register.tsx) | 15 | — |
-| [components/trends/trends-view.tsx](components/trends/trends-view.tsx) | 73 | — |
+| [components/trends/iconos.tsx](components/trends/iconos.tsx) | 46 | Iconos de la ficha del indicador, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
+| [components/trends/resumen.ts](components/trends/resumen.ts) | 44 | — |
+| [components/trends/trends-view.tsx](components/trends/trends-view.tsx) | 266 | — |
 | [components/ui/badge.tsx](components/ui/badge.tsx) | 51 | — |
 | [components/ui/button.tsx](components/ui/button.tsx) | 57 | — |
 | [components/ui/card.tsx](components/ui/card.tsx) | 102 | — |
@@ -83,8 +102,8 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/catalogo.ts](lib/catalogo.ts) | 204 | Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de |
 | [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
 | [lib/cola.ts](lib/cola.ts) | 41 | Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local. |
-| [lib/engine.test.ts](lib/engine.test.ts) | 151 | — |
-| [lib/engine.ts](lib/engine.ts) | 252 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más |
+| [lib/engine.test.ts](lib/engine.test.ts) | 172 | — |
+| [lib/engine.ts](lib/engine.ts) | 279 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más |
 | [lib/etl-client.ts](lib/etl-client.ts) | 166 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
 | [lib/reloj.test.ts](lib/reloj.test.ts) | 56 | — |
 | [lib/reloj.ts](lib/reloj.ts) | 206 | Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con |
@@ -92,12 +111,12 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
 | [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 589 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
-| [lib/types.ts](lib/types.ts) | 186 | — |
+| [lib/strings.ts](lib/strings.ts) | 873 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/types.ts](lib/types.ts) | 188 | — |
 | [lib/utils.ts](lib/utils.ts) | 10 | — |
 | [next.config.mjs](next.config.mjs) | 21 | @type {import('next').NextConfig} |
 | [postcss.config.mjs](postcss.config.mjs) | 8 | @type {import('postcss-load-config').Config} |
-| [public/sw.js](public/sw.js) | 64 | Service worker de VIGÍA: deja la aplicación disponible sin enlace (informe §4.2, "todo funciona sin enlace"). |
+| [public/sw.js](public/sw.js) | 69 | Service worker de VIGÍA: deja la aplicación disponible sin enlace (informe §4.2, "todo funciona sin enlace"). |
 
 ### API pública
 
@@ -147,9 +166,33 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 - función `AboutView`
 
+**components/about/iconos.tsx**
+
+- constante `IconoPrivacidad`
+- constante `IconoSinConexion`
+- constante `IconoCapas`
+- constante `IconoDatos`
+- constante `IconoResultados`
+- constante `IconoLimites`
+
 **components/alerts/alerts-view.tsx**
 
 - función `AlertsView`
+
+**components/alerts/iconos.tsx**
+
+- tipo `Icono`
+- constante `IconoCandado`
+- constante `IconoCompartida`
+- constante `IconoEscalada`
+- constante `IconoTripulacion`
+- constante `IconoMatraz`
+- constante `IconoReloj`
+- constante `IconoInfo`
+- constante `IconoCalma`
+- constante `IconoEscudoAviso`
+- constante `IconoCampana`
+- constante `IconoVisto`
 
 **components/app-context.tsx**
 
@@ -157,18 +200,78 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - función `AppProvider`
 - función `useApp`
 
+**components/body/anatomia.ts**
+
+- tipo `Vec3`
+- tipo `Sdf`
+- tipo `Sexo`
+- interfaz `Malla`
+- constante `smin`
+- función `elipsoide`
+- función `conoRedondo`
+- función `union`
+- interfaz `Medidas`
+- función `medidas`
+- función `cuerpo`
+- función `corazon`
+- función `pulmones`
+- función `cerebro`
+- constante `higado`
+- constante `estomago`
+- constante `pancreas`
+- constante `rinones`
+- constante `ojos`
+- función `mallar`
+- función `trazados`
+- constante `ANCLAS`
+- tipo `AnclaId`
+
 **components/body/body-figure.tsx**
 
 - tipo `BodySide`
 - función `BodyFigure`
 
+**components/body/body-stage.tsx**
+
+- interfaz `Marcador`
+- función `BodyStage`
+
 **components/body/body-view.tsx**
 
 - función `BodyView`
 
+**components/body/ecg.tsx**
+
+- función `Ecg`
+
+**components/body/escena.ts**
+
+- tipo `Vista`
+- interfaz `ZonaCaliente`
+- interfaz `EstadoEscena`
+- tipo `Proyeccion`
+- función `crearEscena`
+- tipo `Escena`
+
 **components/checkin/checkin-form.tsx**
 
 - función `CheckInScreen`
+
+**components/checkin/controles.tsx**
+
+- función `Dial`
+- función `Opciones`
+
+**components/checkin/iconos.tsx**
+
+- constante `ICONO_SINTOMA`
+- constante `IconoMolestias`
+- constante `IconoHecho`
+- constante `IconoSinMedir`
+- constante `IconoPendiente`
+- constante `IconoCrono`
+- constante `IconoMenos`
+- constante `IconoMas`
 
 **components/device/device-view.tsx**
 
@@ -176,7 +279,18 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 **components/device/fc-chart.tsx**
 
+- constante `COLOR_PULSO`
 - función `FcChart`
+
+**components/device/iconos.tsx**
+
+- constante `IconoSimulador`
+- constante `IconoMovimiento`
+- constante `IconoDescarga`
+- constante `IconoTripulacion`
+- constante `IconoChequeo`
+- constante `IconoPunto`
+- función `RelojIlustracion`
 
 **components/device/reloj-extras.tsx**
 
@@ -185,21 +299,58 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 **components/device/switch.tsx**
 
+- función `SwitchTrack`
 - función `Switch`
 
 **components/environment/environment-view.tsx**
 
 - función `EnvironmentView`
 
+**components/environment/iconos.tsx**
+
+- constante `IconoTormenta`
+- constante `IconoCo2`
+- constante `IconoDosis`
+- constante `IconoHumedad`
+- constante `IconoPresion`
+- constante `IconoDatos`
+
+**components/reports/iconos.tsx**
+
+- tipo `Icono`
+- constante `IconoNave`
+- constante `IconoTierra`
+- constante `IconoSobre`
+- constante `IconoRespuesta`
+- constante `IconoEspera`
+- constante `IconoVisto`
+
 **components/reports/reports-view.tsx**
 
 - función `ReportsView`
+
+**components/reports/trayecto.tsx**
+
+- función `Trayecto`
 
 **components/shared/delay-countdown.tsx**
 
 - función `formatDelay`
 - función `useReportState`
 - función `DelayCountdown`
+
+**components/shared/iconos.tsx**
+
+- tipo `Icono`
+- constante `ICONO_INDICADOR`
+- constante `IconoCuerpo`
+- constante `IconoRegistro`
+- constante `IconoTendencias`
+- constante `IconoEntorno`
+- constante `IconoAlertas`
+- constante `IconoInformes`
+- constante `IconoDispositivo`
+- constante `IconoAcerca`
 
 **components/shared/indicator-card.tsx**
 
@@ -208,6 +359,12 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 **components/shared/line-chart.tsx**
 
 - función `LineChart`
+
+**components/shared/logo.tsx**
+
+- función `Simbolo`
+- función `Palabra`
+- función `Logo`
 
 **components/shared/states.tsx**
 
@@ -236,6 +393,19 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 **components/shell/sw-register.tsx**
 
 - función `SwRegister`
+
+**components/trends/iconos.tsx**
+
+- constante `IconoQueEs`
+- constante `IconoPorQue`
+- constante `IconoRiesgo`
+- constante `IconoPrevencion`
+
+**components/trends/resumen.ts**
+
+- tipo `Lugar`
+- interfaz `Resumen`
+- función `resumir`
 
 **components/trends/trends-view.tsx**
 
@@ -420,7 +590,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 ### Dependencias
 
 - Internas: `../../../packages/engine/engine.ts`, `../../../packages/engine/fixtures/caso-referencia.json`, `../../../packages/i18n/i18n.ts`, `./alertas-sync`, `./alertas-sync.ts`, `./api-registro`, `./api-registro.ts`, `./catalogo.ts`, `./cola.ts`, `./engine.ts`, `./globals.css`, `./reloj.ts`, `./sincronizar`, `./sincronizar.ts`, `./storage`, `./storage.ts`, `./strings`, `./strings.ts`, `./types`, `./types.ts`, `./vocabulario.json`
-- Externas: `@/components/about/about-view`, `@/components/alerts/alerts-view`, `@/components/app-context`, `@/components/body/body-figure`, `@/components/body/body-view`, `@/components/checkin/checkin-form`, `@/components/device/device-view`, `@/components/device/fc-chart`, `@/components/device/reloj-extras`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/reports/reports-view`, `@/components/shared/delay-countdown`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/shell/sw-register`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/components/ui/sheet`, `@/components/ui/slider`, `@/lib/alertas-sync`, `@/lib/api-registro`, `@/lib/catalogo`, `@/lib/cola`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/reloj`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/types`, `@/lib/utils`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/merge-props`, `@base-ui/react/popover`, `@base-ui/react/slider`, `@base-ui/react/use-render`, `class-variance-authority`, `clsx`, `cn`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`
+- Externas: `@/components/about/about-view`, `@/components/about/iconos`, `@/components/alerts/alerts-view`, `@/components/alerts/iconos`, `@/components/app-context`, `@/components/body/anatomia`, `@/components/body/body-figure`, `@/components/body/body-stage`, `@/components/body/body-view`, `@/components/body/ecg`, `@/components/body/escena`, `@/components/checkin/checkin-form`, `@/components/checkin/controles`, `@/components/checkin/iconos`, `@/components/device/device-view`, `@/components/device/fc-chart`, `@/components/device/iconos`, `@/components/device/reloj-extras`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/environment/iconos`, `@/components/reports/iconos`, `@/components/reports/reports-view`, `@/components/reports/trayecto`, `@/components/shared/delay-countdown`, `@/components/shared/iconos`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/logo`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/shell/sw-register`, `@/components/trends/iconos`, `@/components/trends/resumen`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/lib/alertas-sync`, `@/lib/api-registro`, `@/lib/catalogo`, `@/lib/cola`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/reloj`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/types`, `@/lib/utils`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/merge-props`, `@base-ui/react/popover`, `@base-ui/react/slider`, `@base-ui/react/use-render`, `@fontsource-variable/space-grotesk`, `@fontsource/ibm-plex-mono/400.css`, `@fontsource/ibm-plex-mono/500.css`, `@fontsource/ibm-plex-mono/600.css`, `class-variance-authority`, `clsx`, `cn`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`, `three`, `three/examples/jsm/loaders/GLTFLoader.js`, `three/examples/jsm/utils/BufferGeometryUtils.js`
 - Biblioteca estándar: `node:assert/strict`, `node:fs`, `node:test`
 
 ### Tests
