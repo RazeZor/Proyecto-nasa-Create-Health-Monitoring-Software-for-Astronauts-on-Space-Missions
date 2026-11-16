@@ -9,6 +9,7 @@ D, H = "2026-10-31T00:00:00Z", "2026-11-13T00:00:00Z"
 class LineaBase(unittest.TestCase):
     def setUp(self):
         self.conn = conectar(":memory:")
+        self.addCleanup(self.conn.close)
         migrar(self.conn)
         m = tr.crear_mision(self.conn, "m", "estacion", "2026-11-14T00:00:00Z")
         self.t = tr.crear_tripulante(self.conn, "ana", m, "astronauta")

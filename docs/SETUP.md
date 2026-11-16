@@ -8,7 +8,8 @@ Toma unos 10 minutos. Al final tendrás el hook activo, los tests en verde y tu 
 | --- | --- | --- |
 | Git | 2.30 o más | Repositorio y hook de pre-commit |
 | Python | 3.10 o más (CI usa 3.12) | `pipelines/` y `tools/contextgen` |
-| Node.js | 20 LTS o más | `apps/web`, cuando exista su `package.json` |
+| Node.js | 22.18 o más (CI: 22.18) | `apps/web` y pruebas TypeScript sin compilación |
+| pnpm | 12.3.4 (`apps/web/package.json`) | Instalación reproducible con `pnpm-lock.yaml` |
 
 **Windows:** si `python` abre la Microsoft Store o dice "no se encontró Python", instálalo desde python.org y usa `py`, o desactiva los alias en *Configuración → Aplicaciones → Configuración avanzada de aplicaciones → Alias de ejecución de aplicaciones* (`python.exe` y `python3.exe`). En esta guía, donde dice `python`, usa `py` si es tu caso.
 
@@ -67,23 +68,51 @@ pip install -r pipelines/<modulo>/requirements.txt
 
 `.venv/` ya está en `.gitignore`.
 
+Si el clon ya tiene `venv/`, reutilízalo; no hace falta crear además `.venv/`. En los comandos siguientes usa el intérprete del entorno elegido (en este equipo, `venv\Scripts\python.exe`). Instala lo que usa la API y la verificación:
+
+```sh
+python -m pip install -r apps/api/requirements.txt ruff
+cd apps/web
+corepack enable
+pnpm install --frozen-lockfile
+cd ../..
+```
+
+`websockets` está declarado por la API: sin él las pruebas del puente y la conexión con smart-monitor quedan incompletas. El gestor canónico de la web es pnpm; no generes un `package-lock.json` adicional.
+
 ## 5. Verificar que todo funciona
 
 ```sh
 python tools/contextgen/contextgen.py --check       # sin salida y código 0: contexto al día
 python -m unittest discover -s tools/contextgen     # tests del generador
 python -m unittest discover -s pipelines/datalake   # tests del datalake
-ruff check .                                        # lint (instalar: uv tool install ruff o pip install ruff)
+python -m ruff check .                              # lint en el mismo entorno Python
 cd pipelines/datalake && python index.py ingest goes && cd ../..   # requiere internet
 ```
 
 Si funcionan, tu entorno está listo. Ruff se configura en `ruff.toml` (E, F, W e imports ordenados; no exige largo de línea) y el CI lo corre en cada PR.
 
+Para comprobar la entrega completa con las suites de todos los módulos, tipado y build:
+
+```sh
+python tools/verificacion/verificar.py --web
+```
+
+`--node RUTA` elige otro ejecutable sin cambiar Node del sistema. El comando conserva códigos, versiones y logs en `tools/verificacion/data/<UTC>/resultado.json` (ignorado por Git), y falla si hay pruebas omitidas. El CI sigue siendo la referencia en Python 3.12; una ejecución local con otro Python no acredita esa versión.
+
+Ensayo de recuperación en Chrome/Chromium, después del build:
+
+```sh
+python tools/verificacion/ensayo.py --node RUTA_NODE --chrome RUTA_CHROME
+```
+
+Usa puertos locales libres, una base y un perfil de navegador temporales: guarda un informe sin API, reinicia Chrome, abre la carcasa sin red y verifica un único informe al reconectar. Un proxy del ensayo aísla la API temporal del destino configurado en el build. Conserva captura y resultado en `tools/verificacion/data/ensayo-*`; detiene sus servidores al terminar. No utiliza la base del usuario ni sustituye un ensayo con el reloj físico.
+
 ### Datos de la demo (gold)
 
 Los datos no van a git, así que en un clon nuevo la pantalla de entorno sale vacía. Al arrancar, la API imprime qué paneles y escenarios tiene cargados, o `gold: vacío` si no hay ninguno.
 
-No se pueden regenerar descargando: GOES solo publica las últimas 24 h, y la ventana de `mision-vigia` (13-14 nov. 2026) ya no está. Por eso se restaura desde el respaldo del equipo, `vigia-datalake-AAAA-MM-DD.tar.gz` (unos 250 KB; trae raw, curated, gold y manifiestos). Pídelo a quien lleve el frente de datos.
+GOES solo publica las últimas 24 h: una ventana antigua que usara GOES necesita el respaldo del equipo. La demo actual `mision-vigia` es el viaje a Marte del 15-sep-2011 al día 259: usa RadLab y DONKI históricos; su dosis de tránsito, CO2 y flujo son simulados y se rotulan. DONKI puede volver a consultarse por tramos de hasta 60 días. El respaldo `vigia-datalake-AAAA-MM-DD.tar.gz` conserva raw, curated, gold y manifiestos; su tamaño depende del inventario.
 
 ```sh
 tar -xzf vigia-datalake-2026-11-14.tar.gz -C pipelines/datalake   # restaurar (Windows 10+ trae tar)
@@ -91,6 +120,25 @@ cd pipelines/datalake && tar -czf ../../vigia-datalake-$(date +%F).tar.gz data  
 ```
 
 Restaura solo en un clon sin `pipelines/datalake/data/`: el datalake nunca sobrescribe `raw/`. Si un escenario pide una ventana que tu curated no tiene, `index.py panel` la omite, avisa por la terminal y la deja en el campo `faltan` del panel.
+
+Para publicar ambos paneles con lo disponible y reproducir el KPI vigente antes de servir exactamente la fixture versionada:
+
+```sh
+cd pipelines/reanclaje
+python index.py preparar
+cd ../..
+python tools/verificacion/inventario.py
+```
+
+Una consulta DONKI vacía solo acredita el rango consultado. `preparar` falla si los resultados actuales no reproducen la fixture; no cambia reglas ni rellena datos faltantes. En modo real el entorno reanclado es referencia: no describe la cabina de la persona.
+
+Las migraciones actuales llegan a versión 6. Para una base existente, respaldar y migrar explícitamente:
+
+```sh
+python tools/verificacion/inventario.py --migrar
+```
+
+`--db` y `--datos` permiten indicar otras rutas; por defecto usa `VIGIA_DB`/`DATALAKE_DIR` del entorno o las rutas del repositorio (este CLI no carga `.env`). El respaldo queda en `tools/verificacion/data/inventario-*/respaldo.db`, fuera de Git y con datos personales: consérvalo con los mismos permisos que el original. Para revertir, detener la API y restaurar ese respaldo con el código anterior; no borrar la base para solucionar versiones. La migración 005 recupera el vínculo del reloj en ambas variantes v4, conserva tablas de cuentas y no activa el acceso experimental.
 
 ## 6. Tu asistente de IA
 
@@ -143,7 +191,7 @@ Todo el proyecto corre en el PC, sin internet ni servidor: smart-monitor (servid
 
    ```sh
    cd apps/api && python -m uvicorn main:app --host 127.0.0.1 --port 8000
-   cd apps/web && npm run dev          # http://localhost:3000 ; desde el móvil http://192.168.137.1:3000
+   cd apps/web && pnpm dev          # http://localhost:3000 ; desde el móvil http://192.168.137.1:3000
    ```
 
    La API lee el `.env` al arrancar: tras cambiarlo hay que reiniciarla.
@@ -153,6 +201,17 @@ Todo el proyecto corre en el PC, sin internet ni servidor: smart-monitor (servid
 Comprobación: `curl http://127.0.0.1:8000/reloj/estado` debe dar `conectado: true` e `ip_lan: "192.168.137.1"`; el panel de smart-monitor (`http://localhost:8765`) muestra el reloj al conectarse. Si el reloj no llega, revisa que `python.exe` tenga permitida la entrada en el firewall de Windows para redes públicas (así trata Windows al hotspot).
 
 ## Problemas frecuentes
+
+Para preparar la evidencia científica del pitch, ejecutar desde la raíz con Node 22.18+:
+
+```powershell
+node tools/validacion/ejecutar.ts --publicar
+python tools/investigacion/investigar.py --lector
+```
+
+El primer comando no necesita red: congela protocolo/casos/código, evalúa el motor de producto y publica el reporte sintético en gold. La API sirve `/ciencia/evidencia` y Acerca de lo muestra sin KPI embebidos. Si cambia motor, generador, métricas o protocolo, la auditoría se rotula histórica hasta repetirla. No convertir esa repetición en conjunto independiente. El segundo comando consulta fuentes públicas y declara el uso de un lector tercero cuando el origen no es accesible. Los datos descargados y resultados permanecen ignorados por Git. El guion y los límites están en [PITCH-CIENTIFICO](PITCH-CIENTIFICO.md).
+
+Para adquirir MMASH con checksum/licencia y publicar su referencia fisiológica: `python pipelines/biometria/index.py mmash`. La consulta Orion y su panel están en [DATOS-Y-EVIDENCIA](DATOS-Y-EVIDENCIA.md). Son datos de referencia, nunca se añaden a la cuenta del usuario actual. Tras publicarlos, `python tools/verificacion/ensayo.py --datasets` comprueba además ambas tarjetas y su copia sin red; la opción exige que existan ambos productos. La batería de tests no descarga datasets. El [plan completo vigente](PLAN-IMPLEMENTACION-COMPLETO.md) reúne los siguientes trabajos.
 
 | Síntoma | Solución |
 | --- | --- |

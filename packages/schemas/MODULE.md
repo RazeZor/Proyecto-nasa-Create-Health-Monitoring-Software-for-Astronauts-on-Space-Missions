@@ -7,6 +7,10 @@ Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON 
 
 ## Puntos clave
 
+- `mmash-gold.schema.json` exige referencia terrestre, fechas UTC de toma desconocidas y ausencia de evaluación/aval clínico. Preserva tiempos relativos y unidades de RR/sueño. El pipeline biométrico valida el producto con este contrato antes de publicarlo.
+
+- `evidencia-cientifica.json` registra fuentes, artefactos y límites traducidos de cada afirmación. Su contrato `afirmaciones-v1` mantiene validación clínica falsa, revisión pendiente y lista vacía; publicar dictámenes reales requerirá una revisión explícita del contrato y evidencia del revisor. `test_evidencia.py` comprueba rutas, traducciones y ausencia de avales inventados.
+
 - `validador.py` implementa validación JSON Schema con biblioteca estándar (soporte de `$ref` locales entre esquemas de `packages/schemas/`) para que ningún paquete ni pipeline añada dependencias externas.
 - `ficha.schema.json` define los seis campos del reto (qué es, cómo se mide en vuelo, por qué hace falta, qué peligro lo altera, cuándo avisar, qué prevención) más `fuentes`. `como_se_mide_en_vuelo` se separa por perfil: `estacion`, `transito` y `superficie`.
 - `perfiles.schema.json` y `perfiles.json` fijan los 5 perfiles de misión (§3.3 del informe): presión de cabina (`760`, `527`, `424 mmHg`), latencia unidireccional y gravedad (`microgravedad`, `lunar`, `marciana`). `apps/` y `pipelines/` consumen los mismos valores sin duplicarlos.
@@ -35,6 +39,7 @@ tags: schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, 
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
+| [test_evidencia.py](test_evidencia.py) | 48 | Las afirmaciones publicadas tienen fuente, código existente y límites traducidos. |
 | [test_fichas.py](test_fichas.py) | 56 | Valida las fichas de packages/schemas/fichas contra ficha.schema.json (solo biblioteca estándar). |
 | [test_schemas.py](test_schemas.py) | 122 | Pruebas de contrato para perfiles, lecturas, entorno Gold y caso de referencia. |
 | [test_vocabulario.py](test_vocabulario.py) | 65 | El contrato vocabulario.json no puede desviarse de lo que de verdad usan la base de datos, las fichas y la interfaz. |
@@ -50,10 +55,11 @@ tags: schemas, contratos, fichas, perfiles, lectura, entorno, gold, simulacion, 
 
 - Internas: `validador`
 - Externas: ninguna
-- Biblioteca estándar: `json`, `pathlib`, `re`, `unittest`
+- Biblioteca estándar: `copy`, `json`, `pathlib`, `re`, `unittest`
 
 ### Tests
 
+- `packages/schemas/test_evidencia.py`: 3 pruebas en Evidencia (3)
 - `packages/schemas/test_fichas.py`: 5 pruebas en Fichas (5)
 - `packages/schemas/test_schemas.py`: 4 pruebas en Contratos (4)
 - `packages/schemas/test_vocabulario.py`: 6 pruebas en Vocabulario (6)

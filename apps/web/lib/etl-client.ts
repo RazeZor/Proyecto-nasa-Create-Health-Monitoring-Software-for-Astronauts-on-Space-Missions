@@ -30,7 +30,8 @@ export interface DosisPanelEtl {
   orientativa: boolean
   series: string[]
   por_dia: DosisDiaEtl[]
-  porcentaje_limite_carrera: number
+  porcentaje_limite_carrera: number | null
+  por_detector?: { id: string; serie: string; tipo: "equivalente" | "absorbida"; unidad: "µSv" | "µGy"; por_dia: DosisDiaEtl[] }[]
 }
 
 export interface ProtonesPanelEtl {

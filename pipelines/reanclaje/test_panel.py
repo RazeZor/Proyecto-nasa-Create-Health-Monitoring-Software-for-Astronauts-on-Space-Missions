@@ -26,14 +26,18 @@ class Panel(unittest.TestCase):
     def test_dosis_acumulada_orientativa_y_cobertura(self):
         dosis = pn.construir_panel(GOLD)["dosis"]
         self.assertEqual((dosis["tipo"], dosis["unidad"], dosis["orientativa"]), ("absorbida", "µGy", True))
-        self.assertEqual([(x["dosis"], x["acumulada"]) for x in dosis["por_dia"]], [(5.0, 5.0), (10.0, 15.0)])
+        self.assertEqual([(x["dosis"], x["acumulada"]) for x in dosis["por_dia"]], [(4.0, 4.0), (10.0, 14.0)])
         self.assertEqual(dosis["por_dia"][0]["cobertura"], round(12 / 288, 3))  # solo 1 h de datos
-        self.assertEqual(dosis["porcentaje_limite_carrera"], round(15 / 1000 / 600 * 100, 4))
+        self.assertIsNone(dosis["porcentaje_limite_carrera"])
+        self.assertEqual([d["serie"] for d in dosis["por_detector"]], ["DosTel1", "DosTel2"])
+        self.assertEqual(dosis["por_detector"][1]["por_dia"][0]["dosis"], 6.0)
 
     def test_prefiere_dosis_equivalente(self):
         gold = {**GOLD, "diario": GOLD["diario"] + [d("radlab", "REM", "dose_equivalent_rate", max=1.0, dosis=2.0)]}
         dosis = pn.construir_panel(gold)["dosis"]
         self.assertEqual((dosis["tipo"], dosis["orientativa"], dosis["series"]), ("equivalente", False, ["REM"]))
+        self.assertEqual({d["unidad"] for d in dosis["por_detector"]}, {"µSv", "µGy"})
+        self.assertIsNone(dosis["porcentaje_limite_carrera"])
 
     def test_ventanas_que_faltan_llegan_al_panel(self):
         falta = {"fuente": "goes", "desde": "a", "hasta": "b", "dia_mision": 21}

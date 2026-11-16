@@ -3,27 +3,29 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import almacen.db as bd
 from almacen import conectar, migrar
 
 TABLAS = {"mision", "tripulante", "indicador", "lectura", "sintoma", "linea_base", "alerta",
-          "escalamiento", "reporte_cola", "consentimiento", "auditoria"}
+          "escalamiento", "reporte_cola", "consentimiento", "auditoria", "reloj_vinculo"}
 
 
 class Esquema(unittest.TestCase):
     def setUp(self):
         self.conn = conectar(":memory:")
+        self.addCleanup(self.conn.close)
         migrar(self.conn)
 
     def test_migrar_crea_todas_las_tablas(self):
         nombres = {f[0] for f in self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         self.assertTrue(TABLAS <= nombres)
-        self.assertEqual(migrar(conectar(":memory:")), 4)
+        self.assertEqual(self.conn.execute("PRAGMA user_version").fetchone()[0], 6)
 
     def test_migrar_es_idempotente(self):
-        self.assertEqual(migrar(self.conn), 4)
-        self.assertEqual(migrar(self.conn), 4)
+        self.assertEqual(migrar(self.conn), 6)
+        self.assertEqual(migrar(self.conn), 6)
 
     def test_llaves_foraneas_activas(self):
         with self.assertRaises(sqlite3.IntegrityError):
@@ -73,7 +75,7 @@ class Esquema(unittest.TestCase):
             [h.join() for h in hilos]
             self.assertEqual(errores, [])
             conn = conectar(ruta)
-            self.assertEqual(migrar(conn), 4)
+            self.assertEqual(migrar(conn), 6)
             conn.close()
 
     def test_migracion_fallida_no_deja_esquema_parcial(self):
@@ -84,6 +86,7 @@ class Esquema(unittest.TestCase):
             original, bd.MIGRACIONES = bd.MIGRACIONES, carpeta
             try:
                 conn = conectar(":memory:")
+                self.addCleanup(conn.close)
                 with self.assertRaises(sqlite3.OperationalError):
                     migrar(conn)
                 self.assertEqual(conn.execute("PRAGMA user_version").fetchone()[0], 1)
@@ -91,6 +94,41 @@ class Esquema(unittest.TestCase):
                 self.assertEqual(tablas, {"a"})
             finally:
                 bd.MIGRACIONES = original
+
+    def test_version_duplicada_falla_antes_de_escribir(self):
+        with tempfile.TemporaryDirectory() as d:
+            carpeta = Path(d)
+            for nombre in ("001_a.sql", "001_b.sql"):
+                (carpeta / nombre).write_text("CREATE TABLE nueva (id);", encoding="utf-8")
+            with patch.object(bd, "MIGRACIONES", carpeta):
+                with self.assertRaisesRegex(ValueError, "duplicada"):
+                    migrar(self.conn)
+            self.assertIsNone(self.conn.execute("SELECT name FROM sqlite_master WHERE name='nueva'").fetchone())
+
+    def test_actualizar_ambas_variantes_v4_sin_perder_datos(self):
+        for con_reloj in (True, False):
+            conn = conectar(":memory:")
+            self.addCleanup(conn.close)
+            for archivo in sorted(bd.MIGRACIONES.glob("00[123]_*.sql")):
+                conn.executescript(archivo.read_text(encoding="utf-8"))
+            conn.executescript("INSERT INTO mision VALUES (1, 'original', 'estacion', '2026-11-14T00:00:00Z'); "
+                               "INSERT INTO tripulante VALUES (1, 'ana', 1, 'astronauta');")
+            if con_reloj:
+                conn.executescript((bd.MIGRACIONES / "004_reloj_vinculo.sql").read_text(encoding="utf-8"))
+                conn.execute("INSERT INTO reloj_vinculo VALUES ('mi reloj', 1, '2026-11-14T00:00:00Z')")
+            else:
+                conn.executescript("CREATE TABLE cuenta (id INTEGER PRIMARY KEY, dato TEXT); INSERT INTO cuenta VALUES (7, 'conservar');")
+            conn.execute("PRAGMA user_version = 4")
+            conn.commit()
+            self.assertEqual(migrar(conn), 6)
+            self.assertEqual(migrar(conn), 6)
+            self.assertEqual(conn.execute("SELECT alias FROM tripulante").fetchone()[0], "ana")
+            if con_reloj:
+                self.assertEqual(conn.execute("SELECT nombre FROM reloj_vinculo").fetchone()[0], "mi reloj")
+            else:
+                self.assertEqual(conn.execute("SELECT dato FROM cuenta").fetchone()[0], "conservar")
+                self.assertEqual(conn.execute("SELECT count(*) FROM reloj_vinculo").fetchone()[0], 0)
+            self.assertEqual(conn.execute("PRAGMA integrity_check").fetchone()[0], "ok")
 
 
 if __name__ == "__main__":

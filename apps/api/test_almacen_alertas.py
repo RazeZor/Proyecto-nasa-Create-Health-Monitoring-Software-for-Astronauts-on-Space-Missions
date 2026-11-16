@@ -12,6 +12,7 @@ T = "2026-11-14T08:00:00Z"
 class Alertas(unittest.TestCase):
     def setUp(self):
         self.conn = conectar(":memory:")
+        self.addCleanup(self.conn.close)
         migrar(self.conn)
         ids = tr.sembrar_demo(self.conn)
         self.ana, self.med, self.cmd = ids["astronauta"], ids["oficial_medico"], ids["comandante"]

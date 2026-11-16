@@ -40,6 +40,8 @@ export interface OrigenDato { naturaleza: "Real" | "Simulado"; fuente: string; f
 export interface EventoSep { sepID: string; t_real: string; link: string | null; fuente: string }
 export interface EntornoHistorial {
   dia_mision: number
+  /** Una observación remota o histórica nunca autoriza acciones en la cabina actual. */
+  uso?: "referencia" | "escenario" | "operativo"
   /** Fecha UTC (YYYY-MM-DD) del día de misión; solo en el viaje de la demo. */
   fecha?: string
   /** CO2 real de cabina en ppm (EDA): se convierte a mmHg con la presión del perfil. */
@@ -68,6 +70,7 @@ export interface PosicionViaje {
   marte: { x_ua: number; y_ua: number }
 }
 export interface Historial {
+  mision_id?: number
   modo?: Mode
   naturaleza: string
   dias_prevuelo: number

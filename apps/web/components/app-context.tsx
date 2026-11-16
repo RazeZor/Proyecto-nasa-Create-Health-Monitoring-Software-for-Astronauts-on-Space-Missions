@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { cargarCatalogo, type Catalogo, type Historial } from "@/lib/catalogo"
 import { type Analisis, analizar } from "@/lib/engine"
+import { enviarReporte } from "@/lib/api-registro"
+import { bandejaInformes, sincronizarBandeja } from "@/lib/bandeja-informes"
 import { enviarOrdenReloj, INTERVALO_SONDEO_MS, leerReloj, type OrdenReloj, type RespuestaReloj, siguienteEstado } from "@/lib/reloj"
 import { rolDeRuta } from "@/lib/roles"
 import { leerModo, store, usarModo } from "@/lib/storage"
@@ -142,6 +144,23 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   const profile = catalogo.perfiles.find((p) => p.id === "transit") ?? catalogo.perfiles[1]
   const analisis = useMemo(() => analizar(checkIns, catalogo.historial, profile.cabinPressureMmHg), [checkIns, catalogo, profile.cabinPressureMmHg])
   const online = navegadorEnLinea && !catalogo.sinEnlace
+
+  // La bandeja de informes también se vacía fuera de /reports y cuando vuelve la API sin evento online.
+  useEffect(() => {
+    const enviar = () => {
+      let bandeja
+      try {
+        bandeja = bandejaInformes(TRIPULANTE ?? 1, mode, String(catalogo.historial.mision_id ?? "sin-identificar"))
+      } catch {
+        return // /reports muestra el error de almacenamiento al intentar leer o guardar
+      }
+      void sincronizarBandeja(bandeja, (p) => enviarReporte(p.perfil, p.creado, bandeja.tripulante, p.retardo, p.contenido, p.id)).catch(() => undefined)
+    }
+    enviar()
+    const intervalo = window.setInterval(enviar, 30000)
+    window.addEventListener("online", enviar)
+    return () => { window.clearInterval(intervalo); window.removeEventListener("online", enviar) }
+  }, [mode, catalogo.historial.mision_id])
 
   // Cola local -> API: registros del día y rojos de capa A (§5.4). Sin enlace quedan pendientes y se reintenta.
   const sincronizarTodo = useCallback(async () => {

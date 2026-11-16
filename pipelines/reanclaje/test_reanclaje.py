@@ -96,10 +96,19 @@ class Construir(unittest.TestCase):
         rc.construir({"nombre": "t", "ventanas": [V, donki]})  # nunca se ingirió DONKI: es un hueco
         gold = json.loads((rc.datalake.ROOT / "gold" / "t.json").read_text())
         self.assertEqual(gold["faltan"], [donki])
-        (rc.datalake.ROOT / "manifest.json").write_text(json.dumps([{"fuente": "donki", "filas": 0}]))
+        consulta = f"https://ccmc.gsfc.nasa.gov/DONKI-API/get/SEP?startDate={V['desde'][:10]}&endDate={V['hasta'][:10]}"
+        (rc.datalake.ROOT / "manifest.json").write_text(json.dumps([{"fuente": "donki", "filas": 0, "url": consulta}]))
         rc.construir({"nombre": "t", "ventanas": [V, donki]})  # consultado y vacío: ventana tranquila
         gold = json.loads((rc.datalake.ROOT / "gold" / "t.json").read_text())
         self.assertEqual((gold["eventos"], gold["faltan"], len(gold["serie5min"])), ([], [], 2))
+
+    def test_consulta_de_otro_intervalo_no_acredita_ventana_donki_vacia(self):
+        donki = {**V, "fuente": "donki"}
+        for url in ("", "https://ejemplo/SEP?startDate=2000-01-01&endDate=2000-01-02"):
+            (rc.datalake.ROOT / "manifest.json").write_text(json.dumps([{"fuente": "donki", "filas": 0, "url": url}]))
+            rc.construir({"nombre": "t", "ventanas": [V, donki]})
+            gold = json.loads((rc.datalake.ROOT / "gold/t.json").read_text())
+            self.assertEqual(gold["faltan"], [donki])
 
 
 if __name__ == "__main__":

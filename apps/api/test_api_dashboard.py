@@ -306,6 +306,7 @@ class Entorno(unittest.TestCase):
         self.assertIn("reanclada", h["aviso_entorno"])
         self.assertIn("re-anchored", self.c.get(f"/tripulantes/{self.ana}/historial?modo=real&lang=en", headers=self.h).json()["aviso_entorno"])
         self.assertEqual(sorted(e), [12, 18, 19, 22])
+        self.assertTrue(all(d["uso"] == "referencia" for d in e.values()))
         self.assertEqual(e[19]["co2_ppm_max_horario"], 2950.5)
         self.assertIsNone(e[19]["co2_mmhg_max_horario"])  # la conversión depende del perfil: la hace la app
         self.assertEqual(e[19]["co2_origen"], {"naturaleza": "Real", "fuente": "EDA RR-1 (NASA OSDR)", "fecha_real": "2014-09-22"})
@@ -317,6 +318,7 @@ class Entorno(unittest.TestCase):
     def test_modo_demo_mezcla_real_y_anomalias_simuladas_rotuladas(self):
         _, e = self.entorno("demo")
         self.assertEqual(len(e), 259)
+        self.assertTrue(all(d["uso"] == "escenario" for d in e.values()))
         self.assertEqual(e[19]["co2_origen"]["naturaleza"], "Real")  # sin anomalía ese día: manda la medición real
         self.assertEqual(e[12]["flujo_origen"]["naturaleza"], "Real")
         # las anomalías inyectadas del viaje (A2 el día 60, A3 los días 131 y 132) son simuladas y rotuladas

@@ -52,9 +52,15 @@ class Validar(unittest.TestCase):
         r = vr.validar(ref)
         self.assertEqual((r["estado"], r["pmcid"], r["crossref"]["anio"]), (vr.OK, "PMC1", 2015))
 
-    def test_crossref_caido(self):
+    def test_respuesta_404_sin_metadatos(self):
         vr._get = lambda url, como_json=True: None
         self.assertEqual(vr.validar({"id": "a", "doi": "10.1/x"})["estado"], vr.DOI_NO_EXISTE)
+
+    def test_red_caida_no_es_doi_inexistente(self):
+        def fallo(url, como_json=True):
+            raise vr.FuenteNoDisponible("sin red")
+        vr._get = fallo
+        self.assertEqual(vr.validar({"id": "a", "doi": "10.1/x"})["estado"], vr.FUENTE_NO_DISPONIBLE)
 
 
 class Catalogo(unittest.TestCase):

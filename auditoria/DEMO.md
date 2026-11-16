@@ -1,5 +1,7 @@
 # Project Demo — 7 slides (English), draft 2026-11-15
 
+> Actualización científica 16-nov-2026 UTC: usar [PITCH-CIENTIFICO](../docs/PITCH-CIENTIFICO.md) y el reporte actual de `tools/validacion`. Este guion conserva cifras históricas del generador de desarrollo; no acreditan rendimiento general. Los generadores de diapositivas ya consumen el reporte auditado y rechazan cifras desactualizadas.
+
 Format chosen: **slide deck, 7 slides including the title slide** (official limit: 7 slides or a 30-second video; exceeding it excludes the project from Global Judging). A deck can be built in minutes from screenshots and needs no voice recording; a 30-second video is listed as alternative at the end. Required content per the Submission Guide: team name, team members, the challenge, an image of the project, the user experience, and how NASA and partner open data made the solution possible. All text in English. No NASA logos. No AI-generated images (screenshots of the app only).
 
 Team fields: `[TEAM NAME]`, `[MEMBER 1, MEMBER 2, …]` exactly as registered on the Members tab.

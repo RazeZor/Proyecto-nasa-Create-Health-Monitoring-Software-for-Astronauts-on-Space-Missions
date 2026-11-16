@@ -35,7 +35,7 @@ jobs:
             fi
           done
       - name: Tests de TypeScript (motor y lógica de la app; Node ejecuta TS sin compilar)
-        run: node --test packages/engine/*.test.ts apps/web/lib/*.test.ts
+        run: node --test packages/engine/*.test.ts apps/web/lib/*.test.ts tools/validacion/*.test.ts tools/presentacion/*.test.cjs
 
   web:
     # el front no lo cubren los tests de lib/: un error de tipos o un build roto en un componente solo se ve compilando

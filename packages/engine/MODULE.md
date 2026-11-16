@@ -3,9 +3,12 @@
 <!-- CONTEXT:MANUAL:START -->
 ## Propósito
 
-Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro.
+Motor híbrido de VIGÍA en TypeScript puro: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto. No implementa NEWS2 completo ni hereda su validación. Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro.
 
 ## Puntos clave
+
+- `OpcionesMotor.capas` permite ablaciones experimentales en `tools/validacion`; la app omite la opción y conserva las cuatro capas. La acumulación y exclusión propias de C se desactivan sin C; la referencia robusta común se mantiene. No se cambiaron umbrales a partir del banco exploratorio.
+- `evidencia.ts` es puro: clasifica ausencia, antigüedad, futuro y comparabilidad sin borrar extremos ni inventar confianza porcentual. `esEntornoAplicable` se comparte con el adaptador de la app. La captura completa de tiempos/calidad por observación sigue pendiente; esta política de ingeniería no es una validación clínica.
 
 - Es el port 1:1 de `evaluar_tripulante` en `pipelines/reanclaje/simulacion.py`. Si cambias una regla o una constante, cámbiala en los dos lados.
 - `paridad-referencia.test.ts` compara el motor con `fixtures/caso-referencia.json` (4 tripulantes; anomalías A1, A2 y A3 de §5.5). `test_simulacion.py` exige que ese fixture sea idéntico a `generar_caso_referencia()`: si el simulador cambia, regenera el fixture con `json.dumps(simulacion.generar_caso_referencia(), indent=1, ensure_ascii=False)`.
@@ -35,7 +38,9 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [engine.ts](engine.ts) | 289 | Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD), |
+| [engine.ts](engine.ts) | 294 | Motor híbrido de VIGÍA: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con MAD), |
+| [evidencia.test.ts](evidencia.test.ts) | 26 | — |
+| [evidencia.ts](evidencia.ts) | 42 | Aplicabilidad y suficiencia explícitas. Reglas de ingeniería; no estiman confianza clínica. Sin IO. |
 | [instrumento.test.ts](instrumento.test.ts) | 41 | — |
 | [paridad-referencia.test.ts](paridad-referencia.test.ts) | 114 | — |
 | [series.test.ts](series.test.ts) | 45 | — |
@@ -77,6 +82,15 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 - función `analizarTripulante`
 - función `evaluarTripulante`
 
+**evidencia.ts**
+
+- tipo `UsoDato`
+- tipo `EstadoEvidencia`
+- interfaz `ObservacionEvidencia`
+- interfaz `PoliticaEvidencia`
+- constante `esEntornoAplicable`
+- función `evaluarEvidencia`
+
 **series.ts**
 
 - interfaz `Punto`
@@ -88,12 +102,13 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 
 ### Dependencias
 
-- Internas: `./engine.ts`, `./fixtures/caso-referencia.json`, `./fixtures/caso-viaje.json`, `./series.ts`
+- Internas: `./engine.ts`, `./evidencia.ts`, `./fixtures/caso-referencia.json`, `./fixtures/caso-viaje.json`, `./series.ts`
 - Externas: ninguna
 - Biblioteca estándar: `node:assert/strict`, `node:test`
 
 ### Tests
 
+- `packages/engine/evidencia.test.ts`: 0 pruebas
 - `packages/engine/instrumento.test.ts`: 0 pruebas
 - `packages/engine/paridad-referencia.test.ts`: 0 pruebas
 - `packages/engine/series.test.ts`: 0 pruebas

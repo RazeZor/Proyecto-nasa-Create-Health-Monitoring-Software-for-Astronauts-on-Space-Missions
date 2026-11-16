@@ -24,10 +24,12 @@ from gold import DATALAKE_DEFECTO  # noqa: E402, F401
 from gold import carpeta as _gold  # noqa: E402, F401
 from gold import leer_verificado as _leer_gold_verificado  # noqa: E402
 from gold import manifiesto as _manifiesto  # noqa: E402
+from rutas_ciencia import router as rutas_ciencia  # noqa: E402
 from rutas_dashboard import router as rutas_dashboard  # noqa: E402
 
 from almacen import conectar, migrar  # noqa: E402
 from almacen.cola import avanzar_cola  # noqa: E402
+from almacen.reintentos import ConflictoOperacion  # noqa: E402
 from i18n import t  # noqa: E402
 from rutas_registro import router as rutas_registro  # noqa: E402
 
@@ -113,12 +115,18 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "P
                    allow_private_network=True)  # shortcut: sin lista de orígenes; acotar antes de producción
 app.include_router(rutas_registro)
 app.include_router(rutas_dashboard)
+app.include_router(rutas_ciencia)
 app.include_router(puente_reloj.router)
 
 
 @app.exception_handler(ValueError)
 def dato_invalido(_, e):
     return JSONResponse({"detail": t("api.error.dato_invalido", detalle=str(e))}, status_code=422)
+
+
+@app.exception_handler(ConflictoOperacion)
+def conflicto_operacion(_, e):
+    return JSONResponse({"detail": t("api.error.dato_invalido", detalle=str(e))}, status_code=409)
 _PERFILES = Path(__file__).resolve().parents[2] / "packages" / "schemas" / "perfiles.json"
 
 

@@ -7,6 +7,14 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 
 ## Puntos clave
 
+- `/ciencia/datasets` enumera únicamente MMASH/Orion presentes con hashes comprobados; `/ciencia/datasets/{id}` devuelve el producto de referencia conocido. Las fechas de toma MMASH siguen desconocidas y Orion es radiación ambiental histórica; no se evalúa el motor ni se incorporan esos sujetos a cuentas actuales.
+
+- `GET /ciencia/evidencia` separa catálogo de afirmaciones y reporte sintético gold. Verifica integridad y hashes del motor, generador, métricas, runner y protocolo; reporta `vigente`, `desactualizado` o `no_publicado`. Reportes corruptos/incompatibles fallan cerrados. No acredita revisión profesional.
+
+- Migraciones hasta 006: el catálogo rechaza números duplicados antes de escribir. 005 reconcilia las variantes v4 con/sin `reloj_vinculo` y conserva las cuentas experimentales sin activarlas. `tools/verificacion/inventario.py --migrar` respalda antes de actualizar una base existente.
+- Síntomas e informes aceptan `operacion_id` opcional: un índice por propietario evita duplicados incluso concurrentes; reutilizar el id con distinto contenido devuelve 409. Clientes anteriores sin id siguen funcionando. El estado de informes sigue siendo el del simulador de enlace de esta API, no un acuse de un receptor independiente en Tierra.
+- El historial identifica `mision_id`; el entorno del panel real lleva `uso: referencia` y el demo `uso: escenario`. Las observaciones remotas reancladas no marcan `durante_tormenta` en las lecturas personales reales.
+
 - No importa el pipeline (regla 3 de la arquitectura): lee `<DATALAKE_DIR>/gold/*.json` y `gold/manifest.json`. No ejecuta el ETL ni escribe nada; para generar datos se corre `pipelines/reanclaje/index.py`.
 - Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`; `GET /perfiles`; `GET /simulacion/caso-referencia` y `GET /simulacion/kpi`. Tablero (`rutas_dashboard.py`): `GET /fichas` y `/fichas/{id}` (de `packages/schemas/fichas`), `GET /entorno/referencia`, `GET /tripulacion`, y por tripulante `historial`, `recordatorios` y `mensajes`.
 - Documentación para agentes: `AGENTES.md` (cómo leer los datos y sus trampas) y `GET /openapi.json` (contrato, con resumen y descripción en cada ruta). Un test exige que cada ruta tenga ambos y aparezca en la guía; al agregar una ruta, documéntala en las dos partes.
@@ -50,26 +58,30 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/__main__.py](almacen/__main__.py) | 18 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
 | [almacen/alertas.py](almacen/alertas.py) | 104 | Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4). |
 | [almacen/base.py](almacen/base.py) | 18 | Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo). |
-| [almacen/cola.py](almacen/cola.py) | 40 | Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2). |
-| [almacen/db.py](almacen/db.py) | 44 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
-| [almacen/lecturas.py](almacen/lecturas.py) | 50 | Lecturas de indicadores y síntomas de un tripulante. |
+| [almacen/cola.py](almacen/cola.py) | 42 | Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2). |
+| [almacen/db.py](almacen/db.py) | 55 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
+| [almacen/lecturas.py](almacen/lecturas.py) | 52 | Lecturas de indicadores y síntomas de un tripulante. |
+| [almacen/reintentos.py](almacen/reintentos.py) | 32 | Inserción idempotente por propietario y operación, con detección de contenido distinto. |
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 110 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [almacen/vocabulario.py](almacen/vocabulario.py) | 7 | Vocabulario compartido con la interfaz: lee el contrato packages/schemas/vocabulario.json. |
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
-| [main.py](main.py) | 233 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [main.py](main.py) | 241 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 594 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
-| [rutas_dashboard.py](rutas_dashboard.py) | 342 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
-| [rutas_registro.py](rutas_registro.py) | 230 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
-| [test_almacen_alertas.py](test_almacen_alertas.py) | 134 | — |
-| [test_almacen_base.py](test_almacen_base.py) | 40 | — |
-| [test_almacen_cola.py](test_almacen_cola.py) | 53 | — |
-| [test_almacen_db.py](test_almacen_db.py) | 97 | — |
-| [test_almacen_lecturas.py](test_almacen_lecturas.py) | 73 | — |
-| [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 68 | — |
+| [rutas_ciencia.py](rutas_ciencia.py) | 88 | Afirmaciones trazables y auditoría exploratoria; no acredita validación clínica. |
+| [rutas_dashboard.py](rutas_dashboard.py) | 344 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
+| [rutas_registro.py](rutas_registro.py) | 232 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
+| [test_almacen_alertas.py](test_almacen_alertas.py) | 135 | — |
+| [test_almacen_base.py](test_almacen_base.py) | 41 | — |
+| [test_almacen_cola.py](test_almacen_cola.py) | 54 | — |
+| [test_almacen_db.py](test_almacen_db.py) | 135 | — |
+| [test_almacen_lecturas.py](test_almacen_lecturas.py) | 74 | — |
+| [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 69 | — |
 | [test_api.py](test_api.py) | 144 | — |
-| [test_api_dashboard.py](test_api_dashboard.py) | 335 | — |
+| [test_api_dashboard.py](test_api_dashboard.py) | 337 | — |
 | [test_api_registro.py](test_api_registro.py) | 208 | — |
+| [test_ciencia.py](test_ciencia.py) | 93 | La ausencia, alteración y caducidad del reporte nunca producen una validación aparente. |
 | [test_puente_reloj.py](test_puente_reloj.py) | 454 | — |
+| [test_reintentos.py](test_reintentos.py) | 76 | Reintentos tras perder un acuse: mismos ids, propietario separado y conflictos visibles. |
 
 ### API pública
 
@@ -89,7 +101,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 **almacen/cola.py**
 
-- función `encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min, contenido=None)`
+- función `encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min, contenido=None, operacion_id=None)`
 - función `avanzar_cola(conn, ahora)`: Pasa a `entregado` los reportes que ya llegaron a tierra; devuelve cuántos.
 - función `responder_reporte(conn, reporte_id, respuesta, t_real)`: Solo un reporte `entregado` puede responderse, y no antes de su llegada a tierra.
 - función `leer_reportes(conn, tripulante_id)`
@@ -104,8 +116,13 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 - función `registrar_lectura(conn, tripulante_id, indicador, valor, t_real, origen='manual', metodo=None, naturaleza='Simulado')`: Guarda una lectura. Reenviar la misma (tripulante, indicador, t_real, origen) devuelve el mismo id.
 - función `leer_lecturas(conn, tripulante_id, indicador=None, desde=None, hasta=None)`
-- función `registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real)`
+- función `registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real, operacion_id=None)`
 - función `leer_sintomas(conn, tripulante_id, desde=None, hasta=None)`
+
+**almacen/reintentos.py**
+
+- clase `ConflictoOperacion(ValueError)`: El cliente reutilizó un identificador para un contenido distinto.
+- función `insertar(conn, tabla, tripulante_id, operacion_id, campos)`: Inserta o devuelve el mismo id; índice UNIQUE y comparación dentro de la misma transacción.
 
 **almacen/tripulacion.py**
 
@@ -130,6 +147,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `cargar_env(ruta=None)`: Carga el `.env` de la raíz del repo (plantilla: `.env.example`) en `os.environ` con la biblioteca estándar:
 - función `ciclo_de_vida(_app)`: Carga el `.env` de la raíz (sin pisar el entorno) y arranca el reloj de la cola de reportes: cada
 - función `dato_invalido(_, e)`
+- función `conflicto_operacion(_, e)`
 - función `salud()`: Devuelve {"estado": "ok"} si el servicio responde. No toca el gold.
 - función `listar_escenarios()`: Lista de `nombre` válidos para `/escenarios/{nombre}`. Vacía si el ETL no ha publicado nada.
 - función `leer_escenario(nombre: str, fuente: str | None=None, variable: str | None=None, dia_mision: int | None=None)`: Objeto con `escenario`, `ventanas` (fuente y fechas reales de cada serie), `serie5min`, `diario` y `eventos`
@@ -171,6 +189,13 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - clase `ToleranciaIn(BaseModel)`
 - función `cambiar_config_reloj(tolerancia: ToleranciaIn, _quien: int=Depends(actor))`: Reenvía `set_config` al servidor del reloj, que la aplica a todos los relojes. Con `personalizada` van los
 - función `exportar_reloj(id: int=Depends(propio), conn=Depends(conexion), desde: str | None=None)`: CSV de smart-monitor (`/export.csv`) filtrado por el nombre del tripulante: una fila por segundo con
+
+**rutas_ciencia.py**
+
+- función `verificar_vigencia(informe)`: Comparar todos los componentes del banco con el código local; las rutas no proceden del JSON.
+- función `evidencia()`: Catálogo trazable y reporte sintético verificado por SHA-256. Sin reporte: `no_publicado`, sin métricas.
+- función `dataset_cientifico(id: str)`: Solo MMASH y el piloto Orion conocidos. Devuelve el producto completo con su procedencia.
+- función `datasets_cientificos()`: Catálogo de productos presentes en gold con SHA-256 comprobado. Ausentes: lista vacía, sin números ficticios.
 
 **rutas_dashboard.py**
 
@@ -224,21 +249,23 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 ### Dependencias
 
-- Internas: `gold`, `main`, `puente_reloj`, `rutas_dashboard`, `rutas_registro`
+- Internas: `gold`, `main`, `puente_reloj`, `rutas_ciencia`, `rutas_dashboard`, `rutas_registro`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: `almacen`, `fastapi`, `pydantic`, `websockets`
-- Biblioteca estándar: `asyncio`, `collections`, `concurrent`, `contextlib`, `datetime`, `hashlib`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `socket`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`, `urllib`
+- Biblioteca estándar: `asyncio`, `collections`, `concurrent`, `contextlib`, `datetime`, `hashlib`, `importlib`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `socket`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`, `urllib`
 
 ### Tests
 
 - `apps/api/test_almacen_alertas.py`: 13 pruebas en Alertas (13)
 - `apps/api/test_almacen_base.py`: 4 pruebas en LineaBase (4)
 - `apps/api/test_almacen_cola.py`: 5 pruebas en Cola (5)
-- `apps/api/test_almacen_db.py`: 8 pruebas en Esquema (8)
+- `apps/api/test_almacen_db.py`: 10 pruebas en Esquema (10)
 - `apps/api/test_almacen_lecturas.py`: 9 pruebas en Lecturas (9)
 - `apps/api/test_almacen_tripulacion.py`: 9 pruebas en Tripulacion (9)
 - `apps/api/test_api.py`: 13 pruebas en Api (12), Entorno (1)
 - `apps/api/test_api_dashboard.py`: 26 pruebas en Dashboard (23), Entorno (3)
 - `apps/api/test_api_registro.py`: 19 pruebas en Registro (19)
+- `apps/api/test_ciencia.py`: 6 pruebas en Ciencia (6)
 - `apps/api/test_puente_reloj.py`: 28 pruebas en Estado (12), Persistencia (7), Rutas (7), ExtremoAExtremo (2)
+- `apps/api/test_reintentos.py`: 4 pruebas en Reintentos (4)
 <!-- CONTEXT:AUTO:END -->

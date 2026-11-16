@@ -2,16 +2,18 @@
 import json
 from datetime import timedelta
 
-from .tripulacion import FORMATO, _insertar, _utc
+from .reintentos import insertar
+from .tripulacion import FORMATO, _utc
 
 
-def encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min, contenido=None):
+def encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min, contenido=None, operacion_id=None):
     if isinstance(retardo_min, bool) or not isinstance(retardo_min, int) or not 0 <= retardo_min <= 22:
         raise ValueError(f"retardo_min debe ser un entero de 0 a 22: {retardo_min!r}")
     llega = (_utc(creado_t_real) + timedelta(minutes=retardo_min)).strftime(FORMATO)
-    return _insertar(conn, "INSERT INTO reporte_cola (tripulante_id, creado_t_real, retardo_min, llega_t_real, contenido) "
-                           "VALUES (?, ?, ?, ?, ?)", (tripulante_id, creado_t_real, retardo_min, llega,
-                                                      None if contenido is None else json.dumps(contenido, ensure_ascii=False)))
+    return insertar(conn, "reporte_cola", tripulante_id, operacion_id, {
+        "creado_t_real": creado_t_real, "retardo_min": retardo_min, "llega_t_real": llega,
+        "contenido": None if contenido is None else json.dumps(contenido, ensure_ascii=False, sort_keys=True),
+    })
 
 
 def avanzar_cola(conn, ahora):

@@ -9,10 +9,10 @@ const srv = (estado: ReporteServidor["estado"], retardo = 10): ReporteServidor =
   llega_t_real: new Date(T0 + retardo * 60_000).toISOString().replace(".000Z", "Z"), estado, respuesta: null, contenido: null,
 })
 
-test("sin servidor usa el cálculo local de la demo", () => {
+test("sin acuse el informe permanece local aunque pase el retardo", () => {
   assert.equal(estadoReporte(T0, 1, T0 + 1000).state, "queued")
-  assert.equal(estadoReporte(T0, 1, T0 + 10_000).state, "sent")
-  assert.equal(estadoReporte(T0, 1, T0 + 70_000).state, "arrived")
+  assert.equal(estadoReporte(T0, 1, T0 + 10_000).state, "queued")
+  assert.equal(estadoReporte(T0, 1, T0 + 70_000).state, "queued")
 })
 
 test("con servidor, en_cola antes de llegar es sent con cuenta atrás y progreso", () => {
@@ -25,11 +25,11 @@ test("el estado del servidor manda: entregado y respondido son arrived aunque fa
   assert.equal(estadoReporte(0, 0, T0 + 1000, srv("respondido")).state, "arrived")
 })
 
-test("pasada la hora de llegada se muestra arrived sin esperar al reloj del servidor", () => {
-  assert.equal(estadoReporte(0, 0, T0 + 11 * 60_000, srv("en_cola")).state, "arrived")
+test("el contador vencido no confirma recepción", () => {
+  assert.equal(estadoReporte(0, 0, T0 + 11 * 60_000, srv("en_cola")).state, "sent")
 })
 
-test("retardo 0: llega al instante con progreso completo", () => {
+test("retardo 0: espera confirmación incluso con progreso completo", () => {
   const e = estadoReporte(0, 0, T0, srv("en_cola", 0))
-  assert.deepEqual([e.state, e.progress], ["arrived", 1])
+  assert.deepEqual([e.state, e.progress], ["sent", 1])
 })

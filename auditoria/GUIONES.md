@@ -1,5 +1,7 @@
 # Guiones de VIGÍA · Scripts
 
+> Guion científico vigente: [PITCH-CIENTIFICO](../docs/PITCH-CIENTIFICO.md), con los resultados adversos del banco de auditoría. Las cifras históricas de este documento no deben presentarse como detección general. No hay revisión profesional ni validación clínica ejecutadas.
+
 Cuatro piezas: el pitch de 240 s para el jurado local, el vídeo de 30 s (alternativa a las 7 diapositivas de `DEMO.md`), el recorrido de demo en vivo (qué pulsar y qué decir) y las preguntas probables del jurado con su respuesta. Español para el equipo; las frases que se dicen en inglés van en inglés. Cifras: las de `packages/engine/fixtures/kpi.json`; si cambian, se actualizan aquí.
 
 Reglas: cada dato real se nombra con su fuente; lo simulado se dice que es simulado; no se promete nada que la app no haga. Nunca decir «diagnostica»: VIGÍA **apoya la decisión**.

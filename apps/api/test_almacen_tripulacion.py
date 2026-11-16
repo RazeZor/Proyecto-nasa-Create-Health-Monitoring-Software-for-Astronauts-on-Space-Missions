@@ -9,6 +9,7 @@ DIA1 = "2026-11-14T00:00:00Z"
 class Tripulacion(unittest.TestCase):
     def setUp(self):
         self.conn = conectar(":memory:")
+        self.addCleanup(self.conn.close)
         migrar(self.conn)
         self.mision = tr.crear_mision(self.conn, "m1", "estacion", DIA1)
         self.t = tr.crear_tripulante(self.conn, "ana", self.mision, "astronauta")

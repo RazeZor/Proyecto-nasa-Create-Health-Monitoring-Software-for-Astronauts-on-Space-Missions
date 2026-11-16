@@ -3,12 +3,12 @@
 <!-- CONTEXT:MANUAL:START -->
 ## Propósito
 
-Comprueba que las referencias científicas del informe existen y dicen lo que citamos. Consulta Crossref y Europe PMC para cada DOI de `referencias.json`. El resultado legible está en [documentacion/referencias-validadas.md](../../documentacion/referencias-validadas.md).
+Comprueba existencia bibliográfica, títulos y fragmentos del catálogo mediante Crossref y Europe PMC. No verifica por sí solo la interpretación, aplicabilidad o validez clínica de las afirmaciones.
 
 ## Puntos clave
 
 - Tres comprobaciones por referencia: el DOI existe en Crossref; el título contiene `titulo_contiene` (detecta los DOI que apuntan a otro artículo); y el resumen, o el texto completo si se pide `texto_contiene`, contiene `resumen_contiene`.
-- Estados: `OK`, `DOI_NO_EXISTE`, `REVISAR_TITULO` y `REVISAR_TEXTO`. Solo los dos primeros fallos dan código de salida 1. `REVISAR_TEXTO` es un aviso, porque muchos textos completos no son de acceso abierto y la cifra puede estar en una tabla.
+- Estados: `OK`, `DOI_NO_EXISTE`, `REVISAR_TITULO`, `REVISAR_TEXTO` y `FUENTE_NO_DISPONIBLE`. Salida 1 ante DOI/título incorrectos; 2 ante consultas no verificables sin esos errores. Un 404 se distingue de red o servidor caídos. `REVISAR_TEXTO` requiere inspección: la coincidencia de fragmentos no sustituye revisión humana.
 - El texto completo solo existe para artículos de acceso abierto en Europe PMC. NCBI no se usa: en la red del equipo un proxy rompe su certificado TLS.
 - Usa solo la biblioteca estándar. Todo el IO pasa por `_get`; `evaluar()` es pura y los tests reemplazan `_get`, sin red.
 - No corre en CI, porque necesita red. Se ejecuta a mano cuando cambia el catálogo o el informe.
@@ -16,7 +16,7 @@ Comprueba que las referencias científicas del informe existen y dicen lo que ci
 
 ## Relación con el informe
 
-- Respalda la sección "Fuentes" y el criterio Validity: cada cifra del informe enlaza con un artículo verificado.
+- Ayuda a revisar la sección Fuentes; no permite afirmar que cada cifra o regla del informe esté validada profesionalmente.
 
 tags: herramientas, referencias, papers, doi, crossref, europe-pmc, validación, informe
 <!-- CONTEXT:MANUAL:END -->
@@ -30,13 +30,14 @@ tags: herramientas, referencias, papers, doi, crossref, europe-pmc, validación,
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [test_validar_referencias.py](test_validar_referencias.py) | 72 | — |
-| [validar_referencias.py](validar_referencias.py) | 137 | Valida las referencias científicas del informe contra Crossref y Europe PMC. |
+| [test_validar_referencias.py](test_validar_referencias.py) | 78 | — |
+| [validar_referencias.py](validar_referencias.py) | 153 | Valida las referencias científicas del informe contra Crossref y Europe PMC. |
 
 ### API pública
 
 **validar_referencias.py**
 
+- clase `FuenteNoDisponible(OSError)`: Una consulta fallida no demuestra que un DOI no exista.
 - función `crossref(doi)`: Metadatos de Crossref: título, revista, año y primeros autores, o None.
 - función `europepmc(doi)`: Resumen y PMCID del artículo en Europe PMC: (resumen, pmcid).
 - función `texto_completo(pmcid)`: Texto plano del artículo completo (solo acceso abierto), o cadena vacía.
@@ -66,5 +67,5 @@ python tools/validar-referencias/validar_referencias.py [--salida resultado.json
 
 ### Tests
 
-- `tools/validar-referencias/test_validar_referencias.py`: 7 pruebas en Evaluar (4), Validar (2), Catalogo (1)
+- `tools/validar-referencias/test_validar_referencias.py`: 8 pruebas en Evaluar (4), Validar (3), Catalogo (1)
 <!-- CONTEXT:AUTO:END -->

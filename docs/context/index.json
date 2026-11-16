@@ -5,6 +5,11 @@
       "modulo": "apps/api",
       "proposito": "API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`).",
       "puntos_clave": [
+        "`/ciencia/datasets` enumera únicamente MMASH/Orion presentes con hashes comprobados; `/ciencia/datasets/{id}` devuelve el producto de referencia conocido. Las fechas de toma MMASH siguen desconocidas y Orion es radiación ambiental histórica; no se evalúa el motor ni se incorporan esos sujetos a cuentas actuales.",
+        "`GET /ciencia/evidencia` separa catálogo de afirmaciones y reporte sintético gold. Verifica integridad y hashes del motor, generador, métricas, runner y protocolo; reporta `vigente`, `desactualizado` o `no_publicado`. Reportes corruptos/incompatibles fallan cerrados. No acredita revisión profesional.",
+        "Migraciones hasta 006: el catálogo rechaza números duplicados antes de escribir. 005 reconcilia las variantes v4 con/sin `reloj_vinculo` y conserva las cuentas experimentales sin activarlas. `tools/verificacion/inventario.py --migrar` respalda antes de actualizar una base existente.",
+        "Síntomas e informes aceptan `operacion_id` opcional: un índice por propietario evita duplicados incluso concurrentes; reutilizar el id con distinto contenido devuelve 409. Clientes anteriores sin id siguen funcionando. El estado de informes sigue siendo el del simulador de enlace de esta API, no un acuse de un receptor independiente en Tierra.",
+        "El historial identifica `mision_id`; el entorno del panel real lleva `uso: referencia` y el demo `uso: escenario`. Las observaciones remotas reancladas no marcan `durante_tormenta` en las lecturas personales reales.",
         "No importa el pipeline (regla 3 de la arquitectura): lee `<DATALAKE_DIR>/gold/*.json` y `gold/manifest.json`. No ejecuta el ETL ni escribe nada; para generar datos se corre `pipelines/reanclaje/index.py`.",
         "Endpoints: `GET /salud`; `GET /escenarios`, `/escenarios/{nombre}` (filtros `fuente`, `variable`, `dia_mision`), `/escenarios/{nombre}/serie` y `/diario`; `GET /paneles`, `/paneles/{nombre}` y `/paneles/{nombre}/{dosis|protones|cabina|eventos}`; `GET /perfiles`; `GET /simulacion/caso-referencia` y `GET /simulacion/kpi`. Tablero (`rutas_dashboard.py`): `GET /fichas` y `/fichas/{id}` (de `packages/schemas/fichas`), `GET /entorno/referencia`, `GET /tripulacion`, y por tripulante `historial`, `recordatorios` y `mensajes`.",
         "Documentación para agentes: `AGENTES.md` (cómo leer los datos y sus trampas) y `GET /openapi.json` (contrato, con resumen y descripción en cada ruta). Un test exige que cada ruta tenga ambos y aparezca en la guía; al agregar una ruta, documéntala en las dos partes.",
@@ -129,14 +134,14 @@
         },
         {
           "ruta": "apps/api/almacen/cola.py",
-          "lineas": 40,
+          "lineas": 42,
           "descripcion": "Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2).",
           "test": false,
           "simbolos": [
             {
               "nombre": "encolar_reporte",
               "tipo": "función",
-              "firma": "encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min, contenido=None)",
+              "firma": "encolar_reporte(conn, tripulante_id, creado_t_real, retardo_min, contenido=None, operacion_id=None)",
               "doc": ""
             },
             {
@@ -161,7 +166,7 @@
         },
         {
           "ruta": "apps/api/almacen/db.py",
-          "lineas": 44,
+          "lineas": 55,
           "descripcion": "Conexión y migraciones del almacén SQLite (solo biblioteca estándar).",
           "test": false,
           "simbolos": [
@@ -187,7 +192,7 @@
         },
         {
           "ruta": "apps/api/almacen/lecturas.py",
-          "lineas": 50,
+          "lineas": 52,
           "descripcion": "Lecturas de indicadores y síntomas de un tripulante.",
           "test": false,
           "simbolos": [
@@ -206,7 +211,7 @@
             {
               "nombre": "registrar_sintoma",
               "tipo": "función",
-              "firma": "registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real)",
+              "firma": "registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real, operacion_id=None)",
               "doc": ""
             },
             {
@@ -214,6 +219,26 @@
               "tipo": "función",
               "firma": "leer_sintomas(conn, tripulante_id, desde=None, hasta=None)",
               "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/almacen/reintentos.py",
+          "lineas": 32,
+          "descripcion": "Inserción idempotente por propietario y operación, con detección de contenido distinto.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ConflictoOperacion",
+              "tipo": "clase",
+              "firma": "ConflictoOperacion(ValueError)",
+              "doc": "El cliente reutilizó un identificador para un contenido distinto."
+            },
+            {
+              "nombre": "insertar",
+              "tipo": "función",
+              "firma": "insertar(conn, tabla, tripulante_id, operacion_id, campos)",
+              "doc": "Inserta o devuelve el mismo id; índice UNIQUE y comparación dentro de la misma transacción."
             }
           ]
         },
@@ -314,7 +339,7 @@
         },
         {
           "ruta": "apps/api/main.py",
-          "lineas": 233,
+          "lineas": 241,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -334,6 +359,12 @@
               "nombre": "dato_invalido",
               "tipo": "función",
               "firma": "dato_invalido(_, e)",
+              "doc": ""
+            },
+            {
+              "nombre": "conflicto_operacion",
+              "tipo": "función",
+              "firma": "conflicto_operacion(_, e)",
               "doc": ""
             },
             {
@@ -575,8 +606,40 @@
           ]
         },
         {
+          "ruta": "apps/api/rutas_ciencia.py",
+          "lineas": 88,
+          "descripcion": "Afirmaciones trazables y auditoría exploratoria; no acredita validación clínica.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "verificar_vigencia",
+              "tipo": "función",
+              "firma": "verificar_vigencia(informe)",
+              "doc": "Comparar todos los componentes del banco con el código local; las rutas no proceden del JSON."
+            },
+            {
+              "nombre": "evidencia",
+              "tipo": "función",
+              "firma": "evidencia()",
+              "doc": "Catálogo trazable y reporte sintético verificado por SHA-256. Sin reporte: `no_publicado`, sin métricas."
+            },
+            {
+              "nombre": "dataset_cientifico",
+              "tipo": "función",
+              "firma": "dataset_cientifico(id: str)",
+              "doc": "Solo MMASH y el piloto Orion conocidos. Devuelve el producto completo con su procedencia."
+            },
+            {
+              "nombre": "datasets_cientificos",
+              "tipo": "función",
+              "firma": "datasets_cientificos()",
+              "doc": "Catálogo de productos presentes en gold con SHA-256 comprobado. Ausentes: lista vacía, sin números ficticios."
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/rutas_dashboard.py",
-          "lineas": 342,
+          "lineas": 344,
           "descripcion": "Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante,",
           "test": false,
           "simbolos": [
@@ -644,7 +707,7 @@
         },
         {
           "ruta": "apps/api/rutas_registro.py",
-          "lineas": 230,
+          "lineas": 232,
           "descripcion": "Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md).",
           "test": false,
           "simbolos": [
@@ -808,7 +871,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_alertas.py",
-          "lineas": 134,
+          "lineas": 135,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -822,7 +885,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_base.py",
-          "lineas": 40,
+          "lineas": 41,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -836,7 +899,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_cola.py",
-          "lineas": 53,
+          "lineas": 54,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -850,7 +913,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_db.py",
-          "lineas": 97,
+          "lineas": 135,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -864,7 +927,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_lecturas.py",
-          "lineas": 73,
+          "lineas": 74,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -878,7 +941,7 @@
         },
         {
           "ruta": "apps/api/test_almacen_tripulacion.py",
-          "lineas": 68,
+          "lineas": 69,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -912,7 +975,7 @@
         },
         {
           "ruta": "apps/api/test_api_dashboard.py",
-          "lineas": 335,
+          "lineas": 337,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -940,6 +1003,20 @@
               "nombre": "Registro",
               "tipo": "clase",
               "firma": "Registro(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/test_ciencia.py",
+          "lineas": 93,
+          "descripcion": "La ausencia, alteración y caducidad del reporte nunca producen una validación aparente.",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Ciencia",
+              "tipo": "clase",
+              "firma": "Ciencia(unittest.TestCase)",
               "doc": ""
             }
           ]
@@ -987,6 +1064,20 @@
               "doc": "Un `/live` falso que habla el protocolo de smart-monitor: el puente recibe, guarda y reenvía órdenes."
             }
           ]
+        },
+        {
+          "ruta": "apps/api/test_reintentos.py",
+          "lineas": 76,
+          "descripcion": "Reintentos tras perder un acuse: mismos ids, propietario separado y conflictos visibles.",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Reintentos",
+              "tipo": "clase",
+              "firma": "Reintentos(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
         }
       ]
     },
@@ -994,11 +1085,17 @@
       "modulo": "apps/web",
       "proposito": "Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo.",
       "puntos_clave": [
+        "Acerca de muestra los datasets efectivamente publicados mediante `/ciencia/datasets`, con cantidades, fuente, SHA-256 y alcance. Copia offline explícita y errores de servidor sin ocultarlos con caché. MMASH no es FC en reposo validada ni cohorte de deriva; Orion no es dosis personal.",
+        "Acerca de consume `/ciencia/evidencia`, sin KPI escritos a mano: detecciones, omitidos, IC, retraso condicionado y exposición por escenario/método. Distingue auditoría vigente, histórica, ausente y copia offline sin verificar. Una respuesta corrupta no se oculta con caché antigua. La capa A se rotula adaptación parcial de NEWS2 y la revisión profesional queda pendiente.",
+        "Informes sin API: `lib/bandeja-informes.ts` guarda una instantánea por operación en localStorage, aislada por misión/tripulante/modo. Sobrevive a cierre, reintenta en segundo plano y elimina solo con acuse válido de la API. Un 409 conserva el informe y detiene su reintento; la última cola leída también queda en caché por ámbito. Esto no migra el HealthStore principal a IndexedDB ni añade autenticación.",
+        "`estadoReporte` no confirma recepción por vencer un contador: sin acuse queda local y con API `en_cola` continúa pendiente hasta que el servidor indique entrega. El transporte sigue siendo una simulación local. `nuevoId` usa getRandomValues cuando randomUUID no está disponible en la LAN HTTP.",
+        "Entorno real: las referencias históricas/remotas siguen visibles pero no generan acciones de cabina; un entorno sin `uso` también se abstiene fuera de demo. Dosis por detector seleccionable, sin promedio entre ubicaciones; absorbida en mGy, equivalente en mSv. Las dosis ambientales no muestran porcentaje de límite de carrera.",
+        "El build valida TypeScript (sin `ignoreBuildErrors`); service worker v7. El ensayo `tools/verificacion/ensayo.py` comprueba recuperación de informes con API interrumpida, reinicio de Chrome y carcasa sin red sobre datos temporales.",
         "Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + componentes UI accesibles (`components/ui/*`) + three.js (solo el cuerpo 3D). Las gráficas son SVG propio (`components/shared/line-chart.tsx`, con exploración táctil del día).",
         "**Marca y sistema visual** (`docs/brand`, logotipo «Centinela»): tokens en `app/globals.css` (tinta Noche `#0B1020`, fondo Casco `#F2F5FA`, estados Normal/Atención/Alerta; tema claro por defecto), Space Grotesk e IBM Plex Mono empaquetadas con `@fontsource` (sin red). `components/shared/logo.tsx` dibuja el símbolo con el punto en el color del estado del sistema. Iconos propios en `components/shared/iconos.tsx` (y un `iconos.tsx` por pantalla); `lucide-react` solo para flechas y cierres. La navegación es una barra superior no fija (`components/shell/app-shell.tsx`), pensada para pantalla táctil de 19\": objetivos de 48–56 px o más y nada depende de `hover`.",
         "**Cuerpo 3D** (`/`, `components/body/`): `escena.ts` (three.js, sin React) dibuja la piel translúcida y los órganos, late a los lpm del dato (`liveHr` del reloj o la FC en reposo del día; sin dato late tenue), y lleva la cámara al órgano de la vista elegida (un indicador o una zona). Carga `public/modelos/cuerpo.glb` (`next.config.mjs` lo sirve con `Cache-Control` de un día más revalidación, para que cambiar de modo no lo vuelva a bajar; BodyParts3D, CC BY 4.0, varón adulto; atribución en `public/modelos/ATRIBUCION.md` y visible en el lienzo); si el archivo falta, genera una anatomía procedural (`anatomia.ts`: campos de distancia + «surface nets») con selector de modelo corporal. Sin WebGL se avisa con un texto (el estado de cada zona sigue en las tarjetas); ya no hay figura vectorial 2D. `body-stage.tsx` pone los marcadores táctiles y avisa en cada cuadro de dónde cae cada ancla; `body-view.tsx` dibuja con eso las líneas guía de las tarjetas. El estado por indicador sale de `analisis.indicatorStatus(day)` (`lib/engine.ts`): B, C y glucosa señalan su indicador y la capa A (NEWS2) los parámetros que puntúan. Las zonas con indicadores fuera de rango y los síntomas del día tiñen la piel en su ancla.",
         "**Registro guiado** (`components/checkin/`): una medida por paso con dial +/− y deslizador, sin teclado; cada dial arranca en el último valor conocido pero solo se guarda lo confirmado o ajustado (lo demás, `null`).",
-        "**Dos modos de datos** (selector «Datos» de la barra superior; `lib/storage.ts`: `leerModo`, `usarModo`). `real` (por defecto; `NEXT_PUBLIC_VIGIA_MODO=demo` lo cambia): solo lo que el tripulante registra y el entorno medido; el registro se guarda en el día de misión de hoy y se sube a la API con `naturaleza: Real`. `demo`: tripulante simulado de 30 días con las anomalías de §5.5, todo rotulado; lo registrado en demo usa otro almacén (prefijo `vigia:` frente a `vigia:real:`) y **nunca** se sube ni escala. La API recibe el modo en `?modo=`. **Nada se inventa en modo real** (auditoría 2026-11-15): el simulador de pulso solo actúa en demo (`simulando` en `app-context.tsx`; la tarjeta de `/device` queda deshabilitada), el ánimo del registro solo se guarda si se confirma (`SIN_OMITIR` ya no lo incluye), los informes viajan con el retardo del perfil (`retardoEnvio`: solo demo lo acorta a 1 min), sin red `listarReportes` devuelve `null` y la pantalla avisa, las etiquetas «Real» de Entorno solo aparecen con datos y sin ningún registro el cuerpo dice «Aún no hay registro» en vez de «Todo en orden». El hilo con tierra se pide con `?modo=&lang=` y la API filtra los reportes de demo (`contenido.demo`). `NEXT_PUBLIC_VIGIA_PUBLICO=1` (al compilar) muestra en modo real el aviso de tripulante de prueba compartido del sitio público.",
+        "**Dos modos de datos** (selector «Datos» de la barra superior; `lib/storage.ts`: `leerModo`, `usarModo`). `real` (por defecto; `NEXT_PUBLIC_VIGIA_MODO=demo` lo cambia): solo lo que el tripulante registra y el entorno medido; el registro se guarda en el día de misión de hoy y se sube a la API con `naturaleza: Real`. `demo`: tripulante simulado del viaje de 259 días con las anomalías de §5.5, todo rotulado; lo registrado en demo usa otro almacén (prefijo `vigia:` frente a `vigia:real:`) y **nunca** se sube ni escala. La API recibe el modo en `?modo=`. **Nada se inventa en modo real** (auditoría 2026-11-15): el simulador de pulso solo actúa en demo (`simulando` en `app-context.tsx`; la tarjeta de `/device` queda deshabilitada), el ánimo del registro solo se guarda si se confirma (`SIN_OMITIR` ya no lo incluye), los informes viajan con el retardo del perfil (`retardoEnvio`: solo demo lo acorta a 1 min), sin red `listarReportes` devuelve `null` y la pantalla avisa, las etiquetas «Real» de Entorno solo aparecen con datos y sin ningún registro el cuerpo dice «Aún no hay registro» en vez de «Todo en orden». El hilo con tierra se pide con `?modo=&lang=` y la API filtra los reportes de demo (`contenido.demo`). `NEXT_PUBLIC_VIGIA_PUBLICO=1` (al compilar) muestra en modo real el aviso de tripulante de prueba compartido del sitio público.",
         "**La app solo conoce la API, pero abre sin ella**: perfiles, fichas, referencia de entorno, historial, recordatorios, mensajes e informes salen de `apps/api`. `lib/catalogo.ts` (`cargarCatalogo(tripulante, modo)`) los pide al arrancar y guarda una copia local; si la API no responde, abre con esa copia (`catalogo.sinEnlace`), muestra «sin enlace» y reintenta cada 30 s y al volver la red. Solo la primera apertura en un dispositivo necesita enlace. `lib/etl-client.ts` hace lo mismo con el panel de entorno. No hay datos de ejemplo en el cliente: los mockups viven en `apps/api/demo/`.",
         "Sin conexión (§4.2): `public/sw.js` (escrito a mano, sin dependencias) guarda la carcasa (el HTML de las 8 pantallas, sus recursos de `/_next/static` y el modelo `/modelos/cuerpo.glb`) al instalarse; navegación con red primero y copia como respaldo; no intercepta `/vigia-api`. Se registra solo en producción (`components/shell/sw-register.tsx`). `app/manifest.ts` es el manifiesto. Si cambias las rutas, actualiza `PANTALLAS` en `sw.js`; si cambias la estrategia, sube la versión de `CACHE`.",
         "Motor híbrido: `packages/engine` evalúa las capas A, B y C y las reglas de contexto. `lib/engine.ts` (`analizar(checkIns, historial, presionCabinaMmHg)`) lo aplica al historial de la API más los registros locales; `AppProvider` lo recalcula en `analisis` al guardar un registro o cambiar de perfil. **El entorno entra al motor**: el CO2 real llega en ppm y se convierte con la presión de cabina del perfil activo (cambiar de perfil puede cambiar la alerta, §3.3); la tormenta sale del flujo (>= 10 pfu) o de un evento SEP real de DONKI. Cada alerta de entorno lleva su procedencia (`source`: Real o Simulado, fuente y fecha real). Una medida no tomada es `null`, nunca 0. Las alertas `informative` (capa B en adaptación) se muestran pero no cambian el estado ni avisan. La banda personal de las tendencias es la referencia del motor día a día (`analisis.band`).",
@@ -1257,7 +1354,7 @@
         },
         {
           "ruta": "apps/web/components/about/about-view.tsx",
-          "lineas": 247,
+          "lineas": 236,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1265,6 +1362,34 @@
               "nombre": "AboutView",
               "tipo": "función",
               "firma": "AboutView",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/about/datasets-cientificos.tsx",
+          "lineas": 56,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "DatasetsCientificos",
+              "tipo": "función",
+              "firma": "DatasetsCientificos",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/about/evidencia-cientifica.tsx",
+          "lineas": 78,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "EvidenciaCientificaPanel",
+              "tipo": "función",
+              "firma": "EvidenciaCientificaPanel",
               "doc": ""
             }
           ]
@@ -1415,7 +1540,7 @@
         },
         {
           "ruta": "apps/web/components/app-context.tsx",
-          "lineas": 256,
+          "lineas": 275,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1995,7 +2120,7 @@
         },
         {
           "ruta": "apps/web/components/environment/environment-view.tsx",
-          "lineas": 490,
+          "lineas": 504,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2117,7 +2242,7 @@
         },
         {
           "ruta": "apps/web/components/reports/reports-view.tsx",
-          "lineas": 341,
+          "lineas": 384,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2626,7 +2751,7 @@
         },
         {
           "ruta": "apps/web/lib/api-registro.ts",
-          "lineas": 161,
+          "lineas": 171,
           "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
           "test": false,
           "simbolos": [
@@ -2697,6 +2822,18 @@
               "doc": ""
             },
             {
+              "nombre": "AcuseReporte",
+              "tipo": "tipo",
+              "firma": "AcuseReporte",
+              "doc": ""
+            },
+            {
+              "nombre": "enviarReporte",
+              "tipo": "función",
+              "firma": "enviarReporte",
+              "doc": ""
+            },
+            {
               "nombre": "encolarReporte",
               "tipo": "función",
               "firma": "encolarReporte",
@@ -2759,6 +2896,51 @@
           ]
         },
         {
+          "ruta": "apps/web/lib/bandeja-informes.test.ts",
+          "lineas": 66,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/bandeja-informes.ts",
+          "lineas": 82,
+          "descripcion": "Informes inmutables hasta el acuse de la API. Cada operación ocupa una clave propia y conserva su ámbito.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "InformePendiente",
+              "tipo": "interfaz",
+              "firma": "InformePendiente",
+              "doc": ""
+            },
+            {
+              "nombre": "crearBandeja",
+              "tipo": "función",
+              "firma": "crearBandeja",
+              "doc": ""
+            },
+            {
+              "nombre": "BandejaInformes",
+              "tipo": "tipo",
+              "firma": "BandejaInformes",
+              "doc": ""
+            },
+            {
+              "nombre": "sincronizarBandeja",
+              "tipo": "función",
+              "firma": "sincronizarBandeja",
+              "doc": ""
+            },
+            {
+              "nombre": "bandejaInformes",
+              "tipo": "función",
+              "firma": "bandejaInformes",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/catalogo.test.ts",
           "lineas": 42,
           "descripcion": "",
@@ -2767,7 +2949,7 @@
         },
         {
           "ruta": "apps/web/lib/catalogo.ts",
-          "lineas": 238,
+          "lineas": 241,
           "descripcion": "Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de",
           "test": false,
           "simbolos": [
@@ -2888,6 +3070,45 @@
           ]
         },
         {
+          "ruta": "apps/web/lib/ciencia.test.ts",
+          "lineas": 19,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/ciencia.ts",
+          "lineas": 48,
+          "descripcion": "Contrato de lectura: una respuesta incompleta no se convierte en ceros ni en validación clínica.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ResultadoCientifico",
+              "tipo": "interfaz",
+              "firma": "ResultadoCientifico",
+              "doc": ""
+            },
+            {
+              "nombre": "Afirmacion",
+              "tipo": "interfaz",
+              "firma": "Afirmacion",
+              "doc": ""
+            },
+            {
+              "nombre": "EvidenciaCientifica",
+              "tipo": "interfaz",
+              "firma": "EvidenciaCientifica",
+              "doc": ""
+            },
+            {
+              "nombre": "leerEvidencia",
+              "tipo": "función",
+              "firma": "leerEvidencia",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/cola.test.ts",
           "lineas": 35,
           "descripcion": "",
@@ -2896,8 +3117,8 @@
         },
         {
           "ruta": "apps/web/lib/cola.ts",
-          "lineas": 50,
-          "descripcion": "Estado de un reporte de la cola hacia Tierra: de la API si la hay y, si no, calculado con el reloj local.",
+          "lineas": 46,
+          "descripcion": "Estado confirmado por la API del simulador de enlace; sin acuse permanece en el dispositivo.",
           "test": false,
           "simbolos": [
             {
@@ -2927,6 +3148,39 @@
           ]
         },
         {
+          "ruta": "apps/web/lib/datasets-cientificos.test.ts",
+          "lineas": 18,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/datasets-cientificos.ts",
+          "lineas": 29,
+          "descripcion": "Referencias públicas adquiridas; nunca son datos del tripulante ni resultados clínicos.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "DatasetReferencia",
+              "tipo": "interfaz",
+              "firma": "DatasetReferencia",
+              "doc": ""
+            },
+            {
+              "nombre": "CatalogoDatasets",
+              "tipo": "interfaz",
+              "firma": "CatalogoDatasets",
+              "doc": ""
+            },
+            {
+              "nombre": "leerDatasets",
+              "tipo": "función",
+              "firma": "leerDatasets",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/ejes.test.ts",
           "lineas": 7,
           "descripcion": "",
@@ -2949,14 +3203,14 @@
         },
         {
           "ruta": "apps/web/lib/engine.test.ts",
-          "lineas": 172,
+          "lineas": 189,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "apps/web/lib/engine.ts",
-          "lineas": 294,
+          "lineas": 303,
           "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más",
           "test": false,
           "simbolos": [
@@ -2991,6 +3245,12 @@
               "doc": ""
             },
             {
+              "nombre": "entornoAplicable",
+              "tipo": "constante",
+              "firma": "entornoAplicable",
+              "doc": ""
+            },
+            {
               "nombre": "analizar",
               "tipo": "función",
               "firma": "analizar",
@@ -3018,7 +3278,7 @@
         },
         {
           "ruta": "apps/web/lib/etl-client.ts",
-          "lineas": 126,
+          "lineas": 127,
           "descripcion": "Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -3536,10 +3796,16 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 1001,
+          "lineas": 1007,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "textoCiencia",
+              "tipo": "constante",
+              "firma": "textoCiencia",
+              "doc": ""
+            },
             {
               "nombre": "IDIOMA",
               "tipo": "constante",
@@ -3747,10 +4013,16 @@
         },
         {
           "ruta": "apps/web/lib/utils.ts",
-          "lineas": 6,
+          "lineas": 12,
           "descripcion": "",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "nuevoId",
+              "tipo": "función",
+              "firma": "nuevoId",
+              "doc": ""
+            },
             {
               "nombre": "cn",
               "tipo": "función",
@@ -3761,7 +4033,7 @@
         },
         {
           "ruta": "apps/web/next.config.mjs",
-          "lineas": 25,
+          "lineas": 22,
           "descripcion": "@type {import('next').NextConfig}",
           "test": false,
           "simbolos": []
@@ -3784,8 +4056,10 @@
     },
     {
       "modulo": "packages/engine",
-      "proposito": "Motor híbrido de VIGÍA en TypeScript puro: capa A (NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro.",
+      "proposito": "Motor híbrido de VIGÍA en TypeScript puro: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto. No implementa NEWS2 completo ni hereda su validación. Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro.",
       "puntos_clave": [
+        "`OpcionesMotor.capas` permite ablaciones experimentales en `tools/validacion`; la app omite la opción y conserva las cuatro capas. La acumulación y exclusión propias de C se desactivan sin C; la referencia robusta común se mantiene. No se cambiaron umbrales a partir del banco exploratorio.",
+        "`evidencia.ts` es puro: clasifica ausencia, antigüedad, futuro y comparabilidad sin borrar extremos ni inventar confianza porcentual. `esEntornoAplicable` se comparte con el adaptador de la app. La captura completa de tiempos/calidad por observación sigue pendiente; esta política de ingeniería no es una validación clínica.",
         "Es el port 1:1 de `evaluar_tripulante` en `pipelines/reanclaje/simulacion.py`. Si cambias una regla o una constante, cámbiala en los dos lados.",
         "`paridad-referencia.test.ts` compara el motor con `fixtures/caso-referencia.json` (4 tripulantes; anomalías A1, A2 y A3 de §5.5). `test_simulacion.py` exige que ese fixture sea idéntico a `generar_caso_referencia()`: si el simulador cambia, regenera el fixture con `json.dumps(simulacion.generar_caso_referencia(), indent=1, ensure_ascii=False)`.",
         "`paridad-referencia.test.ts` también compara el motor con `fixtures/caso-viaje.json` (259 días): el motor no cambia, solo la duración y el calendario de las anomalías.",
@@ -3811,8 +4085,8 @@
       "archivos": [
         {
           "ruta": "packages/engine/engine.ts",
-          "lineas": 289,
-          "descripcion": "Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD),",
+          "lineas": 294,
+          "descripcion": "Motor híbrido de VIGÍA: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con MAD),",
           "test": false,
           "simbolos": [
             {
@@ -3999,6 +4273,57 @@
               "nombre": "evaluarTripulante",
               "tipo": "función",
               "firma": "evaluarTripulante",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "packages/engine/evidencia.test.ts",
+          "lineas": 26,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "packages/engine/evidencia.ts",
+          "lineas": 42,
+          "descripcion": "Aplicabilidad y suficiencia explícitas. Reglas de ingeniería; no estiman confianza clínica. Sin IO.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "UsoDato",
+              "tipo": "tipo",
+              "firma": "UsoDato",
+              "doc": ""
+            },
+            {
+              "nombre": "EstadoEvidencia",
+              "tipo": "tipo",
+              "firma": "EstadoEvidencia",
+              "doc": ""
+            },
+            {
+              "nombre": "ObservacionEvidencia",
+              "tipo": "interfaz",
+              "firma": "ObservacionEvidencia",
+              "doc": ""
+            },
+            {
+              "nombre": "PoliticaEvidencia",
+              "tipo": "interfaz",
+              "firma": "PoliticaEvidencia",
+              "doc": ""
+            },
+            {
+              "nombre": "esEntornoAplicable",
+              "tipo": "constante",
+              "firma": "esEntornoAplicable",
+              "doc": ""
+            },
+            {
+              "nombre": "evaluarEvidencia",
+              "tipo": "función",
+              "firma": "evaluarEvidencia",
               "doc": ""
             }
           ]
@@ -4203,6 +4528,8 @@
       "modulo": "packages/schemas",
       "proposito": "Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`).",
       "puntos_clave": [
+        "`mmash-gold.schema.json` exige referencia terrestre, fechas UTC de toma desconocidas y ausencia de evaluación/aval clínico. Preserva tiempos relativos y unidades de RR/sueño. El pipeline biométrico valida el producto con este contrato antes de publicarlo.",
+        "`evidencia-cientifica.json` registra fuentes, artefactos y límites traducidos de cada afirmación. Su contrato `afirmaciones-v1` mantiene validación clínica falsa, revisión pendiente y lista vacía; publicar dictámenes reales requerirá una revisión explícita del contrato y evidencia del revisor. `test_evidencia.py` comprueba rutas, traducciones y ausencia de avales inventados.",
         "`validador.py` implementa validación JSON Schema con biblioteca estándar (soporte de `$ref` locales entre esquemas de `packages/schemas/`) para que ningún paquete ni pipeline añada dependencias externas.",
         "`ficha.schema.json` define los seis campos del reto (qué es, cómo se mide en vuelo, por qué hace falta, qué peligro lo altera, cuándo avisar, qué prevención) más `fuentes`. `como_se_mide_en_vuelo` se separa por perfil: `estacion`, `transito` y `superficie`.",
         "`perfiles.schema.json` y `perfiles.json` fijan los 5 perfiles de misión (§3.3 del informe): presión de cabina (`760`, `527`, `424 mmHg`), latencia unidireccional y gravedad (`microgravedad`, `lunar`, `marciana`). `apps/` y `pipelines/` consumen los mismos valores sin duplicarlos.",
@@ -4229,6 +4556,20 @@
       ],
       "env": [],
       "archivos": [
+        {
+          "ruta": "packages/schemas/test_evidencia.py",
+          "lineas": 48,
+          "descripcion": "Las afirmaciones publicadas tienen fuente, código existente y límites traducidos.",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Evidencia",
+              "tipo": "clase",
+              "firma": "Evidencia(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
         {
           "ruta": "packages/schemas/test_fichas.py",
           "lineas": 56,
@@ -4300,9 +4641,111 @@
       ]
     },
     {
+      "modulo": "pipelines/biometria",
+      "proposito": "Adquirir y preparar fisiología humana pública de referencia, conservando originales, licencia, tiempos relativos y trazabilidad. La primera fuente es MMASH v1.0.0; no se mezcla con tripulantes actuales ni se usa como validación clínica del motor.",
+      "puntos_clave": [
+        "Solo biblioteca estándar. `python pipelines/biometria/index.py mmash [--desde CARPETA]` descarga desde PhysioNet o verifica originales locales y publica un resumen en el gold compartido. Los datos viven en `data/`, ignorada por Git.",
+        "MMASH se verifica contra SHA256SUMS y los hashes de la versión oficial consultada. Raw usa nombres por contenido y creación exclusiva; nunca se extrae el ZIP al sistema de archivos. Se limita tamaño, rutas, duplicados y volumen descomprimido antes de procesar.",
+        "Importa RR y periodos de sueño de todos los sujetos disponibles. Conserva cantidades/ausencias, agrega intervalos positivos con tiempo interpretable a medianas de 5 min y transforma TST de minutos a horas. `60/IBI` es una frecuencia derivada exploratoria, no FC en reposo validada ni HRV.",
+        "Días 1/2 y horas del estudio siguen siendo relativos; `t_real` de medición es null. La hora UTC de importación no se usa como fecha de observación. No se inventan ánimo 1–10 ni signos ausentes a partir de cuestionarios o ceros.",
+        "La versión adquirida contiene 47.599 intervalos con día original `-29`, incompatible con los días positivos documentados: se conservan íntegros en raw y se cuentan por sujeto, sin agregarlos a una fecha inventada ni corregirlos automáticamente.",
+        "Raw conserva también los archivos que no se normalizan. El gold detalla los campos procesados y las limitaciones: referencia humana terrestre de 24 h, sin evaluación clínica ni prueba de deriva de semanas.",
+        "Curated, gold y manifiestos se publican atómicamente por archivo, con SHA-256 y un único escritor. La API consume el contrato de datos; no importa el pipeline. Repetir la misma entrada/procesador conserva artefactos y cantidades."
+      ],
+      "tags": [
+        "biometria",
+        "mmash",
+        "fisiologia",
+        "referencia",
+        "humanos",
+        "sueno",
+        "intervalos",
+        "trazabilidad"
+      ],
+      "env": [
+        "DATALAKE_DIR"
+      ],
+      "archivos": [
+        {
+          "ruta": "pipelines/biometria/index.py",
+          "lineas": 26,
+          "descripcion": "CLI de importación fisiológica. El idioma se resuelve con el catálogo compartido.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main()",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "pipelines/biometria/mmash.py",
+          "lineas": 240,
+          "descripcion": "MMASH: originales verificados y referencia fisiológica; sin fechas UTC de toma inventadas.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "EstructuraInesperada",
+              "tipo": "clase",
+              "firma": "EstructuraInesperada(ValueError)",
+              "doc": "Estructura incompatible: no publicar datos parciales."
+            },
+            {
+              "nombre": "sha256",
+              "tipo": "función",
+              "firma": "sha256(contenido)",
+              "doc": ""
+            },
+            {
+              "nombre": "normalizar",
+              "tipo": "función",
+              "firma": "normalizar(contenido)",
+              "doc": "Normalizar RR/sueño sin extraer rutas ni convertir los tiempos relativos en calendario."
+            },
+            {
+              "nombre": "verificar_archivos",
+              "tipo": "función",
+              "firma": "verificar_archivos(archivos)",
+              "doc": "Verificar sumas del proveedor y fijación de la versión antes de escribir raw/curated/gold."
+            },
+            {
+              "nombre": "importar_mmash",
+              "tipo": "función",
+              "firma": "importar_mmash(desde=None, raiz=None, gold=None)",
+              "doc": "Descargar/verificar, normalizar y publicar referencia; solo un escritor por manifiesto."
+            }
+          ]
+        },
+        {
+          "ruta": "pipelines/biometria/test_mmash.py",
+          "lineas": 77,
+          "descripcion": "Integridad, tiempos relativos y repetición con archivos artificiales pequeños; sin red.",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "archivo",
+              "tipo": "función",
+              "firma": "archivo(rr=None, sueno=None, extra=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "Biometria",
+              "tipo": "clase",
+              "firma": "Biometria(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
       "modulo": "pipelines/datalake",
       "proposito": "Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLab y EDA, con un CLI para ingerir y leer.",
       "puntos_clave": [
+        "DONKI prioriza `https://ccmc.gsfc.nasa.gov/DONKI-API/get/SEP`, según el cambio publicado por NASA CCMC. Conserva los espejos; elimina claves/tokens de las URLs persistidas y de los errores de fallback. El saneamiento conserva literalmente operadores y campos sin valor de RadLab para no cambiar una consulta reproducible.",
+        "Raw se crea en modo exclusivo: una colisión nunca sobrescribe el original. El manifiesto se reemplaza atómicamente; sigue requiriendo un único escritor (no hay bloqueo entre procesos).",
         "Estructura: `data/raw/<fuente>/<fecha>/<hora>-<sha8>.<ext>` guarda la respuesta original y nunca se sobrescribe. `data/curated/...json` guarda las filas limpias. `data/manifest.json` registra fuente, URL, hora de consulta, SHA-256 y número de filas.",
         "Si una fuente cambia de estructura, `clean_*` lanza `EstructuraInesperada` (mensaje `ESTRUCTURA_INESPERADA`) **antes** de escribir, así que una ingesta fallida no deja archivos.",
         "Toda hora se normaliza a UTC en `t_real` (`YYYY-MM-DDTHH:MM:SSZ`). `read(fuente, desde, hasta)` filtra comparando esas cadenas.",
@@ -4334,7 +4777,7 @@
       "archivos": [
         {
           "ruta": "pipelines/datalake/datalake.py",
-          "lineas": 225,
+          "lineas": 244,
           "descripcion": "Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2).",
           "test": false,
           "simbolos": [
@@ -4397,7 +4840,7 @@
         },
         {
           "ruta": "pipelines/datalake/test_datalake.py",
-          "lineas": 109,
+          "lineas": 145,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -4427,22 +4870,26 @@
       "modulo": "pipelines/reanclaje",
       "proposito": "ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA), reancla cada ventana real a la línea de tiempo de misión y publica la zona gold y el JSON del panel de entorno que consume la app.",
       "puntos_clave": [
+        "`escenarios/orion-artemis-i-piloto.json` publica el 17-nov-2022 de Orion como referencia histórica separada; requiere la consulta RadLab correspondiente. Los cuatro instrumentos se conservan separados, sin dosis personal ni conversión Gy→Sv. No sustituye el escenario de la misión actual.",
+        "`index.py preparar` reproduce los resultados de `fixtures/kpi.json` con su semilla/tamaño antes de publicar los paneles real/demo y exactamente los bytes del KPI versionado (incluidos finales de línea). No regenera ni ajusta la fixture; una discrepancia falla antes de publicar. Solo usa curated existente, sin descargas.",
+        "El panel de dosis conserva `por_detector` con magnitud, unidad, acumulación y cobertura propias. Los campos anteriores proyectan el primer detector equivalente disponible, o absorbido; no se promedian detectores ni se convierte Gy a Sv. `porcentaje_limite_carrera` es null para las mediciones ambientales. La app permite elegir detector; la dosis personal del viaje sigue siendo simulada.",
+        "Una respuesta DONKI vacía solo acredita el rango de fechas documentado en las consultas; una consulta de otro año o un manifiesto sin rango no evita `faltan`. Gold y su manifiesto se reemplazan atómicamente; los escritores siguen siendo secuenciales.",
         "Entrada: un escenario JSON (`escenarios/ejemplo.json`) con ventanas `{fuente, desde, hasta, dia_mision}`. Lee solo con `datalake.read()`, nunca los archivos.",
         "Un corrimiento único por ventana: `desde` cae en 00:00 del `dia_mision`. Se ancla en `desde` y no en la primera marca (el informe dice la primera marca) para que las fuentes con el mismo `desde` y día mantengan su relación real (§3.4 regla 5). Los valores no se escalan ni se suavizan.",
         "Doble marca en cada punto: `t_real` (UTC) y `t_mision` (`D022T00:05:00` = día de misión 22, 00:05). El origen de la línea de misión es sintético.",
         "Rejilla de 5 min: máximo en flujo de protones y CO2, promedio en el resto. `n` indica cuántas lecturas entran en cada paso.",
-        "Resumen diario: `max`; `dosis` (tasa de dosis x horas) en las tasas de dosis; `max_prom_horario` en CO2. `bins` cuenta los pasos con datos: con huecos la dosis queda por debajo. DosTel no trae `dose_equivalent_rate`, así que su dosis es absorbida (µGy), orientativa frente al límite de 600 mSv.",
+        "Resumen diario: `max`; `dosis` (tasa de dosis x horas) en las tasas de dosis; `max_prom_horario` en CO2. `bins` cuenta los pasos con datos: con huecos la dosis es parcial. DosTel no trae `dose_equivalent_rate`, así que conserva dosis absorbida (µGy), sin comparación con un límite personal.",
         "Los eventos de DONKI van aparte (`eventos`), reanclados con el mismo corrimiento. Toda fila lleva `naturaleza: \"Real\"`; el calendario de misión es escenario y no se genera aquí.",
         "Escenario inválido lanza `ValueError` y no escribe nada. Una ventana sin datos curated se omite, se avisa por stderr y queda en `faltan` del gold y del panel; solo si faltan todas falla sin escribir (#27: la ventana GOES de un escenario no se puede volver a descargar). Es idempotente y determinista: mismo escenario y mismo curated dan el mismo archivo y SHA-256.",
         "Salida: `<DATALAKE_DIR>/gold/<escenario>.json` y `gold/manifest.json` (SHA-256, tamaños y hora por escenario).",
-        "`panel.py` convierte el gold en el panel de entorno (`index.py panel <escenario.json> [destino]`, por defecto `gold/panel-<nombre>.json`): dosis acumulada por día y su porcentaje del límite de carrera de 600 mSv, flujo de protones con `modo_tormenta` (≥10 pfu en ≥10 MeV), y cabina con CO2 en mmHg por perfil (ppm x presión total del perfil: 760, 760 y 424 mmHg), temperatura y humedad. Una sección sin datos queda en `null` o vacía.",
-        "La dosis usa dosis equivalente si el escenario la trae; con dosis absorbida (DosTel, Lidal) va con `orientativa: true` y supone 1 µGy = 1 µSv, que es una cota inferior. `cobertura` es la fracción del día con datos (con 1 h de datos, 0,042): la dosis del día es parcial y no debe leerse como total.",
+        "`panel.py` convierte el gold en el panel de entorno (`index.py panel <escenario.json> [destino]`, por defecto `gold/panel-<nombre>.json`): dosis acumulada por día/detector/magnitud, flujo de protones con `modo_tormenta` (≥10 pfu en ≥10 MeV), y cabina con CO2 en mmHg por perfil, temperatura y humedad. Una sección sin datos queda en `null` o vacía.",
+        "La proyección principal prioriza dosis equivalente si existe; con absorbida conserva µGy y `orientativa: true`. `por_detector` mantiene ambas magnitudes sin convertirlas ni combinarlas. `cobertura` es la fracción del día con datos (con 1 h, 0,042): una dosis parcial no es el total del día.",
         "`ALTEA-Survey` es el único instrumento de RadLab con `dose_equivalent_rate` (408 321 filas, cada minuto, de 2010-09 a 2012-06 en la ISS; revisado con una consulta a toda la base). `escenarios/dosis-equivalente.json` lo usa: un día completo (2011-11-16, cobertura 1,0) da 913 µSv, sin `orientativa`. Ese día está por encima de los 0,2 a 0,5 mSv/día que cita el informe; es un día y los datos son preliminares.",
         "El panel repite `ventanas` (fuente y fechas reales) y un `aviso`: que series de fechas reales distintas caigan en el mismo día de misión es decisión del escenario, no un hecho observado (§3.4 regla 4).",
         "GOES separa la serie por satélite (`G18 >=10 MeV`) para no mezclar satélites en el mismo paso.",
         "Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...`, `index.py simular [n]` e `index.py barrer [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.",
         "`simulacion.py` implementa el protocolo de §5.5 tal cual: 14 días de prevuelo + 30 de misión, 4 tripulantes, y las anomalías A1 (deriva de sueño, FC y ánimo en trip-1, días 18 a 27), A2 (CO2 de 4,6 mmHg el día 12 con cefalea en trip-2 y trip-3) y A3 (200 pfu los días 22 y 23). El motor de referencia sigue §5.1 y §5.2 (línea base de tierra a vuelo; el detector no conoce los desplazamientos de `SUPUESTOS`, que solo usa el generador). Publica `gold/caso_referencia.json` y `gold/kpi.json` (detección por anomalía, días hasta la alerta, mitad de intensidad, alerta por azar, comparador de 91 lpm y falsas alarmas por tripulante y semana, con segunda semilla). `index.py barrer` publica `gold/barrido.json` (k y h del CUSUM). Las cifras del informe salen de aquí: si cambia una regla, se vuelve a correr y se actualiza el informe; no se ajustan parámetros para recuperar un número.",
-        "Escenarios que usa la app (la API los busca por nombre): `mision-real` es el entorno del modo real, anclado al día 1 de la misión (GOES y DONKI en su fecha real, y RadLab ALTEA-Survey y EDA RR-1 reanclados); `mision-vigia` es el del modo demo del viaje a Marte: RadLab y DONKI anclados al calendario real del viaje (día 1 = 15-sep-2011, ver «Calendario real» abajo), sin EDA ni GOES. Para tener los eventos SEP hay que ingerir DONKI de 2011-09-15 a 2012-06-01 en tramos de 60 días como máximo (la API de DONKI rechaza rangos mayores con 400); sin esa ingesta el panel sale con `eventos: 0` y la demo pierde la tormenta real. El servicio de GOES solo guarda 24 horas: hay que reingerir y republicar (`index.py panel`) para que el modo real avance. Una ventana de DONKI ya consultada y sin eventos es un resultado válido (no va a `faltan`); cualquier otra ventana sin datos sí.",
+        "Escenarios que usa la app (la API los busca por nombre): `mision-real` es la referencia ambiental del modo real (no la cabina actual), anclado al día 1 de la misión (GOES y DONKI en su fecha real, y RadLab ALTEA-Survey y EDA RR-1 reanclados); `mision-vigia` es el del modo demo del viaje a Marte: RadLab y DONKI anclados al calendario real del viaje (día 1 = 15-sep-2011, ver «Calendario real» abajo), sin EDA ni GOES. Para tener los eventos SEP hay que ingerir DONKI de 2011-09-15 a 2012-06-01 en tramos de 60 días como máximo (la API de DONKI rechaza rangos mayores con 400); sin esa ingesta el panel sale con `eventos: 0` y la demo pierde la tormenta real. El servicio de GOES solo guarda 24 horas: hay que reingerir y republicar (`index.py panel`) para que el modo real avance. Una ventana de DONKI ya consultada y sin eventos es un resultado válido (no va a `faltan`); cualquier otra ventana sin datos sí.",
         "Viaje a Marte (`trayectoria.py` + `generar_caso_viaje`): `posicion(dia)` calcula una transferencia de Hohmann Tierra→Marte (órbitas circulares coplanares, semieje 1,262 UA, 259 días; Kepler por Newton) y da la posición de la nave, la Tierra y Marte, la distancia a la Tierra y el retardo (distancia × 499 s/UA; 13 min al llegar). El caso (`python3 index.py viaje` → `packages/engine/fixtures/caso-viaje.json`, ~330 KB compacto) usa el mismo generador con `dias_vuelo = 259` y `ANOMALIAS_VIAJE` (A2 día 60; A1 días 100–109; A3 días 131–132, la tormenta solar real del 23-ene-2012), más `dosis_msv_dia` y `dosis_acumulada_msv` por día (fondo ≈ 1,8 mSv/día de MSL RAD y +3 mSv por día de tormenta, supuesto de escenario) y la `trayectoria` completa. El caso de 30 días sigue siendo el fixture de paridad; el de 259 también lo pasa el motor TS. **Calendario real:** el viaje parte el 15-sep-2011 (`INICIO_MISION`, día 1) y llega el día 259 (30-may-2012); el escenario `mision-vigia` ancla RadLab y DONKI a esas fechas (`dia_mision: 1` en 2011-09-15), así que los eventos SEP reales caen en su día verdadero (p. ej. días 8, 131–135). CO2 (EDA) y protones GOES no tienen datos en esas fechas: siguen simulados y rotulados. La dosis del viaje es simulada (MSL RAD): ALTEA mide en la ISS, no en tránsito. shortcut: sin efemérides reales."
       ],
       "tags": [
@@ -4463,14 +4910,14 @@
       "archivos": [
         {
           "ruta": "pipelines/reanclaje/index.py",
-          "lineas": 43,
+          "lineas": 47,
           "descripcion": "CLI del ETL de reanclaje.",
           "test": false,
           "simbolos": []
         },
         {
           "ruta": "pipelines/reanclaje/panel.py",
-          "lineas": 83,
+          "lineas": 84,
           "descripcion": "Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app.",
           "test": false,
           "simbolos": [
@@ -4489,8 +4936,22 @@
           ]
         },
         {
+          "ruta": "pipelines/reanclaje/preparar.py",
+          "lineas": 29,
+          "descripcion": "Preparar los paneles y el KPI del despliegue desde curated y las fixtures versionadas.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "preparar_local",
+              "tipo": "función",
+              "firma": "preparar_local()",
+              "doc": "Reproduce el KPI antes de publicarlo; no ajusta reglas ni sobrescribe raw o las fixtures."
+            }
+          ]
+        },
+        {
           "ruta": "pipelines/reanclaje/reanclaje.py",
-          "lineas": 161,
+          "lineas": 187,
           "descripcion": "ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold.",
           "test": false,
           "simbolos": [
@@ -4539,7 +5000,7 @@
             {
               "nombre": "guardar",
               "tipo": "función",
-              "firma": "guardar(clave, datos, destino=None, **resumen)",
+              "firma": "guardar(clave, datos, destino=None, *, contenido_original=None, **resumen)",
               "doc": "Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en"
             }
           ]
@@ -4614,7 +5075,7 @@
         },
         {
           "ruta": "pipelines/reanclaje/test_panel.py",
-          "lineas": 76,
+          "lineas": 80,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -4639,8 +5100,22 @@
           ]
         },
         {
+          "ruta": "pipelines/reanclaje/test_preparar.py",
+          "lineas": 29,
+          "descripcion": "Una fixture que no reproduce sus resultados nunca debe publicarse como KPI vigente.",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Preparacion",
+              "tipo": "clase",
+              "firma": "Preparacion(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "pipelines/reanclaje/test_reanclaje.py",
-          "lineas": 106,
+          "lineas": 115,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -4895,6 +5370,73 @@
       ]
     },
     {
+      "modulo": "tools/investigacion",
+      "proposito": "Recopilar las fuentes públicas de los diez ganadores globales de Space Apps 2025 y registrar qué se pudo consultar, con procedencia y hashes para la comparación de VIGÍA.",
+      "puntos_clave": [
+        "Solo biblioteca estándar; descarga secuencial, tiempo límite y tamaño máximo por documento. `fuentes.json` mantiene URLs, categoría y relación con cada proyecto, sin perfiles personales ni contactos.",
+        "`investigar.py` guarda respuestas/textos y un manifiesto en `data/`, ignorado por Git. Nunca ejecuta código de proyectos ajenos ni publica sus páginas completas en el repositorio.",
+        "HTTPS se verifica siempre. `--lector` permite una segunda consulta a r.jina.ai, declarada como representación de un tercero: no se confunde con descarga directa ni acredita que un demo o repositorio funcione.",
+        "Los fallos y el alcance de lectura quedan explícitos. Un premio, descripción de autor o README no equivale a una validación independiente ni prueba por qué ganó un proyecto."
+      ],
+      "tags": [
+        "investigacion",
+        "spaceapps",
+        "ganadores",
+        "fuentes",
+        "scraping",
+        "procedencia"
+      ],
+      "env": [],
+      "archivos": [
+        {
+          "ruta": "tools/investigacion/investigar.py",
+          "lineas": 111,
+          "descripcion": "Recopilar ganadores 2025: python tools/investigacion/investigar.py [--lector].",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "TextoPublico",
+              "tipo": "clase",
+              "firma": "TextoPublico(HTMLParser)",
+              "doc": "Texto y enlaces visibles; excluye scripts y estilos sin interpretar JavaScript."
+            },
+            {
+              "nombre": "descargar",
+              "tipo": "función",
+              "firma": "descargar(url)",
+              "doc": ""
+            },
+            {
+              "nombre": "consultar",
+              "tipo": "función",
+              "firma": "consultar(url, destino, lector=False, obtener=descargar)",
+              "doc": ""
+            },
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main(argv=None)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/investigacion/test_investigar.py",
+          "lineas": 43,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Investigacion",
+              "tipo": "clase",
+              "firma": "Investigacion(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
       "modulo": "tools/modelo-anatomico",
       "proposito": "Guiones que generaron el modelo anatómico del cuerpo 3D de la app (`apps/web/public/modelos/cuerpo.glb`, `cuerpo.json` y `ATRIBUCION.md`) a partir de los OBJ originales de BodyParts3D. Se guardan para que el modelo sea reproducible y su procedencia, verificable.",
       "puntos_clave": [
@@ -5063,7 +5605,7 @@
       "modulo": "tools/presentacion",
       "proposito": "Genera las presentaciones de VIGÍA para NASA Space Apps (la demo oficial de 7 diapositivas en inglés y el pitch de 4 minutos) como `.pptx`, y toma las capturas limpias de la app que llevan dentro.",
       "puntos_clave": [
-        "`deck.js` (pptxgenjs): `node deck.js <carpeta_capturas> <carpeta_marca> <salida> \"[equipo]\" \"[integrantes]\" \"[evento]\"`. Sin los tres últimos argumentos deja los marcadores `[TEAM NAME]`, `[Team members]` y `[Local Event]` en la portada. Los textos y cifras salen de `auditoria/DEMO.md`, `GUIONES.md` y `packages/engine/fixtures/kpi.json`: si cambian los KPI, cámbialos aquí a mano.",
+        "`deck.js` (pptxgenjs): `node deck.js <carpeta_capturas> <carpeta_marca> <salida> \"[equipo]\" \"[integrantes]\" \"[evento]\"`. Sin los tres últimos argumentos deja marcadores de identidad. Ambos idiomas leen las cifras con `evidencia.js` desde `gold/validacion.json`, verifican manifiesto y hashes del código/protocolo y rechazan reportes históricos o alterados. Ejecutar primero `tools/validacion/ejecutar.ts --publicar`. El guion científico vigente es `docs/PITCH-CIENTIFICO.md`; los antiguos KPI no se generalizan.",
         "La demo oficial debe tener **como máximo 7 diapositivas** (regla de la guía de envío 2026): `demo()` crea exactamente 7; no añadas más sin quitar otra.",
         "El pitch (`pitch()`, 15 diapositivas) añade tres que no caben en la demo: «Lo que nos diferencia», «Cinco peligros, cinco respuestas, cinco entornos» (tabla peligro → medida → regla → acción y los cinco perfiles) y «Un reloj en la muñeca» (app Wear OS + smart-monitor). `deck-es.js` es la misma presentación en español con las capturas `-es`; cualquier cambio de contenido se hace en los dos archivos.",
         "Formas con `pres.ShapeType.roundRect` / `ellipse`, nunca el nombre como cadena: PowerPoint no abre el archivo si `prstGeom` lleva un valor inválido, aunque `validate.py` lo dé por bueno.",
@@ -5083,6 +5625,7 @@
         "demo"
       ],
       "env": [
+        "DATALAKE_DIR",
         "PPTX_SKILL",
         "SIN_TEMA"
       ],
@@ -5103,14 +5646,21 @@
         },
         {
           "ruta": "tools/presentacion/deck-es.js",
-          "lineas": 393,
+          "lineas": 394,
           "descripcion": "",
           "test": false,
           "simbolos": []
         },
         {
           "ruta": "tools/presentacion/deck.js",
-          "lineas": 391,
+          "lineas": 392,
+          "descripcion": "",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/presentacion/evidencia.js",
+          "lineas": 26,
           "descripcion": "",
           "test": false,
           "simbolos": []
@@ -5215,11 +5765,154 @@
       ]
     },
     {
+      "modulo": "tools/validacion",
+      "proposito": "Evaluar el motor TypeScript de producto en un banco sintético de auditoría, con comparadores, ablaciones, intervalos y artefactos congelados antes de calcular resultados.",
+      "puntos_clave": [
+        "Node 22.18+, sin dependencias. `node tools/validacion/ejecutar.ts [--publicar]` genera datos, congelación, reporte JSON y resumen Markdown en `data/`, ignorada. `--publicar` copia el reporte a gold con SHA-256; único escritor.",
+        "`protocolo.json` fija semilla, tamaño, escenarios y métricas antes de ejecutar. El generador no importa el simulador Python ni sus supuestos. Se evalúa el motor TS real; no se reajustan umbrales para mejorar resultados.",
+        "Banco exploratorio creado por el mismo equipo/asistente: no es conjunto reservado independiente ni validación humana. Los intervalos Wilson y bootstrap pareado por misión son descriptivos, sin corrección de multiplicidad. La ausencia de un criterio clínico acordado impide declarar innovación clínicamente validada.",
+        "Ablaciones A, A+B, A+C, A+B+C y con contexto usan `OpcionesMotor.capas`; mantienen la política común de referencia robusta, pero desactivan la acumulación/exclusión propia de C cuando C no está activa.",
+        "Detección por episodio y escenario; retraso solo entre detectados y omitidos explícitos; falsos episodios por persona-semana observada fuera del evento y recuperación. Las dos reglas ambientales deterministas se informan en `reglas_ambientales`, aparte de los once escenarios fisiológicos. El negativo cuenta señales ambientales aunque no tenga evento; el test cambia deliberadamente `uso` para comprobar que la métrica detectaría el fallo. La enmienda v1.1 es posterior a inspeccionar v1 y no ajusta el detector.",
+        "El reporte identifica hashes del motor, generador, protocolo y casos. La API comprueba integridad y vigencia respecto al motor instalado antes de presentarlo como resultado actual."
+      ],
+      "tags": [
+        "ciencia",
+        "validacion",
+        "benchmark",
+        "ablacion",
+        "incertidumbre",
+        "motor",
+        "reproducibilidad"
+      ],
+      "env": [
+        "DATALAKE_DIR"
+      ],
+      "archivos": [
+        {
+          "ruta": "tools/validacion/banco.test.ts",
+          "lineas": 43,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/validacion/banco.ts",
+          "lineas": 96,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "CAPAS",
+              "tipo": "constante",
+              "firma": "CAPAS",
+              "doc": ""
+            },
+            {
+              "nombre": "detectar",
+              "tipo": "función",
+              "firma": "detectar",
+              "doc": ""
+            },
+            {
+              "nombre": "evaluarCaso",
+              "tipo": "función",
+              "firma": "evaluarCaso",
+              "doc": ""
+            },
+            {
+              "nombre": "ejecutarBanco",
+              "tipo": "función",
+              "firma": "ejecutarBanco",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/validacion/ejecutar.ts",
+          "lineas": 53,
+          "descripcion": "Congela entradas y código antes de medir. Sin descargas, sin reajuste del detector.",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/validacion/generador.ts",
+          "lineas": 69,
+          "descripcion": "Generador de auditoría separado del simulador de desarrollo. Sus distribuciones son supuestos de prueba.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "CasoAuditoria",
+              "tipo": "interfaz",
+              "firma": "CasoAuditoria",
+              "doc": ""
+            },
+            {
+              "nombre": "Protocolo",
+              "tipo": "interfaz",
+              "firma": "Protocolo",
+              "doc": ""
+            },
+            {
+              "nombre": "aleatorio",
+              "tipo": "función",
+              "firma": "aleatorio",
+              "doc": ""
+            },
+            {
+              "nombre": "generarCaso",
+              "tipo": "función",
+              "firma": "generarCaso",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/validacion/metricas.test.ts",
+          "lineas": 25,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/validacion/metricas.ts",
+          "lineas": 32,
+          "descripcion": "Métricas por misión; nunca cuenta días correlacionados como sujetos independientes.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "wilson",
+              "tipo": "función",
+              "firma": "wilson",
+              "doc": ""
+            },
+            {
+              "nombre": "medianaOmitible",
+              "tipo": "función",
+              "firma": "medianaOmitible",
+              "doc": ""
+            },
+            {
+              "nombre": "contarEpisodios",
+              "tipo": "función",
+              "firma": "contarEpisodios",
+              "doc": ""
+            },
+            {
+              "nombre": "diferenciaPareada",
+              "tipo": "función",
+              "firma": "diferenciaPareada",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
       "modulo": "tools/validar-referencias",
-      "proposito": "Comprueba que las referencias científicas del informe existen y dicen lo que citamos. Consulta Crossref y Europe PMC para cada DOI de `referencias.json`. El resultado legible está en [documentacion/referencias-validadas.md](../../documentacion/referencias-validadas.md).",
+      "proposito": "Comprueba existencia bibliográfica, títulos y fragmentos del catálogo mediante Crossref y Europe PMC. No verifica por sí solo la interpretación, aplicabilidad o validez clínica de las afirmaciones.",
       "puntos_clave": [
         "Tres comprobaciones por referencia: el DOI existe en Crossref; el título contiene `titulo_contiene` (detecta los DOI que apuntan a otro artículo); y el resumen, o el texto completo si se pide `texto_contiene`, contiene `resumen_contiene`.",
-        "Estados: `OK`, `DOI_NO_EXISTE`, `REVISAR_TITULO` y `REVISAR_TEXTO`. Solo los dos primeros fallos dan código de salida 1. `REVISAR_TEXTO` es un aviso, porque muchos textos completos no son de acceso abierto y la cifra puede estar en una tabla.",
+        "Estados: `OK`, `DOI_NO_EXISTE`, `REVISAR_TITULO`, `REVISAR_TEXTO` y `FUENTE_NO_DISPONIBLE`. Salida 1 ante DOI/título incorrectos; 2 ante consultas no verificables sin esos errores. Un 404 se distingue de red o servidor caídos. `REVISAR_TEXTO` requiere inspección: la coincidencia de fragmentos no sustituye revisión humana.",
         "El texto completo solo existe para artículos de acceso abierto en Europe PMC. NCBI no se usa: en la red del equipo un proxy rompe su certificado TLS.",
         "Usa solo la biblioteca estándar. Todo el IO pasa por `_get`; `evaluar()` es pura y los tests reemplazan `_get`, sin red.",
         "No corre en CI, porque necesita red. Se ejecuta a mano cuando cambia el catálogo o el informe.",
@@ -5239,7 +5932,7 @@
       "archivos": [
         {
           "ruta": "tools/validar-referencias/test_validar_referencias.py",
-          "lineas": 72,
+          "lineas": 78,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -5265,10 +5958,16 @@
         },
         {
           "ruta": "tools/validar-referencias/validar_referencias.py",
-          "lineas": 137,
+          "lineas": 153,
           "descripcion": "Valida las referencias científicas del informe contra Crossref y Europe PMC.",
           "test": false,
           "simbolos": [
+            {
+              "nombre": "FuenteNoDisponible",
+              "tipo": "clase",
+              "firma": "FuenteNoDisponible(OSError)",
+              "doc": "Una consulta fallida no demuestra que un DOI no exista."
+            },
             {
               "nombre": "crossref",
               "tipo": "función",
@@ -5304,6 +6003,110 @@
               "tipo": "función",
               "firma": "validar(ref)",
               "doc": "Descarga y evalúa una referencia."
+            },
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main(argv=None)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modulo": "tools/verificacion",
+      "proposito": "Ejecutar las comprobaciones de ingeniería de una entrega con un único intérprete Python y un Node explícito, conservando resultados y logs locales reproducibles.",
+      "puntos_clave": [
+        "`ensayo.py --datasets` exige MMASH/Orion publicados, comprueba las dos tarjetas y su copia offline, y conserva captura. Sin esa opción los campos de ese ensayo quedan null: no se presentan como aprobados; el resto de comprobaciones sigue siendo obligatorio. Los datasets se adquieren aparte, nunca durante tests unitarios.",
+        "La batería incluye `tools/investigacion` y los tests TS de `tools/validacion`: verificar software y contratos no equivale a validar beneficio clínico. El ensayo en navegador usa servicios y base temporales, conserva el reporte científico gold y comprueba su vista sin modificar la API personal.",
+        "Solo biblioteca estándar. `verificar.py` descubre las suites Python en los cuatro contenedores y ejecuta las mismas pruebas TS que CI; también lint, contexto y tipado. `--web` añade build de producción.",
+        "No instala dependencias ni descarga datos ni publica cambios. Node debe ser 22.18 o posterior; `--node` permite usar un ejecutable portátil sin cambiar Windows.",
+        "`inventario.py` comprueba hashes raw/gold y resume cobertura y esquema SQLite sin mostrar registros. Solo con `--migrar` crea un respaldo SQLite y aplica las migraciones; por defecto abre la base en solo lectura. No carga `.env`: admite rutas explícitas o variables ya exportadas.",
+        "`ensayo.py` inicia API/web y un proxy en puertos locales libres con base temporal, ejecuta `navegador.mjs` por Chrome DevTools Protocol y detiene sus procesos. El proxy desvía `/vigia-api` a la base temporal sin cambiar el rewrite del build ni tocar la API del usuario. Requiere build previo, Node 22.18+ y Chrome/Chromium; sin dependencias npm. Prueba cierre/reapertura, pérdida de API, carcasa sin red y reenvío idempotente.",
+        "`data/` está ignorada por Git: cada ejecución crea una carpeta UTC con logs por comprobación y `resultado.json` (HEAD, versiones, comandos, duración, códigos y resúmenes). Un fallo u omisión se conserva y devuelve código distinto de cero; una prueba omitida no se considera verificación completa.",
+        "El resultado prueba ingeniería del software en esa copia, no eficacia clínica, reloj físico, autorización NASA ni revisión profesional."
+      ],
+      "tags": [
+        "verificacion",
+        "tests",
+        "release",
+        "calidad",
+        "reproducibilidad"
+      ],
+      "env": [
+        "DATALAKE_DIR",
+        "VIGIA_DB",
+        "VIGIA_E2E_API",
+        "VIGIA_E2E_DATASETS",
+        "VIGIA_E2E_PROXY",
+        "VIGIA_E2E_WEB"
+      ],
+      "archivos": [
+        {
+          "ruta": "tools/verificacion/ensayo.py",
+          "lineas": 81,
+          "descripcion": "Ensayo de navegador con base temporal: python tools/verificacion/ensayo.py --node RUTA [--chrome RUTA].",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "esperar",
+              "tipo": "función",
+              "firma": "esperar(url, proceso)",
+              "doc": ""
+            },
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main()",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/verificacion/inventario.py",
+          "lineas": 89,
+          "descripcion": "Auditar datalake y SQLite sin mostrar datos personales; --migrar crea respaldo antes de actualizar SQLite.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "hash_archivo",
+              "tipo": "función",
+              "firma": "hash_archivo(raiz, relativa)",
+              "doc": ""
+            },
+            {
+              "nombre": "inventariar",
+              "tipo": "función",
+              "firma": "inventariar(datos, db)",
+              "doc": ""
+            },
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main()",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/verificacion/navegador.mjs",
+          "lineas": 213,
+          "descripcion": "Ensayo de recuperación de informes con Chrome DevTools Protocol, sin dependencias npm.",
+          "test": false,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/verificacion/verificar.py",
+          "lineas": 73,
+          "descripcion": "Comprobaciones reproducibles: python tools/verificacion/verificar.py [--node RUTA] [--web].",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ejecutar",
+              "tipo": "función",
+              "firma": "ejecutar(nombre, comando, carpeta, destino)",
+              "doc": ""
             },
             {
               "nombre": "main",

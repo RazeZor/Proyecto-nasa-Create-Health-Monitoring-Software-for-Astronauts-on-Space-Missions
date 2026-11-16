@@ -7,6 +7,9 @@ Ingesta y datalake local de datos ambientales (radiación) de GOES, DONKI, RadLa
 
 ## Puntos clave
 
+- DONKI prioriza `https://ccmc.gsfc.nasa.gov/DONKI-API/get/SEP`, según el cambio publicado por NASA CCMC. Conserva los espejos; elimina claves/tokens de las URLs persistidas y de los errores de fallback. El saneamiento conserva literalmente operadores y campos sin valor de RadLab para no cambiar una consulta reproducible.
+- Raw se crea en modo exclusivo: una colisión nunca sobrescribe el original. El manifiesto se reemplaza atómicamente; sigue requiriendo un único escritor (no hay bloqueo entre procesos).
+
 - Estructura: `data/raw/<fuente>/<fecha>/<hora>-<sha8>.<ext>` guarda la respuesta original y nunca se sobrescribe. `data/curated/...json` guarda las filas limpias. `data/manifest.json` registra fuente, URL, hora de consulta, SHA-256 y número de filas.
 - Si una fuente cambia de estructura, `clean_*` lanza `EstructuraInesperada` (mensaje `ESTRUCTURA_INESPERADA`) **antes** de escribir, así que una ingesta fallida no deja archivos.
 - Toda hora se normaliza a UTC en `t_real` (`YYYY-MM-DDTHH:MM:SSZ`). `read(fuente, desde, hasta)` filtra comparando esas cadenas.
@@ -36,9 +39,9 @@ tags: ingesta, datalake, goes, donki, radlab, eda, radiación, utc, cli
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [datalake.py](datalake.py) | 225 | Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2). |
+| [datalake.py](datalake.py) | 244 | Datalake local de VIGÍA (informe técnico, secciones 3.3 y 4.2). |
 | [index.py](index.py) | 35 | CLI del datalake. Mensajes en español por defecto; VIGIA_LANG=en para inglés. |
-| [test_datalake.py](test_datalake.py) | 109 | — |
+| [test_datalake.py](test_datalake.py) | 145 | — |
 
 ### API pública
 
@@ -68,7 +71,7 @@ python3 index.py manifest
 - Variables de entorno: `DATALAKE_DIR`, `NASA_API_KEY`
 - `EDA_URL`: https://visualization.osdr.nasa.gov/eda/api/missions/{mision}/telemetry_data/
 - `GOES_URL`: https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json
-- `DONKI_URLS`: https://ccmc.gsfc.nasa.gov/DONKI/WS/get/SEP
+- `DONKI_URLS`: https://ccmc.gsfc.nasa.gov/DONKI-API/get/SEP
 - `DONKI_URLS`: https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/SEP
 - `DONKI_URLS`: https://api.nasa.gov/DONKI/SEP
 - `RADLAB_URL`: https://visualization.osdr.nasa.gov/radlab/api/
@@ -82,5 +85,5 @@ python3 index.py manifest
 
 ### Tests
 
-- `pipelines/datalake/test_datalake.py`: 10 pruebas en Raiz (1), Limpieza (4), Almacen (5)
+- `pipelines/datalake/test_datalake.py`: 12 pruebas en Raiz (1), Limpieza (4), Almacen (7)
 <!-- CONTEXT:AUTO:END -->

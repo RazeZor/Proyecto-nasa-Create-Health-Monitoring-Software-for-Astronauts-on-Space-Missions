@@ -13,6 +13,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 # API pública de otro módulo: solo read(). shortcut: sin paquete instalable, se enlaza por ruta.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "datalake"))
@@ -118,7 +119,7 @@ def construir(escenario):
             "serie5min": [], "diario": [], "eventos": [], "faltan": []}
     for v in escenario["ventanas"]:
         filas = datalake.read(v["fuente"], v["desde"], v["hasta"])
-        if not filas and v["fuente"] == "donki" and _donki_consultado():
+        if not filas and v["fuente"] == "donki" and _donki_consultado(v):
             continue  # DONKI consultado y sin eventos SEP en la ventana: es un resultado válido, no un hueco
         if not filas:
             print(f"aviso: no hay datos curated de {v['fuente']} en {v['desde']}..{v['hasta']}; se omite",
@@ -138,24 +139,49 @@ def construir(escenario):
     return entrada
 
 
-def _donki_consultado():
-    """True si el datalake tiene al menos una ingesta de DONKI (una respuesta vacía también cuenta, §3.3)."""
-    return any(e["fuente"] == "donki" for e in datalake.manifest())
+def _donki_consultado(ventana):
+    """Una respuesta vacía solo cubre el intervalo efectivamente consultado, nunca cualquier fecha."""
+    intervalos = []
+    for entrada in datalake.manifest():
+        if entrada["fuente"] != "donki":
+            continue
+        consulta = parse_qs(urlsplit(entrada.get("url", "")).query)
+        try:
+            inicio = datetime.strptime(consulta["startDate"][0], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            fin = datetime.strptime(consulta["endDate"][0], "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(days=1)
+        except (KeyError, ValueError, IndexError):
+            continue  # manifiesto antiguo sin rango: no acredita cobertura
+        intervalos.append((inicio, fin))
+    cubierto = datetime.strptime(ventana["desde"], FORMATO).replace(tzinfo=timezone.utc)
+    hasta = datetime.strptime(ventana["hasta"], FORMATO).replace(tzinfo=timezone.utc)
+    for inicio, fin in sorted(intervalos):
+        if inicio > cubierto:
+            break
+        cubierto = max(cubierto, fin)
+        if cubierto >= hasta:
+            return True
+    return False
 
 
-def guardar(clave, datos, destino=None, **resumen):
+def guardar(clave, datos, destino=None, *, contenido_original=None, **resumen):
     """Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en
     gold/manifest.json. Idempotente: una entrada por clave."""
-    contenido = json.dumps(datos, indent=1, ensure_ascii=False).encode()
+    contenido = json.dumps(datos, indent=1, ensure_ascii=False).encode() if contenido_original is None else contenido_original
+    if json.loads(contenido) != datos:
+        raise ValueError("los bytes del producto no representan los datos que se van a publicar")
     carpeta = datalake.ROOT / "gold"
     carpeta.mkdir(parents=True, exist_ok=True)
     archivo = Path(destino) if destino else carpeta / f"{clave}.json"
     archivo.parent.mkdir(parents=True, exist_ok=True)
-    archivo.write_bytes(contenido)
+    temporal = archivo.with_suffix(archivo.suffix + ".tmp")
+    temporal.write_bytes(contenido)
+    temporal.replace(archivo)
     entrada = {"sha256": hashlib.sha256(contenido).hexdigest(), **resumen,
                "generado": datetime.now(timezone.utc).strftime(FORMATO)}
     ruta = carpeta / "manifest.json"
     manifiesto = json.loads(ruta.read_text()) if ruta.exists() else {}
     manifiesto[clave] = entrada
-    ruta.write_text(json.dumps(manifiesto, indent=2, ensure_ascii=False))
+    temporal = ruta.with_suffix(".tmp")
+    temporal.write_text(json.dumps(manifiesto, indent=2, ensure_ascii=False), encoding="utf-8")
+    temporal.replace(ruta)
     return entrada

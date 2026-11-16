@@ -12,6 +12,7 @@ export { descomponer, type Descomposicion } from "../../../packages/engine/serie
 import type { EntornoHistorial, Historial, OrigenDato } from "./catalogo.ts"
 import { MOTOR, S } from "./strings.ts"
 import vocabulario from "./vocabulario.json" with { type: "json" }
+import { esEntornoAplicable } from "../../../packages/engine/evidencia.ts"
 import type { Alert, BandPoint, CheckInEntry, DailyVitals, IndicatorId, Status, Symptom, ZoneId, ZoneResult } from "./types.ts"
 
 export const ADAPTATION_END_DAY = DIA_FIN_ADAPTACION
@@ -68,6 +69,10 @@ function entornoMotor(e: EntornoHistorial, presion: number): EntornoDia {
   return { co2_mmhg_max_horario: co2, flujo_protones_10mev_pfu: e.flujo_protones_10mev_pfu ?? null, modo_tormenta: Boolean(e.modo_tormenta) }
 }
 
+/** Sin declaración de aplicabilidad, solo se evalúa el entorno dentro de la demostración. */
+export const entornoAplicable = (e: EntornoHistorial, modo?: Historial["modo"]): boolean =>
+  esEntornoAplicable(modo, e.uso)
+
 const textoOrigen = (o?: OrigenDato | null) =>
   !o ? "" : o.naturaleza === "Real" ? `${MOTOR.real} · ${o.fuente}${o.fecha_real ? ` · ${o.fecha_real}` : ""}` : `${MOTOR.simulado} · ${MOTOR.escenarioDemo}`
 
@@ -97,7 +102,9 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
   const MISSION_DAYS = historial.dias_vuelo
   const entornoApi = new Map(historial.entorno_diario.map((e) => [e.dia_mision, e]))
   const ENTORNO: Record<number, EntornoDia> = Object.fromEntries(
-    historial.entorno_diario.map((e) => [e.dia_mision, entornoMotor(e, presionCabinaMmHg)]),
+    historial.entorno_diario.map((e) => [e.dia_mision, entornoAplicable(e, historial.modo)
+      ? entornoMotor(e, presionCabinaMmHg)
+      : { co2_mmhg_max_horario: null, flujo_protones_10mev_pfu: null, modo_tormenta: false }]),
   )
   const porDia = new Map<number, Lectura>(historial.lecturas.map((l) => [l.dia_mision, l as Lectura]))
   for (const e of checkIns) porDia.set(e.day, enLectura(e, porDia.get(e.day))) // el último registro del día manda
@@ -242,7 +249,7 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
   /** Tormenta del día y de dónde sale: evento SEP real de DONKI, flujo medido o anomalía simulada. */
   const stormInfo = (day: number) => {
     const e = entornoApi.get(day)
-    if (!e) return null
+    if (!e || !entornoAplicable(e, historial.modo)) return null
     const flujo = e.flujo_protones_10mev_pfu ?? null
     const porFlujo = flujo !== null && flujo >= PROTONES_TORMENTA_PFU
     if (!e.modo_tormenta && !porFlujo) return null
@@ -258,8 +265,10 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
   /** CO2 del día en mmHg con el perfil activo, y su procedencia. */
   const co2 = (day: number) => {
     const e = entornoApi.get(day)
-    const mmHg = ENTORNO[day]?.co2_mmhg_max_horario ?? null
-    return e && mmHg !== null ? { mmHg, ppm: e.co2_ppm_max_horario ?? null, source: textoOrigen(e.co2_origen), simulated: e.co2_origen?.naturaleza !== "Real" } : null
+    const mmHg = e ? (entornoMotor(e, presionCabinaMmHg).co2_mmhg_max_horario ?? null) : null
+    return e && mmHg !== null ? { mmHg, ppm: e.co2_ppm_max_horario ?? null,
+      source: entornoAplicable(e, historial.modo) ? textoOrigen(e.co2_origen) : `${S.env.referenceOnly} · ${textoOrigen(e.co2_origen)}`,
+      simulated: e.co2_origen?.naturaleza !== "Real" } : null
   }
   return { alerts, vitals, zones, indicatorStatus, overall, band, storm, stormInfo, co2, hasData, missionDays: MISSION_DAYS, cambiosInstrumento, real: historial.modo === "real" }
 }

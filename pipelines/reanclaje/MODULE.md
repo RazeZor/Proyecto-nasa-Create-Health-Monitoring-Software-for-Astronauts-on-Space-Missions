@@ -7,22 +7,28 @@ ETL que toma la zona curated de `pipelines/datalake` (GOES, DONKI, RadLab, EDA),
 
 ## Puntos clave
 
+- `escenarios/orion-artemis-i-piloto.json` publica el 17-nov-2022 de Orion como referencia histórica separada; requiere la consulta RadLab correspondiente. Los cuatro instrumentos se conservan separados, sin dosis personal ni conversión Gy→Sv. No sustituye el escenario de la misión actual.
+
+- `index.py preparar` reproduce los resultados de `fixtures/kpi.json` con su semilla/tamaño antes de publicar los paneles real/demo y exactamente los bytes del KPI versionado (incluidos finales de línea). No regenera ni ajusta la fixture; una discrepancia falla antes de publicar. Solo usa curated existente, sin descargas.
+- El panel de dosis conserva `por_detector` con magnitud, unidad, acumulación y cobertura propias. Los campos anteriores proyectan el primer detector equivalente disponible, o absorbido; no se promedian detectores ni se convierte Gy a Sv. `porcentaje_limite_carrera` es null para las mediciones ambientales. La app permite elegir detector; la dosis personal del viaje sigue siendo simulada.
+- Una respuesta DONKI vacía solo acredita el rango de fechas documentado en las consultas; una consulta de otro año o un manifiesto sin rango no evita `faltan`. Gold y su manifiesto se reemplazan atómicamente; los escritores siguen siendo secuenciales.
+
 - Entrada: un escenario JSON (`escenarios/ejemplo.json`) con ventanas `{fuente, desde, hasta, dia_mision}`. Lee solo con `datalake.read()`, nunca los archivos.
 - Un corrimiento único por ventana: `desde` cae en 00:00 del `dia_mision`. Se ancla en `desde` y no en la primera marca (el informe dice la primera marca) para que las fuentes con el mismo `desde` y día mantengan su relación real (§3.4 regla 5). Los valores no se escalan ni se suavizan.
 - Doble marca en cada punto: `t_real` (UTC) y `t_mision` (`D022T00:05:00` = día de misión 22, 00:05). El origen de la línea de misión es sintético.
 - Rejilla de 5 min: máximo en flujo de protones y CO2, promedio en el resto. `n` indica cuántas lecturas entran en cada paso.
-- Resumen diario: `max`; `dosis` (tasa de dosis x horas) en las tasas de dosis; `max_prom_horario` en CO2. `bins` cuenta los pasos con datos: con huecos la dosis queda por debajo. DosTel no trae `dose_equivalent_rate`, así que su dosis es absorbida (µGy), orientativa frente al límite de 600 mSv.
+- Resumen diario: `max`; `dosis` (tasa de dosis x horas) en las tasas de dosis; `max_prom_horario` en CO2. `bins` cuenta los pasos con datos: con huecos la dosis es parcial. DosTel no trae `dose_equivalent_rate`, así que conserva dosis absorbida (µGy), sin comparación con un límite personal.
 - Los eventos de DONKI van aparte (`eventos`), reanclados con el mismo corrimiento. Toda fila lleva `naturaleza: "Real"`; el calendario de misión es escenario y no se genera aquí.
 - Escenario inválido lanza `ValueError` y no escribe nada. Una ventana sin datos curated se omite, se avisa por stderr y queda en `faltan` del gold y del panel; solo si faltan todas falla sin escribir (#27: la ventana GOES de un escenario no se puede volver a descargar). Es idempotente y determinista: mismo escenario y mismo curated dan el mismo archivo y SHA-256.
 - Salida: `<DATALAKE_DIR>/gold/<escenario>.json` y `gold/manifest.json` (SHA-256, tamaños y hora por escenario).
-- `panel.py` convierte el gold en el panel de entorno (`index.py panel <escenario.json> [destino]`, por defecto `gold/panel-<nombre>.json`): dosis acumulada por día y su porcentaje del límite de carrera de 600 mSv, flujo de protones con `modo_tormenta` (≥10 pfu en ≥10 MeV), y cabina con CO2 en mmHg por perfil (ppm x presión total del perfil: 760, 760 y 424 mmHg), temperatura y humedad. Una sección sin datos queda en `null` o vacía.
-- La dosis usa dosis equivalente si el escenario la trae; con dosis absorbida (DosTel, Lidal) va con `orientativa: true` y supone 1 µGy = 1 µSv, que es una cota inferior. `cobertura` es la fracción del día con datos (con 1 h de datos, 0,042): la dosis del día es parcial y no debe leerse como total.
+- `panel.py` convierte el gold en el panel de entorno (`index.py panel <escenario.json> [destino]`, por defecto `gold/panel-<nombre>.json`): dosis acumulada por día/detector/magnitud, flujo de protones con `modo_tormenta` (≥10 pfu en ≥10 MeV), y cabina con CO2 en mmHg por perfil, temperatura y humedad. Una sección sin datos queda en `null` o vacía.
+- La proyección principal prioriza dosis equivalente si existe; con absorbida conserva µGy y `orientativa: true`. `por_detector` mantiene ambas magnitudes sin convertirlas ni combinarlas. `cobertura` es la fracción del día con datos (con 1 h, 0,042): una dosis parcial no es el total del día.
 - `ALTEA-Survey` es el único instrumento de RadLab con `dose_equivalent_rate` (408 321 filas, cada minuto, de 2010-09 a 2012-06 en la ISS; revisado con una consulta a toda la base). `escenarios/dosis-equivalente.json` lo usa: un día completo (2011-11-16, cobertura 1,0) da 913 µSv, sin `orientativa`. Ese día está por encima de los 0,2 a 0,5 mSv/día que cita el informe; es un día y los datos son preliminares.
 - El panel repite `ventanas` (fuente y fechas reales) y un `aviso`: que series de fechas reales distintas caigan en el mismo día de misión es decisión del escenario, no un hecho observado (§3.4 regla 4).
 - GOES separa la serie por satélite (`G18 >=10 MeV`) para no mezclar satélites en el mismo paso.
 - Solo biblioteca estándar. CLI: `python3 index.py build escenarios/ejemplo.json`, `index.py panel ...`, `index.py simular [n]` e `index.py barrer [n]`. Sus mensajes de error están en español sin pasar por `packages/i18n`.
 - `simulacion.py` implementa el protocolo de §5.5 tal cual: 14 días de prevuelo + 30 de misión, 4 tripulantes, y las anomalías A1 (deriva de sueño, FC y ánimo en trip-1, días 18 a 27), A2 (CO2 de 4,6 mmHg el día 12 con cefalea en trip-2 y trip-3) y A3 (200 pfu los días 22 y 23). El motor de referencia sigue §5.1 y §5.2 (línea base de tierra a vuelo; el detector no conoce los desplazamientos de `SUPUESTOS`, que solo usa el generador). Publica `gold/caso_referencia.json` y `gold/kpi.json` (detección por anomalía, días hasta la alerta, mitad de intensidad, alerta por azar, comparador de 91 lpm y falsas alarmas por tripulante y semana, con segunda semilla). `index.py barrer` publica `gold/barrido.json` (k y h del CUSUM). Las cifras del informe salen de aquí: si cambia una regla, se vuelve a correr y se actualiza el informe; no se ajustan parámetros para recuperar un número.
-- Escenarios que usa la app (la API los busca por nombre): `mision-real` es el entorno del modo real, anclado al día 1 de la misión (GOES y DONKI en su fecha real, y RadLab ALTEA-Survey y EDA RR-1 reanclados); `mision-vigia` es el del modo demo del viaje a Marte: RadLab y DONKI anclados al calendario real del viaje (día 1 = 15-sep-2011, ver «Calendario real» abajo), sin EDA ni GOES. Para tener los eventos SEP hay que ingerir DONKI de 2011-09-15 a 2012-06-01 en tramos de 60 días como máximo (la API de DONKI rechaza rangos mayores con 400); sin esa ingesta el panel sale con `eventos: 0` y la demo pierde la tormenta real. El servicio de GOES solo guarda 24 horas: hay que reingerir y republicar (`index.py panel`) para que el modo real avance. Una ventana de DONKI ya consultada y sin eventos es un resultado válido (no va a `faltan`); cualquier otra ventana sin datos sí.
+- Escenarios que usa la app (la API los busca por nombre): `mision-real` es la referencia ambiental del modo real (no la cabina actual), anclado al día 1 de la misión (GOES y DONKI en su fecha real, y RadLab ALTEA-Survey y EDA RR-1 reanclados); `mision-vigia` es el del modo demo del viaje a Marte: RadLab y DONKI anclados al calendario real del viaje (día 1 = 15-sep-2011, ver «Calendario real» abajo), sin EDA ni GOES. Para tener los eventos SEP hay que ingerir DONKI de 2011-09-15 a 2012-06-01 en tramos de 60 días como máximo (la API de DONKI rechaza rangos mayores con 400); sin esa ingesta el panel sale con `eventos: 0` y la demo pierde la tormenta real. El servicio de GOES solo guarda 24 horas: hay que reingerir y republicar (`index.py panel`) para que el modo real avance. Una ventana de DONKI ya consultada y sin eventos es un resultado válido (no va a `faltan`); cualquier otra ventana sin datos sí.
 - Viaje a Marte (`trayectoria.py` + `generar_caso_viaje`): `posicion(dia)` calcula una transferencia de Hohmann Tierra→Marte (órbitas circulares coplanares, semieje 1,262 UA, 259 días; Kepler por Newton) y da la posición de la nave, la Tierra y Marte, la distancia a la Tierra y el retardo (distancia × 499 s/UA; 13 min al llegar). El caso (`python3 index.py viaje` → `packages/engine/fixtures/caso-viaje.json`, ~330 KB compacto) usa el mismo generador con `dias_vuelo = 259` y `ANOMALIAS_VIAJE` (A2 día 60; A1 días 100–109; A3 días 131–132, la tormenta solar real del 23-ene-2012), más `dosis_msv_dia` y `dosis_acumulada_msv` por día (fondo ≈ 1,8 mSv/día de MSL RAD y +3 mSv por día de tormenta, supuesto de escenario) y la `trayectoria` completa. El caso de 30 días sigue siendo el fixture de paridad; el de 259 también lo pasa el motor TS. **Calendario real:** el viaje parte el 15-sep-2011 (`INICIO_MISION`, día 1) y llega el día 259 (30-may-2012); el escenario `mision-vigia` ancla RadLab y DONKI a esas fechas (`dia_mision: 1` en 2011-09-15), así que los eventos SEP reales caen en su día verdadero (p. ej. días 8, 131–135). CO2 (EDA) y protones GOES no tienen datos en esas fechas: siguen simulados y rotulados. La dosis del viaje es simulada (MSL RAD): ALTEA mide en la ISS, no en tránsito. shortcut: sin efemérides reales.
 
 ## Relación con el informe
@@ -41,12 +47,14 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [index.py](index.py) | 43 | CLI del ETL de reanclaje. |
-| [panel.py](panel.py) | 83 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
-| [reanclaje.py](reanclaje.py) | 161 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
+| [index.py](index.py) | 47 | CLI del ETL de reanclaje. |
+| [panel.py](panel.py) | 84 | Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app. |
+| [preparar.py](preparar.py) | 29 | Preparar los paneles y el KPI del despliegue desde curated y las fixtures versionadas. |
+| [reanclaje.py](reanclaje.py) | 187 | ETL de reanclaje (informe §3.4): zona curated del datalake -> zona gold. |
 | [simulacion.py](simulacion.py) | 602 | Simulador reproducible y motor híbrido de referencia de VIGÍA (informe §5.1, §5.2 y §5.5). |
-| [test_panel.py](test_panel.py) | 76 | — |
-| [test_reanclaje.py](test_reanclaje.py) | 106 | — |
+| [test_panel.py](test_panel.py) | 80 | — |
+| [test_preparar.py](test_preparar.py) | 29 | Una fixture que no reproduce sus resultados nunca debe publicarse como KPI vigente. |
+| [test_reanclaje.py](test_reanclaje.py) | 115 | — |
 | [test_simulacion.py](test_simulacion.py) | 208 | — |
 | [test_trayectoria.py](test_trayectoria.py) | 46 | — |
 | [trayectoria.py](trayectoria.py) | 46 | Trayectoria de la nave en el tránsito Tierra→Marte (diseño: docs/superpowers/specs/2026-11-15-viaje-a-marte-design.md). |
@@ -58,6 +66,10 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 - función `construir_panel(gold)`: Panel de un escenario ya reanclado. Una sección sin datos queda en null o lista vacía.
 - función `publicar(escenario, destino=None)`: Reancla el escenario, arma el panel y lo guarda (por defecto en gold/panel-<nombre>.json).
 
+**preparar.py**
+
+- función `preparar_local()`: Reproduce el KPI antes de publicarlo; no ajusta reglas ni sobrescribe raw o las fixtures.
+
 **reanclaje.py**
 
 - función `medidas(fuente, fila)`: (serie, variable, valor) de una fila curada de una fuente con series temporales.
@@ -67,7 +79,7 @@ tags: etl, reanclaje, gold, rejilla, misión, t_mision, t_real, dosis, co2, fluj
 - función `eventos(filas, corrimiento)`
 - función `validar(escenario)`
 - función `construir(escenario)`: Genera y guarda el gold del escenario. Una ventana sin curated (p. ej. GOES, que solo publica
-- función `guardar(clave, datos, destino=None, **resumen)`: Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en
+- función `guardar(clave, datos, destino=None, *, contenido_original=None, **resumen)`: Escribe `datos` en gold/<clave>.json (o en `destino`) y lo registra con su SHA-256 en
 
 **simulacion.py**
 
@@ -97,18 +109,20 @@ python3 index.py simular [n_misiones]     genera caso_referencia.json y kpi.json
 python3 index.py viaje                    regenera packages/engine/fixtures/caso-viaje.json (viaje a Marte)
 python3 index.py barrer [n_misiones]      barrido de k y h del CUSUM en gold/barrido.json
 python3 index.py manifest                 SHA-256 y tamaños de cada escenario generado
+python3 index.py preparar                 reproduce KPI y publica ambos paneles con el curated disponible
 ```
 
 ### Dependencias
 
-- Internas: `panel`, `reanclaje`, `simulacion`, `trayectoria`
+- Internas: `panel`, `preparar`, `reanclaje`, `simulacion`, `trayectoria`
 - Externas: `datalake`, `validador`
-- Biblioteca estándar: `collections`, `datetime`, `hashlib`, `json`, `math`, `pathlib`, `random`, `statistics`, `sys`, `tempfile`, `unittest`
+- Biblioteca estándar: `collections`, `datetime`, `hashlib`, `json`, `math`, `pathlib`, `random`, `statistics`, `sys`, `tempfile`, `unittest`, `urllib`
 
 ### Tests
 
 - `pipelines/reanclaje/test_panel.py`: 7 pruebas en Panel (6), Publicar (1)
-- `pipelines/reanclaje/test_reanclaje.py`: 10 pruebas en Pasos (6), Construir (4)
+- `pipelines/reanclaje/test_preparar.py`: 2 pruebas en Preparacion (2)
+- `pipelines/reanclaje/test_reanclaje.py`: 11 pruebas en Pasos (6), Construir (5)
 - `pipelines/reanclaje/test_simulacion.py`: 23 pruebas en Simulacion (3), Reglas (13), FixtureDelMotor (1), CasoViaje (6)
 - `pipelines/reanclaje/test_trayectoria.py`: 6 pruebas en TrayectoriaTest (6)
 <!-- CONTEXT:AUTO:END -->

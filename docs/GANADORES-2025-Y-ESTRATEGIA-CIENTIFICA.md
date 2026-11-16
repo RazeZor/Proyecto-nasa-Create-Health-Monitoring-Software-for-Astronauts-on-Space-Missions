@@ -1,0 +1,61 @@
+# Ganadores de 2025 y decisiones para VIGÍA
+
+Consulta: 16-nov-2026 UTC. Se recopilaron las fichas de **los diez ganadores globales**, no solo los relacionados con salud. La selección y las categorías se contrastaron con el [anuncio oficial de NASA](https://www.nasa.gov/learning-resources/stem-engagement-at-nasa/nasa-announces-2025-international-space-apps-challenge-global-winners/) y el [listado oficial](https://www.spaceappschallenge.org/2025/awards/global-winners/).
+
+El premio acredita el resultado del concurso; no acredita cada afirmación de los participantes ni constituye validación científica o clínica independiente. Las lecciones siguientes son nuestra interpretación, no una explicación del voto del jurado.
+
+## Alcance reproducible de la consulta
+
+`tools/investigacion/fuentes.json` contiene el catálogo y `investigar.py --lector` conserva respuestas, texto, URLs, hora UTC, SHA-256 y errores en `tools/investigacion/data/`, ignorada por Git. La primera captura fue `20261116T005413Z`; la ampliación `20261116T010513Z` completó la pestaña Project de Zumorroda-X y las guías actuales. El HTTPS original falló en varias páginas: se usó una representación pública de r.jina.ai, identificada como tercero en el manifiesto, sin desactivar certificados. Se leyeron las diez descripciones; no se ejecutó el código de los demás equipos ni se auditó su rendimiento.
+
+Las fichas originales no expusieron todos los destinos de los botones Demo/Project Link al extractor. Un botón, captura, descripción o README no se cuenta como ensayo funcional. No se copiaron proyectos ajenos al producto ni se recopilaron contactos. Las respuestas completas permanecen locales; este documento resume y enlaza las fuentes.
+
+## Comparación de los diez proyectos
+
+| Proyecto y categoría oficial | Qué describe el equipo | Lección aplicable a VIGÍA | Qué queda sin verificar en esta revisión |
+| --- | --- | --- | --- |
+| [SpaceGenes+](https://www.spaceappschallenge.org/2025/find-a-team/spacegenes/?tab=project) · Best Use of Science | Explora respuesta molecular combinada a radiación y microgravedad. Su [sitio de autor](https://spacegenes-plus.framer.website/) distingue un caso activo de futuras extensiones. | Formular una pregunta acotada y señalar exactamente qué datos sostienen cada vista. | No reproducimos el análisis; el caso murino no demuestra predicción individual en astronautas. |
+| [Resonant Exoplanets](https://www.spaceappschallenge.org/2025/find-a-team/resonant-exoplanets/?tab=project) · Best Use of Data | Propone una cadena desde observaciones astronómicas hasta detección y análisis físico/químico. | Mostrar datos → método → salida revisable, con trazabilidad de extremo a extremo. | Las declaraciones de exactitud y reducción de falsos positivos son de sus autores; no quedan acreditadas por leer la ficha. |
+| [Twisters / SkySense](https://www.spaceappschallenge.org/2025/find-a-team/twisters/?tab=project) · Best Use of Technology | Lleva información meteorológica a decisiones sobre actividades y ventanas de tiempo. | Terminar el flujo en una decisión comprensible para un usuario identificado. | No se midió habilidad de pronóstico, calibración ni beneficio frente a alternativas. |
+| [Astro Sweepers](https://www.spaceappschallenge.org/2025/find-a-team/astro-sweepers-we-catch-what-space-leaves-behind/?tab=project) · Galactic Impact | Relaciona evaluación de residuos, informes de cumplimiento y su índice de riesgo. Tiene un [sitio público](https://astro-sweepers.vercel.app/sustainability). | Entregar un informe que otra persona pueda revisar, además del tablero. | No se ejecutó DAS ni se validaron pesos del índice; un índice propio no es un estándar oficial. |
+| [PureFlow](https://www.spaceappschallenge.org/2025/find-a-team/pureflow2/?tab=project) · Best Mission Concept | Combina diseño de hábitats, restricciones de recursos y escenarios ambientales. | Integrar restricciones de misión, en vez de agregar gráficos sin relación con la tarea. | Una conexión a DONKI no demuestra que el modelo prediga supervivencia o dosis personal. |
+| [Photonics Odyssey / AakashNet](https://www.spaceappschallenge.org/2025/find-a-team/photonic-force/?tab=project) · Most Inspirational | Presenta una arquitectura de conectividad y un demostrador de red; declara interfaz local y simulación. | Separar arquitectura propuesta, simulación y capacidad efectivamente construida. | No se inspeccionó hardware ni se hicieron pruebas de enlace; no se acredita una red desplegada. |
+| [HerCode Space / A Solar Tale](https://www.spaceappschallenge.org/2025/find-a-team/hercode-space/?tab=project) · Best Use of Storytelling | Narra ciencia solar para públicos jóvenes. El [sitio del equipo](https://studiohercode.com/solar-tale) enlaza la experiencia. | Explicar un caso humano antes de introducir fórmulas y capas. | No se midieron aprendizaje, comprensión o accesibilidad con participantes. |
+| [Gaia+LEO](https://www.spaceappschallenge.org/2025/find-a-team/gaialeo/?tab=project) · Global Connection | Modela decisiones conjuntas sobre centros de datos terrestres y orbitales bajo restricciones. | Declarar objetivo, restricciones y supuestos; mostrar compromisos, no un número aislado. | No se resolvió su modelo ni se verificaron supuestos térmicos, económicos o de infraestructura. |
+| [Zumorroda-X / Henry’s Farm Adventures](https://www.spaceappschallenge.org/2025/find-a-team/zumorroda-x/?tab=project) · Art & Technology | Integra problemas agrícolas, imágenes de observación y actividades educativas. | Hacer visible el efecto de cada dato dentro de una interacción concreta. | No se midieron efectividad educativa ni exactitud de sus modelos agrícolas. |
+| [QUEÑARIS](https://www.spaceappschallenge.org/2025/find-a-team/watana-project/?tab=project) · Local Impact | Aborda reforestación de queñua con observación territorial y seguimiento. | Identificar beneficiario, contexto y resultado observable, con responsables locales. | Las cifras de crecimiento y supervivencia son afirmaciones del equipo; no se revisaron datos de campo o controles. |
+
+## Qué pide la evaluación y cómo responder
+
+La [guía de evaluación 2025](https://spaceapps-v2-staging.s3.amazonaws.com/media/documents/Final_Space_Apps_2025_Judging_Guidelines_for_web.pdf) y la [guía oficial consultada para 2026](https://www.spaceappschallenge.org/resources/judging-awards-guide/) distinguen impacto, creatividad, validez, relevancia y presentación. Validez incluye fundamento y factibilidad; no basta con citar artículos. La [guía de entrega actual](https://www.spaceappschallenge.org/resources/project-submission-guide/) exige una demo breve y materiales en inglés; la demo admite hasta siete diapositivas o treinta segundos. La investigación de ganadores no cambia estas reglas.
+
+| Criterio | Evidencia concreta que debe enseñar VIGÍA | Estado de esta entrega |
+| --- | --- | --- |
+| Impacto | Usuario y decisión específicos: reconocer un cambio, revisar evidencia y preparar comunicación con enlace limitado. | Flujo demostrable; impacto clínico y ahorro de tiempo sin medir. |
+| Creatividad | Hipótesis de integración: referencia personal, contexto aplicable y explicación local con trazabilidad. | Implementada como prototipo; novedad frente al estado del arte y beneficio comparativo sin validar. |
+| Validez | Código reproducible, comparadores, ablaciones, incertidumbre, resultados negativos y revisión profesional. | Banco exploratorio y registro de afirmaciones implementados; revisión externa pendiente. |
+| Relevancia | Datos NASA/NOAA con procedencia y un uso justificado en la tarea. | Fuentes ambientales integradas; no se convierten en dosimetría humana ni datos fisiológicos de entrenamiento. |
+| Presentación | Una historia completa y afirmaciones respaldadas por artefactos accesibles. | [Pitch y demo de siete diapositivas](PITCH-CIENTIFICO.md); falta completar nombres reales del equipo y someter materiales mediante su cuenta. |
+
+## Decisiones ejecutadas
+
+1. Añadir investigación reproducible de los diez proyectos y las guías, con fallos de acceso explícitos.
+2. Evaluar el **motor TypeScript que ejecuta la aplicación**, con un generador separado del simulador de desarrollo: 780 misiones, trece escenarios y siete métodos. Protocolo, casos y código se congelan antes de calcular métricas. La independencia del generador como archivo no equivale a independencia científica del equipo.
+3. Publicar detecciones, omitidos, intervalos Wilson, retraso condicionado a detección, falsas alertas por exposición observada y diferencias pareadas. Incluir ablaciones y datos ausentes, cambio de instrumento y ruido no gaussiano.
+4. Sustituir los KPI escritos a mano en «Acerca de» por un reporte verificado, con SHA-256 y estado de vigencia. Un reporte ausente o corrupto no se presenta como cero errores.
+5. Registrar cada afirmación, su fuente, su implementación y su límite. Identificar la capa A como adaptación parcial de NEWS2: cuatro parámetros y agregación propia.
+6. Preparar un protocolo profesional y una demo que incluye el resultado adverso de deriva sutil. No inventar revisores, avales ni porcentajes de éxito en el concurso.
+
+## Hallazgo que cambia el pitch
+
+La auditoría `auditoria-sintetica-v1.1` detecta 60/60 derivas intensas y **1/60 derivas sutiles** con el motor completo. Esta última estimación tiene IC Wilson 95 % aproximado de **0,3–8,9 %**. Por tanto, la cifra histórica de 99,8 % del generador de desarrollo no permite afirmar detección general de deriva. Los escenarios, intensidades y calendarios difieren; tampoco debe interpretarse como una regresión temporal del software. La enmienda v1.1 separó las reglas ambientales deterministas y corrigió el conteo del control negativo ambiental después de inspeccionar v1; no cambió generador, detector ni resultados fisiológicos. Ambas ejecuciones se conservan.
+
+El comparador personal simple detecta 4/60 derivas sutiles y el de umbrales 52/60, pero este último produce 627 episodios falsos en 4.200 días de control (1,045 por persona-semana). No igualamos carga de alarmas entre métodos: no se puede escoger solo sensibilidad y declarar vencedor. Los umbrales simples evalúan cualquier banda anormal de un parámetro; no implementan el NEWS2 completo. Con deriva intensa el motor también produce 44 episodios fuera del evento y recuperación en 2.580 días: no debe ocultarse detrás de los controles sin inyección.
+
+El resultado justifica estudiar adaptación de línea base, magnitud mínima detectable y carga de alertas con expertos. **No se reajustaron umbrales usando este banco**. Si se usa para desarrollar una mejora, debe etiquetarse como desarrollo y reservar otro conjunto, diseñado o custodiado por un evaluador independiente, para la siguiente evaluación.
+
+## Lo que falta para una innovación validada
+
+Antecedentes que impiden afirmar «primero» o «único»: NASA desarrolla [Autonomous Medical Operations](https://www.nasa.gov/directorates/stmd/game-changing-development-program/autonomous-medical-operations-amo/) y un [concepto de apoyo clínico para operaciones independientes de Tierra](https://www.nasa.gov/centers-and-facilities/ames/ames-science/ames-space-biosciences/a-clinical-decision-support-system-for-earth-independent-medical-operations/). CSA describe [Bio-Monitor](https://www.csa-asc.gc.ca/eng/sciences/bio-monitor.asp) y el [estudio Space Health con análisis Artemis](https://www.asc-csa.gc.ca/eng/sciences/space-flight-improve-monitor-health-earth.asp). Estos antecedentes cubren captura fisiológica y apoyo/interpretación; no se evaluaron comparativamente aquí. VIGÍA no reemplaza esos sistemas ni ha demostrado superarlos. Esta búsqueda orienta el posicionamiento; no es una revisión sistemática o de patentes.
+
+El fundamento de MAD/CUSUM/NEWS2 no demuestra que combinarlos de esta manera sea novedoso, seguro o útil. La contribución defendible hoy es un prototipo de integración y auditabilidad. Falta comparar con herramientas existentes, acordar una pregunta primaria y criterios antes de evaluar, obtener revisión clínica y metrológica, caracterizar sensores y validar con datos adecuados y participantes bajo el protocolo correspondiente. El [protocolo de revisión](PROTOCOLO-REVISION-CIENTIFICA.md) convierte esas tareas en entregables verificables. No dependen de añadir más datasets ambientales al azar.

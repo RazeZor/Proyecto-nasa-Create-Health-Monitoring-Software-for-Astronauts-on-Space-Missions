@@ -2,7 +2,9 @@
 
 // Cliente: los textos salen de `S`, que resuelve el idioma en el navegador; en el servidor saldría siempre en español.
 import { ArrowRight } from "lucide-react"
-import { IconoCapas, IconoDatos, IconoLimites, IconoPrivacidad, IconoResultados, IconoSinConexion } from "@/components/about/iconos"
+import { IconoCapas, IconoDatos, IconoLimites, IconoPrivacidad, IconoSinConexion } from "@/components/about/iconos"
+import { EvidenciaCientificaPanel } from "@/components/about/evidencia-cientifica"
+import { DatasetsCientificos } from "@/components/about/datasets-cientificos"
 import { ICONO_INDICADOR, IconoAlertas, IconoCuerpo, IconoEntorno, IconoInformes, IconoRegistro, IconoTendencias, type Icono } from "@/components/shared/iconos"
 import { Palabra, Simbolo } from "@/components/shared/logo"
 import { LayerChip, ProvenanceTag, STATUS_ICON } from "@/components/shared/status"
@@ -200,21 +202,8 @@ export function AboutView() {
         </dl>
       </section>
 
-      {/* 6. Resultados de la simulación */}
-      <section aria-labelledby="resultados" className={tarjeta}>
-        <Titulo id="resultados" icono={IconoResultados} titulo={S.about.results} entrada={S.about.resultsLead} />
-        <dl className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {S.about.kpis.map((k) => (
-            <div key={k.k} className="rounded-2xl border border-border bg-background p-4">
-              <dd className="font-mono text-4xl font-semibold leading-none tabular-nums">{k.v}</dd>
-              <dt className="mt-2 text-base leading-snug text-muted-foreground">{k.l}</dt>
-            </div>
-          ))}
-        </dl>
-        <p className="mt-4 flex items-start gap-3 rounded-2xl border border-status-watch/40 bg-status-watch/12 p-4 text-base leading-snug md:text-lg">
-          <Aviso aria-hidden className="mt-0.5 size-6 shrink-0 text-status-watch" />{S.about.resultsCaveat}
-        </p>
-      </section>
+      <EvidenciaCientificaPanel />
+      <DatasetsCientificos />
 
       {/* 7. Límites y fuentes */}
       <div className="grid gap-5 lg:grid-cols-2">

@@ -156,6 +156,23 @@ test("modo real: sin lecturas no se inventa nada; una medida ausente no puntúa"
   assert.equal(evaluar(entrada(2, { spo2: 91, restingHr: null, systolic: null, tempC: null, sleepH: null }), [], vacio), "act")
 })
 
+test("el entorno histórico conserva sus cifras sin disparar acciones sobre la cabina real", () => {
+  const h: Historial = {
+    modo: "real", naturaleza: "Real", dias_prevuelo: 0, dias_vuelo: 30, dia_actual: 10, lecturas: [],
+    entorno_diario: [{ dia_mision: 10, uso: "referencia", co2_ppm_max_horario: 9000,
+      flujo_protones_10mev_pfu: 200, modo_tormenta: true }],
+  }
+  const datos = [entrada(10, { symptoms: ["headache"], spo2: 89 })]
+  const real = analizarCon(datos, h)
+  assert.equal(real.co2(10)?.mmHg, 6.84)
+  assert.equal(real.stormInfo(10), null)
+  assert.ok(real.alerts(10).every((a) => !["co2", "protones"].includes(a.key ?? "")))
+  assert.ok(real.alerts(10).some((a) => a.layer === "A" && a.escalates))
+  assert.ok(analizarCon(datos, { ...h, modo: "demo" }).alerts(10).some((a) => ["co2", "protones"].includes(a.key ?? "")))
+  const sinUso = { ...h, entorno_diario: h.entorno_diario.map(({ uso, ...resto }) => resto) }
+  assert.equal(analizarCon(datos, sinUso).stormInfo(10), null)
+})
+
 test("tres días seguidos en ámbar: se recomienda compartir", () => {
   const a = analizar([24, 25, 26, 27].map((d) => entrada(d, { systolic: 150 })))
   const pas = a.alerts(27).filter((x) => x.indicator.includes("sistólica") && !x.informative)

@@ -13,6 +13,7 @@ import { ProvenanceTag, STATUS_ICON, statusSurface, statusText } from "@/compone
 import type { OrigenDato } from "@/lib/catalogo"
 import { cargarKpiSimulacion, cargarPanelGold, type KpiSimulacionEtl, type PanelEntornoEtl } from "@/lib/etl-client"
 import { MOTOR, S } from "@/lib/strings"
+import { entornoAplicable } from "@/lib/engine"
 import type { Provenance, Status } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Ayuda } from "@/components/shared/ayuda"
@@ -140,6 +141,9 @@ export function EnvironmentView() {
   const [gold, setGold] = useState<PanelEntornoEtl | null>(null)
   const [kpi, setKpi] = useState<KpiSimulacionEtl | null>(null)
   const [cargando, setCargando] = useState<boolean>(true)
+  const [detector, setDetector] = useState("")
+  const detectores = gold?.dosis?.por_detector ?? []
+  const dosisPanel = detectores.find((d) => d.id === detector) ?? detectores[0] ?? gold?.dosis
 
   // El panel es el mismo del que la API saca el entorno que evalúa el motor (historial.escenario_entorno).
   useEffect(() => {
@@ -167,7 +171,7 @@ export function EnvironmentView() {
   const dosisViaje = entorno.some((e) => e.dosis_acumulada_msv != null)
   const dosisPoints = dosisViaje
     ? entorno.flatMap((e) => (e.dosis_acumulada_msv != null ? [{ day: e.dia_mision, value: Number(e.dosis_acumulada_msv.toFixed(1)) }] : []))
-    : (gold?.dosis?.por_dia ?? []).map((d) => ({ day: d.dia_mision, value: Number((d.acumulada / 1000).toFixed(4)) }))
+    : (dosisPanel?.por_dia ?? []).map((d) => ({ day: d.dia_mision, value: Number((d.acumulada / 1000).toFixed(4)) }))
   const co2Points = entorno.flatMap((e) => {
     const c = analisis.co2(e.dia_mision)
     return c ? [{ day: e.dia_mision, value: Number(c.mmHg.toFixed(2)) }] : []
@@ -177,10 +181,10 @@ export function EnvironmentView() {
   const protonSimulados = entorno.filter((e) => e.flujo_origen?.naturaleza === "Simulado" && e.flujo_protones_10mev_pfu != null).map((e) => e.dia_mision)
   const soloAnomalias = (dias: number[], limite: (d: number) => boolean) => dias.filter(limite)
 
-  const dosisDia = gold?.dosis?.por_dia.findLast((d) => d.dia_mision <= day) ?? gold?.dosis?.por_dia[0]
+  const dosisDia = dosisPanel?.por_dia.findLast((d) => d.dia_mision <= day)
   const dosisViajeDia = entorno.find((e) => e.dia_mision === day)?.dosis_acumulada_msv ?? null
-  const dosisMSv = dosisViaje ? (dosisViajeDia !== null ? Number(dosisViajeDia.toFixed(1)) : null) : dosisDia ? Number((dosisDia.acumulada / 1000).toFixed(3)) : null
-  const pctCarrera = dosisViaje ? Number((((dosisMSv ?? 0) / CAREER_LIMIT_MSV) * 100).toFixed(1)) : gold?.dosis?.porcentaje_limite_carrera ?? 0
+  const dosisAcumulada = dosisViaje ? (dosisViajeDia !== null ? Number(dosisViajeDia.toFixed(1)) : null) : dosisDia ? Number((dosisDia.acumulada / 1000).toFixed(3)) : null
+  const pctCarrera = dosisViaje ? Number((((dosisAcumulada ?? 0) / CAREER_LIMIT_MSV) * 100).toFixed(1)) : gold?.dosis?.porcentaje_limite_carrera ?? 0
   const hayDosis = dosisViaje || !!gold?.dosis
   const cabinaDia = gold?.cabina.find((c) => c.dia_mision === day)
   const co2Dia = analisis.co2(day)
@@ -192,11 +196,14 @@ export function EnvironmentView() {
 
   // La respuesta de hoy: tormenta (lo que decide el motor) y CO2 frente a su límite. Sin dato no se afirma nada.
   const entornoDia = entorno.find((e) => e.dia_mision === day)
+  const aplicable = !!entornoDia && entornoAplicable(entornoDia, catalogo.historial.modo)
   const tormenta = analisis.stormInfo(day)
   const flujoDia = entornoDia?.flujo_protones_10mev_pfu ?? null
   const hayProtones = flujoDia !== null || tormenta !== null
-  const estadoTormenta: Status | null = tormenta ? "act" : hayProtones ? "ok" : null
-  const respuesta: { estado: Status | null; titulo: string; detalle: string; accion: boolean } = tormenta
+  const estadoTormenta: Status | null = !aplicable ? null : tormenta ? "act" : hayProtones ? "ok" : null
+  const respuesta: { estado: Status | null; titulo: string; detalle: string; accion: boolean } = !aplicable && !!entornoDia
+    ? { estado: null, titulo: S.env.referenceOnly, detalle: S.env.referenceOnlyHint, accion: false }
+    : tormenta
     ? { estado: "act", titulo: S.banners.storm, detalle: MOTOR.accion.protones, accion: true }
     : co2Dia && co2Status === "act"
       ? { estado: "act", titulo: S.env.hero.co2Act, detalle: MOTOR.accion.co2, accion: true }
@@ -226,7 +233,8 @@ export function EnvironmentView() {
   }
   const co2Simulado = entorno.some((e) => analisis.co2(e.dia_mision) !== null && !esReal(e.co2_origen))
   const escalaCo2 = Math.max(CO2_LIMIT_MMHG * 1.5, (co2Dia?.mmHg ?? 0) * 1.1)
-  const notaDosis = dosisViaje ? S.trayecto.doseNote : gold?.dosis?.tipo === "equivalente" ? S.env.doseEquivalent : S.env.doseNote
+  const notaDosis = dosisViaje ? S.trayecto.doseNote : dosisPanel?.tipo === "equivalente" ? S.env.doseEquivalent : S.env.doseNote
+  const unidadDosis = !dosisViaje && dosisPanel?.tipo === "absorbida" ? "mGy" : "mSv"
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
@@ -275,7 +283,7 @@ export function EnvironmentView() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Respuesta icono={IconoTormenta} titulo={S.env.stormCard} estado={estadoTormenta}
-          veredicto={tormenta ? S.env.stormOn : hayProtones ? S.env.stormOff : S.env.stormUnknown}>
+          veredicto={!aplicable && hayProtones ? S.env.referenceOnly : tormenta ? S.env.stormOn : hayProtones ? S.env.stormOff : S.env.stormUnknown}>
           <Cifra rotulo={S.env.protonsToday} valor={flujoDia !== null ? num(flujoDia) : "—"} unidad={flujoDia !== null ? "pfu" : undefined} />
           <p className="text-base text-muted-foreground">{S.env.eventThreshold}</p>
           {tormenta && <Paso estado="act" texto={MOTOR.accion.protones} />}
@@ -285,8 +293,8 @@ export function EnvironmentView() {
           </div>
         </Respuesta>
 
-        <Respuesta icono={IconoCo2} titulo={S.env.co2} estado={co2Dia ? co2Status : null}
-          veredicto={!co2Dia ? S.env.noCabin : co2Status === "act" ? S.env.co2Over : co2Status === "watch" ? S.env.co2Near : S.env.co2Under}>
+        <Respuesta icono={IconoCo2} titulo={S.env.co2} estado={co2Dia && aplicable ? co2Status : null}
+          veredicto={!co2Dia ? S.env.noCabin : !aplicable ? S.env.referenceOnly : co2Status === "act" ? S.env.co2Over : co2Status === "watch" ? S.env.co2Near : S.env.co2Under}>
           <Cifra valor={co2Dia ? co2Dia.mmHg.toFixed(2) : "—"} unidad={co2Dia ? "mmHg" : undefined} />
           {co2Dia && (
             <div>
@@ -297,24 +305,30 @@ export function EnvironmentView() {
               </p>
             </div>
           )}
-          {co2Dia && co2Status === "act" && <Paso estado="act" texto={MOTOR.accion.co2} />}
+          {aplicable && co2Dia && co2Status === "act" && <Paso estado="act" texto={MOTOR.accion.co2} />}
           <div className="mt-auto flex flex-wrap items-center gap-2">
             {procCo2 && <ProvenanceTag provenance={procCo2} className={PROV} />}
           </div>
         </Respuesta>
 
         <Respuesta icono={IconoDosis} titulo={S.env.dose} estado={null} veredicto={hayDosis ? notaDosis : S.env.noDose}>
-          <Cifra valor={dosisMSv !== null ? String(dosisMSv) : "—"} unidad={dosisMSv !== null ? "mSv" : undefined} />
-          {hayDosis && (
+          {!dosisViaje && detectores.length > 0 && <label className="flex flex-col gap-1 text-sm font-semibold">
+            {S.env.detector}
+            <select value={detectores.find((d) => d.id === detector)?.id ?? detectores[0].id} onChange={(e) => setDetector(e.target.value)} className="min-h-12 rounded-xl border border-input bg-background px-3 text-base">
+              {detectores.map((d) => <option key={d.id} value={d.id}>{d.serie} · {d.unidad}</option>)}
+            </select>
+          </label>}
+          <Cifra valor={dosisAcumulada !== null ? String(dosisAcumulada) : "—"} unidad={dosisAcumulada !== null ? unidadDosis : undefined} />
+          {dosisViaje && (
             <div>
               <Medidor fraccion={pctCarrera / 100} clase="bg-primary" etiqueta={`${pctCarrera}% · ${S.env.careerLimit}`} />
               <p className="mt-1.5 text-base text-muted-foreground">
                 <span className="font-mono font-semibold tabular-nums text-foreground">{pctCarrera}%</span> · {S.env.careerLimit}
-                <span className="font-mono tabular-nums"> · {dosisMSv} / {CAREER_LIMIT_MSV} mSv</span>
+                <span className="font-mono tabular-nums"> · {dosisAcumulada} / {CAREER_LIMIT_MSV} mSv</span>
               </p>
-              {!dosisViaje && gold?.dosis && <p className="text-base text-muted-foreground">{gold.dosis.orientativa ? S.env.indicative : gold.dosis.series.join(", ")}</p>}
             </div>
           )}
+          {!dosisViaje && gold?.dosis && <p className="text-base text-muted-foreground">{S.env.environmentalDose} · {dosisPanel && "serie" in dosisPanel ? dosisPanel.serie : gold.dosis.series.join(", ")}</p>}
           <div className="mt-auto flex flex-wrap items-center gap-2">
             {dosisViaje ? <ProvenanceTag provenance={SIMULADO} className={PROV} /> : gold?.dosis && <ProvenanceTag provenance={REAL("RadLab · NASA OSDR", fechaVentana(gold, "radlab"))} className={PROV} />}
           </div>
@@ -370,7 +384,7 @@ export function EnvironmentView() {
             {dosisPoints.length === 0 ? (
               <EmptyState message={S.env.emptyDose} />
             ) : (
-              <LineChart label={S.env.dose} unit="mSv" days={MISSION_DAYS} currentDay={day} points={dosisPoints} className="h-64" />
+              <LineChart label={S.env.dose} unit={unidadDosis} days={MISSION_DAYS} currentDay={day} points={dosisPoints} className="h-64" />
             )}
           </Panel>
 

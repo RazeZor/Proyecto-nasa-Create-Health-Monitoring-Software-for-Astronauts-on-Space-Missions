@@ -1,6 +1,9 @@
 # Datos: nunca van al repositorio (ver docs/ARQUITECTURA.md, "Datos")
 pipelines/*/data/
 apps/api/data/
+tools/verificacion/data/
+tools/investigacion/data/
+tools/validacion/data/
 *.parquet
 *.avro
 # Python

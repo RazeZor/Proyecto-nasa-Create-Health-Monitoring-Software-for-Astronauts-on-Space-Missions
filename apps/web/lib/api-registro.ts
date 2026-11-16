@@ -13,7 +13,7 @@ import type { CheckInEntry, IndicatorId, Layer, ProfileId, Report, Status } from
 export const API_BASE_URL = process.env.NEXT_PUBLIC_VIGIA_API_URL || "/vigia-api"
 
 type Lectura = { indicador: string; valor: number; t_real: string; origen: "manual" | "sensor"; metodo: string | null; naturaleza: "Real" }
-type Sintoma = { codigo: string; gravedad: number; t_real: string }
+type Sintoma = { codigo: string; gravedad: number; t_real: string; operacion_id: string }
 
 const IDS: Record<string, string> = Object.fromEntries(
   vocabulario.indicadores.filter((i) => i.ui).map((i) => [i.ui as string, i.id]),
@@ -51,7 +51,7 @@ export function lecturasDeCheckIn(e: CheckInEntry): Lectura[] {
 
 /** La interfaz no pide gravedad: se envía 1 (leve). */
 export const sintomasDeCheckIn = (e: CheckInEntry): Sintoma[] =>
-  e.symptoms.map((s) => ({ codigo: vocabulario.sintomas[s], gravedad: 1, t_real: tReal(e.createdAt) }))
+  e.symptoms.map((s) => ({ codigo: vocabulario.sintomas[s], gravedad: 1, t_real: tReal(e.createdAt), operacion_id: `${e.id}:${s}` }))
 
 async function enviar(ruta: string, tripulante: number, cuerpo: unknown): Promise<boolean> {
   try {
@@ -76,17 +76,27 @@ export async function enviarCheckIn(e: CheckInEntry, tripulante: number): Promis
 }
 
 /** Encola un reporte con el retardo del perfil (o `retardo` si se acorta, como en la demo); devuelve su id o null. */
-export async function encolarReporte(perfil: ProfileId, creado: string, tripulante: number, retardo = retardoMin(perfil), contenido?: ContenidoReporte): Promise<number | null> {
+export type AcuseReporte = { id: number } | { error: "conflicto" | "reintentar" }
+
+export async function enviarReporte(perfil: ProfileId, creado: string, tripulante: number, retardo = retardoMin(perfil), contenido?: ContenidoReporte, operacionId?: string): Promise<AcuseReporte> {
   try {
     const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reportes`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) },
-      body: JSON.stringify({ creado_t_real: tReal(creado), retardo_min: retardo, contenido }),
+      body: JSON.stringify({ creado_t_real: tReal(creado), retardo_min: retardo, contenido, operacion_id: operacionId }),
     })
-    return res.ok ? ((await res.json()) as { id: number }).id : null
+    if (res.status === 409) return { error: "conflicto" }
+    if (!res.ok) return { error: "reintentar" }
+    const acuse = await res.json() as { id?: unknown }
+    return typeof acuse.id === "number" && Number.isSafeInteger(acuse.id) && acuse.id > 0 ? { id: acuse.id } : { error: "reintentar" }
   } catch {
-    return null
+    return { error: "reintentar" }
   }
+}
+
+export async function encolarReporte(perfil: ProfileId, creado: string, tripulante: number, retardo = retardoMin(perfil), contenido?: ContenidoReporte): Promise<number | null> {
+  const acuse = await enviarReporte(perfil, creado, tripulante, retardo, contenido)
+  return "id" in acuse ? acuse.id : null
 }
 
 /** Reportes propios con su estado en la cola; `null` si no hay red o la API falla (nunca se finge una cola vacía). */

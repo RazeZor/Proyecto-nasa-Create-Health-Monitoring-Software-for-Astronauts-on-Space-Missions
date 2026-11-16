@@ -147,11 +147,11 @@ python -m uvicorn main:app --port 8000
 # 2. Web app (terminal 2)
 cd apps/web
 corepack enable                              # provides pnpm, the declared package manager
-pnpm install
+pnpm install --frozen-lockfile
 pnpm build && pnpm start                     # http://localhost:3000
 ```
 
-Open http://localhost:3000/?modo=demo&lang=en. `npm install && npm run build && npm start` also works if you prefer npm. For development with hot reload use `pnpm dev` instead of the last line.
+Open http://localhost:3000/?modo=demo&lang=en. The canonical package manager is pnpm with the committed lockfile. For development with hot reload use `pnpm dev` instead of the last line.
 
 Without the next step the demo still works, but the Environment screen has no real solar particle events and real mode shows "no data" for the environment.
 
@@ -206,12 +206,12 @@ Useful address parameters: `?modo=demo` or `?modo=real`, and `?lang=en` or `?lan
 ```sh
 python -m unittest discover -s pipelines/datalake     # repeat for each Python module
 python -m unittest discover -s apps/api
-node --test packages/engine/*.test.ts apps/web/lib/*.test.ts
+node --test packages/engine/*.test.ts apps/web/lib/*.test.ts tools/validacion/*.test.ts tools/presentacion/*.test.cjs
 ruff check .
 python tools/contextgen/contextgen.py --check
 ```
 
-324 tests: 236 in Python (data lake, re-anchoring and simulator, schemas, translations, API, tools) and 88 in Node (engine, parity with the Python reference, app logic). CI runs them on every pull request together with the type check and the production build of the web app.
+373 tests: 265 in Python and 108 in Node, including dataset import/integrity, evidence contracts, benchmark metrics, ablations and presentation integrity. CI also checks types and builds the web app. The isolated Chrome rehearsal is documented in [SETUP](docs/SETUP.md) and [VERIFICACION](docs/VERIFICACION.md). The [complete implementation plan](docs/PLAN-IMPLEMENTACION-COMPLETO.md) separates remaining work from the acquired MMASH/Orion reference datasets. The [scientific pitch](docs/PITCH-CIENTIFICO.md) includes unfavorable results: the same-team synthetic audit is not clinical or professional validation.
 
 ### Troubleshooting
 

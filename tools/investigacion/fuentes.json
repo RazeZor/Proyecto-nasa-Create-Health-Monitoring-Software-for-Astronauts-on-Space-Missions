@@ -1,0 +1,23 @@
+{
+  "version": "ganadores-2025-v1",
+  "fuentes_generales": [
+    "https://www.spaceappschallenge.org/2025/awards/global-winners/",
+    "https://www.nasa.gov/learning-resources/stem-engagement-at-nasa/nasa-announces-2025-international-space-apps-challenge-global-winners/",
+    "https://www.spaceappschallenge.org/2025/awards/",
+    "https://www.spaceappschallenge.org/resources/judging-awards-guide/",
+    "https://www.spaceappschallenge.org/resources/project-submission-guide/",
+    "https://spaceapps-v2-staging.s3.amazonaws.com/media/documents/Final_Space_Apps_2025_Judging_Guidelines_for_web.pdf"
+  ],
+  "proyectos": [
+    {"id":"spacegenes","nombre":"SpaceGenes+","premio":"Best Use of Science","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/spacegenes/?tab=project","artefactos":["https://spacegenes-plus.framer.website/","https://salonitangal.framer.website/spacegenes"]},
+    {"id":"resonant-exoplanets","nombre":"Resonant Exoplanets","premio":"Best Use of Data","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/resonant-exoplanets/?tab=project","artefactos":[]},
+    {"id":"twisters","nombre":"Twisters / SkySense","premio":"Best Use of Technology","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/twisters/?tab=project","artefactos":[]},
+    {"id":"astro-sweepers","nombre":"Astro Sweepers","premio":"Galactic Impact","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/astro-sweepers-we-catch-what-space-leaves-behind/?tab=project","artefactos":["https://astro-sweepers.vercel.app/sustainability"]},
+    {"id":"pureflow","nombre":"PureFlow","premio":"Best Mission Concept","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/pureflow2/?tab=project","artefactos":["https://portal.unit.br/blog/noticias/projeto-criado-na-unit-vence-hackathon-global-da-nasa-e-ganha-projecao-mundial/"]},
+    {"id":"photonics-odyssey","nombre":"Photonics Odyssey","premio":"Most Inspirational","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/photonic-force/?tab=project","artefactos":[]},
+    {"id":"hercode-space","nombre":"HerCode Space","premio":"Best Use of Storytelling","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/hercode-space/?tab=project","artefactos":["https://studiohercode.com/solar-tale"]},
+    {"id":"gaia-leo","nombre":"Gaia+LEO","premio":"Global Connection","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/gaialeo/?tab=project","artefactos":[]},
+    {"id":"zumorroda-x","nombre":"Zumorroda-X","premio":"Art & Technology","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/zumorroda-x/?tab=project","artefactos":[]},
+    {"id":"quenaris","nombre":"QUEÑARIS","premio":"Local Impact","pagina":"https://www.spaceappschallenge.org/2025/find-a-team/watana-project/?tab=project","artefactos":[]}
+  ]
+}
