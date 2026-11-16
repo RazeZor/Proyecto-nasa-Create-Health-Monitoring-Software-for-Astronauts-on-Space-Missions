@@ -7,6 +7,7 @@ import { leerSeguimiento, registrarEvento, resolverConflicto, sincronizarSeguimi
 import { TRIPULANTE } from "@/lib/sincronizacion"
 import { textoSistema as t, MOTOR, IDIOMA } from "@/lib/strings"
 import { nuevoId } from "@/lib/utils"
+import { esDemoPublica } from "@/lib/sesion"
 
 export function SeguimientoEpisodios() {
   const { mode, analisis, day, role, checkIns } = useApp()
@@ -23,7 +24,7 @@ export function SeguimientoEpisodios() {
   useEffect(() => {
     void recargar()
     const sincronizar = () => {
-      if (mode === "real" && TRIPULANTE) void sincronizarSeguimiento(TRIPULANTE).then(recargar).catch(() => setError(true))
+      if ((mode === "real" || esDemoPublica()) && TRIPULANTE) void sincronizarSeguimiento(TRIPULANTE).then(recargar).catch(() => setError(true))
     }
     sincronizar()
     const reloj = window.setInterval(sincronizar, 15000)
@@ -45,7 +46,7 @@ export function SeguimientoEpisodios() {
         indicador: e?.indicador ?? clave ?? "personal", tipo, nota: nota.trim(), observaciones,
         t_real: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"), version_previa: e?.version ?? 0 })
       setNota(""); setError(false); await recargar()
-      if (mode === "real" && TRIPULANTE) await sincronizarSeguimiento(TRIPULANTE)
+      if ((mode === "real" || esDemoPublica()) && TRIPULANTE) await sincronizarSeguimiento(TRIPULANTE)
       await recargar()
     } catch { setError(true) }
   }

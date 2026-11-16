@@ -3,7 +3,7 @@
  * - Navegación: red primero para tomar el último despliegue; sin red, la copia guardada.
  * - Recursos con huella (/_next/static): caché primero, son inmutables.
  * - La API (/vigia-api) no se intercepta: la app guarda su propia copia del catálogo y su cola de envíos. */
-const CACHE = "vigia-carcasa-v9"
+const CACHE = "vigia-carcasa-v10"
 // Recursos que la carcasa necesita y no llevan huella: el modelo anatómico del cuerpo 3D.
 const RECURSOS = ["/modelos/cuerpo.glb"]
 // Una por rol y pantalla (lib/roles.ts: SECCIONES): si cambian las rutas, cámbialas aquí y sube CACHE.

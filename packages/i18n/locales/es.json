@@ -40,7 +40,9 @@
       "reloj_nombre_por_defecto": "«{nombre}» es el nombre de fábrica del reloj: cambia el campo Tripulante en el reloj antes de vincularlo.",
       "reloj_nombre_ocupado": "El nombre «{nombre}» ya está vinculado a otro tripulante.",
       "sesion_requerida": "Inicia sesión con una cuenta autorizada.",
-      "acceso_limitado": "Se alcanzó el límite de intentos. Espera 15 minutos."
+      "acceso_limitado": "Se alcanzó el límite de intentos. Espera 15 minutos.",
+      "demo_caducada": "La sesión de demostración terminó. Abre una demo nueva para continuar.",
+      "demo_ocupada": "La demostración está ocupada. Vuelve a intentarlo más tarde."
     },
     "autor": {
       "cirujano": "Cirujano de Vuelo"
@@ -1177,8 +1179,8 @@
     },
     "sistema": {
       "acceso": {
-        "titulo": "Acceso a VIGÍA",
-        "detalle": "Usa la cuenta asignada a tu misión. El acceso local continúa en esta pestaña hasta que vence la sesión.",
+        "titulo": "Explora VIGÍA",
+        "detalle": "Prueba una misión de demostración o accede a tus registros personales.",
         "usuario": "Usuario",
         "clave": "Contraseña",
         "entrar": "Entrar",
@@ -1192,7 +1194,12 @@
         "alcance_clinico": "El personal médico de tu misión podrá leer el historial, las observaciones y los episodios. Revocar bloquea accesos nuevos cuando hay conexión; las copias autorizadas sin red requieren reconexión.",
         "conceder": "Conceder lectura clínica",
         "revocar": "Revocar lectura clínica",
-        "almacen_error": "No se puede leer el almacenamiento local. Los registros se conservan; exporta una copia y revisa la recuperacion antes de continuar."
+        "almacen_error": "No se puede leer el almacenamiento local. Los registros se conservan; exporta una copia y revisa la recuperacion antes de continuar.",
+        "explorar_demo": "Explorar demo",
+        "demo_detalle": "Sin cuenta ni contraseña. Explora los tres roles con datos ficticios en un espacio temporal propio.",
+        "cuenta_personal": "Acceso a mis datos personales",
+        "demo_activa": "Demo pública · Datos simulados",
+        "salir_demo": "Salir de la demo"
       },
       "evidencia": {
         "titulo": "Calidad de las mediciones",

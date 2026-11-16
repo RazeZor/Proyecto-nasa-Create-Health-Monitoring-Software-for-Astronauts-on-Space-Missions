@@ -7,6 +7,7 @@ Ejecutar las comprobaciones de ingeniería de una entrega con un único intérpr
 
 ## Puntos clave
 
+- `ensayo.py --demo-publica` abre la demo sin credenciales con autenticación personal activa, comprueba los tres roles, episodio simulado, separación de bandejas y cierre del acceso privado. Usa su propio `VIGIA_DEMO_DIR` temporal; no crea cuentas personales. Es incompatible con `--integral`.
 - `--aislado` selecciona `.next-verificacion` en el verificador y en el ensayo de Chrome. La reapertura del navegador verifica identidad de nuevo antes de simular caída del registro; una pestaña desbloqueada sí continúa durante el corte de API dentro de su vigencia.
 - `recuperar.py` usa SQLite backup (incluye WAL), verifica integridad/llaves/filas/hashes y restaura únicamente a un destino nuevo; conserva intactas las operaciones posteriores de la base original. Las copias son privadas y no se suben a Git.
 - `ensayo.py --integral` usa cuentas con claves temporales para registro, episodio con una toma realmente posterior, módulos, offline e aislamiento de usuario. `ensayo_transporte.py` verifica ida y vuelta entre dos procesos/bases, con sesiones normales y credenciales generadas en memoria; no toca despliegues personales.
@@ -34,11 +35,12 @@ tags: verificacion, tests, release, calidad, reproducibilidad
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [ensayo.py](ensayo.py) | 93 | Ensayo de navegador con base temporal: python tools/verificacion/ensayo.py --node RUTA [--chrome RUTA]. |
+| [ensayo.py](ensayo.py) | 99 | Ensayo de navegador con base temporal: python tools/verificacion/ensayo.py --node RUTA [--chrome RUTA]. |
 | [ensayo_transporte.py](ensayo_transporte.py) | 99 | Ensayo de ida/vuelta entre dos procesos y bases temporales, sin credenciales persistentes. |
+| [flujo-demo-publica.mjs](flujo-demo-publica.mjs) | 68 | Aceptación de la entrada para evaluadores, sin crear cuentas personales. |
 | [flujo-integral.mjs](flujo-integral.mjs) | 95 | Aceptación en Chrome con cuentas y datos de ensayo en una base temporal. |
 | [inventario.py](inventario.py) | 89 | Auditar datalake y SQLite sin mostrar datos personales; --migrar crea respaldo antes de actualizar SQLite. |
-| [navegador.mjs](navegador.mjs) | 227 | Ensayo de recuperación de informes con Chrome DevTools Protocol, sin dependencias npm. |
+| [navegador.mjs](navegador.mjs) | 230 | Ensayo de recuperación de informes con Chrome DevTools Protocol, sin dependencias npm. |
 | [recuperar.py](recuperar.py) | 53 | Copias SQLite coherentes, con WAL y verificación, sin reemplazar ninguna base existente. |
 | [test_recuperar.py](test_recuperar.py) | 40 | — |
 | [verificar.py](verificar.py) | 76 | Comprobaciones reproducibles: python tools/verificacion/verificar.py [--node RUTA] [--web]. |
@@ -53,6 +55,10 @@ tags: verificacion, tests, release, calidad, reproducibilidad
 **ensayo_transporte.py**
 
 - función `ejecutar()`
+
+**flujo-demo-publica.mjs**
+
+- función `ensayarDemoPublica`
 
 **flujo-integral.mjs**
 
@@ -84,11 +90,11 @@ tags: verificacion, tests, release, calidad, reproducibilidad
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `DATALAKE_DIR`, `VIGIA_DB`, `VIGIA_E2E_API`, `VIGIA_E2E_CLAVE`, `VIGIA_E2E_DATASETS`, `VIGIA_E2E_INTEGRAL`, `VIGIA_E2E_PROXY`, `VIGIA_E2E_WEB`
+- Variables de entorno: `DATALAKE_DIR`, `VIGIA_DB`, `VIGIA_E2E_API`, `VIGIA_E2E_CLAVE`, `VIGIA_E2E_DATASETS`, `VIGIA_E2E_DEMO_PUBLICA`, `VIGIA_E2E_INTEGRAL`, `VIGIA_E2E_PROXY`, `VIGIA_E2E_WEB`
 
 ### Dependencias
 
-- Internas: `./flujo-integral.mjs`, `recuperar`
+- Internas: `./flujo-demo-publica.mjs`, `./flujo-integral.mjs`, `recuperar`
 - Externas: ninguna
 - Biblioteca estándar: `argparse`, `contextlib`, `datetime`, `hashlib`, `http`, `json`, `node:assert/strict`, `node:child_process`, `node:events`, `node:fs/promises`, `node:http`, `node:os`, `node:path`, `node:timers/promises`, `os`, `pathlib`, `re`, `secrets`, `shutil`, `socket`, `sqlite3`, `subprocess`, `sys`, `tempfile`, `time`, `unittest`, `urllib`, `uuid`
 

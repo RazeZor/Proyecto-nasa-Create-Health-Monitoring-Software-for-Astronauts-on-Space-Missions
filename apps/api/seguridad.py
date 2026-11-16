@@ -51,6 +51,8 @@ def crear_cuenta(conn, usuario, clave, tripulante_id, rol):
 
 
 def sesion_verificada(request, conn):
+    if request.headers.get("X-Vigia-Demo-Rol") is not None:
+        raise HTTPException(403, t("api.error.sin_permiso"))
     token = request.cookies.get("vigia_sesion")
     if not token:
         raise HTTPException(401, t("api.error.sesion_requerida"))

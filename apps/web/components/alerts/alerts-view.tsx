@@ -9,6 +9,7 @@ import { useApp } from "@/components/app-context"
 import { SeguimientoEpisodios } from "@/components/alerts/seguimiento"
 import { EvidenciaMediciones } from "@/components/shared/evidencia-mediciones"
 import { RevisionEpisodios } from "@/components/alerts/revision-episodios"
+import { esDemoPublica } from "@/lib/sesion"
 import { EmptyState, PageHeader } from "@/components/shared/states"
 import { LayerChip, STATUS_ICON, StatusBadge, statusSurface, statusText } from "@/components/shared/status"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -419,7 +420,7 @@ export function AlertsView() {
       <PageHeader title={S.alerts.title} ayuda={<p>{astronauta ? S.alerts.subtitle : S.alerts.cmoNote}</p>} />
       {astronauta && <SeguimientoEpisodios />}
       {astronauta && <EvidenciaMediciones />}
-      {!astronauta && mode === "real" && <RevisionEpisodios />}
+      {!astronauta && (mode === "real" || esDemoPublica()) && <RevisionEpisodios />}
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="flex min-w-0 flex-col gap-8">
           {!astronauta && mode === "real" && (

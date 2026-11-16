@@ -35,7 +35,10 @@ def main():
     parser.add_argument("--datasets", action="store_true", help="comprobar también MMASH y Orion previamente publicados")
     parser.add_argument("--aislado", action="store_true", help="usar el build de .next-verificacion")
     parser.add_argument("--integral", action="store_true", help="sesiones verificadas, registro, episodios, módulos e IndexedDB aislados")
+    parser.add_argument("--demo-publica", action="store_true", help="entrada sin credenciales, tres roles y datos ficticios separados")
     args = parser.parse_args()
+    if args.integral and args.demo_publica:
+        parser.error("elegir --integral o --demo-publica")
     if not args.node or not Path(args.chrome).is_file():
         parser.error("indicar Node 22.18+ y Chrome/Chromium instalado")
     node = str(Path(args.node).resolve())
@@ -53,10 +56,13 @@ def main():
     entorno = {**os.environ, "VIGIA_DB": str(destino / "ensayo.db"), "SMART_DESACTIVADO": "1", "VIGIA_IDENTIDAD_ENSAYO": "1", "VIGIA_RELOJ_SEG": "0",
                "VIGIA_E2E_API": api, "VIGIA_E2E_WEB": web, "VIGIA_E2E_PROXY": proxy,
                "VIGIA_E2E_DATASETS": "1" if args.datasets else "0"}
+    entorno["VIGIA_DEMO_DIR"] = str(destino / "demostraciones")
     if args.aislado:
         entorno["VIGIA_VERIFICACION"] = "1"
     if args.integral:
         entorno.update(VIGIA_IDENTIDAD_ENSAYO="0", VIGIA_E2E_INTEGRAL="1", VIGIA_E2E_CLAVE=secrets.token_urlsafe(24))
+    if args.demo_publica:
+        entorno.update(VIGIA_IDENTIDAD_ENSAYO="0", VIGIA_E2E_DEMO_PUBLICA="1")
     subprocess.run([sys.executable, "-m", "almacen", "sembrar"], cwd=RAIZ / "apps/api", env=entorno, check=True, capture_output=True)
     if args.integral:
         codigo = ("import os, main; from seguridad import crear_cuenta; from almacen import conectar; "

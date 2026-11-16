@@ -1,4 +1,4 @@
-import { peticion } from "./sesion.ts"
+import { peticion, esDemoPublica } from "./sesion.ts"
 /**
  * Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz
  * a las de la API con el contrato vocabulario.json (copia de packages/schemas; la guarda un test de Python).
@@ -93,7 +93,7 @@ export async function enviarCheckIn(e: CheckInEntry, tripulante: number): Promis
     ...observacionesDeCheckIn(e).map(async (l) => {
       try {
         const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/observaciones`, {
-          method: "POST", headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) }, body: JSON.stringify(l),
+          method: "POST", headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) }, body: JSON.stringify(esDemoPublica() ? { ...l, uso: "escenario" } : l),
         })
         if (!res.ok) return false
         const acuse = await res.json() as { id?: unknown; recibido_t_real?: unknown }

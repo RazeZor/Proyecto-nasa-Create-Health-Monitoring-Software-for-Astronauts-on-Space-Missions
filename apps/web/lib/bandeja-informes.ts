@@ -2,6 +2,7 @@
 import type { AcuseReporte } from "./api-registro.ts"
 import type { ContenidoReporte } from "./cola.ts"
 import type { Mode, ProfileId } from "./types.ts"
+import { espacioSesion } from "./sesion.ts"
 
 export interface InformePendiente {
   id: string
@@ -15,7 +16,7 @@ export interface InformePendiente {
 type Almacen = Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">
 
 export function crearBandeja(almacen: Almacen, tripulante: number, modo: Mode, mision: string) {
-  const prefijo = `vigia:informes:v1:${encodeURIComponent(mision)}:${tripulante}:${modo}:`
+  const prefijo = `vigia:${espacioSesion()}informes:v1:${encodeURIComponent(mision)}:${tripulante}:${modo}:`
   return {
     tripulante,
     listar(): InformePendiente[] {

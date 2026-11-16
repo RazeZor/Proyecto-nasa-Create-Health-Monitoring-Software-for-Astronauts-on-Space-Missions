@@ -1,17 +1,18 @@
 /** IndexedDB transaccional. Sin fallback silencioso cuando falla la persistencia. */
 import { validarClavePrivada } from "./almacen-validar.ts"
-export interface AmbitoLocal { tripulante: number; mision: number; modo: "real" | "demo" }
+export interface AmbitoLocal { tripulante: number; mision: number; modo: "real" | "demo"; espacioDemo?: string }
 let ambito: AmbitoLocal | null = null
 let apertura: Promise<IDBDatabase> | null = null
 
 export function fijarAmbito(a: AmbitoLocal | null) {
   if (a && (!Number.isSafeInteger(a.tripulante) || a.tripulante <= 0 || !Number.isSafeInteger(a.mision) || a.mision <= 0)) throw new Error("ámbito inválido")
+  if (a?.espacioDemo && (!/^[a-f0-9]{32}$/.test(a.espacioDemo) || a.modo !== "demo")) throw new Error("espacio de demostración inválido")
   ambito = a ? { ...a } : null
 }
 
 export function claveAmbito(): string {
   if (!ambito) throw new Error("almacén sin identidad y misión")
-  return `${ambito.mision}:${ambito.tripulante}:${ambito.modo}`
+  return `${ambito.espacioDemo ? `demo:${ambito.espacioDemo}:` : ""}${ambito.mision}:${ambito.tripulante}:${ambito.modo}`
 }
 
 function abrir(): Promise<IDBDatabase> {

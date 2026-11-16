@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation"
 import { Acceso } from "@/components/shell/acceso"
 import { fijarAmbito, preservarLegado } from "@/lib/almacen-local"
-import { sesionActual, verificarSesion, salir, type SesionVerificada } from "@/lib/sesion"
+import { sesionActual, verificarSesion, salir, cambiarRolDemo, esDemoPublica, type SesionVerificada } from "@/lib/sesion"
 import { sincronizarSeguimiento } from "@/lib/seguimiento"
 import { archivarEvaluacion, sincronizarEstudios } from "@/lib/estudios"
 import { nuevoId } from "@/lib/utils"
@@ -74,10 +74,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const cargar = useCallback((m: Mode, silencioso = false) => {
     if (!silencioso) { setCatalogo(null); setFalloInicialAlmacen(false) }
     usarModo(m)
-    cargarCatalogo(TRIPULANTE ?? 1, m).then(async (c) => {
+    const sujeto = TRIPULANTE ?? 1
+    const espacio = sesionActual()?.espacio_demo
+    cargarCatalogo(sujeto, m).then(async (c) => {
       const s = sesionActual()
+      if (!s || s.tripulante_id !== sujeto || s.espacio_demo !== espacio) return
       if (c && s) {
-        fijarAmbito({ tripulante: s.tripulante_id, mision: c.historial.mision_id ?? s.mision_id, modo: m })
+        fijarAmbito({ tripulante: s.tripulante_id, mision: c.historial.mision_id ?? s.mision_id, modo: m, espacioDemo: s.espacio_demo })
         try { await preservarLegado() }
         catch { setFalloInicialAlmacen(true); setCatalogo("error"); return }
       }
@@ -98,12 +101,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(reloj)
   }, [identidad, aceptarIdentidad])
   useEffect(() => {
+    if (!identidad?.demo_publica) return
+    const rol = rolDeRuta(ruta) ?? "astronaut"
+    if (rol !== identidad.rol) aceptarIdentidad(cambiarRolDemo(rol))
+  }, [ruta, identidad, aceptarIdentidad])
+  useEffect(() => {
     if (!identidad) return
-    const m = leerModo()
+    const m = identidad.demo_publica ? "demo" : leerModo()
     setModeRaw(m)
     cargar(m)
   }, [cargar, identidad])
   const setMode = useCallback((m: Mode) => {
+    if (esDemoPublica() && m !== "demo") { void salir().catch(() => setFalloSalida(true)); return }
     usarModo(m, true)
     setModeRaw(m)
     cargar(m)
@@ -118,12 +127,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   if (identidad === undefined) return <Estado mensaje="" />
   if (identidad === null) return <Acceso alAcceder={aceptarIdentidad} />
   const rolPedido = rolDeRuta(ruta)
-  if (!identidad.ensayo && rolPedido && rolPedido !== identidad.rol) return <Estado mensaje={textoSistema("acceso.rol")} reintentar={() => window.location.assign(`/${identidad.rol === "astronaut" ? "astronauta" : identidad.rol === "cmo" ? "oficial" : "medico"}`)} />
+  if (identidad.demo_publica && rolPedido && rolPedido !== identidad.rol) return <Estado mensaje="" />
+  if (!identidad.ensayo && !identidad.demo_publica && rolPedido && rolPedido !== identidad.rol) return <Estado mensaje={textoSistema("acceso.rol")} reintentar={() => window.location.assign(`/${identidad.rol === "astronaut" ? "astronauta" : identidad.rol === "cmo" ? "oficial" : "medico"}`)} />
   if (catalogo === null || mode === null) return <Estado mensaje="" />
   if (catalogo === "error") return <Estado mensaje={falloInicialAlmacen ? textoSistema("acceso.almacen_error") : S.common.apiOffline} detalle={falloInicialAlmacen ? undefined : S.common.apiOfflineDetail} reintentar={() => cargar(mode)} />
   return <><div className="flex items-center justify-end gap-3 border-b px-4 py-1 text-sm">
-    <span>{identidad.sinEnlace ? textoSistema("acceso.local") : textoSistema("acceso.verificada")}</span>
-    {!identidad.ensayo && <button className="min-h-11 underline" onClick={() => { void salir().then((ok) => setFalloSalida(!ok)).catch(() => setFalloSalida(true)) }}>{textoSistema("acceso.salir")}</button>}
+    <span>{identidad.demo_publica ? textoSistema("acceso.demo_activa") : identidad.sinEnlace ? textoSistema("acceso.local") : textoSistema("acceso.verificada")}</span>
+    {!identidad.ensayo && <button className="min-h-11 underline" onClick={() => { void salir().then((ok) => setFalloSalida(!ok)).catch(() => setFalloSalida(true)) }}>{textoSistema(identidad.demo_publica ? "acceso.salir_demo" : "acceso.salir")}</button>}
     {falloSalida && <span role="alert">{textoSistema("acceso.salida_error")}</span>}
   </div><Sesion key={`${identidad.tripulante_id}:${mode}`} catalogo={catalogo} mode={mode} setMode={setMode} recargar={() => cargar(mode, true)}>{children}</Sesion></>
 }
@@ -214,7 +224,7 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   // Cola local -> API: registros del día y rojos de capa A (§5.4). Sin enlace quedan pendientes y se reintenta.
   const sincronizarTodo = useCallback(async () => {
     await sincronizarRegistros()
-    if (mode === "real" && TRIPULANTE) {
+    if ((mode === "real" || esDemoPublica()) && TRIPULANTE) {
       if (checkIns.length > 0) await archivarEvaluacion(analisis.traza(), nuevoId)
       await Promise.allSettled([sincronizarSeguimiento(TRIPULANTE), sincronizarEstudios(TRIPULANTE)])
     }

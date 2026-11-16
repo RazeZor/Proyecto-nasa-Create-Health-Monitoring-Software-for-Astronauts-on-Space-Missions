@@ -8,6 +8,7 @@ import os from "node:os"
 import path from "node:path"
 import { setTimeout as pausa } from "node:timers/promises"
 import { ensayarIntegral } from "./flujo-integral.mjs"
+import { ensayarDemoPublica } from "./flujo-demo-publica.mjs"
 
 const [chrome, destino] = process.argv.slice(2)
 const web = `http://127.0.0.1:${process.env.VIGIA_E2E_PROXY}`
@@ -113,7 +114,9 @@ const locales = `Object.keys(localStorage).filter(k => k.startsWith('vigia:infor
 try {
   console.log("Abrir Chrome sobre la base temporal")
   await iniciar()
-  if (process.env.VIGIA_E2E_INTEGRAL === "1") {
+  if (process.env.VIGIA_E2E_DEMO_PUBLICA === "1") {
+    await ensayarDemoPublica({ cliente, hasta, web, destino, errores })
+  } else if (process.env.VIGIA_E2E_INTEGRAL === "1") {
     await ensayarIntegral({ cliente, hasta, web, destino, errores })
   } else {
   console.log("Cargar la app y guardar sin API")

@@ -40,7 +40,9 @@
       "reloj_nombre_por_defecto": "“{nombre}” is the watch's factory name: change the Crew member field on the watch before linking it.",
       "reloj_nombre_ocupado": "The name “{nombre}” is already linked to another crew member.",
       "sesion_requerida": "Sign in with an authorized account.",
-      "acceso_limitado": "Too many attempts. Wait 15 minutes."
+      "acceso_limitado": "Too many attempts. Wait 15 minutes.",
+      "demo_caducada": "The demonstration session has ended. Open a new demo to continue.",
+      "demo_ocupada": "The demonstration is busy. Please try again later."
     },
     "autor": {
       "cirujano": "Flight Surgeon"
@@ -1177,8 +1179,8 @@
     },
     "sistema": {
       "acceso": {
-        "titulo": "Sign in to VIGÍA",
-        "detalle": "Use the account assigned to your mission. Local access continues in this tab until the session expires.",
+        "titulo": "Explore VIGÍA",
+        "detalle": "Try a demonstration mission or sign in to your personal records.",
         "usuario": "Username",
         "clave": "Password",
         "entrar": "Sign in",
@@ -1192,7 +1194,12 @@
         "alcance_clinico": "Medical staff in your mission may read history, observations and episodes. Revocation blocks new connected access; previously authorized offline copies require reconnection.",
         "conceder": "Grant clinical read access",
         "revocar": "Revoke clinical read access",
-        "almacen_error": "Local storage could not be read. Records are preserved; export a copy and review recovery before continuing."
+        "almacen_error": "Local storage could not be read. Records are preserved; export a copy and review recovery before continuing.",
+        "explorar_demo": "Explore demo",
+        "demo_detalle": "No account or password required. Explore all three roles using fictional data in your own temporary space.",
+        "cuenta_personal": "Access my personal records",
+        "demo_activa": "Public demo · Simulated data",
+        "salir_demo": "Exit demo"
       },
       "evidencia": {
         "titulo": "Measurement quality",

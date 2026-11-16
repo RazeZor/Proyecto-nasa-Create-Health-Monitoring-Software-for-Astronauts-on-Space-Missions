@@ -13,6 +13,7 @@ import { estadoReporte, type AccionHecha, type ReporteServidor } from "@/lib/col
 import { balanceLectura, lecturaHumana } from "@/lib/lectura-humana"
 import { S } from "@/lib/strings"
 import { TRIPULANTE } from "@/lib/sincronizacion"
+import { esDemoPublica } from "@/lib/sesion"
 import { guardarCache, leerCache } from "@/lib/storage"
 import type { Report } from "@/lib/types"
 import { cn, nuevoId } from "@/lib/utils"
@@ -163,7 +164,7 @@ export function ReportsView() {
     } catch {
       setFallo(true)
     }
-    const c = role === "surgeon" && mode === "real" ? await listarReportesRecibidos() : await listarReportes(tripulante)
+    const c = role === "surgeon" && (mode === "real" || esDemoPublica()) ? await listarReportesRecibidos() : await listarReportes(tripulante)
     setSinEnlace(c === null)
     const clave = `reportes:${mision}:${tripulante}:${mode}`
     if (c !== null) {

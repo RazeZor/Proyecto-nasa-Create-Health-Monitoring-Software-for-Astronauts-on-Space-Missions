@@ -9,7 +9,7 @@ import { TRIPULANTE } from "@/lib/sincronizacion"
 import { textoSistema as t, IDIOMA } from "@/lib/strings"
 import { nuevoId } from "@/lib/utils"
 import { API_BASE_URL } from "@/lib/api-registro"
-import { peticion } from "@/lib/sesion"
+import { peticion, esDemoPublica } from "@/lib/sesion"
 
 export function ModulosCientificos() {
   const { role, mode } = useApp()
@@ -44,7 +44,7 @@ export function ModulosCientificos() {
       await guardarEstudio({ id: nuevoId(), t_real: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"), tipo,
         protocolo: tipo === "reaccion" ? "reaccion-practica-v1" : "diario-sueno-v1", datos })
       setMensaje(datos.interrumpida ? t("ciencia.interrumpida") : t("seguimiento.registrado"))
-      if (mode === "real" && TRIPULANTE) await sincronizarEstudios(TRIPULANTE)
+      if ((mode === "real" || esDemoPublica()) && TRIPULANTE) await sincronizarEstudios(TRIPULANTE)
     } catch { setMensaje(t("seguimiento.error")) }
   }
   const programar = () => {
@@ -108,7 +108,7 @@ export function ModulosCientificos() {
     }} /></label>
     <details className="mt-3"><summary className="cursor-pointer py-3">{t("acceso.consentimientos")}</summary><p>{t("acceso.alcance_clinico")}</p>
       {([true, false] as const).map((aceptado) => <button key={String(aceptado)} className="m-1 min-h-12 rounded-xl border px-4" onClick={() => { void (async () => {
-        if (!TRIPULANTE || mode !== "real") { setMensaje(t("seguimiento.error")); return }
+        if (!TRIPULANTE || (mode !== "real" && !esDemoPublica())) { setMensaje(t("seguimiento.error")); return }
         const r = await peticion(`${API_BASE_URL}/tripulantes/${TRIPULANTE}/consentimientos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ regla: "historial_clinico", aceptado }) })
         setMensaje(r.ok ? t("seguimiento.registrado") : t("seguimiento.error"))
       })().catch(() => setMensaje(t("seguimiento.error"))) }}>{t(aceptado ? "acceso.conceder" : "acceso.revocar")}</button>)}

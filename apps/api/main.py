@@ -24,6 +24,7 @@ import puente_reloj  # noqa: E402
 from almacen import conectar, migrar  # noqa: E402
 from almacen.cola import avanzar_cola  # noqa: E402
 from almacen.reintentos import ConflictoOperacion  # noqa: E402
+from demostracion import crear_aplicacion_demo  # noqa: E402
 from gold import DATALAKE_DEFECTO  # noqa: E402, F401
 from gold import carpeta as _gold  # noqa: E402, F401
 from gold import leer_verificado as _leer_gold_verificado  # noqa: E402
@@ -138,6 +139,7 @@ app.include_router(rutas_estudios)
 app.include_router(rutas_dashboard)
 app.include_router(rutas_ciencia)
 app.include_router(puente_reloj.router)
+app.mount("/demo", crear_aplicacion_demo())
 
 
 @app.exception_handler(ValueError)

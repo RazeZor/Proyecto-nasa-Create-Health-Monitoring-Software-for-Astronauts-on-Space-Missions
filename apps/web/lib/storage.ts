@@ -1,6 +1,7 @@
 import type { CheckInEntry, Mode } from "./types"
 import { actualizarPrivado, leerPrivado } from "./almacen-local.ts"
 import { validarRegistros, validarIds } from "./almacen-validar.ts"
+import { espacioSesion } from "./sesion.ts"
 
 /** Interfaz estable; IndexedDB confirma la transacción antes de resolver una escritura. */
 export interface HealthStore {
@@ -77,11 +78,11 @@ export const store: HealthStore = {
 export const localStore = store
 
 /** Copia local de lo último que respondió la API (catálogo, panel de entorno...): con ella la app abre sin enlace. */
-export const leerCache = <T>(clave: string): T | null => read<T | null>(`vigia:cache:${clave}`, null)
+export const leerCache = <T>(clave: string): T | null => read<T | null>(`vigia:${espacioSesion()}cache:${clave}`, null)
 export function guardarCache<T>(clave: string, valor: T) {
   if (!hayAlmacen()) return
   try {
-    write(`vigia:cache:${clave}`, valor)
+    write(`vigia:${espacioSesion()}cache:${clave}`, valor)
   } catch {
     // almacenamiento lleno: la app sigue con la red; solo se pierde el arranque sin enlace
   }

@@ -2,6 +2,8 @@
 
 ## Identidad, observaciones y seguimiento
 
+- `/demo/sesion` (`POST`/`GET`/`DELETE`) permite una visita pública sin credenciales. `/demo/openapi.json` documenta la subaplicación aislada. Sus rutas de registro/tablero/seguimiento usan otra SQLite por visitante; nunca la base personal ni el reloj/transporte real. Requiere su cookie firmada y CSRF para escribir. La cookie personal no se modifica. Enlaces de interfaz: `/?demo=1` y `/?demo=1&lang=en`.
+
 - `POST /sesion`, `GET /sesion`, `DELETE /sesion`: acceso con contraseña local, sesión opaca revocable de 8 horas y CSRF. `X-Tripulante` no concede permisos. `VIGIA_IDENTIDAD_ENSAYO=1` habilita explícitamente el adaptador antiguo solo para ensayos aislados.
 - `POST /tripulantes/{id}/observaciones` y `GET /tripulantes/{id}/observaciones`: tomas inmutables, horas propias, unidades canónicas, correcciones enlazadas y acuse por operación.
 - `POST /tripulantes/{id}/episodios/eventos`: acciones, impedimentos, remedición, solicitud de revisión, cierre médico y reapertura; exige versión previa y devuelve 409 en conflicto.

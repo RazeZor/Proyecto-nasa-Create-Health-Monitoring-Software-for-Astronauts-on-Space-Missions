@@ -206,6 +206,10 @@ La [ejecución del plan](EJECUCION-PLAN.md) distingue lo implementado de la revi
 
 ### Cuentas y acceso
 
+Para evaluar el producto abre **«Explorar demo»** o el enlace `/?demo=1` (`&lang=en` para inglés). No hay que repartir una contraseña: cada visitante recibe una cookie de demostración y una base ficticia propia durante ocho horas. Puede probar los tres roles y realizar registros/episodios/informes simulados. La franja de la interfaz señala siempre la demo. El puente del reloj, el transporte real y la base personal no forman parte de ella.
+
+Las cookies de demo se invalidan al reiniciar el proceso. Sus bases viven en `VIGIA_DEMO_DIR` o `apps/api/data/demostraciones/`, fuera de Git; se limita a 100 espacios y se limpian archivos propios de más de nueve horas. El navegador también separa IndexedDB, cachés y bandejas por el identificador de esa visita. La implementación usa una [subaplicación independiente de FastAPI](https://fastapi.tiangolo.com/advanced/sub-applications/) con sus propias dependencias; las pruebas comprueban el aislamiento frente a una base personal con registros señuelo.
+
 La API exige sesión verificada por defecto. Primero crea la misión/tripulantes por el procedimiento del proyecto; `python -m almacen sembrar` es exclusivamente una semilla de demostración. Desde `apps/api`, una persona con acceso privado al equipo puede dar de alta una cuenta:
 
 ```sh

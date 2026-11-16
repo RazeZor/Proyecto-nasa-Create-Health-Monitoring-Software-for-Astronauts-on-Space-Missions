@@ -7,6 +7,8 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 
 ## Puntos clave
 
+- `/demo` es una subaplicación con dependencias propias: entrada pública sin contraseña, cookie firmada/CSRF y una SQLite temporal por visitante bajo `VIGIA_DEMO_DIR` (por defecto `data/demostraciones`). Solo siembra datos ficticios. No monta identidad personal, puente del reloj ni transporte; las respuestas son simuladas. Ocho horas de sesión, reinicio del proceso invalida sus cookies y se limita a 100 espacios; limpieza de archivos `demo-<hex>.db` de más de nueve horas.
+
 - Identidad normal mediante `seguridad.py`: sesiones opacas de 8 h, scrypt, cookie HttpOnly/SameSite, CSRF, revocación y límite de intentos por IP. `cuentas.py` da de alta cuentas desde terminal privada. `VIGIA_IDENTIDAD_ENSAYO=1` es un adaptador explícito para ensayos aislados; nunca proporciona autenticación para piloto.
 - Migraciones 007–011: observaciones inmutables con hora/unidad/operación propias, originales legados sin recepción inventada, eventos de episodio, archivo experimental y acuses/respuestas de destino. Repetir IDs con otro contenido devuelve 409; `lectura` queda como proyección compatible. `historial.mediciones` conserva el tiempo por campo y `observaciones` preserva extremos previos.
 - Los clínicos de la misma misión requieren consentimiento `historial_clinico` para historial/observaciones/episodios. Solo el propietario concede/revoca; el servidor audita accesos y cambios. Un cierre de episodio requiere estado en revisión y actor médico; ni una medición normal ni el reloj lo cierran.
@@ -72,15 +74,16 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 110 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [almacen/vocabulario.py](almacen/vocabulario.py) | 7 | Vocabulario compartido con la interfaz: lee el contrato packages/schemas/vocabulario.json. |
 | [cuentas.py](cuentas.py) | 33 | Alta local de una cuenta; la contraseña solo se pide en una terminal privada. |
+| [demostracion.py](demostracion.py) | 211 | Demo pública por visitante: bases temporales propias, sin cuentas ni datos personales. |
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
-| [main.py](main.py) | 262 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [main.py](main.py) | 264 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 594 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
 | [rutas_ciencia.py](rutas_ciencia.py) | 89 | Afirmaciones trazables y auditoría exploratoria; no acredita validación clínica. |
 | [rutas_dashboard.py](rutas_dashboard.py) | 373 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
 | [rutas_estudios.py](rutas_estudios.py) | 71 | Archivo de sesiones experimentales: no equivale a evaluación clínica independiente. |
 | [rutas_registro.py](rutas_registro.py) | 328 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [rutas_seguimiento.py](rutas_seguimiento.py) | 42 | Contratos HTTP de acciones, nueva medición y revisión de episodios. |
-| [seguridad.py](seguridad.py) | 133 | Sesiones opacas revocables, credenciales locales y CSRF. Nunca confiar en X-Tripulante. |
+| [seguridad.py](seguridad.py) | 135 | Sesiones opacas revocables, credenciales locales y CSRF. Nunca confiar en X-Tripulante. |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 135 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 41 | — |
 | [test_almacen_cola.py](test_almacen_cola.py) | 54 | — |
@@ -91,6 +94,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_api_dashboard.py](test_api_dashboard.py) | 344 | — |
 | [test_api_registro.py](test_api_registro.py) | 211 | — |
 | [test_ciencia.py](test_ciencia.py) | 93 | La ausencia, alteración y caducidad del reporte nunca producen una validación aparente. |
+| [test_demostracion.py](test_demostracion.py) | 125 | Un visitante explora la demo sin credenciales y sin acceso a la base personal. |
 | [test_plan_integral.py](test_plan_integral.py) | 225 | Aceptación de identidad, medidas, seguimiento y transporte sin datos del usuario. |
 | [test_puente_reloj.py](test_puente_reloj.py) | 461 | — |
 | [test_reintentos.py](test_reintentos.py) | 79 | Reintentos tras perder un acuse: mismos ids, propietario separado y conflictos visibles. |
@@ -161,6 +165,10 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 **cuentas.py**
 
 - función `main()`
+
+**demostracion.py**
+
+- función `crear_aplicacion_demo()`: La sustitución de dependencias pertenece a esta subaplicación; la API personal no cambia.
 
 **gold.py**
 
@@ -311,11 +319,11 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `DATALAKE_DIR`, `SMART_AUTOREGISTRO`, `SMART_DESACTIVADO`, `SMART_IP_LAN`, `SMART_TRIPULANTES`, `SMART_URL`, `VIGIA_COOKIE_SEGURA`, `VIGIA_DB`, `VIGIA_IDENTIDAD_ENSAYO`, `VIGIA_ORIGENES`, `VIGIA_PRUEBA_A`, `VIGIA_PRUEBA_FIJA`, `VIGIA_RELOJ_SEG`, `VIGIA_TIERRA_CLAVE`, `VIGIA_TIERRA_URL`
+- Variables de entorno: `DATALAKE_DIR`, `SMART_AUTOREGISTRO`, `SMART_DESACTIVADO`, `SMART_IP_LAN`, `SMART_TRIPULANTES`, `SMART_URL`, `VIGIA_COOKIE_SEGURA`, `VIGIA_DB`, `VIGIA_DEMO_DIR`, `VIGIA_IDENTIDAD_ENSAYO`, `VIGIA_ORIGENES`, `VIGIA_PRUEBA_A`, `VIGIA_PRUEBA_FIJA`, `VIGIA_RELOJ_SEG`, `VIGIA_TIERRA_CLAVE`, `VIGIA_TIERRA_URL`
 
 ### Dependencias
 
-- Internas: `gold`, `main`, `puente_reloj`, `rutas_ciencia`, `rutas_dashboard`, `rutas_estudios`, `rutas_registro`, `rutas_seguimiento`, `seguridad`, `transporte`
+- Internas: `demostracion`, `gold`, `main`, `puente_reloj`, `rutas_ciencia`, `rutas_dashboard`, `rutas_estudios`, `rutas_registro`, `rutas_seguimiento`, `seguridad`, `transporte`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: `almacen`, `fastapi`, `pydantic`, `websockets`
 - Biblioteca estándar: `argparse`, `asyncio`, `collections`, `concurrent`, `contextlib`, `datetime`, `getpass`, `hashlib`, `hmac`, `importlib`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `secrets`, `socket`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`, `urllib`, `uuid`
@@ -332,6 +340,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_api_dashboard.py`: 26 pruebas en Dashboard (23), Entorno (3)
 - `apps/api/test_api_registro.py`: 19 pruebas en Registro (19)
 - `apps/api/test_ciencia.py`: 6 pruebas en Ciencia (6)
+- `apps/api/test_demostracion.py`: 7 pruebas en Demostracion (7)
 - `apps/api/test_plan_integral.py`: 16 pruebas en PlanIntegral (16)
 - `apps/api/test_puente_reloj.py`: 28 pruebas en Estado (12), Persistencia (7), Rutas (7), ExtremoAExtremo (2)
 - `apps/api/test_reintentos.py`: 4 pruebas en Reintentos (4)

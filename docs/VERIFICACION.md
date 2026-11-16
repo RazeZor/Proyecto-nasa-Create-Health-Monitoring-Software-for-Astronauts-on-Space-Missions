@@ -4,6 +4,15 @@ Revisión local: 15-nov-2026; ejecución en UTC del 16-nov. Base: `cf5d53f184ea7
 
 ## Cierre posterior: plan completo y datasets reales
 
+### Demo pública para evaluación, 16-nov-2026
+
+La pantalla de acceso ofrece «Explorar demo», también disponible en `/?demo=1`, sin cuenta ni contraseña. Cada visitante recibe una sesión de ocho horas y una base simulada independiente; los tres roles exploran ese espacio. El almacenamiento del navegador incorpora el identificador de la demo. La API personal conserva su autenticación y rechaza peticiones marcadas como demo, incluso con una cookie personal válida. No se incluyen cuentas compartidas ni contraseñas en el código.
+
+- **414 pruebas locales: 293 Python y 121 Node**, sin fallos ni omitidas; contexto, Ruff, tipos y build de producción aprobados. Resultado: `tools/verificacion/data/20261116T130659Z/resultado.json`.
+- Chrome sin credenciales: `ensayo-20261116T131907Z/resultado.json`. Tres roles, nueve observaciones simuladas, episodio revisado, informes ficticios, API personal cerrada, puente del reloj ausente, bandeja personal conservada y sesión recuperada. Cero excepciones.
+- Regresión del acceso personal en Chrome: `ensayo-20261116T133259Z/resultado.json`. Dieciocho observaciones, episodio/acción/nueva toma/revisión, recuperación local, sueño, reacción interrumpida, continuidad de pestaña offline y aislamiento del segundo usuario. Cero excepciones.
+- Los ensayos usan bases y perfiles temporales; no validan eficacia clínica ni constituyen una evaluación oficial de NASA. Los artefactos permanecen ignorados por Git.
+
 ### Ejecución del plan, 16-nov-2026
 
 Rama `feat/ejecutar-plan-integral`, con referencia `origin/main` en `b55d0f8` (PR #67 ya fusionado). La presentación final T38 no se implementó.

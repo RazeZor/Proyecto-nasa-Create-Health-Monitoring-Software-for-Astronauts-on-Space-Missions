@@ -1,7 +1,7 @@
 /** Bitácora offline y bandeja transaccional: cada acuse confirma una operación concreta. */
 import { actualizarPrivado, claveAmbito, leerPrivado } from "./almacen-local.ts"
 import { API_BASE_URL } from "./api-registro.ts"
-import { peticion } from "./sesion.ts"
+import { peticion, esDemoPublica } from "./sesion.ts"
 import { aplicarEvento, type Episodio, type EventoEpisodio, type TipoEvento } from "../../../packages/engine/episodios.ts"
 import catalogo from "../../../packages/schemas/acciones-seguimiento.json" with { type: "json" }
 
@@ -52,6 +52,18 @@ export function sincronizarSeguimiento(tripulante: number): Promise<void> {
         if (acuse.id !== op.id || acuse.episodio_id !== op.episodio_id || acuse.version !== op.version_previa + 1) { bloqueados.add(op.episodio_id); continue }
         await actualizarPrivado<Bandeja>("seguimiento-v1", VACIA, (actual) => ({ ...actual, confirmadas: [...new Set([...actual.confirmadas, op.id])] }))
       } catch { break }
+    }
+    if (esDemoPublica() && claveAmbito() === ambitoInicial) {
+      const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/episodios`, { cache: "no-store" })
+      if (res.ok) {
+        const remotos = await res.json() as Episodio[]
+        if (Array.isArray(remotos) && claveAmbito() === ambitoInicial) await actualizarPrivado<Bandeja>("seguimiento-v1", VACIA, (a) => ({
+          ...a, episodios: a.episodios.map((e) => {
+            const pendiente = a.operaciones.some((o) => o.episodio_id === e.id && !a.confirmadas.includes(o.id))
+            return !pendiente && !a.conflictos.includes(e.id) ? remotos.find((r) => r.id === e.id) ?? e : e
+          }),
+        }))
+      }
     }
   })().finally(() => { enCurso = null })
   return enCurso
