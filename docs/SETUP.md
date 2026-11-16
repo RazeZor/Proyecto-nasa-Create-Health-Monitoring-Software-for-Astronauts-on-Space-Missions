@@ -43,6 +43,7 @@ Completa `.env`:
 - `NASA_API_KEY`: pídela gratis en https://api.nasa.gov. Sin ella se usa `DEMO_KEY`, que tiene límite de consultas.
 - `DATALAKE_DIR`: opcional. Por defecto es `pipelines/datalake/data/`.
 - `VIGIA_DB`: opcional. Archivo SQLite de la API (registro de la tripulación). Por defecto `apps/api/data/vigia.db`. Se crea con `cd apps/api && python3 -m almacen migrar` y se llena de demostración con `python3 -m almacen sembrar`.
+- `VIGIA_CLAVE_INVITACIONES`: secreto de al menos 32 caracteres para emitir altas web ligadas a una identidad/rol; solo se configura en entornos privados de la API y nunca se comparte.
 `.env` está en `.gitignore`: **nunca lo subas**. Los scripts leen variables del entorno y **no** cargan `.env` solos. Cárgalo en tu terminal antes de ingerir:
 
 ```sh
@@ -217,6 +218,15 @@ python cuentas.py --usuario mi-usuario --tripulante 1 --rol astronaut
 ```
 
 La contraseña se pide con `getpass`, se repite y nunca se pasa como argumento ni queda en Git. Mínimo 12 caracteres. `cmo` y `surgeon` requieren un tripulante `oficial_medico` de esa misión; una cuenta de astronauta no puede heredar un tripulante médico. No hay contraseñas predeterminadas. Abre la web e inicia sesión con esa cuenta.
+
+Para permitir que la persona cree su propia contraseña, emite una invitación firmada y de un solo uso para una identidad sin cuenta:
+
+```powershell
+$env:VIGIA_CLAVE_INVITACIONES = "<secreto-aleatorio-de-32-caracteres-o-mas>"
+python apps/api/invitaciones.py --tripulante 12 --rol astronaut --horas 72
+```
+
+La API debe tener configurado el mismo secreto. Entrega el código impreso solo a esa persona; vence en un máximo de siete días. La pantalla `/?lang=en&alta=1` usa el logo VIGÍA, fondo negro y textos en inglés. La demo sigue abierta sin registro.
 
 El acceso clínico al historial, observaciones y episodios requiere consentimiento `historial_clinico`; el dueño lo concede/revoca en Tendencias → módulos de investigación → permisos. Los escalamientos rojos conservan su alcance separado. La revocación se comprueba en servidor; una copia previamente autorizada sin red no se puede revocar a distancia hasta reconectar. Las respuestas de informes en modo normal requieren rol `surgeon` y el destino configurado.
 

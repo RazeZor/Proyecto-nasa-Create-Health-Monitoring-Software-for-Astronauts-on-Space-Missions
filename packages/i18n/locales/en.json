@@ -42,7 +42,8 @@
       "sesion_requerida": "Sign in with an authorized account.",
       "acceso_limitado": "Too many attempts. Wait 15 minutes.",
       "demo_caducada": "The demonstration session has ended. Open a new demo to continue.",
-      "demo_ocupada": "The demonstration is busy. Please try again later."
+      "demo_ocupada": "The demonstration is busy. Please try again later.",
+      "invitacion_invalida": "The invitation is invalid, expired, or already used."
     },
     "autor": {
       "cirujano": "Flight Surgeon"
@@ -1199,7 +1200,16 @@
         "demo_detalle": "No account or password required. Explore all three roles using fictional data in your own temporary space.",
         "cuenta_personal": "Access my personal records",
         "demo_activa": "Public demo · Simulated data",
-        "salir_demo": "Exit demo"
+        "salir_demo": "Exit demo",
+        "crear_cuenta": "Create a personal account",
+        "alta_titulo": "Create account",
+        "alta_detalle": "Use a personal invitation issued by the VIGÍA team. Your identity and permissions are already assigned.",
+        "alta_invitacion": "Invitation code",
+        "alta_confirmar": "Confirm password",
+        "alta_crear": "Create account and sign in",
+        "alta_volver": "Back to sign in",
+        "alta_error": "The account could not be created. Check the invitation, username, and passwords.",
+        "alta_claves": "Passwords must match."
       },
       "evidencia": {
         "titulo": "Measurement quality",

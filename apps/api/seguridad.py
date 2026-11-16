@@ -1,8 +1,11 @@
 """Sesiones opacas revocables, credenciales locales y CSRF. Nunca confiar en X-Tripulante."""
+import base64
 import hashlib
 import hmac
+import json
 import os
 import secrets
+import sqlite3
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -31,6 +34,43 @@ def _hash(texto):
 
 def _derivar(clave, sal):
     return hashlib.scrypt(clave.encode(), salt=bytes.fromhex(sal), n=16384, r=8, p=1).hex()
+
+
+def crear_invitacion(tripulante_id, rol, horas=72):
+    """Firma una invitación de alta ligada a una identidad y un rol existentes."""
+    secreto = os.environ.get("VIGIA_CLAVE_INVITACIONES", "")
+    if len(secreto) < 32:
+        raise ValueError("VIGIA_CLAVE_INVITACIONES requiere al menos 32 caracteres")
+    if not 1 <= horas <= 168 or rol not in ("astronaut", "cmo", "surgeon"):
+        raise ValueError("caducidad o rol inválidos")
+    datos = json.dumps({"tripulante_id": int(tripulante_id), "rol": rol,
+                        "vence": int(datetime.now(timezone.utc).timestamp()) + horas * 3600,
+                        "nonce": secrets.token_hex(16)}, separators=(",", ":")).encode()
+    carga = base64.urlsafe_b64encode(datos).decode().rstrip("=")
+    firma = hmac.new(secreto.encode(), carga.encode(), hashlib.sha256).hexdigest()
+    return carga + "." + firma
+
+
+def leer_invitacion(token):
+    """Verifica firma, vigencia y forma de una invitación sin revelar su identidad."""
+    secreto = os.environ.get("VIGIA_CLAVE_INVITACIONES", "")
+    if len(secreto) < 32 or not isinstance(token, str) or len(token) > 2048:
+        raise ValueError("invitación inválida")
+    try:
+        carga, firma = token.split(".", 1)
+        esperada = hmac.new(secreto.encode(), carga.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(firma, esperada):
+            raise ValueError("invitación inválida")
+        datos = json.loads(base64.urlsafe_b64decode(carga + "=" * (-len(carga) % 4)))
+        if (set(datos) != {"tripulante_id", "rol", "vence", "nonce"}
+                or not isinstance(datos["tripulante_id"], int) or datos["tripulante_id"] < 1
+                or datos["rol"] not in ("astronaut", "cmo", "surgeon")
+                or not isinstance(datos["vence"], int) or datos["vence"] <= int(datetime.now(timezone.utc).timestamp())
+                or not isinstance(datos["nonce"], str) or len(datos["nonce"]) != 32):
+            raise ValueError("invitación inválida")
+        return datos["tripulante_id"], datos["rol"]
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError) as error:
+        raise ValueError("invitación inválida o vencida") from error
 
 
 def crear_cuenta(conn, usuario, clave, tripulante_id, rol):
@@ -76,6 +116,12 @@ class AccesoIn(BaseModel):
     clave: str = Field(min_length=1, max_length=200)
 
 
+class AltaIn(BaseModel):
+    invitacion: str = Field(min_length=20, max_length=2048)
+    usuario: str = Field(min_length=3, max_length=100)
+    clave: str = Field(min_length=12, max_length=200)
+
+
 def _perfil(fila):
     return {k: fila[k] for k in ("tripulante_id", "mision_id", "rol", "vence_t_real")}
 
@@ -112,6 +158,34 @@ def iniciar(cuerpo: AccesoIn, request: Request, response: Response, conn=Depends
     response.headers["Cache-Control"] = "no-store"
     mision = conn.execute("SELECT mision_id FROM tripulante WHERE id = ?", (cuenta["tripulante_id"],)).fetchone()[0]
     return {"tripulante_id": cuenta["tripulante_id"], "mision_id": mision, "rol": cuenta["rol"], "vence_t_real": vence, "csrf": csrf}
+
+
+@router.post("/cuentas/registro", status_code=201)
+def registrar(cuerpo: AltaIn, conn=Depends(conexion_identidad)):
+    """Crea una sola cuenta para la identidad y el rol incluidos en una invitación firmada."""
+    try:
+        tripulante_id, rol = leer_invitacion(cuerpo.invitacion)
+        conn.execute("BEGIN IMMEDIATE")
+        sujeto = conn.execute("SELECT rol FROM tripulante WHERE id = ?", (tripulante_id,)).fetchone()
+        existentes = conn.execute("SELECT 1 FROM identidad_cuenta WHERE tripulante_id = ? LIMIT 1", (tripulante_id,)).fetchone()
+        if not sujeto or existentes:
+            raise ValueError("invitación inválida o ya utilizada")
+        if (rol in ("cmo", "surgeon") and sujeto["rol"] != "oficial_medico") or (rol == "astronaut" and sujeto["rol"] == "oficial_medico"):
+            raise ValueError("invitación inválida")
+        crear_cuenta(conn, cuerpo.usuario, cuerpo.clave, tripulante_id, rol)
+        return {"creada": True}
+    except ValueError as error:
+        if conn.in_transaction:
+            conn.rollback()
+        raise HTTPException(400, t("api.error.invitacion_invalida")) from error
+    except sqlite3.IntegrityError as error:
+        if conn.in_transaction:
+            conn.rollback()
+        raise HTTPException(409, t("api.error.invitacion_invalida")) from error
+    except Exception:
+        if conn.in_transaction:
+            conn.rollback()
+        raise
 
 
 @router.get("/sesion")

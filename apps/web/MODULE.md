@@ -8,6 +8,8 @@ Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva p
 ## Puntos clave
 
 - La entrada prioriza «Explorar demo» y permite `/?demo=1` sin credenciales. Los tres roles comparten únicamente el espacio ficticio de ese visitante; API, IndexedDB, cachés y bandejas llevan su ámbito de demo. La franja siempre indica datos simulados. Salir vuelve al acceso personal; el cliente no puede activar modo real dentro de esa sesión.
+- La pantalla de acceso y alta usa el logo VIGÍA sobre fondo negro. `/?lang=en&alta=1` abre el formulario en inglés y requiere una invitación ligada a una identidad/rol; la demo pública sigue sin registro.
+- La pantalla de acceso y alta usa el logo VIGÍA sobre fondo negro. `/?lang=en&alta=1` abre el formulario en inglés y requiere una invitación ligada a una identidad/rol; la demo pública sigue sin registro.
 
 - El acceso se verifica por sesión de servidor (`lib/sesion.ts`); el rol de la ruta no concede permisos. La continuidad offline se limita a la pestaña ya desbloqueada y al vencimiento de 8 h; un 401 recibido bloquea la vista. No hay autenticación facial ni credenciales incluidas en el código; la demo pública tiene su propia sesión limitada a datos ficticios.
 - `HealthStore` usa IndexedDB transaccional, particionado por misión/tripulante/modo. Los registros de localStorage sin propietario se copian a cuarentena sin reasignarlos. Las escrituras fallidas no se dan por guardadas; el perfil local no sustituye la autorización del servidor ni cifra el disco.
@@ -121,7 +123,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/shared/logo.tsx](components/shared/logo.tsx) | 42 | Marca VIGÍA («Centinela»), tal como la define docs/brand: el casco, la V con su cabeza y el punto de estado. |
 | [components/shared/states.tsx](components/shared/states.tsx) | 55 | — |
 | [components/shared/status.tsx](components/shared/status.tsx) | 73 | — |
-| [components/shell/acceso.tsx](components/shell/acceso.tsx) | 34 | — |
+| [components/shell/acceso.tsx](components/shell/acceso.tsx) | 84 | — |
 | [components/shell/alert-center.tsx](components/shell/alert-center.tsx) | 225 | — |
 | [components/shell/app-shell.tsx](components/shell/app-shell.tsx) | 277 | — |
 | [components/shell/sw-register.tsx](components/shell/sw-register.tsx) | 15 | — |
@@ -169,7 +171,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [lib/roles.ts](lib/roles.ts) | 27 | Quién usa la app lo dice la ruta: /astronauta, /oficial y /medico. Cada rol ve sus propias pantallas. |
 | [lib/seguimiento.ts](lib/seguimiento.ts) | 88 | Bitácora offline y bandeja transaccional: cada acuse confirma una operación concreta. |
 | [lib/sesion-demo.test.ts](lib/sesion-demo.test.ts) | 51 | — |
-| [lib/sesion.ts](lib/sesion.ts) | 96 | La identidad la verifica el servidor. El perfil local solo permite continuidad offline limitada. |
+| [lib/sesion.ts](lib/sesion.ts) | 104 | La identidad la verifica el servidor. El perfil local solo permite continuidad offline limitada. |
 | [lib/sincronizacion.ts](lib/sincronizacion.ts) | 64 | — |
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
@@ -800,6 +802,7 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - función `iniciarDemo`
 - función `cambiarRolDemo`
 - función `acceder`
+- función `registrarCuenta`
 - función `peticion`
 - función `salir`
 

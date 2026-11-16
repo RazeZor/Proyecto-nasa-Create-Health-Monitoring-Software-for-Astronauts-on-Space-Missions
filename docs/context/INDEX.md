@@ -6,7 +6,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 
 | Módulo | Propósito | Tags | Archivos |
 | --- | --- | --- | --- |
-| [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 38 |
+| [apps/api](../../apps/api/MODULE.md) | API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`). | api, fastapi, gold, etl, panel, solo-lectura | 39 |
 | [apps/tierra](../../apps/tierra/MODULE.md) | Receptor independiente de ensayo del enlace a Tierra. Persiste mensajes y respuestas en otra base SQLite y confirma identificadores y hashes; no importa código de ninguna otra app. | tierra, transporte, acuses, sqlite, causalidad, autenticacion | 2 |
 | [apps/web](../../apps/web/MODULE.md) | Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo. | frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-humana, fichas | 120 |
 | [packages/engine](../../packages/engine/MODULE.md) | Motor híbrido de VIGÍA en TypeScript puro: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto. No implementa NEWS2 completo ni hereda su validación. Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro. | engine, hibrido, news2, mad, cusum, paridad, typescript | 11 |
@@ -45,6 +45,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `Alertas` | clase | [apps/api/test_almacen_alertas.py](../../apps/api/test_almacen_alertas.py) |
 | `AlertsView` | función | [apps/web/components/alerts/alerts-view.tsx](../../apps/web/components/alerts/alerts-view.tsx) |
 | `Almacen` | clase | [pipelines/datalake/test_datalake.py](../../pipelines/datalake/test_datalake.py) |
+| `AltaIn` | clase | [apps/api/seguridad.py](../../apps/api/seguridad.py) |
 | `AmbitoLocal` | interfaz | [apps/web/lib/almacen-local.ts](../../apps/web/lib/almacen-local.ts) |
 | `Analisis` | tipo | [apps/web/lib/engine.ts](../../apps/web/lib/engine.ts) |
 | `AnclaId` | tipo | [apps/web/components/body/anatomia.ts](../../apps/web/components/body/anatomia.ts) |
@@ -482,6 +483,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `crear_alerta` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `crear_aplicacion_demo` | función | [apps/api/demostracion.py](../../apps/api/demostracion.py) |
 | `crear_cuenta` | función | [apps/api/seguridad.py](../../apps/api/seguridad.py) |
+| `crear_invitacion` | función | [apps/api/seguridad.py](../../apps/api/seguridad.py) |
 | `crear_lectura` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
 | `crear_mision` | función | [apps/api/almacen/tripulacion.py](../../apps/api/almacen/tripulacion.py) |
 | `crear_observacion` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
@@ -610,6 +612,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `leer_diario` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_escenario` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_ficha` | función | [apps/api/rutas_dashboard.py](../../apps/api/rutas_dashboard.py) |
+| `leer_invitacion` | función | [apps/api/seguridad.py](../../apps/api/seguridad.py) |
 | `leer_kpi_simulacion` | función | [apps/api/main.py](../../apps/api/main.py) |
 | `leer_lecturas` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |
 | `leer_linea_base` | función | [apps/api/rutas_registro.py](../../apps/api/rutas_registro.py) |
@@ -641,6 +644,7 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `localStore` | constante | [apps/web/lib/storage.ts](../../apps/web/lib/storage.ts) |
 | `madBruto` | función | [packages/engine/engine.ts](../../packages/engine/engine.ts) |
 | `main` | función | [apps/api/cuentas.py](../../apps/api/cuentas.py) |
+| `main` | función | [apps/api/invitaciones.py](../../apps/api/invitaciones.py) |
 | `main` | función | [pipelines/biometria/index.py](../../pipelines/biometria/index.py) |
 | `main` | función | [tools/contextgen/contextgen.py](../../tools/contextgen/contextgen.py) |
 | `main` | función | [tools/investigacion/investigar.py](../../tools/investigacion/investigar.py) |
@@ -719,6 +723,8 @@ Empieza aquí. Cada módulo tiene un `MODULE.md` con su propósito, sus puntos c
 | `registrar` | función | [apps/api/almacen/episodios.py](../../apps/api/almacen/episodios.py) |
 | `registrar` | función | [apps/api/almacen/observaciones.py](../../apps/api/almacen/observaciones.py) |
 | `registrar` | función | [apps/api/rutas_seguimiento.py](../../apps/api/rutas_seguimiento.py) |
+| `registrar` | función | [apps/api/seguridad.py](../../apps/api/seguridad.py) |
+| `registrarCuenta` | función | [apps/web/lib/sesion.ts](../../apps/web/lib/sesion.ts) |
 | `registrarEvento` | función | [apps/web/lib/seguimiento.ts](../../apps/web/lib/seguimiento.ts) |
 | `registrar_alerta` | función | [apps/api/almacen/alertas.py](../../apps/api/almacen/alertas.py) |
 | `registrar_lectura` | función | [apps/api/almacen/lecturas.py](../../apps/api/almacen/lecturas.py) |

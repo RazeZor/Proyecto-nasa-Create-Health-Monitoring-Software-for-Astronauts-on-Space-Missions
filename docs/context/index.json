@@ -6,7 +6,7 @@
       "proposito": "API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`).",
       "puntos_clave": [
         "`/demo` es una subaplicación con dependencias propias: entrada pública sin contraseña, cookie firmada/CSRF y una SQLite temporal por visitante bajo `VIGIA_DEMO_DIR` (por defecto `data/demostraciones`). Solo siembra datos ficticios. No monta identidad personal, puente del reloj ni transporte; las respuestas son simuladas. Ocho horas de sesión, reinicio del proceso invalida sus cookies y se limita a 100 espacios; limpieza de archivos `demo-<hex>.db` de más de nueve horas.",
-        "Identidad normal mediante `seguridad.py`: sesiones opacas de 8 h, scrypt, cookie HttpOnly/SameSite, CSRF, revocación y límite de intentos por IP. `cuentas.py` da de alta cuentas desde terminal privada. `VIGIA_IDENTIDAD_ENSAYO=1` es un adaptador explícito para ensayos aislados; nunca proporciona autenticación para piloto.",
+        "Identidad normal mediante `seguridad.py`: sesiones opacas de 8 h, scrypt, cookie HttpOnly/SameSite, CSRF, revocación y límite de intentos por IP. `cuentas.py` da de alta cuentas desde terminal privada; `invitaciones.py` emite invitaciones HMAC de un solo uso ligadas a una identidad/rol, con `VIGIA_CLAVE_INVITACIONES` (32+ caracteres). El alta web no permite escoger permisos. `VIGIA_IDENTIDAD_ENSAYO=1` es un adaptador explícito para ensayos aislados; nunca proporciona autenticación para piloto.",
         "Migraciones 007–011: observaciones inmutables con hora/unidad/operación propias, originales legados sin recepción inventada, eventos de episodio, archivo experimental y acuses/respuestas de destino. Repetir IDs con otro contenido devuelve 409; `lectura` queda como proyección compatible. `historial.mediciones` conserva el tiempo por campo y `observaciones` preserva extremos previos.",
         "Los clínicos de la misma misión requieren consentimiento `historial_clinico` para historial/observaciones/episodios. Solo el propietario concede/revoca; el servidor audita accesos y cambios. Un cierre de episodio requiere estado en revisión y actor médico; ni una medición normal ni el reloj lo cierran.",
         "El transporte normal usa `transporte.py` y el receptor independiente configurado con `VIGIA_TIERRA_URL/CLAVE/OPERADOR_CLAVE`. Sin receptor, conserva la cola. Solo un acuse de ID/hash habilita `entregado`; las respuestas se recogen con vínculo causal. El temporizador antiguo queda limitado al modo de ensayo.",
@@ -53,6 +53,7 @@
         "SMART_IP_LAN",
         "SMART_TRIPULANTES",
         "SMART_URL",
+        "VIGIA_CLAVE_INVITACIONES",
         "VIGIA_COOKIE_SEGURA",
         "VIGIA_DB",
         "VIGIA_DEMO_DIR",
@@ -413,6 +414,20 @@
               "tipo": "función",
               "firma": "panel(nombre)",
               "doc": "Panel de entorno publicado para un escenario, o None si el ETL no lo publicó o fue alterado."
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/invitaciones.py",
+          "lineas": 33,
+          "descripcion": "Emite invitaciones locales de un solo uso para una identidad ya provisionada.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main()",
+              "doc": ""
             }
           ]
         },
@@ -1050,7 +1065,7 @@
         },
         {
           "ruta": "apps/api/seguridad.py",
-          "lineas": 135,
+          "lineas": 209,
           "descripcion": "Sesiones opacas revocables, credenciales locales y CSRF. Nunca confiar en X-Tripulante.",
           "test": false,
           "simbolos": [
@@ -1059,6 +1074,18 @@
               "tipo": "función",
               "firma": "conexion_identidad()",
               "doc": ""
+            },
+            {
+              "nombre": "crear_invitacion",
+              "tipo": "función",
+              "firma": "crear_invitacion(tripulante_id, rol, horas=72)",
+              "doc": "Firma una invitación de alta ligada a una identidad y un rol existentes."
+            },
+            {
+              "nombre": "leer_invitacion",
+              "tipo": "función",
+              "firma": "leer_invitacion(token)",
+              "doc": "Verifica firma, vigencia y forma de una invitación sin revelar su identidad."
             },
             {
               "nombre": "crear_cuenta",
@@ -1079,10 +1106,22 @@
               "doc": ""
             },
             {
+              "nombre": "AltaIn",
+              "tipo": "clase",
+              "firma": "AltaIn(BaseModel)",
+              "doc": ""
+            },
+            {
               "nombre": "iniciar",
               "tipo": "función",
               "firma": "iniciar(cuerpo: AccesoIn, request: Request, response: Response, conn=Depends(conexion_identidad))",
               "doc": "Comprueba credenciales y crea una sesión de 8 horas con cookie HttpOnly y CSRF."
+            },
+            {
+              "nombre": "registrar",
+              "tipo": "función",
+              "firma": "registrar(cuerpo: AltaIn, conn=Depends(conexion_identidad))",
+              "doc": "Crea una sola cuenta para la identidad y el rol incluidos en una invitación firmada."
             },
             {
               "nombre": "consultar",
@@ -1476,6 +1515,8 @@
       "proposito": "Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo.",
       "puntos_clave": [
         "La entrada prioriza «Explorar demo» y permite `/?demo=1` sin credenciales. Los tres roles comparten únicamente el espacio ficticio de ese visitante; API, IndexedDB, cachés y bandejas llevan su ámbito de demo. La franja siempre indica datos simulados. Salir vuelve al acceso personal; el cliente no puede activar modo real dentro de esa sesión.",
+        "La pantalla de acceso y alta usa el logo VIGÍA sobre fondo negro. `/?lang=en&alta=1` abre el formulario en inglés y requiere una invitación ligada a una identidad/rol; la demo pública sigue sin registro.",
+        "La pantalla de acceso y alta usa el logo VIGÍA sobre fondo negro. `/?lang=en&alta=1` abre el formulario en inglés y requiere una invitación ligada a una identidad/rol; la demo pública sigue sin registro.",
         "El acceso se verifica por sesión de servidor (`lib/sesion.ts`); el rol de la ruta no concede permisos. La continuidad offline se limita a la pestaña ya desbloqueada y al vencimiento de 8 h; un 401 recibido bloquea la vista. No hay autenticación facial ni credenciales incluidas en el código; la demo pública tiene su propia sesión limitada a datos ficticios.",
         "`HealthStore` usa IndexedDB transaccional, particionado por misión/tripulante/modo. Los registros de localStorage sin propietario se copian a cuarentena sin reasignarlos. Las escrituras fallidas no se dan por guardadas; el perfil local no sustituye la autorización del servidor ni cifra el disco.",
         "El registro conserva horas por medida y usa `/observaciones` con IDs estables; la confirmación del formulario no inventa la hora de una toma antigua. La política técnica versionada controla agregación temporal y exclusión de referencia personal; los extremos originales quedan visibles para confirmar. Una ausencia de medidas no genera el mensaje verde de calma en Alertas.",
@@ -2977,7 +3018,7 @@
         },
         {
           "ruta": "apps/web/components/shell/acceso.tsx",
-          "lineas": 34,
+          "lineas": 84,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -4399,7 +4440,7 @@
         },
         {
           "ruta": "apps/web/lib/sesion.ts",
-          "lineas": 96,
+          "lineas": 104,
           "descripcion": "La identidad la verifica el servidor. El perfil local solo permite continuidad offline limitada.",
           "test": false,
           "simbolos": [
@@ -4449,6 +4490,12 @@
               "nombre": "acceder",
               "tipo": "función",
               "firma": "acceder",
+              "doc": ""
+            },
+            {
+              "nombre": "registrarCuenta",
+              "tipo": "función",
+              "firma": "registrarCuenta",
               "doc": ""
             },
             {

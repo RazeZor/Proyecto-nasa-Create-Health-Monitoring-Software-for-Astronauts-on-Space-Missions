@@ -9,7 +9,7 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 
 - `/demo` es una subaplicación con dependencias propias: entrada pública sin contraseña, cookie firmada/CSRF y una SQLite temporal por visitante bajo `VIGIA_DEMO_DIR` (por defecto `data/demostraciones`). Solo siembra datos ficticios. No monta identidad personal, puente del reloj ni transporte; las respuestas son simuladas. Ocho horas de sesión, reinicio del proceso invalida sus cookies y se limita a 100 espacios; limpieza de archivos `demo-<hex>.db` de más de nueve horas.
 
-- Identidad normal mediante `seguridad.py`: sesiones opacas de 8 h, scrypt, cookie HttpOnly/SameSite, CSRF, revocación y límite de intentos por IP. `cuentas.py` da de alta cuentas desde terminal privada. `VIGIA_IDENTIDAD_ENSAYO=1` es un adaptador explícito para ensayos aislados; nunca proporciona autenticación para piloto.
+- Identidad normal mediante `seguridad.py`: sesiones opacas de 8 h, scrypt, cookie HttpOnly/SameSite, CSRF, revocación y límite de intentos por IP. `cuentas.py` da de alta cuentas desde terminal privada; `invitaciones.py` emite invitaciones HMAC de un solo uso ligadas a una identidad/rol, con `VIGIA_CLAVE_INVITACIONES` (32+ caracteres). El alta web no permite escoger permisos. `VIGIA_IDENTIDAD_ENSAYO=1` es un adaptador explícito para ensayos aislados; nunca proporciona autenticación para piloto.
 - Migraciones 007–011: observaciones inmutables con hora/unidad/operación propias, originales legados sin recepción inventada, eventos de episodio, archivo experimental y acuses/respuestas de destino. Repetir IDs con otro contenido devuelve 409; `lectura` queda como proyección compatible. `historial.mediciones` conserva el tiempo por campo y `observaciones` preserva extremos previos.
 - Los clínicos de la misma misión requieren consentimiento `historial_clinico` para historial/observaciones/episodios. Solo el propietario concede/revoca; el servidor audita accesos y cambios. Un cierre de episodio requiere estado en revisión y actor médico; ni una medición normal ni el reloj lo cierran.
 - El transporte normal usa `transporte.py` y el receptor independiente configurado con `VIGIA_TIERRA_URL/CLAVE/OPERADOR_CLAVE`. Sin receptor, conserva la cola. Solo un acuse de ID/hash habilita `entregado`; las respuestas se recogen con vínculo causal. El temporizador antiguo queda limitado al modo de ensayo.
@@ -76,6 +76,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [cuentas.py](cuentas.py) | 33 | Alta local de una cuenta; la contraseña solo se pide en una terminal privada. |
 | [demostracion.py](demostracion.py) | 211 | Demo pública por visitante: bases temporales propias, sin cuentas ni datos personales. |
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
+| [invitaciones.py](invitaciones.py) | 33 | Emite invitaciones locales de un solo uso para una identidad ya provisionada. |
 | [main.py](main.py) | 264 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 594 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
 | [rutas_ciencia.py](rutas_ciencia.py) | 89 | Afirmaciones trazables y auditoría exploratoria; no acredita validación clínica. |
@@ -83,7 +84,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [rutas_estudios.py](rutas_estudios.py) | 71 | Archivo de sesiones experimentales: no equivale a evaluación clínica independiente. |
 | [rutas_registro.py](rutas_registro.py) | 328 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
 | [rutas_seguimiento.py](rutas_seguimiento.py) | 42 | Contratos HTTP de acciones, nueva medición y revisión de episodios. |
-| [seguridad.py](seguridad.py) | 135 | Sesiones opacas revocables, credenciales locales y CSRF. Nunca confiar en X-Tripulante. |
+| [seguridad.py](seguridad.py) | 209 | Sesiones opacas revocables, credenciales locales y CSRF. Nunca confiar en X-Tripulante. |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 135 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 41 | — |
 | [test_almacen_cola.py](test_almacen_cola.py) | 54 | — |
@@ -176,6 +177,10 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `manifiesto()`
 - función `leer_verificado(clave, predicado, nombre_error=None)`: El JSON gold `clave` si está en el manifiesto, cumple `predicado` y su SHA-256 coincide; si no, 404 o 500.
 - función `panel(nombre)`: Panel de entorno publicado para un escenario, o None si el ETL no lo publicó o fue alterado.
+
+**invitaciones.py**
+
+- función `main()`
 
 **main.py**
 
@@ -297,10 +302,14 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 **seguridad.py**
 
 - función `conexion_identidad()`
+- función `crear_invitacion(tripulante_id, rol, horas=72)`: Firma una invitación de alta ligada a una identidad y un rol existentes.
+- función `leer_invitacion(token)`: Verifica firma, vigencia y forma de una invitación sin revelar su identidad.
 - función `crear_cuenta(conn, usuario, clave, tripulante_id, rol)`
 - función `sesion_verificada(request, conn)`
 - clase `AccesoIn(BaseModel)`
+- clase `AltaIn(BaseModel)`
 - función `iniciar(cuerpo: AccesoIn, request: Request, response: Response, conn=Depends(conexion_identidad))`: Comprueba credenciales y crea una sesión de 8 horas con cookie HttpOnly y CSRF.
+- función `registrar(cuerpo: AltaIn, conn=Depends(conexion_identidad))`: Crea una sola cuenta para la identidad y el rol incluidos en una invitación firmada.
 - función `consultar(request: Request, response: Response, conn=Depends(conexion_identidad))`: Verifica una sesión vigente y devuelve su ámbito autorizado.
 - función `cerrar(request: Request, response: Response, conn=Depends(conexion_identidad))`: Revoca la sesión en el servidor y retira su cookie; requiere CSRF.
 
@@ -316,17 +325,18 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 - `apps/api/almacen/__main__.py`
 - `apps/api/cuentas.py`
+- `apps/api/invitaciones.py`
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `DATALAKE_DIR`, `SMART_AUTOREGISTRO`, `SMART_DESACTIVADO`, `SMART_IP_LAN`, `SMART_TRIPULANTES`, `SMART_URL`, `VIGIA_COOKIE_SEGURA`, `VIGIA_DB`, `VIGIA_DEMO_DIR`, `VIGIA_IDENTIDAD_ENSAYO`, `VIGIA_ORIGENES`, `VIGIA_PRUEBA_A`, `VIGIA_PRUEBA_FIJA`, `VIGIA_RELOJ_SEG`, `VIGIA_TIERRA_CLAVE`, `VIGIA_TIERRA_URL`
+- Variables de entorno: `DATALAKE_DIR`, `SMART_AUTOREGISTRO`, `SMART_DESACTIVADO`, `SMART_IP_LAN`, `SMART_TRIPULANTES`, `SMART_URL`, `VIGIA_CLAVE_INVITACIONES`, `VIGIA_COOKIE_SEGURA`, `VIGIA_DB`, `VIGIA_DEMO_DIR`, `VIGIA_IDENTIDAD_ENSAYO`, `VIGIA_ORIGENES`, `VIGIA_PRUEBA_A`, `VIGIA_PRUEBA_FIJA`, `VIGIA_RELOJ_SEG`, `VIGIA_TIERRA_CLAVE`, `VIGIA_TIERRA_URL`
 
 ### Dependencias
 
 - Internas: `demostracion`, `gold`, `main`, `puente_reloj`, `rutas_ciencia`, `rutas_dashboard`, `rutas_estudios`, `rutas_registro`, `rutas_seguimiento`, `seguridad`, `transporte`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: `almacen`, `fastapi`, `pydantic`, `websockets`
-- Biblioteca estándar: `argparse`, `asyncio`, `collections`, `concurrent`, `contextlib`, `datetime`, `getpass`, `hashlib`, `hmac`, `importlib`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `secrets`, `socket`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`, `urllib`, `uuid`
+- Biblioteca estándar: `argparse`, `asyncio`, `base64`, `collections`, `concurrent`, `contextlib`, `datetime`, `getpass`, `hashlib`, `hmac`, `importlib`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `secrets`, `socket`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`, `urllib`, `uuid`
 
 ### Tests
 

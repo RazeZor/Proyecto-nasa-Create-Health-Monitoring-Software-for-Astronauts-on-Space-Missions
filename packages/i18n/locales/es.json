@@ -42,7 +42,8 @@
       "sesion_requerida": "Inicia sesión con una cuenta autorizada.",
       "acceso_limitado": "Se alcanzó el límite de intentos. Espera 15 minutos.",
       "demo_caducada": "La sesión de demostración terminó. Abre una demo nueva para continuar.",
-      "demo_ocupada": "La demostración está ocupada. Vuelve a intentarlo más tarde."
+      "demo_ocupada": "La demostración está ocupada. Vuelve a intentarlo más tarde.",
+      "invitacion_invalida": "La invitación no es válida, venció o ya se utilizó."
     },
     "autor": {
       "cirujano": "Cirujano de Vuelo"
@@ -1199,7 +1200,16 @@
         "demo_detalle": "Sin cuenta ni contraseña. Explora los tres roles con datos ficticios en un espacio temporal propio.",
         "cuenta_personal": "Acceso a mis datos personales",
         "demo_activa": "Demo pública · Datos simulados",
-        "salir_demo": "Salir de la demo"
+        "salir_demo": "Salir de la demo",
+        "crear_cuenta": "Crear cuenta personal",
+        "alta_titulo": "Crear cuenta",
+        "alta_detalle": "Usa una invitación personal emitida por el equipo de VIGÍA. La identidad y los permisos ya vienen asignados.",
+        "alta_invitacion": "Código de invitación",
+        "alta_confirmar": "Confirmar contraseña",
+        "alta_crear": "Crear cuenta e iniciar sesión",
+        "alta_volver": "Volver al acceso",
+        "alta_error": "No se pudo crear la cuenta. Revisa la invitación, el usuario y las contraseñas.",
+        "alta_claves": "Las contraseñas deben coincidir."
       },
       "evidencia": {
         "titulo": "Calidad de las mediciones",

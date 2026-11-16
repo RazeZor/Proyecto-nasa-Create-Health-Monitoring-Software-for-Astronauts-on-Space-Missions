@@ -67,6 +67,14 @@ export async function acceder(usuario: string, clave: string): Promise<SesionVer
   return res.ok ? recordar(aceptar(await res.json())) : null
 }
 
+export async function registrarCuenta(invitacion: string, usuario: string, clave: string): Promise<boolean> {
+  const res = await fetch(`${BASE}/cuentas/registro`, {
+    method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ invitacion, usuario, clave }),
+  })
+  return res.status === 201
+}
+
 export async function peticion(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   const cabeceras = new Headers(init.headers)
   if (actual?.csrf) cabeceras.set("X-Vigia-CSRF", actual.csrf)
