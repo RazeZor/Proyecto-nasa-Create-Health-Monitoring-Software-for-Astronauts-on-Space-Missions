@@ -6,6 +6,8 @@ Revisión local: 2026-11-15, inventario de partida 2026-11-16T00:28:49Z y amplia
 
 ## Adquisición efectiva posterior: MMASH y Orion
 
+La [implementación posterior](EJECUCION-PLAN.md) conserva estas referencias y amplía el banco de desarrollo a v1.2. No añade una cohorte longitudinal ni convierte estos datos en validación profesional.
+
 Se descargaron e incorporaron dos referencias nuevas durante la preparación del plan completo:
 
 | Producto | Adquisición y contenido comprobados | Estado de integración | Límite |

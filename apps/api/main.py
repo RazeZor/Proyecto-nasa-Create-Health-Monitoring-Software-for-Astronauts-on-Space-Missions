@@ -16,22 +16,27 @@ from typing import Literal
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "i18n"))  # monorepo sin instalar
 
-import puente_reloj  # noqa: E402
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
+
+import puente_reloj  # noqa: E402
+from almacen import conectar, migrar  # noqa: E402
+from almacen.cola import avanzar_cola  # noqa: E402
+from almacen.reintentos import ConflictoOperacion  # noqa: E402
+from demostracion import crear_aplicacion_demo  # noqa: E402
 from gold import DATALAKE_DEFECTO  # noqa: E402, F401
 from gold import carpeta as _gold  # noqa: E402, F401
 from gold import leer_verificado as _leer_gold_verificado  # noqa: E402
 from gold import manifiesto as _manifiesto  # noqa: E402
+from i18n import t  # noqa: E402
 from rutas_ciencia import router as rutas_ciencia  # noqa: E402
 from rutas_dashboard import router as rutas_dashboard  # noqa: E402
-
-from almacen import conectar, migrar  # noqa: E402
-from almacen.cola import avanzar_cola  # noqa: E402
-from almacen.reintentos import ConflictoOperacion  # noqa: E402
-from i18n import t  # noqa: E402
+from rutas_estudios import router as rutas_estudios  # noqa: E402
 from rutas_registro import router as rutas_registro  # noqa: E402
+from rutas_seguimiento import router as rutas_seguimiento  # noqa: E402
+from seguridad import router as rutas_identidad  # noqa: E402
+from transporte import entregar_pendientes, recoger_respuestas  # noqa: E402
 
 DESCRIPCION = (
     "Datos reanclados a la línea de tiempo de misión (informe §3.4), solo lectura. Guía para agentes: AGENTES.md. "
@@ -70,7 +75,12 @@ def _tic():
     conn = conectar()
     try:
         migrar(conn)
-        avanzar_cola(conn, datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+        ahora = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if os.environ.get("VIGIA_IDENTIDAD_ENSAYO") == "1":
+            avanzar_cola(conn, ahora)
+        else:
+            entregar_pendientes(conn, ahora)
+            recoger_respuestas(conn)
     finally:
         conn.close()
 
@@ -111,12 +121,25 @@ app = FastAPI(lifespan=ciclo_de_vida, title="VIGÍA: API del ETL", description=D
     {"name": "reloj", "description": "Galaxy Watch4 en vivo, a través del servidor smart-monitor (SMART_URL)."},
     {"name": "sistema", "description": "Estado del servicio."}])
 # shortcut: cualquier origen, sin cookies ni autenticación real (X-Tripulante); acotar `allow_origins` al desplegar
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["*"],
-                   allow_private_network=True)  # shortcut: sin lista de orígenes; acotar antes de producción
+app.add_middleware(CORSMiddleware, allow_origins=[v.strip() for v in os.environ.get("VIGIA_ORIGENES", "").split(",") if v.strip()],
+                   allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", "X-Vigia-CSRF", "X-Tripulante"], allow_credentials=True)
+
+
+@app.middleware("http")
+async def evitar_cache_privada(request, call_next):
+    respuesta = await call_next(request)
+    if request.url.path.startswith(("/tripulantes", "/tripulacion", "/reportes", "/sesion", "/escalamientos", "/reloj")):
+        respuesta.headers["Cache-Control"] = "no-store"
+        respuesta.headers["Vary"] = "Cookie"
+    return respuesta
 app.include_router(rutas_registro)
+app.include_router(rutas_identidad)
+app.include_router(rutas_seguimiento)
+app.include_router(rutas_estudios)
 app.include_router(rutas_dashboard)
 app.include_router(rutas_ciencia)
 app.include_router(puente_reloj.router)
+app.mount("/demo", crear_aplicacion_demo())
 
 
 @app.exception_handler(ValueError)

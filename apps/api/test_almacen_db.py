@@ -21,11 +21,11 @@ class Esquema(unittest.TestCase):
     def test_migrar_crea_todas_las_tablas(self):
         nombres = {f[0] for f in self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         self.assertTrue(TABLAS <= nombres)
-        self.assertEqual(self.conn.execute("PRAGMA user_version").fetchone()[0], 6)
+        self.assertEqual(self.conn.execute("PRAGMA user_version").fetchone()[0], 11)
 
     def test_migrar_es_idempotente(self):
-        self.assertEqual(migrar(self.conn), 6)
-        self.assertEqual(migrar(self.conn), 6)
+        self.assertEqual(migrar(self.conn), 11)
+        self.assertEqual(migrar(self.conn), 11)
 
     def test_llaves_foraneas_activas(self):
         with self.assertRaises(sqlite3.IntegrityError):
@@ -75,7 +75,7 @@ class Esquema(unittest.TestCase):
             [h.join() for h in hilos]
             self.assertEqual(errores, [])
             conn = conectar(ruta)
-            self.assertEqual(migrar(conn), 6)
+            self.assertEqual(migrar(conn), 11)
             conn.close()
 
     def test_migracion_fallida_no_deja_esquema_parcial(self):
@@ -120,8 +120,8 @@ class Esquema(unittest.TestCase):
                 conn.executescript("CREATE TABLE cuenta (id INTEGER PRIMARY KEY, dato TEXT); INSERT INTO cuenta VALUES (7, 'conservar');")
             conn.execute("PRAGMA user_version = 4")
             conn.commit()
-            self.assertEqual(migrar(conn), 6)
-            self.assertEqual(migrar(conn), 6)
+            self.assertEqual(migrar(conn), 11)
+            self.assertEqual(migrar(conn), 11)
             self.assertEqual(conn.execute("SELECT alias FROM tripulante").fetchone()[0], "ana")
             if con_reloj:
                 self.assertEqual(conn.execute("SELECT nombre FROM reloj_vinculo").fetchone()[0], "mi reloj")

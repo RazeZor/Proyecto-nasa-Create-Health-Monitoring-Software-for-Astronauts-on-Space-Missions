@@ -2,6 +2,8 @@
 import type { ReportState } from "./types"
 
 export interface ReporteServidor {
+  /** Ausente solo en clientes/fixtures anteriores. null declara que no hay recepción real confirmada. */
+  acuse_destino?: { mensaje_id: string; sha256: string; t_real: string } | null
   id: number
   creado_t_real: string
   retardo_min: number
@@ -37,7 +39,7 @@ export function estadoReporte(createdAt: number, delayMinutes: number, ahora: nu
   if (servidor) {
     const creado = Date.parse(servidor.creado_t_real)
     const llega = Date.parse(servidor.llega_t_real)
-    const llego = servidor.estado !== "en_cola"
+    const llego = servidor.estado !== "en_cola" && servidor.acuse_destino !== null
     const state: ReportState = llego ? "arrived" : "sent"
     return { state, remainingMs: Math.max(0, llega - ahora), progress: llego || llega <= creado ? 1 : Math.min(1, Math.max(0, (ahora - creado) / (llega - creado))) }
   }

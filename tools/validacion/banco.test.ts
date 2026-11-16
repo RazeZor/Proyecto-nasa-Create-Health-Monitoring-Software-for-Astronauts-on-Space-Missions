@@ -35,9 +35,26 @@ test("la métrica mantiene los no detectados y no inventa retraso", () => {
 test("el banco informa ausencia de validación clínica y datos humanos", () => {
   const reporte = ejecutarBanco(protocolo)
   assert.equal(reporte.conclusion, "exploratoria_sin_validacion_clinica")
-  assert.equal(reporte.sintesis.misiones_sinteticas, 26)
+  assert.equal(reporte.sintesis.misiones_sinteticas, protocolo.escenarios.length * 2)
   assert.equal(reporte.reglas_ambientales.length, 2)
   assert.ok(reporte.reglas_ambientales.every((r) => r.coincide_con_regla))
   assert.ok(reporte.resultados.every((r) => !r.escenario.startsWith("entorno_")))
   assert.ok(reporte.resultados.every((r) => r.eventos === 0 ? r.deteccion === null && r.ic95_deteccion === null : r.no_detectados === r.eventos - r.detectados))
+})
+
+test("una alarma de otro canal en la ventana no acredita detectar la deriva objetivo", () => {
+  const caso = generarCaso("deriva_sutil", 0, protocolo)
+  caso.evento = { inicio: 36, fin: 36, tipo: "deriva", canales: ["fc"] }
+  for (const r of caso.tripulante.lecturas) { r.fc_reposo_lpm = 65; r.pas_mmHg = 120; r.spo2_pct = 98; r.temp_central_c = r.dia_mision === 36 ? 34 : 36.7 }
+  const resultado = evaluarCaso(caso, "A", 7)
+  assert.equal(resultado.detectado, false)
+  assert.equal(resultado.alertas_incidentales_en_ventana, 1)
+})
+
+test("una señal en un día fuera de la máscara común no mejora el numerador", () => {
+  const caso = generarCaso("extremo", 0, protocolo)
+  caso.tripulante.lecturas.find((r) => r.dia_mision === 36)!.sueno_h = null
+  const resultado = evaluarCaso(caso, "A", 7)
+  assert.equal(resultado.detectado, false)
+  assert.equal(resultado.dias_evento_observados, 0)
 })

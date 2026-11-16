@@ -1,6 +1,9 @@
 import type { CheckInEntry, Mode } from "./types"
+import { actualizarPrivado, leerPrivado } from "./almacen-local.ts"
+import { validarRegistros, validarIds } from "./almacen-validar.ts"
+import { espacioSesion } from "./sesion.ts"
 
-/** Swap this implementation for IndexedDB/Dexie later; consumers only use the interface. */
+/** Interfaz estable; IndexedDB confirma la transacción antes de resolver una escritura. */
 export interface HealthStore {
   listCheckIns(): Promise<CheckInEntry[]>
   saveCheckIn(entry: CheckInEntry): Promise<void>
@@ -20,7 +23,6 @@ export interface HealthStore {
 const MODO_DEFECTO: Mode = process.env.NEXT_PUBLIC_VIGIA_MODO === "demo" ? "demo" : "real"
 const CLAVE_MODO = "vigia:modo"
 let modo: Mode = MODO_DEFECTO
-const prefijo = () => (modo === "demo" ? "vigia:" : "vigia:real:")
 
 const hayAlmacen = () => typeof window !== "undefined" && !!window.localStorage
 
@@ -59,32 +61,28 @@ function write<T>(key: string, value: T) {
   window.localStorage.setItem(key, JSON.stringify(value))
 }
 
-async function append<T>(key: string, item: T) {
-  write(prefijo() + key, [...read<T[]>(prefijo() + key, []), item])
+const anadir = <T>(clave: string, valor: T) => actualizarPrivado<T[]>(clave, [], (lista) => lista.includes(valor) ? lista : [...lista, valor])
+export const store: HealthStore = {
+  listCheckIns: async () => validarRegistros(await leerPrivado<unknown>("checkins", [])),
+  saveCheckIn: (e) => actualizarPrivado<CheckInEntry[]>("checkins", [], (lista) => {
+    const previo = lista.find((x) => x.id === e.id)
+    if (previo && JSON.stringify(previo) !== JSON.stringify(e)) throw new Error("registro inmutable reutilizado")
+    return previo ? lista : [...lista, e]
+  }),
+  listSharedAlertIds: async () => validarIds(await leerPrivado<unknown>("shared", [])), shareAlert: (id) => anadir("shared", id),
+  listAcknowledgedAlertIds: async () => validarIds(await leerPrivado<unknown>("acked", [])), acknowledgeAlert: (id) => anadir("acked", id),
+  listSyncedCheckInIds: async () => validarIds(await leerPrivado<unknown>("synced", [])), markCheckInSynced: (id) => anadir("synced", id),
+  listEscalations: () => leerPrivado<Record<string, number | null>>("escalations", {}),
+  saveEscalation: (clave, id) => actualizarPrivado<Record<string, number | null>>("escalations", {}, (datos) => ({ ...datos, [clave]: id })),
 }
-
-export const localStore: HealthStore = {
-  listCheckIns: async () => read<CheckInEntry[]>(prefijo() + "checkins", []),
-  saveCheckIn: (e) => append("checkins", e),
-  listSharedAlertIds: async () => read<string[]>(prefijo() + "shared", []),
-  shareAlert: (id) => append("shared", id),
-  listAcknowledgedAlertIds: async () => read<string[]>(prefijo() + "acked", []),
-  acknowledgeAlert: (id) => append("acked", id),
-  listSyncedCheckInIds: async () => read<string[]>(prefijo() + "synced", []),
-  markCheckInSynced: (id) => append("synced", id),
-  listEscalations: async () => read<Record<string, number | null>>(prefijo() + "escalations", {}),
-  saveEscalation: async (clave, id) =>
-    write(prefijo() + "escalations", { ...read<Record<string, number | null>>(prefijo() + "escalations", {}), [clave]: id }),
-}
-
-export const store: HealthStore = localStore
+export const localStore = store
 
 /** Copia local de lo último que respondió la API (catálogo, panel de entorno...): con ella la app abre sin enlace. */
-export const leerCache = <T>(clave: string): T | null => read<T | null>(`vigia:cache:${clave}`, null)
+export const leerCache = <T>(clave: string): T | null => read<T | null>(`vigia:${espacioSesion()}cache:${clave}`, null)
 export function guardarCache<T>(clave: string, valor: T) {
   if (!hayAlmacen()) return
   try {
-    write(`vigia:cache:${clave}`, valor)
+    write(`vigia:${espacioSesion()}cache:${clave}`, valor)
   } catch {
     // almacenamiento lleno: la app sigue con la red; solo se pierde el arranque sin enlace
   }

@@ -49,7 +49,10 @@ jobs:
         with:
           node-version: "22.18"
       - name: pnpm (la versión de packageManager)
-        run: corepack enable
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: apps/web/package.json
+          run_install: false
       - name: Dependencias exactas del lockfile
         run: pnpm install --frozen-lockfile
       - name: Tipos

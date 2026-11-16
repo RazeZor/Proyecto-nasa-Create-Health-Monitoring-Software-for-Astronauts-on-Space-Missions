@@ -9,6 +9,7 @@ import type { Layer, Role, Status, Symptom, ZoneId } from "./types.ts"
 
 /** Catálogo de evidencia: claves de afirmaciones, métodos y escenarios del contrato compartido. */
 export const textoCiencia = (clave: string): string => t(`web.ciencia.${clave}`, IDIOMA)
+export const textoSistema = (clave: string): string => t(`web.sistema.${clave}`, IDIOMA)
 
 const CLAVE_IDIOMA = "vigia:idioma"
 const enNavegador = typeof window !== "undefined"

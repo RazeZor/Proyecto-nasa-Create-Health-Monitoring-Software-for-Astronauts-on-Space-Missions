@@ -1,3 +1,4 @@
+import { peticion, esDemoPublica } from "./sesion.ts"
 /**
  * Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz
  * a las de la API con el contrato vocabulario.json (copia de packages/schemas; la guarda un test de Python).
@@ -49,13 +50,33 @@ export function lecturasDeCheckIn(e: CheckInEntry): Lectura[] {
   )
 }
 
+const UNIDADES: Record<string, string> = {
+  frecuencia_cardiaca_reposo: "lpm", presion_arterial_sistolica: "mmHg", presion_arterial_diastolica: "mmHg",
+  spo2: "%", temperatura_central: "°C", sueno: "h", estado_animo: "puntos", glucosa: "mg/dL", masa_corporal: "kg",
+}
+
+/** La hora de envío nunca sustituye la hora desconocida de una toma. */
+export function observacionesDeCheckIn(e: CheckInEntry) {
+  const inverso = Object.fromEntries(Object.entries(IDS).map(([ui, id]) => [id, ui]))
+  return lecturasDeCheckIn(e).map(({ naturaleza: _naturaleza, ...l }) => {
+    const ui = (inverso[l.indicador] ?? "diastolic") as IndicatorId | "diastolic"
+    const hora = e.tiemposMedicion?.[ui]
+    return {
+      ...l, id: `${e.id}:${l.indicador}`, operacion_id: `${e.id}:${l.indicador}`, unidad: UNIDADES[l.indicador],
+      t_real: hora ? tReal(hora) : null, precision_tiempo: hora ? "declarada" as const : "desconocida" as const,
+      uso: "operativo" as const, instrumento: l.metodo, sitio: ui === "spo2" ? e.spo2Site || null : null,
+      comparable: l.origen === "manual", configuracion_version: "captura-v1", corrige_id: null,
+    }
+  })
+}
+
 /** La interfaz no pide gravedad: se envía 1 (leve). */
 export const sintomasDeCheckIn = (e: CheckInEntry): Sintoma[] =>
   e.symptoms.map((s) => ({ codigo: vocabulario.sintomas[s], gravedad: 1, t_real: tReal(e.createdAt), operacion_id: `${e.id}:${s}` }))
 
 async function enviar(ruta: string, tripulante: number, cuerpo: unknown): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}${ruta}`, {
+    const res = await peticion(`${API_BASE_URL}${ruta}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) },
       body: JSON.stringify(cuerpo),
@@ -69,7 +90,16 @@ async function enviar(ruta: string, tripulante: number, cuerpo: unknown): Promis
 /** Envía el registro del día; true solo si todo llegó. Reenviarlo es seguro: la API ignora lecturas repetidas. */
 export async function enviarCheckIn(e: CheckInEntry, tripulante: number): Promise<boolean> {
   const envios = [
-    ...lecturasDeCheckIn(e).map((l) => enviar(`/tripulantes/${tripulante}/lecturas`, tripulante, l)),
+    ...observacionesDeCheckIn(e).map(async (l) => {
+      try {
+        const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/observaciones`, {
+          method: "POST", headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) }, body: JSON.stringify(esDemoPublica() ? { ...l, uso: "escenario" } : l),
+        })
+        if (!res.ok) return false
+        const acuse = await res.json() as { id?: unknown; recibido_t_real?: unknown }
+        return acuse.id === l.id && typeof acuse.recibido_t_real === "string"
+      } catch { return false }
+    }),
     ...sintomasDeCheckIn(e).map((s) => enviar(`/tripulantes/${tripulante}/sintomas`, tripulante, s)),
   ]
   return (await Promise.all(envios)).every(Boolean)
@@ -80,7 +110,7 @@ export type AcuseReporte = { id: number } | { error: "conflicto" | "reintentar" 
 
 export async function enviarReporte(perfil: ProfileId, creado: string, tripulante: number, retardo = retardoMin(perfil), contenido?: ContenidoReporte, operacionId?: string): Promise<AcuseReporte> {
   try {
-    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reportes`, {
+    const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/reportes`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) },
       body: JSON.stringify({ creado_t_real: tReal(creado), retardo_min: retardo, contenido, operacion_id: operacionId }),
@@ -102,11 +132,16 @@ export async function encolarReporte(perfil: ProfileId, creado: string, tripulan
 /** Reportes propios con su estado en la cola; `null` si no hay red o la API falla (nunca se finge una cola vacía). */
 export async function listarReportes(tripulante: number): Promise<ReporteServidor[] | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reportes?lang=${IDIOMA}`, { headers: { "X-Tripulante": String(tripulante) } })
+    const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/reportes?lang=${IDIOMA}`, { headers: { "X-Tripulante": String(tripulante) } })
     return res.ok ? ((await res.json()) as ReporteServidor[]) : null
   } catch {
     return null
   }
+}
+
+export async function listarReportesRecibidos(): Promise<ReporteServidor[] | null> {
+  try { const res = await peticion(`${API_BASE_URL}/reportes/recibidos`, { cache: "no-store" }); return res.ok ? await res.json() as ReporteServidor[] : null }
+  catch { return null }
 }
 
 /** El médico de vuelo responde un reporte ya entregado. shortcut: la API acepta a cualquier tripulante conocido. */
@@ -139,7 +174,7 @@ export interface Escalamiento {
  *  lo guardó sin escalar (sin destinatario o sin consentimiento) o `undefined` si no respondió. */
 export async function enviarAlertaRoja(a: AvisoRojo, tripulante: number, explicacion: string): Promise<number | null | undefined> {
   try {
-    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/alertas`, {
+    const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/alertas`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Tripulante": String(tripulante) },
       body: JSON.stringify({ indicador: a.indicador, capa: "A", nivel: "rojo", valor: a.valor, t_real: tReal(a.t_real), tramo: a.tramo, explicacion, regla_version: "news2-2017" }),
@@ -153,7 +188,7 @@ export async function enviarAlertaRoja(a: AvisoRojo, tripulante: number, explica
 
 async function leer<T>(ruta: string, actor: number): Promise<T | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}${ruta}`, { headers: { "X-Tripulante": String(actor) }, cache: "no-store" })
+    const res = await peticion(`${API_BASE_URL}${ruta}`, { headers: { "X-Tripulante": String(actor) }, cache: "no-store" })
     return res.ok ? ((await res.json()) as T) : null
   } catch {
     return null

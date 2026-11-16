@@ -43,6 +43,7 @@ Completa `.env`:
 - `NASA_API_KEY`: pídela gratis en https://api.nasa.gov. Sin ella se usa `DEMO_KEY`, que tiene límite de consultas.
 - `DATALAKE_DIR`: opcional. Por defecto es `pipelines/datalake/data/`.
 - `VIGIA_DB`: opcional. Archivo SQLite de la API (registro de la tripulación). Por defecto `apps/api/data/vigia.db`. Se crea con `cd apps/api && python3 -m almacen migrar` y se llena de demostración con `python3 -m almacen sembrar`.
+- `VIGIA_CLAVE_INVITACIONES`: secreto de al menos 32 caracteres para emitir altas web ligadas a una identidad/rol; solo se configura en entornos privados de la API y nunca se comparte.
 `.env` está en `.gitignore`: **nunca lo subas**. Los scripts leen variables del entorno y **no** cargan `.env` solos. Cárgalo en tu terminal antes de ingerir:
 
 ```sh
@@ -199,6 +200,90 @@ Todo el proyecto corre en el PC, sin internet ni servidor: smart-monitor (servid
 4. **Reloj:** Wi-Fi del reloj encendido (si está enlazado al teléfono por Bluetooth lo apaga), conectar a `umbra` / `solem123`, y en la app: Servidor `ws://192.168.137.1:8765/watch`, Tripulante el nombre que pusiste en `SMART_TRIPULANTES`. La pantalla Dispositivo de VIGÍA (`/device`) muestra esa misma URL sugerida y si el reloj ya está vinculado.
 
 Comprobación: `curl http://127.0.0.1:8000/reloj/estado` debe dar `conectado: true` e `ip_lan: "192.168.137.1"`; el panel de smart-monitor (`http://localhost:8765`) muestra el reloj al conectarse. Si el reloj no llega, revisa que `python.exe` tenga permitida la entrada en el firewall de Windows para redes públicas (así trata Windows al hotspot).
+
+## 9. Identidad, seguimiento y recuperación del prototipo
+
+La [ejecución del plan](EJECUCION-PLAN.md) distingue lo implementado de la revisión profesional y el piloto pendientes. Los parámetros de evidencia siguen siendo experimentales. No habilites datos personales de un piloto basándote solo en que las pruebas pasan.
+
+### Cuentas y acceso
+
+Para evaluar el producto abre **«Explorar demo»** o el enlace `/?demo=1` (`&lang=en` para inglés). No hay que repartir una contraseña: cada visitante recibe una cookie de demostración y una base ficticia propia durante ocho horas. Puede probar los tres roles y realizar registros/episodios/informes simulados. La franja de la interfaz señala siempre la demo. El puente del reloj, el transporte real y la base personal no forman parte de ella.
+
+Las cookies de demo se invalidan al reiniciar el proceso. Sus bases viven en `VIGIA_DEMO_DIR` o `apps/api/data/demostraciones/`, fuera de Git; se limita a 100 espacios y se limpian archivos propios de más de nueve horas. El navegador también separa IndexedDB, cachés y bandejas por el identificador de esa visita. La implementación usa una [subaplicación independiente de FastAPI](https://fastapi.tiangolo.com/advanced/sub-applications/) con sus propias dependencias; las pruebas comprueban el aislamiento frente a una base personal con registros señuelo.
+
+La API exige sesión verificada por defecto. Primero crea la misión/tripulantes por el procedimiento del proyecto; `python -m almacen sembrar` es exclusivamente una semilla de demostración. Desde `apps/api`, una persona con acceso privado al equipo puede dar de alta una cuenta:
+
+```sh
+python cuentas.py --usuario mi-usuario --tripulante 1 --rol astronaut
+```
+
+La contraseña se pide con `getpass`, se repite y nunca se pasa como argumento ni queda en Git. Mínimo 12 caracteres. `cmo` y `surgeon` requieren un tripulante `oficial_medico` de esa misión; una cuenta de astronauta no puede heredar un tripulante médico. No hay contraseñas predeterminadas. Abre la web e inicia sesión con esa cuenta.
+
+Para permitir que la persona cree su propia contraseña, emite una invitación firmada y de un solo uso para una identidad sin cuenta:
+
+```powershell
+$env:VIGIA_CLAVE_INVITACIONES = "<secreto-aleatorio-de-32-caracteres-o-mas>"
+python apps/api/invitaciones.py --tripulante 12 --rol astronaut --horas 72
+```
+
+La API debe tener configurado el mismo secreto. Entrega el código impreso solo a esa persona; vence en un máximo de siete días. La pantalla `/?lang=en&alta=1` usa el logo VIGÍA, fondo negro y textos en inglés. La demo sigue abierta sin registro.
+
+El acceso clínico al historial, observaciones y episodios requiere consentimiento `historial_clinico`; el dueño lo concede/revoca en Tendencias → módulos de investigación → permisos. Los escalamientos rojos conservan su alcance separado. La revocación se comprueba en servidor; una copia previamente autorizada sin red no se puede revocar a distancia hasta reconectar. Las respuestas de informes en modo normal requieren rol `surgeon` y el destino configurado.
+
+La sesión vence en ocho horas. Una pestaña desbloqueada puede continuar offline dentro de ese plazo; abrir un navegador nuevo necesita verificar identidad. No se guarda la contraseña ni un token portador en localStorage. IndexedDB y los respaldos no cifran el disco: la protección del dispositivo, HTTPS y la gestión de cuentas forman parte del despliegue que debe revisarse antes del piloto. Con TLS en un proxy externo, exporta `VIGIA_COOKIE_SEGURA=1`.
+
+`VIGIA_IDENTIDAD_ENSAYO=1` habilita el adaptador de cabecera antiguo y el reloj simulado de entrega; solo corresponde a servicios/bases temporales de ensayo. El funcionamiento normal lo deja vacío. CORS permanece cerrado; el proxy web del mismo origen funciona sin abrirlo. Si necesitas acceso directo, exporta `VIGIA_ORIGENES` con orígenes exactos antes de iniciar uvicorn.
+
+### Migración y respaldos
+
+Las migraciones 007–011 se aplican al abrir la API. Antes de migrar una base existente, detén las escrituras del despliegue y crea una copia privada. Desde la raíz, con rutas de archivos reales y un destino nuevo:
+
+Si ya hay una API usando este clon, trabaja en otro `git worktree` o detén ese servicio antes de agregar SQL: el migrador descubre los archivos de la carpeta en cada consulta, incluso aunque el proceso haya arrancado con código anterior. Un build separado y una base temporal de tests no aíslan esa lectura de los servicios abiertos.
+
+```python
+import sys
+sys.path.insert(0, "tools/verificacion")
+from recuperar import respaldar, restaurar_en_copia
+respaldar("apps/api/data/vigia.db", "apps/api/data/respaldo-previo.db")
+restaurar_en_copia("apps/api/data/respaldo-previo.db",
+                  "apps/api/data/respaldo-previo.db.manifest.json",
+                  "apps/api/data/restauracion-aislada.db")
+```
+
+Ejecuta estas llamadas con el Python del entorno. La copia incluye WAL y verifica integridad, llaves, filas y hash; rechaza un destino existente. La restauración **no sustituye** la base original: conserva operaciones posteriores para conciliarlas hacia adelante. La reversión de aplicación debe conservar la base nueva y revisar las observaciones/episodios que una versión anterior no interpreta.
+
+El navegador exporta/restaura su propio ámbito desde Tendencias. Rechaza hash, formato, usuario/misión o claves incompatibles y no pisa diferencias actuales. Los registros antiguos de localStorage sin identidad se conservan en cuarentena; no se reasignan automáticamente. Exportación y copias contienen datos privados y quedan fuera de Git.
+
+### Receptor Tierra y respuesta
+
+Instala las dependencias de `apps/tierra/requirements.txt` en el entorno elegido. En el proceso Tierra exporta `VIGIA_TIERRA_DB`, `VIGIA_TIERRA_CLAVE` y `VIGIA_TIERRA_OPERADOR_CLAVE`: dos secretos distintos, aleatorios y de al menos 32 caracteres. No hay claves incluidas. Desde `apps/tierra`:
+
+```sh
+python -m uvicorn receptor:app --host 127.0.0.1 --port 8100
+```
+
+El proceso receptor toma las variables del entorno; no carga el `.env` de la raíz. En el emisor configura `VIGIA_TIERRA_URL=http://127.0.0.1:8100` y las credenciales correspondientes. Fuera de loopback el transporte requiere HTTPS y no sigue redirecciones. La API intenta entregar cada `VIGIA_RELOJ_SEG` segundos; sin destino/configuración conserva la cola. Solo cambia a recibido después de ID/hash confirmados por la otra base. El operador responde a un mensaje realmente recibido y la vuelta conserva `en_respuesta_a`. Esto sigue rotulado como ensayo de transporte.
+
+### Verificación sin reemplazar el build en uso
+
+```sh
+python tools/contextgen/contextgen.py
+python tools/verificacion/verificar.py --web --aislado
+python tools/verificacion/ensayo.py --aislado --integral
+python tools/verificacion/ensayo.py --aislado --datasets
+```
+
+`--node RUTA` permite el Node portátil del entorno. `--aislado` usa `.next-verificacion`. El ensayo integral genera contraseñas temporales, usa sesiones reales y otra SQLite; comprueba observaciones, episodios, sueño, reacción interrumpida, IndexedDB, offline de pestaña y separación de usuarios. El ensayo de datasets comprueba referencias ya adquiridas, recuperación de informes, reinicio y carcasa; no descarga datos ni utiliza la base personal.
+
+Investigación y reproducción (Node 22.18+):
+
+```sh
+node tools/validacion/ejecutar.ts --publicar
+node tools/validacion/investigar.ts
+node tools/validacion/reproducir.ts RUTA_AL_ARTEFACTO_DE_EVALUACION.json
+```
+
+El último comando exige la misma huella del motor y recalcula su salida. Publicar el banco sintético no constituye evaluación reservada ni validación profesional. Para promover una variante siguen pendientes los criterios, la revisión y el conjunto independiente.
 
 ## Problemas frecuentes
 

@@ -7,6 +7,8 @@ import http from "node:http"
 import os from "node:os"
 import path from "node:path"
 import { setTimeout as pausa } from "node:timers/promises"
+import { ensayarIntegral } from "./flujo-integral.mjs"
+import { ensayarDemoPublica } from "./flujo-demo-publica.mjs"
 
 const [chrome, destino] = process.argv.slice(2)
 const web = `http://127.0.0.1:${process.env.VIGIA_E2E_PROXY}`
@@ -112,6 +114,11 @@ const locales = `Object.keys(localStorage).filter(k => k.startsWith('vigia:infor
 try {
   console.log("Abrir Chrome sobre la base temporal")
   await iniciar()
+  if (process.env.VIGIA_E2E_DEMO_PUBLICA === "1") {
+    await ensayarDemoPublica({ cliente, hasta, web, destino, errores })
+  } else if (process.env.VIGIA_E2E_INTEGRAL === "1") {
+    await ensayarIntegral({ cliente, hasta, web, destino, errores })
+  } else {
   console.log("Cargar la app y guardar sin API")
   await cliente.enviar("Page.navigate", { url: `${web}/astronauta/reports?modo=demo&lang=es` })
   const boton = `[...document.querySelectorAll('button')].find(b => b.textContent.trim() === ${JSON.stringify(catalogo.reports.send)} && !b.disabled)`
@@ -133,7 +140,8 @@ try {
   await cerrar()
   console.log("Reabrir Chrome y recuperar el informe")
   await iniciar()
-  await cliente.enviar("Network.setBlockedURLs", { urls: ["*vigia-api*"] })
+  // Tras cerrar el navegador se verifica de nuevo la identidad; solo el registro y catálogo simulan caída.
+  await cliente.enviar("Network.setBlockedURLs", { urls: ["*vigia-api/tripulantes*", "*vigia-api/perfiles*", "*vigia-api/fichas*", "*vigia-api/entorno*"] })
   await cliente.enviar("Page.navigate", { url: `${web}/astronauta/reports?modo=demo&lang=es` })
   await hasta(`document.body.innerText.includes(${JSON.stringify(catalogo.reports.localPending)})`)
   assert.equal((await cliente.evaluar(locales))[0].id, informe.id)
@@ -203,6 +211,15 @@ try {
     excepciones_navegador: errores.length }
   await writeFile(path.join(destino, "resultado.json"), JSON.stringify(resultado, null, 2))
   console.log(JSON.stringify(resultado))
+  }
+} catch (error) {
+  try {
+    const texto = await cliente.evaluar("document.body.innerText")
+    await writeFile(path.join(destino, "fallo-ui.txt"), texto)
+    const captura = await cliente.enviar("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
+    await writeFile(path.join(destino, "fallo-ui.png"), Buffer.from(captura.data, "base64"))
+  } catch { /* conservar siempre el error original */ }
+  throw error
 } finally {
   await cerrar()
   proxy.closeAllConnections()

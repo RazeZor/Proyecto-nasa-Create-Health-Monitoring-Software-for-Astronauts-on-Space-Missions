@@ -5,15 +5,17 @@ sesión firmada antes de uso fuera de localhost. Los datos personales solo los l
 las ve el dueño y, si son rojas, su destinatario (privacidad §5.4).
 """
 import json
+import os
 import sqlite3
 from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field, StrictFloat, StrictInt
 
-from almacen import alertas, base, cola, conectar, lecturas, migrar
+from almacen import alertas, base, cola, conectar, lecturas, migrar, observaciones, tripulacion
 from i18n import t
+from seguridad import sesion_verificada
 
 Numero = StrictInt | StrictFloat  # sin coerción: "97" y true no son números
 router = APIRouter(tags=["registro"])
@@ -31,7 +33,10 @@ def conexion():
         conn.close()
 
 
-def actor(x_tripulante: str | None = Header(None), conn=Depends(conexion)) -> int:
+def actor(request: Request, x_tripulante: str | None = Header(None), conn=Depends(conexion)) -> int:
+    if os.environ.get("VIGIA_IDENTIDAD_ENSAYO") != "1":
+        identidad = sesion_verificada(request, conn)
+        return identidad["tripulante_id"]
     existe = x_tripulante and x_tripulante.isdigit() and conn.execute(
         "SELECT 1 FROM tripulante WHERE id = ?", (int(x_tripulante),)).fetchone()
     if not existe:
@@ -59,6 +64,81 @@ class SintomaIn(BaseModel):
     gravedad: StrictInt
     t_real: str
     operacion_id: str | None = Field(default=None, min_length=1, max_length=200)
+
+
+class ObservacionIn(BaseModel):
+    model_config = {"extra": "forbid"}
+    id: str = Field(min_length=1, max_length=200)
+    operacion_id: str = Field(min_length=1, max_length=200)
+    indicador: str
+    valor: Numero
+    unidad: str
+    t_real: str | None
+    precision_tiempo: Literal["segundo", "declarada", "desconocida"]
+    origen: Literal["manual", "sensor", "importado"]
+    metodo: str | None = Field(default=None, max_length=200)
+    instrumento: str | None = Field(default=None, max_length=200)
+    sitio: str | None = Field(default=None, max_length=100)
+    uso: Literal["operativo", "referencia", "escenario"]
+    comparable: bool = False
+    configuracion_version: str = Field(min_length=1, max_length=100)
+    corrige_id: str | None = Field(default=None, max_length=200)
+
+
+@router.post("/tripulantes/{id}/observaciones", status_code=201, responses=ERRORES)
+def crear_observacion(cuerpo: ObservacionIn, id: int = Depends(propio), conn=Depends(conexion)):
+    """Añade una toma con hora propia; un reintento devuelve el mismo acuse y otro contenido produce 409."""
+    return observaciones.registrar(conn, id, cuerpo.model_dump())
+
+
+@router.get("/tripulantes/{id}/observaciones", responses=ERRORES)
+def listar_observaciones(id: int, quien: int = Depends(actor), conn=Depends(conexion)):
+    """Lista originales y correcciones enlazadas del propietario, sin borrar medidas anteriores."""
+    if id != quien:
+        medico = conn.execute("SELECT 1 FROM tripulante a JOIN tripulante b ON a.mision_id = b.mision_id "
+                              "WHERE a.id = ? AND b.id = ? AND a.rol = 'oficial_medico'", (quien, id)).fetchone()
+        if not medico or not tripulacion.tiene_consentimiento(conn, id, "historial_clinico"):
+            raise HTTPException(403, t("api.error.sin_permiso"))
+        alertas.anotar(conn, quien, "lectura_ajena", "observaciones", id)
+    return observaciones.listar(conn, id)
+
+
+class ConsentimientoIn(BaseModel):
+    regla: Literal["historial_clinico", "escalamiento_rojo"]
+    aceptado: bool
+
+
+@router.post("/tripulantes/{id}/consentimientos")
+def consentimiento(cuerpo: ConsentimientoIn, id: int = Depends(propio), conn=Depends(conexion)):
+    """Concede o revoca un alcance explícito de lectura/escalamiento; cada cambio queda en auditoría."""
+    from datetime import datetime, timezone
+    fecha = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    with conn:
+        if cuerpo.aceptado:
+            conn.execute("INSERT OR REPLACE INTO consentimiento VALUES (?, ?, ?)", (id, cuerpo.regla, fecha))
+        else:
+            conn.execute("DELETE FROM consentimiento WHERE tripulante_id = ? AND regla = ?", (id, cuerpo.regla))
+        alertas._anotar(conn, id, "consentimiento", "tripulante", id, {"regla": cuerpo.regla, "aceptado": cuerpo.aceptado})
+    return {"regla": cuerpo.regla, "aceptado": cuerpo.aceptado}
+
+
+@router.get("/tripulantes/{id}/consentimientos")
+def consentimientos(id: int = Depends(propio), conn=Depends(conexion)):
+    """Lista los alcances que el dueño mantiene concedidos; no muestra decisiones de otras personas."""
+    return [dict(f) for f in conn.execute("SELECT regla, aceptado_t_real FROM consentimiento WHERE tripulante_id = ?", (id,))]
+
+
+@router.get("/reportes/recibidos")
+def reportes_recibidos(quien: int = Depends(actor), conn=Depends(conexion)):
+    """El médico de la misión lee solo informes explícitamente enviados y con recepción del destino confirmada."""
+    medico = conn.execute("SELECT mision_id FROM tripulante WHERE id = ? AND rol = 'oficial_medico'", (quien,)).fetchone()
+    if not medico:
+        raise HTTPException(403, t("api.error.sin_permiso"))
+    sujetos = [f[0] for f in conn.execute("SELECT id FROM tripulante WHERE mision_id = ?", (medico[0],))]
+    informes = [r for sujeto in sujetos for r in cola.leer_reportes(conn, sujeto) if r.get("acuse_destino")]
+    for r in informes:
+        alertas.anotar(conn, quien, "lectura_ajena", "reporte_cola", r["id"])
+    return informes
 
 
 class LineaBaseIn(BaseModel):
@@ -191,14 +271,30 @@ def listar_reportes(id: int = Depends(propio), lang: Literal["es", "en"] = "es",
              summary="Entrega los reportes que ya llegaron a tierra")
 def avanzar(cuerpo: AvanceIn, quien: int = Depends(actor), conn=Depends(conexion)):
     """Pasa a `entregado` los reportes con `llega_t_real` <= `ahora`; devuelve `{"entregados": n}`."""
+    if os.environ.get("VIGIA_IDENTIDAD_ENSAYO") != "1":
+        raise HTTPException(403, t("api.error.sin_permiso"))
     return {"entregados": cola.avanzar_cola(conn, cuerpo.ahora)}
 
 
 @router.post("/reportes/{reporte_id}/respuesta", responses={401: ERRORES[401], 422: ERRORES[422]},
              summary="Responde un reporte entregado")
-def responder(reporte_id: int, cuerpo: RespuestaIn, quien: int = Depends(actor), conn=Depends(conexion)):
+def responder(reporte_id: int, cuerpo: RespuestaIn, request: Request, quien: int = Depends(actor), conn=Depends(conexion)):
     """Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422.
     shortcut: cualquier tripulante conocido puede responder (el médico de vuelo en tierra no está modelado)."""
+    if os.environ.get("VIGIA_IDENTIDAD_ENSAYO") != "1":
+        permiso = conn.execute("SELECT 1 FROM reporte_cola r JOIN tripulante p ON p.id = r.tripulante_id "
+                               "JOIN tripulante a ON a.mision_id = p.mision_id WHERE r.id = ? AND a.id = ? AND a.rol = 'oficial_medico'",
+                               (reporte_id, quien)).fetchone()
+        if not permiso:
+            raise HTTPException(403, t("api.error.sin_permiso"))
+        if request.state.identidad["rol"] != "surgeon":
+            raise HTTPException(403, t("api.error.sin_permiso"))
+        from transporte import responder_en_destino
+        try:
+            responder_en_destino(conn, reporte_id, cuerpo.respuesta, cuerpo.t_real)
+        except OSError:
+            raise HTTPException(503, t("api.error.dato_invalido", detalle="enlace")) from None
+        return {"ok": True}
     cola.responder_reporte(conn, reporte_id, cuerpo.respuesta, cuerpo.t_real)
     return {"ok": True}
 

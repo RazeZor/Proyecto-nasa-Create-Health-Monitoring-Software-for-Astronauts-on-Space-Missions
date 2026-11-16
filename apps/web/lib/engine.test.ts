@@ -162,7 +162,7 @@ test("el entorno histórico conserva sus cifras sin disparar acciones sobre la c
     entorno_diario: [{ dia_mision: 10, uso: "referencia", co2_ppm_max_horario: 9000,
       flujo_protones_10mev_pfu: 200, modo_tormenta: true }],
   }
-  const datos = [entrada(10, { symptoms: ["headache"], spo2: 89 })]
+  const datos = [entrada(10, { symptoms: ["headache"], spo2: 89, tiemposMedicion: { spo2: "2026-11-14T08:00:00Z" } })]
   const real = analizarCon(datos, h)
   assert.equal(real.co2(10)?.mmHg, 6.84)
   assert.equal(real.stormInfo(10), null)

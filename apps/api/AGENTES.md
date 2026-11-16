@@ -1,5 +1,19 @@
 # Guía de la API para agentes
 
+## Identidad, observaciones y seguimiento
+
+- `/demo/sesion` (`POST`/`GET`/`DELETE`) permite una visita pública sin credenciales. `/demo/openapi.json` documenta la subaplicación aislada. Sus rutas de registro/tablero/seguimiento usan otra SQLite por visitante; nunca la base personal ni el reloj/transporte real. Requiere su cookie firmada y CSRF para escribir. La cookie personal no se modifica. Enlaces de interfaz: `/?demo=1` y `/?demo=1&lang=en`.
+
+- `POST /sesion`, `GET /sesion`, `DELETE /sesion`: acceso con contraseña local, sesión opaca revocable de 8 horas y CSRF. `X-Tripulante` no concede permisos. `VIGIA_IDENTIDAD_ENSAYO=1` habilita explícitamente el adaptador antiguo solo para ensayos aislados.
+- `POST /cuentas/registro` crea una única cuenta para la identidad y el rol incluidos en una invitación HMAC temporal. `invitaciones.py` la emite con `VIGIA_CLAVE_INVITACIONES` (32+ caracteres); el alta no permite elegir misión, tripulante ni rol.
+- `POST /tripulantes/{id}/observaciones` y `GET /tripulantes/{id}/observaciones`: tomas inmutables, horas propias, unidades canónicas, correcciones enlazadas y acuse por operación.
+- `POST /tripulantes/{id}/episodios/eventos`: acciones, impedimentos, remedición, solicitud de revisión, cierre médico y reapertura; exige versión previa y devuelve 409 en conflicto.
+- `GET /tripulantes/{id}/episodios`: estado e historial completo, con aislamiento por misión y auditoría de acceso clínico.
+- `POST /tripulantes/{id}/estudios` y `GET /tripulantes/{id}/estudios`: diarios de sueño y prácticas experimentales de reacción; no se aceptan como sesiones clínicas validadas.
+- `POST /tripulantes/{id}/consentimientos` y `GET /tripulantes/{id}/consentimientos`: conceder/revocar alcances y consultar las decisiones propias.
+- `GET /reportes/recibidos`: informes de la misión con acuse del destino, solo para el personal médico autenticado.
+- El transporte normal usa `VIGIA_TIERRA_URL` y `VIGIA_TIERRA_CLAVE`; el destino independiente persiste el mensaje y confirma su ID/hash. Un reloj no acredita entrega. Sin receptor configurado se conserva la cola.
+
 API de solo lectura sobre el gold del ETL (`pipelines/reanclaje`). El contrato exacto y siempre al día está en `GET /openapi.json` (y `/docs` para personas); esta guía explica lo que el esquema no dice. Arranque: `uvicorn main:app --port 8000` desde `apps/api`.
 
 ## Cómo usarla
@@ -99,7 +113,7 @@ El mensaje 404 sale en el idioma de `VIGIA_LANG` (español por defecto).
 
 Además del gold (solo lectura), la API guarda el registro de la tripulación en SQLite (`VIGIA_DB`, por defecto `apps/api/data/vigia.db`). Antes de usarla: `cd apps/api && python3 -m almacen migrar && python3 -m almacen sembrar` (la semilla crea la misión `demo` con astronauta = 1, oficial médico = 2 y comandante = 3).
 
-**Quién eres:** todas estas rutas llevan la cabecera `X-Tripulante: <id>`. Sin ella, o con un id que no existe: 401. No hay autenticación real (prototipo local).
+**Quién eres:** una sesión verificada determina identidad, misión y rol; las escrituras requieren `X-Vigia-CSRF`. Los ejemplos de cabecera de abajo describen únicamente el adaptador `VIGIA_IDENTIDAD_ENSAYO=1` para bases temporales. En modo normal esa cabecera no autoriza acceso.
 
 **Privacidad:** lecturas, síntomas, línea base y reportes solo los ve y escribe su dueño (otro tripulante: 403). Las alertas completas solo las ve su dueño. Si pides las de otro, recibes únicamente el dato mínimo de las que se escalaron a ti (`indicador`, `valor`, `t_real`, `tramo`, más los ids), sin explicación ni capa; verde y ámbar nunca. Cada vez que pides las alertas de otro queda una fila `lectura_ajena` en `auditoria`.
 

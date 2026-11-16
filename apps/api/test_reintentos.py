@@ -16,6 +16,9 @@ T = "2026-11-14T08:00:00Z"
 
 class Reintentos(unittest.TestCase):
     def setUp(self):
+        identidad_ensayo = patch.dict(os.environ, {"VIGIA_IDENTIDAD_ENSAYO": "1"})
+        identidad_ensayo.start()
+        self.addCleanup(identidad_ensayo.stop)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.ruta = Path(self.tmp.name) / "test.db"

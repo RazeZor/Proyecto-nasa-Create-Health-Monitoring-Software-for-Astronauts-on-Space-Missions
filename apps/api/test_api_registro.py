@@ -3,6 +3,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -16,6 +17,9 @@ T = "2026-11-14T08:00:00Z"
 
 class Registro(unittest.TestCase):
     def setUp(self):
+        identidad_ensayo = patch.dict(os.environ, {"VIGIA_IDENTIDAD_ENSAYO": "1"})
+        identidad_ensayo.start()
+        self.addCleanup(identidad_ensayo.stop)
         self.tmp = tempfile.TemporaryDirectory()
         os.environ["VIGIA_DB"] = str(Path(self.tmp.name) / "vigia.db")
         conn = conectar()
@@ -138,22 +142,21 @@ class Registro(unittest.TestCase):
         finally:
             del os.environ["VIGIA_RELOJ_SEG"]
 
-    def test_cors_permite_escribir_desde_la_interfaz(self):
+    def test_cors_rechaza_origen_no_configurado(self):
         for metodo in ("POST", "PUT"):
             r = self.c.options("/tripulantes/1/lecturas", headers={
                 "Origin": "http://localhost:3000", "Access-Control-Request-Method": metodo,
                 "Access-Control-Request-Headers": "x-tripulante,content-type"})
-            self.assertEqual(r.status_code, 200, metodo)
-            self.assertIn(metodo, r.headers["access-control-allow-methods"])
-            self.assertIn("x-tripulante", r.headers["access-control-allow-headers"].lower())
+            self.assertEqual(r.status_code, 400, metodo)
+            self.assertNotIn("access-control-allow-origin", r.headers)
 
-    def test_cors_acepta_el_preflight_de_red_privada(self):
+    def test_cors_no_autoriza_red_privada_desde_otro_origen(self):
         # Chrome lo manda al llamar a una IP de la red local desde otra página de la LAN
         r = self.c.options("/paneles", headers={
             "Origin": "http://192.168.1.5:3000", "Access-Control-Request-Method": "GET",
             "Access-Control-Request-Private-Network": "true"})
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.headers["access-control-allow-private-network"], "true")
+        self.assertEqual(r.status_code, 400)
+        self.assertNotIn("access-control-allow-private-network", r.headers)
 
     def test_sintoma_desconocido_da_422(self):
         h = self.como(self.ana)

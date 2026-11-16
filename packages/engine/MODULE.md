@@ -7,6 +7,10 @@ Motor híbrido de VIGÍA en TypeScript puro: capa A (adaptación parcial de band
 
 ## Puntos clave
 
+- Extensiones explícitas de TypeScript para datos reales: `ventana_clinica_valida` impide agregar tomas separadas, `excluir_personal` evita alimentar B/C con evidencia no comparable y `tomas_clinicas` conserva cada extremo con su valor/hora. Los contratos diarios sin esos campos conservan la paridad histórica del simulador; la separación está documentada en la ejecución del plan.
+- La separación de producto TypeScript y simulador Python está fijada en `docs/decisiones/ADR-001-motor-y-simulador.md`; la paridad sobre fixtures completas no se extiende a campos que Python no implementa.
+- `episodios.ts` define transiciones puras con control de versión: remedición no cierra, cierre requiere revisión y un caso cerrado solo admite reapertura explícita. `ciencia.ts` resume reacción/sueño sin afirmar diagnóstico ni homogeneidad entre métodos distintos.
+
 - `OpcionesMotor.capas` permite ablaciones experimentales en `tools/validacion`; la app omite la opción y conserva las cuatro capas. La acumulación y exclusión propias de C se desactivan sin C; la referencia robusta común se mantiene. No se cambiaron umbrales a partir del banco exploratorio.
 - `evidencia.ts` es puro: clasifica ausencia, antigüedad, futuro y comparabilidad sin borrar extremos ni inventar confianza porcentual. `esEntornoAplicable` se comparte con el adaptador de la app. La captura completa de tiempos/calidad por observación sigue pendiente; esta política de ingeniería no es una validación clínica.
 
@@ -38,7 +42,11 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 
 | Archivo | Líneas | Descripción |
 | --- | --- | --- |
-| [engine.ts](engine.ts) | 294 | Motor híbrido de VIGÍA: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con MAD), |
+| [ciencia.test.ts](ciencia.test.ts) | 19 | — |
+| [ciencia.ts](ciencia.ts) | 19 | Resúmenes exploratorios puros; no estiman diagnósticos ni equivalencia instrumental. |
+| [engine.ts](engine.ts) | 319 | Motor híbrido de VIGÍA: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con MAD), |
+| [episodios.test.ts](episodios.test.ts) | 21 | — |
+| [episodios.ts](episodios.ts) | 37 | Seguimiento puro: una nueva medida nunca cierra un episodio por sí sola. |
 | [evidencia.test.ts](evidencia.test.ts) | 26 | — |
 | [evidencia.ts](evidencia.ts) | 42 | Aplicabilidad y suficiencia explícitas. Reglas de ingeniería; no estiman confianza clínica. Sin IO. |
 | [instrumento.test.ts](instrumento.test.ts) | 41 | — |
@@ -47,6 +55,12 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 | [series.ts](series.ts) | 85 | Descomposición de una serie diaria en tendencia, ciclo y residuo, para el histórico de la interfaz. No es parte del |
 
 ### API pública
+
+**ciencia.ts**
+
+- interfaz `EnsayoReaccion`
+- función `resumirReaccion`
+- función `resumirSueno`
 
 **engine.ts**
 
@@ -82,6 +96,16 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 - función `analizarTripulante`
 - función `evaluarTripulante`
 
+**episodios.ts**
+
+- tipo `EstadoEpisodio`
+- tipo `TipoEvento`
+- interfaz `EventoEpisodio`
+- interfaz `Episodio`
+- constante `VERSION_SEGUIMIENTO`
+- función `siguienteEstado`
+- función `aplicarEvento`
+
 **evidencia.ts**
 
 - tipo `UsoDato`
@@ -102,12 +126,14 @@ tags: engine, hibrido, news2, mad, cusum, paridad, typescript
 
 ### Dependencias
 
-- Internas: `./engine.ts`, `./evidencia.ts`, `./fixtures/caso-referencia.json`, `./fixtures/caso-viaje.json`, `./series.ts`
+- Internas: `./ciencia.ts`, `./engine.ts`, `./episodios.ts`, `./evidencia.ts`, `./fixtures/caso-referencia.json`, `./fixtures/caso-viaje.json`, `./series.ts`
 - Externas: ninguna
 - Biblioteca estándar: `node:assert/strict`, `node:test`
 
 ### Tests
 
+- `packages/engine/ciencia.test.ts`: 0 pruebas
+- `packages/engine/episodios.test.ts`: 0 pruebas
 - `packages/engine/evidencia.test.ts`: 0 pruebas
 - `packages/engine/instrumento.test.ts`: 0 pruebas
 - `packages/engine/paridad-referencia.test.ts`: 0 pruebas

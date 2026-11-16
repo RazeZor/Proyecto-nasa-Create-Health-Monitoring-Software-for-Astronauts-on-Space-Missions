@@ -3,7 +3,7 @@
  * - Navegación: red primero para tomar el último despliegue; sin red, la copia guardada.
  * - Recursos con huella (/_next/static): caché primero, son inmutables.
  * - La API (/vigia-api) no se intercepta: la app guarda su propia copia del catálogo y su cola de envíos. */
-const CACHE = "vigia-carcasa-v8"
+const CACHE = "vigia-carcasa-v10"
 // Recursos que la carcasa necesita y no llevan huella: el modelo anatómico del cuerpo 3D.
 const RECURSOS = ["/modelos/cuerpo.glb"]
 // Una por rol y pantalla (lib/roles.ts: SECCIONES): si cambian las rutas, cámbialas aquí y sube CACHE.
@@ -17,25 +17,32 @@ const PANTALLAS = [
 
 async function guardarPantalla(cache, ruta) {
   const res = await fetch(ruta, { cache: "no-store" })
-  if (!res.ok) return
+  if (!res.ok) throw new Error(`No se pudo preparar ${ruta}`)
   await cache.put(ruta, res.clone())
   const html = await res.text()
   const recursos = [...new Set(html.match(/\/_next\/static\/[^"'\)\s<>]+/g) ?? [])]
-  await Promise.all(recursos.map((r) => cache.add(r).catch(() => undefined)))
+  await Promise.all(recursos.map((r) => cache.add(r)))
 }
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE).then((cache) => Promise.all([
-      ...PANTALLAS.map((p) => guardarPantalla(cache, p).catch(() => undefined)),
-      ...RECURSOS.map((r) => cache.add(r).catch(() => undefined)),
-    ])).then(() => self.skipWaiting()),
+    caches.open(CACHE).then(async (cache) => {
+      const resultados = await Promise.allSettled([
+        ...PANTALLAS.map((p) => guardarPantalla(cache, p)),
+        ...RECURSOS.map((r) => cache.add(r)),
+      ])
+      if (resultados.some((r) => r.status === "rejected")) {
+        await caches.delete(CACHE)
+        throw new Error("Instalación incompleta; conservar la versión anterior")
+      }
+      await self.skipWaiting()
+    }),
   )
 })
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((claves) => Promise.all(claves.filter((c) => c !== CACHE).map((c) => caches.delete(c)))).then(() => self.clients.claim()),
+    caches.keys().then((claves) => Promise.all(claves.filter((c) => c.startsWith("vigia-carcasa-") && c !== CACHE).map((c) => caches.delete(c)))).then(() => self.clients.claim()),
   )
 })
 

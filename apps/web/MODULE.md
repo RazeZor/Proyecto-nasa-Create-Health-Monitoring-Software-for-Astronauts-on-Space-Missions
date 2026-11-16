@@ -7,20 +7,31 @@ Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva p
 
 ## Puntos clave
 
+- La entrada prioriza «Explorar demo» y permite `/?demo=1` sin credenciales. Los tres roles comparten únicamente el espacio ficticio de ese visitante; API, IndexedDB, cachés y bandejas llevan su ámbito de demo. La franja siempre indica datos simulados. Salir vuelve al acceso personal; el cliente no puede activar modo real dentro de esa sesión.
+- La pantalla de acceso y alta usa el logo VIGÍA sobre fondo negro. `/?lang=en&alta=1` abre el formulario en inglés y requiere una invitación ligada a una identidad/rol; la demo pública sigue sin registro.
+- La pantalla de acceso y alta usa el logo VIGÍA sobre fondo negro. `/?lang=en&alta=1` abre el formulario en inglés y requiere una invitación ligada a una identidad/rol; la demo pública sigue sin registro.
+
+- El acceso se verifica por sesión de servidor (`lib/sesion.ts`); el rol de la ruta no concede permisos. La continuidad offline se limita a la pestaña ya desbloqueada y al vencimiento de 8 h; un 401 recibido bloquea la vista. No hay autenticación facial ni credenciales incluidas en el código; la demo pública tiene su propia sesión limitada a datos ficticios.
+- `HealthStore` usa IndexedDB transaccional, particionado por misión/tripulante/modo. Los registros de localStorage sin propietario se copian a cuarentena sin reasignarlos. Las escrituras fallidas no se dan por guardadas; el perfil local no sustituye la autorización del servidor ni cifra el disco.
+- El registro conserva horas por medida y usa `/observaciones` con IDs estables; la confirmación del formulario no inventa la hora de una toma antigua. La política técnica versionada controla agregación temporal y exclusión de referencia personal; los extremos originales quedan visibles para confirmar. Una ausencia de medidas no genera el mensaje verde de calma en Alertas.
+- Alertas incluye episodios con acciones/impedimentos/remedición/revisión, bandeja durable, acuses exactos y conflictos de versión. El revisor médico de la misión ve los casos consentidos y puede cerrarlos explícitamente. La resolución conserva el borrador local antes de cargar la versión remota.
+- Tendencias incluye diario de sueño/contexto y práctica experimental de reacción de cinco estímulos (interrupción/foco/latencia de fotograma/modalidad), sin comparabilidad clínica ni equivalencia PVT. Los artefactos y las trazas del motor se archivan localmente y se sincronizan; exportación/restauración privada incluye SHA-256 y rechaza colisiones con datos actuales.
+- `VIGIA_VERIFICACION=1` compila/inicia `.next-verificacion`, separado del build habitual. El service worker solo activa una carcasa completa y conserva la versión anterior si falla la instalación; no borra cachés ajenas a VIGÍA.
+
 - Acerca de muestra los datasets efectivamente publicados mediante `/ciencia/datasets`, con cantidades, fuente, SHA-256 y alcance. Copia offline explícita y errores de servidor sin ocultarlos con caché. MMASH no es FC en reposo validada ni cohorte de deriva; Orion no es dosis personal.
 
 - Acerca de consume `/ciencia/evidencia`, sin KPI escritos a mano: detecciones, omitidos, IC, retraso condicionado y exposición por escenario/método. Distingue auditoría vigente, histórica, ausente y copia offline sin verificar. Una respuesta corrupta no se oculta con caché antigua. La capa A se rotula adaptación parcial de NEWS2 y la revisión profesional queda pendiente.
 
-- Informes sin API: `lib/bandeja-informes.ts` guarda una instantánea por operación en localStorage, aislada por misión/tripulante/modo. Sobrevive a cierre, reintenta en segundo plano y elimina solo con acuse válido de la API. Un 409 conserva el informe y detiene su reintento; la última cola leída también queda en caché por ámbito. Esto no migra el HealthStore principal a IndexedDB ni añade autenticación.
-- `estadoReporte` no confirma recepción por vencer un contador: sin acuse queda local y con API `en_cola` continúa pendiente hasta que el servidor indique entrega. El transporte sigue siendo una simulación local. `nuevoId` usa getRandomValues cuando randomUUID no está disponible en la LAN HTTP.
+- Informes sin API: `lib/bandeja-informes.ts` guarda una instantánea por operación en localStorage, aislada por misión/tripulante/modo. Sobrevive a cierre, reintenta en segundo plano y elimina solo con acuse válido de la API. Un 409 conserva el informe y detiene su reintento; la última cola leída también queda en caché por ámbito. La bandeja usa el espacio de la sesión actual.
+- `estadoReporte` no confirma recepción por vencer un contador: sin acuse queda local y con API `en_cola` continúa pendiente hasta que el servidor indique entrega. La demo simula el retardo en su almacén; el modo personal exige acuse del receptor. `nuevoId` usa getRandomValues cuando randomUUID no está disponible en la LAN HTTP.
 - Entorno real: las referencias históricas/remotas siguen visibles pero no generan acciones de cabina; un entorno sin `uso` también se abstiene fuera de demo. Dosis por detector seleccionable, sin promedio entre ubicaciones; absorbida en mGy, equivalente en mSv. Las dosis ambientales no muestran porcentaje de límite de carrera.
-- El build valida TypeScript (sin `ignoreBuildErrors`); service worker v7. El ensayo `tools/verificacion/ensayo.py` comprueba recuperación de informes con API interrumpida, reinicio de Chrome y carcasa sin red sobre datos temporales.
+- El build valida TypeScript (sin `ignoreBuildErrors`); service worker v10. El ensayo `tools/verificacion/ensayo.py` comprueba recuperación de informes con API interrumpida, reinicio de Chrome y carcasa sin red sobre datos temporales.
 
 - Stack: Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS 4 + componentes UI accesibles (`components/ui/*`) + three.js (solo el cuerpo 3D). Las gráficas son SVG propio (`components/shared/line-chart.tsx`, con exploración táctil del día).
 - **Marca y sistema visual** (`docs/brand`, logotipo «Centinela»): tokens en `app/globals.css` (tinta Noche `#0B1020`, fondo Casco `#F2F5FA`, estados Normal/Atención/Alerta; tema claro por defecto), Space Grotesk e IBM Plex Mono empaquetadas con `@fontsource` (sin red). `components/shared/logo.tsx` dibuja el símbolo con el punto en el color del estado del sistema. Iconos propios en `components/shared/iconos.tsx` (y un `iconos.tsx` por pantalla); `lucide-react` solo para flechas y cierres. La navegación es una barra superior no fija (`components/shell/app-shell.tsx`), pensada para pantalla táctil de 19": objetivos de 48–56 px o más y nada depende de `hover`.
 - **Cuerpo 3D** (`/`, `components/body/`): `escena.ts` (three.js, sin React) dibuja la piel translúcida y los órganos, late a los lpm del dato (`liveHr` del reloj o la FC en reposo del día; sin dato late tenue), y lleva la cámara al órgano de la vista elegida (un indicador o una zona). Carga `public/modelos/cuerpo.glb` (`next.config.mjs` lo sirve con `Cache-Control` de un día más revalidación, para que cambiar de modo no lo vuelva a bajar; BodyParts3D, CC BY 4.0, varón adulto; atribución en `public/modelos/ATRIBUCION.md` y visible en el lienzo); si el archivo falta, genera una anatomía procedural (`anatomia.ts`: campos de distancia + «surface nets») con selector de modelo corporal. Sin WebGL se avisa con un texto (el estado de cada zona sigue en las tarjetas); ya no hay figura vectorial 2D. `body-stage.tsx` pone los marcadores táctiles y avisa en cada cuadro de dónde cae cada ancla; `body-view.tsx` dibuja con eso las líneas guía de las tarjetas. El estado por indicador sale de `analisis.indicatorStatus(day)` (`lib/engine.ts`): B, C y glucosa señalan su indicador y la capa A (NEWS2) los parámetros que puntúan. Las zonas con indicadores fuera de rango y los síntomas del día tiñen la piel en su ancla.
 - **Registro guiado** (`components/checkin/`): una medida por paso con dial +/− y deslizador, sin teclado; cada dial arranca en el último valor conocido pero solo se guarda lo confirmado o ajustado (lo demás, `null`).
-- **Dos modos de datos** (selector «Datos» de la barra superior; `lib/storage.ts`: `leerModo`, `usarModo`). `real` (por defecto; `NEXT_PUBLIC_VIGIA_MODO=demo` lo cambia): solo lo que el tripulante registra y el entorno medido; el registro se guarda en el día de misión de hoy y se sube a la API con `naturaleza: Real`. `demo`: tripulante simulado del viaje de 259 días con las anomalías de §5.5, todo rotulado; lo registrado en demo usa otro almacén (prefijo `vigia:` frente a `vigia:real:`) y **nunca** se sube ni escala. La API recibe el modo en `?modo=`. **Nada se inventa en modo real** (auditoría 2026-11-15): el simulador de pulso solo actúa en demo (`simulando` en `app-context.tsx`; la tarjeta de `/device` queda deshabilitada), el ánimo del registro solo se guarda si se confirma (`SIN_OMITIR` ya no lo incluye), los informes viajan con el retardo del perfil (`retardoEnvio`: solo demo lo acorta a 1 min), sin red `listarReportes` devuelve `null` y la pantalla avisa, las etiquetas «Real» de Entorno solo aparecen con datos y sin ningún registro el cuerpo dice «Aún no hay registro» en vez de «Todo en orden». El hilo con tierra se pide con `?modo=&lang=` y la API filtra los reportes de demo (`contenido.demo`). `NEXT_PUBLIC_VIGIA_PUBLICO=1` (al compilar) muestra en modo real el aviso de tripulante de prueba compartido del sitio público.
+- **Dos modos de datos** (selector «Datos» de la barra superior; `lib/storage.ts`: `leerModo`, `usarModo`). `real` (por defecto; `NEXT_PUBLIC_VIGIA_MODO=demo` lo cambia): solo lo que el tripulante registra y el entorno medido; el registro se guarda en el día de misión de hoy y se sube a la API con `naturaleza: Real`. `demo`: tripulante simulado del viaje de 259 días con las anomalías de §5.5, todo rotulado; lo registrado en demo usa otro almacén (prefijo `vigia:` frente a `vigia:real:`) y no se sube al almacén personal ni al transporte real. La demo pública sincroniza exclusivamente contra su subaplicación aislada `/demo`. La API recibe el modo en `?modo=`. **Nada se inventa en modo real** (auditoría 2026-11-15): el simulador de pulso solo actúa en demo (`simulando` en `app-context.tsx`; la tarjeta de `/device` queda deshabilitada), el ánimo del registro solo se guarda si se confirma (`SIN_OMITIR` ya no lo incluye), los informes viajan con el retardo del perfil (`retardoEnvio`: solo demo lo acorta a 1 min), sin red `listarReportes` devuelve `null` y la pantalla avisa, las etiquetas «Real» de Entorno solo aparecen con datos y sin ningún registro el cuerpo dice «Aún no hay registro» en vez de «Todo en orden». El hilo con tierra se pide con `?modo=&lang=` y la API filtra los reportes de demo (`contenido.demo`). `NEXT_PUBLIC_VIGIA_PUBLICO=1` (al compilar) muestra en modo real el aviso de tripulante de prueba compartido del sitio público.
 - **La app solo conoce la API, pero abre sin ella**: perfiles, fichas, referencia de entorno, historial, recordatorios, mensajes e informes salen de `apps/api`. `lib/catalogo.ts` (`cargarCatalogo(tripulante, modo)`) los pide al arrancar y guarda una copia local; si la API no responde, abre con esa copia (`catalogo.sinEnlace`), muestra «sin enlace» y reintenta cada 30 s y al volver la red. Solo la primera apertura en un dispositivo necesita enlace. `lib/etl-client.ts` hace lo mismo con el panel de entorno. No hay datos de ejemplo en el cliente: los mockups viven en `apps/api/demo/`.
 - Sin conexión (§4.2): `public/sw.js` (escrito a mano, sin dependencias) guarda la carcasa (el HTML de las 8 pantallas, sus recursos de `/_next/static` y el modelo `/modelos/cuerpo.glb`) al instalarse; navegación con red primero y copia como respaldo; no intercepta `/vigia-api`. Se registra solo en producción (`components/shell/sw-register.tsx`). `app/manifest.ts` es el manifiesto. Si cambias las rutas, actualiza `PANTALLAS` en `sw.js`; si cambias la estrategia, sube la versión de `CACHE`.
 - Motor híbrido: `packages/engine` evalúa las capas A, B y C y las reglas de contexto. `lib/engine.ts` (`analizar(checkIns, historial, presionCabinaMmHg)`) lo aplica al historial de la API más los registros locales; `AppProvider` lo recalcula en `analisis` al guardar un registro o cambiar de perfil. **El entorno entra al motor**: el CO2 real llega en ppm y se convierte con la presión de cabina del perfil activo (cambiar de perfil puede cambiar la alerta, §3.3); la tormenta sale del flujo (>= 10 pfu) o de un evento SEP real de DONKI. Cada alerta de entorno lleva su procedencia (`source`: Real o Simulado, fuente y fecha real). Una medida no tomada es `null`, nunca 0. Las alertas `informative` (capa B en adaptación) se muestran pero no cambian el estado ni avisan. La banda personal de las tendencias es la referencia del motor día a día (`analisis.band`).
@@ -71,15 +82,17 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/about/datasets-cientificos.tsx](components/about/datasets-cientificos.tsx) | 56 | — |
 | [components/about/evidencia-cientifica.tsx](components/about/evidencia-cientifica.tsx) | 78 | — |
 | [components/about/iconos.tsx](components/about/iconos.tsx) | 63 | Iconos de la pantalla Acerca de, con el lenguaje de `components/shared/iconos.tsx`: rejilla de 24 px, |
-| [components/alerts/alerts-view.tsx](components/alerts/alerts-view.tsx) | 473 | — |
+| [components/alerts/alerts-view.tsx](components/alerts/alerts-view.tsx) | 480 | — |
 | [components/alerts/iconos.tsx](components/alerts/iconos.tsx) | 92 | Iconos de las alertas y de los avisos emergentes: privacidad (quién lo ve) y tipo de aviso. Mismo lenguaje que |
-| [components/app-context.tsx](components/app-context.tsx) | 275 | — |
+| [components/alerts/revision-episodios.tsx](components/alerts/revision-episodios.tsx) | 46 | — |
+| [components/alerts/seguimiento.tsx](components/alerts/seguimiento.tsx) | 72 | — |
+| [components/app-context.tsx](components/app-context.tsx) | 338 | — |
 | [components/body/anatomia.ts](components/body/anatomia.ts) | 319 | Anatomía procedural del cuerpo 3D: todo se genera con matemáticas (campos de distancia con signo) y se |
 | [components/body/body-stage.tsx](components/body/body-stage.tsx) | 138 | — |
-| [components/body/body-view.tsx](components/body/body-view.tsx) | 636 | — |
+| [components/body/body-view.tsx](components/body/body-view.tsx) | 638 | — |
 | [components/body/ecg.tsx](components/body/ecg.tsx) | 82 | — |
 | [components/body/escena.ts](components/body/escena.ts) | 707 | Escena 3D del cuerpo (three.js): silueta translúcida, órganos animados y una cámara que viaja al órgano del |
-| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 762 | — |
+| [components/checkin/checkin-form.tsx](components/checkin/checkin-form.tsx) | 782 | — |
 | [components/checkin/controles.tsx](components/checkin/controles.tsx) | 141 | — |
 | [components/checkin/iconos.tsx](components/checkin/iconos.tsx) | 95 | Iconos del registro diario, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/crew/crew-body.tsx](components/crew/crew-body.tsx) | 122 | — |
@@ -97,10 +110,11 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/environment/iconos.tsx](components/environment/iconos.tsx) | 65 | Iconos de la pantalla Entorno, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
 | [components/environment/trayectoria-marte.tsx](components/environment/trayectoria-marte.tsx) | 85 | — |
 | [components/reports/iconos.tsx](components/reports/iconos.tsx) | 51 | Iconos de los informes: los dos extremos del enlace (nave y Tierra) y el mensaje que viaja entre ellos. Mismo |
-| [components/reports/reports-view.tsx](components/reports/reports-view.tsx) | 384 | — |
+| [components/reports/reports-view.tsx](components/reports/reports-view.tsx) | 385 | — |
 | [components/reports/trayecto.tsx](components/reports/trayecto.tsx) | 74 | — |
 | [components/shared/ayuda.tsx](components/shared/ayuda.tsx) | 31 | — |
 | [components/shared/delay-countdown.tsx](components/shared/delay-countdown.tsx) | 37 | — |
+| [components/shared/evidencia-mediciones.tsx](components/shared/evidencia-mediciones.tsx) | 21 | — |
 | [components/shared/giro-botones.tsx](components/shared/giro-botones.tsx) | 70 | — |
 | [components/shared/grafico-intradia.tsx](components/shared/grafico-intradia.tsx) | 59 | — |
 | [components/shared/iconos.tsx](components/shared/iconos.tsx) | 140 | Iconos propios de VIGÍA, dibujados para esta aplicación (no vienen de una librería). Mismo lenguaje en todos: |
@@ -109,55 +123,67 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 | [components/shared/logo.tsx](components/shared/logo.tsx) | 42 | Marca VIGÍA («Centinela»), tal como la define docs/brand: el casco, la V con su cabeza y el punto de estado. |
 | [components/shared/states.tsx](components/shared/states.tsx) | 55 | — |
 | [components/shared/status.tsx](components/shared/status.tsx) | 73 | — |
+| [components/shell/acceso.tsx](components/shell/acceso.tsx) | 84 | — |
 | [components/shell/alert-center.tsx](components/shell/alert-center.tsx) | 225 | — |
 | [components/shell/app-shell.tsx](components/shell/app-shell.tsx) | 277 | — |
 | [components/shell/sw-register.tsx](components/shell/sw-register.tsx) | 15 | — |
 | [components/start/elegir-rol.tsx](components/start/elegir-rol.tsx) | 55 | — |
 | [components/trends/descomposicion.tsx](components/trends/descomposicion.tsx) | 70 | — |
 | [components/trends/iconos.tsx](components/trends/iconos.tsx) | 46 | Iconos de la ficha del indicador, con el mismo lenguaje que `components/shared/iconos.tsx`: rejilla de 24 px, |
+| [components/trends/modulos-cientificos.tsx](components/trends/modulos-cientificos.tsx) | 118 | — |
 | [components/trends/resumen.ts](components/trends/resumen.ts) | 44 | — |
-| [components/trends/trends-view.tsx](components/trends/trends-view.tsx) | 274 | — |
+| [components/trends/trends-view.tsx](components/trends/trends-view.tsx) | 278 | — |
 | [components/ui/button.tsx](components/ui/button.tsx) | 57 | — |
 | [components/ui/dialog.tsx](components/ui/dialog.tsx) | 161 | — |
 | [components/ui/popover.tsx](components/ui/popover.tsx) | 89 | — |
 | [lib/alertas-sync.test.ts](lib/alertas-sync.test.ts) | 52 | — |
 | [lib/alertas-sync.ts](lib/alertas-sync.ts) | 35 | Núcleo puro del escalamiento de alertas rojas (§5.4): sin red ni almacenamiento, que se inyectan. |
+| [lib/almacen-local.ts](lib/almacen-local.ts) | 124 | IndexedDB transaccional. Sin fallback silencioso cuando falla la persistencia. |
+| [lib/almacen-validar.test.ts](lib/almacen-validar.test.ts) | 11 | — |
+| [lib/almacen-validar.ts](lib/almacen-validar.ts) | 30 | Validación de frontera para no interpretar almacenamiento corrupto como salud normal. |
 | [lib/api-registro.test.ts](lib/api-registro.test.ts) | 69 | — |
-| [lib/api-registro.ts](lib/api-registro.ts) | 171 | Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz |
+| [lib/api-registro.ts](lib/api-registro.ts) | 206 | — |
 | [lib/bandeja-informes.test.ts](lib/bandeja-informes.test.ts) | 66 | — |
-| [lib/bandeja-informes.ts](lib/bandeja-informes.ts) | 82 | Informes inmutables hasta el acuse de la API. Cada operación ocupa una clave propia y conserva su ámbito. |
+| [lib/bandeja-informes.ts](lib/bandeja-informes.ts) | 83 | Informes inmutables hasta el acuse de la API. Cada operación ocupa una clave propia y conserva su ámbito. |
 | [lib/catalogo.test.ts](lib/catalogo.test.ts) | 42 | — |
-| [lib/catalogo.ts](lib/catalogo.ts) | 241 | Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de |
+| [lib/catalogo.ts](lib/catalogo.ts) | 248 | — |
 | [lib/ciencia.test.ts](lib/ciencia.test.ts) | 19 | — |
 | [lib/ciencia.ts](lib/ciencia.ts) | 48 | Contrato de lectura: una respuesta incompleta no se convierte en ceros ni en validación clínica. |
 | [lib/cola.test.ts](lib/cola.test.ts) | 35 | — |
-| [lib/cola.ts](lib/cola.ts) | 46 | Estado confirmado por la API del simulador de enlace; sin acuse permanece en el dispositivo. |
+| [lib/cola.ts](lib/cola.ts) | 48 | Estado confirmado por la API del simulador de enlace; sin acuse permanece en el dispositivo. |
 | [lib/datasets-cientificos.test.ts](lib/datasets-cientificos.test.ts) | 18 | — |
 | [lib/datasets-cientificos.ts](lib/datasets-cientificos.ts) | 29 | Referencias públicas adquiridas; nunca son datos del tripulante ni resultados clínicos. |
 | [lib/ejes.test.ts](lib/ejes.test.ts) | 7 | — |
 | [lib/ejes.ts](lib/ejes.ts) | 7 | Días que rotula el eje de una gráfica: el 1 y los múltiplos de un paso redondo, para que quepan unas 6 marcas. |
 | [lib/engine.test.ts](lib/engine.test.ts) | 189 | — |
-| [lib/engine.ts](lib/engine.ts) | 303 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más |
+| [lib/engine.ts](lib/engine.ts) | 313 | Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más |
+| [lib/estudios.ts](lib/estudios.ts) | 30 | — |
 | [lib/etl-client.ts](lib/etl-client.ts) | 127 | Cliente HTTP de solo lectura hacia apps/api (zona gold del ETL en pipelines/reanclaje). |
+| [lib/evidencia-mediciones.test.ts](lib/evidencia-mediciones.test.ts) | 30 | — |
+| [lib/evidencia-mediciones.ts](lib/evidencia-mediciones.ts) | 57 | Trazabilidad por toma y política técnica explícita, pendiente de revisión profesional. |
 | [lib/guardia.ts](lib/guardia.ts) | 8 | — |
 | [lib/lectura-humana.test.ts](lib/lectura-humana.test.ts) | 64 | — |
 | [lib/lectura-humana.ts](lib/lectura-humana.ts) | 99 | Lectura en lenguaje llano de las medidas de un día, para el informe diario a Tierra (§6.1). |
 | [lib/reloj.test.ts](lib/reloj.test.ts) | 79 | — |
-| [lib/reloj.ts](lib/reloj.ts) | 259 | Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con |
+| [lib/reloj.ts](lib/reloj.ts) | 260 | — |
+| [lib/respaldo.ts](lib/respaldo.ts) | 12 | — |
 | [lib/roles.test.ts](lib/roles.test.ts) | 52 | — |
 | [lib/roles.ts](lib/roles.ts) | 27 | Quién usa la app lo dice la ruta: /astronauta, /oficial y /medico. Cada rol ve sus propias pantallas. |
-| [lib/sincronizacion.ts](lib/sincronizacion.ts) | 57 | — |
+| [lib/seguimiento.ts](lib/seguimiento.ts) | 88 | Bitácora offline y bandeja transaccional: cada acuse confirma una operación concreta. |
+| [lib/sesion-demo.test.ts](lib/sesion-demo.test.ts) | 51 | — |
+| [lib/sesion.ts](lib/sesion.ts) | 104 | La identidad la verifica el servidor. El perfil local solo permite continuidad offline limitada. |
+| [lib/sincronizacion.ts](lib/sincronizacion.ts) | 64 | — |
 | [lib/sincronizar.test.ts](lib/sincronizar.test.ts) | 31 | — |
 | [lib/sincronizar.ts](lib/sincronizar.ts) | 22 | Núcleo puro de la sincronización del registro diario con la API (sin red ni almacenamiento: se inyectan). |
-| [lib/storage.ts](lib/storage.ts) | 91 | — |
-| [lib/strings.ts](lib/strings.ts) | 1007 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
+| [lib/storage.ts](lib/storage.ts) | 89 | — |
+| [lib/strings.ts](lib/strings.ts) | 1008 | Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`; |
 | [lib/trayecto.test.ts](lib/trayecto.test.ts) | 45 | — |
 | [lib/trayecto.ts](lib/trayecto.ts) | 45 | — |
-| [lib/types.ts](lib/types.ts) | 174 | — |
+| [lib/types.ts](lib/types.ts) | 177 | — |
 | [lib/utils.ts](lib/utils.ts) | 12 | — |
-| [next.config.mjs](next.config.mjs) | 22 | @type {import('next').NextConfig} |
+| [next.config.mjs](next.config.mjs) | 27 | @type {import('next').NextConfig} |
 | [postcss.config.mjs](postcss.config.mjs) | 8 | @type {import('postcss-load-config').Config} |
-| [public/sw.js](public/sw.js) | 76 | Service worker de VIGÍA: deja la aplicación disponible sin enlace (informe §4.2, "todo funciona sin enlace"). |
+| [public/sw.js](public/sw.js) | 83 | Service worker de VIGÍA: deja la aplicación disponible sin enlace (informe §4.2, "todo funciona sin enlace"). |
 
 ### API pública
 
@@ -261,6 +287,14 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - constante `IconoEscudoAviso`
 - constante `IconoCampana`
 - constante `IconoVisto`
+
+**components/alerts/revision-episodios.tsx**
+
+- función `RevisionEpisodios`
+
+**components/alerts/seguimiento.tsx**
+
+- función `SeguimientoEpisodios`
 
 **components/app-context.tsx**
 
@@ -437,6 +471,10 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - función `useReportState`
 - función `DelayCountdown`
 
+**components/shared/evidencia-mediciones.tsx**
+
+- función `EvidenciaMediciones`
+
 **components/shared/giro-botones.tsx**
 
 - función `GiroBotones`
@@ -488,6 +526,10 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - función `LayerChip`
 - función `ProvenanceTag`
 
+**components/shell/acceso.tsx**
+
+- función `Acceso`
+
 **components/shell/alert-center.tsx**
 
 - función `AlertCenter`
@@ -515,6 +557,10 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - constante `IconoRiesgo`
 - constante `IconoPrevencion`
 
+**components/trends/modulos-cientificos.tsx**
+
+- función `ModulosCientificos`
+
 **components/trends/resumen.ts**
 
 - tipo `Lugar`
@@ -533,6 +579,23 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - constante `escalable`
 - función `sincronizarAlertas`
 
+**lib/almacen-local.ts**
+
+- interfaz `AmbitoLocal`
+- función `fijarAmbito`
+- función `claveAmbito`
+- función `leerPrivado`
+- función `actualizarPrivado`
+- función `preservarLegado`
+- función `exportarPrivado`
+- función `restaurarPrivado`
+
+**lib/almacen-validar.ts**
+
+- función `validarRegistros`
+- función `validarIds`
+- función `validarClavePrivada`
+
 **lib/api-registro.ts**
 
 - constante `API_BASE_URL`
@@ -544,12 +607,14 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - constante `retardoEnvio`
 - constante `tReal`
 - función `lecturasDeCheckIn`
+- función `observacionesDeCheckIn`
 - constante `sintomasDeCheckIn`
 - función `enviarCheckIn`
 - tipo `AcuseReporte`
 - función `enviarReporte`
 - función `encolarReporte`
 - función `listarReportes`
+- función `listarReportesRecibidos`
 - constante `responderReporte`
 - función `reporteDeServidor`
 - interfaz `Escalamiento`
@@ -626,6 +691,14 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - tipo `Analisis`
 - función `evaluateCheckIn`
 
+**lib/estudios.ts**
+
+- interfaz `ArtefactoCientifico`
+- constante `leerEstudios`
+- constante `guardarEstudio`
+- función `sincronizarEstudios`
+- función `archivarEvaluacion`
+
 **lib/etl-client.ts**
 
 - constante `API_BASE_URL`
@@ -639,6 +712,13 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - interfaz `KpiSimulacionEtl`
 - función `cargarPanelGold`
 - función `cargarKpiSimulacion`
+
+**lib/evidencia-mediciones.ts**
+
+- constante `CONFIGURACION_EVIDENCIA`
+- constante `CAMPOS_MEDICION`
+- función `evidenciasDelDia`
+- función `aplicarPoliticaTemporal`
 
 **lib/guardia.ts**
 
@@ -690,6 +770,11 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - función `cambiarTolerancia`
 - función `descargarCsvReloj`
 
+**lib/respaldo.ts**
+
+- función `crearRespaldo`
+- función `restaurarRespaldo`
+
 **lib/roles.ts**
 
 - constante `RUTA_DE_ROL`
@@ -699,9 +784,32 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - función `rolDeRuta`
 - constante `rutaDe`
 
+**lib/seguimiento.ts**
+
+- interfaz `OperacionSeguimiento`
+- constante `leerSeguimiento`
+- función `registrarEvento`
+- función `sincronizarSeguimiento`
+- función `resolverConflicto`
+
+**lib/sesion.ts**
+
+- interfaz `SesionVerificada`
+- constante `sesionActual`
+- constante `esDemoPublica`
+- constante `espacioSesion`
+- función `verificarSesion`
+- función `iniciarDemo`
+- función `cambiarRolDemo`
+- función `acceder`
+- función `registrarCuenta`
+- función `peticion`
+- función `salir`
+
 **lib/sincronizacion.ts**
 
-- constante `TRIPULANTE`
+- variable `TRIPULANTE`
+- función `fijarTripulante`
 - función `sincronizarRegistros`
 - función `sincronizarAlertasRojas`
 
@@ -716,14 +824,15 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - función `leerModo`
 - función `usarModo`
 - constante `modoActual`
-- constante `localStore`
 - constante `store`
+- constante `localStore`
 - constante `leerCache`
 - función `guardarCache`
 
 **lib/strings.ts**
 
 - constante `textoCiencia`
+- constante `textoSistema`
 - constante `IDIOMA`
 - función `cambiarIdioma`
 - constante `S`
@@ -768,17 +877,18 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `NEXT_PUBLIC_VIGIA_API_URL`, `NEXT_PUBLIC_VIGIA_MODO`, `NEXT_PUBLIC_VIGIA_PUBLICO`, `NEXT_PUBLIC_VIGIA_TRIPULANTE`, `NODE_ENV`, `VIGIA_API_INTERNA`
+- Variables de entorno: `NEXT_PUBLIC_VIGIA_API_URL`, `NEXT_PUBLIC_VIGIA_MODO`, `NEXT_PUBLIC_VIGIA_MOTOR_SHA256`, `NEXT_PUBLIC_VIGIA_PUBLICO`, `NEXT_PUBLIC_VIGIA_TRIPULANTE`, `NODE_ENV`, `VIGIA_API_INTERNA`, `VIGIA_VERIFICACION`
 
 ### Dependencias
 
-- Internas: `../../../packages/engine/engine.ts`, `../../../packages/engine/evidencia.ts`, `../../../packages/engine/fixtures/caso-referencia.json`, `../../../packages/i18n/i18n.ts`, `../../../packages/schemas/evidencia-cientifica.json`, `./alertas-sync`, `./alertas-sync.ts`, `./api-registro`, `./api-registro.ts`, `./bandeja-informes.ts`, `./catalogo.ts`, `./ciencia.ts`, `./cola.ts`, `./datasets-cientificos.ts`, `./ejes.ts`, `./engine.ts`, `./globals.css`, `./lectura-humana.ts`, `./reloj.ts`, `./roles.ts`, `./sincronizar`, `./sincronizar.ts`, `./storage`, `./storage.ts`, `./strings`, `./strings.ts`, `./trayecto.ts`, `./types`, `./types.ts`, `./vocabulario.json`
-- Externas: `@/components/about/about-view`, `@/components/about/datasets-cientificos`, `@/components/about/evidencia-cientifica`, `@/components/about/iconos`, `@/components/alerts/alerts-view`, `@/components/alerts/iconos`, `@/components/app-context`, `@/components/body/anatomia`, `@/components/body/body-stage`, `@/components/body/body-view`, `@/components/body/ecg`, `@/components/body/escena`, `@/components/checkin/checkin-form`, `@/components/checkin/controles`, `@/components/checkin/iconos`, `@/components/crew/crew-body`, `@/components/crew/crew-view`, `@/components/crew/historico`, `@/components/crew/modo-animado`, `@/components/crew/navegador-dias`, `@/components/device/device-view`, `@/components/device/fc-chart`, `@/components/device/iconos`, `@/components/device/pasos-conexion`, `@/components/device/reloj-extras`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/environment/iconos`, `@/components/environment/trayectoria-marte`, `@/components/reports/iconos`, `@/components/reports/reports-view`, `@/components/reports/trayecto`, `@/components/shared/ayuda`, `@/components/shared/delay-countdown`, `@/components/shared/giro-botones`, `@/components/shared/grafico-intradia`, `@/components/shared/iconos`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/logo`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/shell/sw-register`, `@/components/start/elegir-rol`, `@/components/trends/descomposicion`, `@/components/trends/iconos`, `@/components/trends/resumen`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/lib/alertas-sync`, `@/lib/api-registro`, `@/lib/bandeja-informes`, `@/lib/catalogo`, `@/lib/ciencia`, `@/lib/cola`, `@/lib/datasets-cientificos`, `@/lib/ejes`, `@/lib/engine`, `@/lib/etl-client`, `@/lib/guardia`, `@/lib/lectura-humana`, `@/lib/reloj`, `@/lib/roles`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/trayecto`, `@/lib/types`, `@/lib/utils`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/popover`, `@fontsource-variable/space-grotesk`, `@fontsource/ibm-plex-mono/400.css`, `@fontsource/ibm-plex-mono/500.css`, `@fontsource/ibm-plex-mono/600.css`, `class-variance-authority`, `clsx`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`, `three`, `three/examples/jsm/loaders/GLTFLoader.js`, `three/examples/jsm/utils/BufferGeometryUtils.js`
-- Biblioteca estándar: `node:assert/strict`, `node:fs`, `node:test`
+- Internas: `../../../../packages/engine/ciencia`, `../../../packages/engine/engine.ts`, `../../../packages/engine/episodios.ts`, `../../../packages/engine/evidencia.ts`, `../../../packages/engine/fixtures/caso-referencia.json`, `../../../packages/i18n/i18n.ts`, `../../../packages/schemas/acciones-seguimiento.json`, `../../../packages/schemas/configuracion-cientifica.json`, `../../../packages/schemas/evidencia-cientifica.json`, `./alertas-sync`, `./alertas-sync.ts`, `./almacen-local`, `./almacen-local.ts`, `./almacen-validar.ts`, `./api-registro`, `./api-registro.ts`, `./bandeja-informes.ts`, `./catalogo.ts`, `./ciencia.ts`, `./cola.ts`, `./datasets-cientificos.ts`, `./ejes.ts`, `./engine.ts`, `./evidencia-mediciones.ts`, `./globals.css`, `./lectura-humana.ts`, `./reloj.ts`, `./roles.ts`, `./sesion`, `./sesion.ts`, `./sincronizar`, `./sincronizar.ts`, `./storage`, `./storage.ts`, `./strings`, `./strings.ts`, `./trayecto.ts`, `./types`, `./types.ts`, `./vocabulario.json`
+- Externas: `@/components/about/about-view`, `@/components/about/datasets-cientificos`, `@/components/about/evidencia-cientifica`, `@/components/about/iconos`, `@/components/alerts/alerts-view`, `@/components/alerts/iconos`, `@/components/alerts/revision-episodios`, `@/components/alerts/seguimiento`, `@/components/app-context`, `@/components/body/anatomia`, `@/components/body/body-stage`, `@/components/body/body-view`, `@/components/body/ecg`, `@/components/body/escena`, `@/components/checkin/checkin-form`, `@/components/checkin/controles`, `@/components/checkin/iconos`, `@/components/crew/crew-body`, `@/components/crew/crew-view`, `@/components/crew/historico`, `@/components/crew/modo-animado`, `@/components/crew/navegador-dias`, `@/components/device/device-view`, `@/components/device/fc-chart`, `@/components/device/iconos`, `@/components/device/pasos-conexion`, `@/components/device/reloj-extras`, `@/components/device/switch`, `@/components/environment/environment-view`, `@/components/environment/iconos`, `@/components/environment/trayectoria-marte`, `@/components/reports/iconos`, `@/components/reports/reports-view`, `@/components/reports/trayecto`, `@/components/shared/ayuda`, `@/components/shared/delay-countdown`, `@/components/shared/evidencia-mediciones`, `@/components/shared/giro-botones`, `@/components/shared/grafico-intradia`, `@/components/shared/iconos`, `@/components/shared/indicator-card`, `@/components/shared/line-chart`, `@/components/shared/logo`, `@/components/shared/states`, `@/components/shared/status`, `@/components/shell/acceso`, `@/components/shell/alert-center`, `@/components/shell/app-shell`, `@/components/shell/sw-register`, `@/components/start/elegir-rol`, `@/components/trends/descomposicion`, `@/components/trends/iconos`, `@/components/trends/modulos-cientificos`, `@/components/trends/resumen`, `@/components/trends/trends-view`, `@/components/ui/button`, `@/components/ui/dialog`, `@/components/ui/popover`, `@/lib/alertas-sync`, `@/lib/almacen-local`, `@/lib/api-registro`, `@/lib/bandeja-informes`, `@/lib/catalogo`, `@/lib/ciencia`, `@/lib/cola`, `@/lib/datasets-cientificos`, `@/lib/ejes`, `@/lib/engine`, `@/lib/estudios`, `@/lib/etl-client`, `@/lib/evidencia-mediciones`, `@/lib/guardia`, `@/lib/lectura-humana`, `@/lib/reloj`, `@/lib/respaldo`, `@/lib/roles`, `@/lib/seguimiento`, `@/lib/sesion`, `@/lib/sincronizacion`, `@/lib/storage`, `@/lib/strings`, `@/lib/trayecto`, `@/lib/types`, `@/lib/utils`, `@base-ui/react/button`, `@base-ui/react/dialog`, `@base-ui/react/popover`, `@fontsource-variable/space-grotesk`, `@fontsource/ibm-plex-mono/400.css`, `@fontsource/ibm-plex-mono/500.css`, `@fontsource/ibm-plex-mono/600.css`, `class-variance-authority`, `clsx`, `lucide-react`, `next`, `next/link`, `next/navigation`, `react`, `tailwind-merge`, `three`, `three/examples/jsm/loaders/GLTFLoader.js`, `three/examples/jsm/utils/BufferGeometryUtils.js`
+- Biblioteca estándar: `node:assert/strict`, `node:crypto`, `node:fs`, `node:test`
 
 ### Tests
 
 - `apps/web/lib/alertas-sync.test.ts`: 0 pruebas
+- `apps/web/lib/almacen-validar.test.ts`: 0 pruebas
 - `apps/web/lib/api-registro.test.ts`: 0 pruebas
 - `apps/web/lib/bandeja-informes.test.ts`: 0 pruebas
 - `apps/web/lib/catalogo.test.ts`: 0 pruebas
@@ -787,9 +897,11 @@ tags: frontend, interfaz, react, nextjs, pwa, offline, motor-hibrido, figura-hum
 - `apps/web/lib/datasets-cientificos.test.ts`: 0 pruebas
 - `apps/web/lib/ejes.test.ts`: 0 pruebas
 - `apps/web/lib/engine.test.ts`: 0 pruebas
+- `apps/web/lib/evidencia-mediciones.test.ts`: 0 pruebas
 - `apps/web/lib/lectura-humana.test.ts`: 0 pruebas
 - `apps/web/lib/reloj.test.ts`: 0 pruebas
 - `apps/web/lib/roles.test.ts`: 0 pruebas
+- `apps/web/lib/sesion-demo.test.ts`: 0 pruebas
 - `apps/web/lib/sincronizar.test.ts`: 0 pruebas
 - `apps/web/lib/trayecto.test.ts`: 0 pruebas
 <!-- CONTEXT:AUTO:END -->

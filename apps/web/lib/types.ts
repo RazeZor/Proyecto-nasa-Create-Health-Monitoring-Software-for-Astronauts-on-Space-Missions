@@ -48,6 +48,7 @@ export interface ZoneResult {
 }
 
 export interface Alert {
+  requiereConfirmacion?: boolean
   id: string
   /** Indicador del motor que la produjo (fc, pas, news2, sueno, co2, sintoma_cefalea…). */
   key?: string
@@ -115,6 +116,8 @@ export interface BandPoint {
 }
 
 export interface CheckInEntry {
+  /** Hora de cada toma; null significa desconocida. createdAt es la confirmación del registro. */
+  tiemposMedicion?: Partial<Record<IndicatorId | "diastolic", string | null>>
   id: string
   day: number
   createdAt: string

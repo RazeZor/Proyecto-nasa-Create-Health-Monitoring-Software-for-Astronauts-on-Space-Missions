@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Evaluación reproducible del cliente v1",
+  "type": "object",
+  "required": ["version", "motor_sha256", "configuracion_version", "perfil_presion_mmhg", "entrada", "salida", "origen"],
+  "properties": {
+    "version": {"const": "evaluacion-v1"},
+    "motor_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "configuracion_version": {"type": "string", "minLength": 1},
+    "perfil_presion_mmhg": {"type": "number", "exclusiveMinimum": 0},
+    "entrada": {"type": "object", "required": ["tripulante", "entorno", "opciones"]},
+    "salida": {"type": "object", "required": ["alertas", "referencias"]},
+    "origen": {"const": "cliente_reproducible_no_revision_independiente"}
+  },
+  "additionalProperties": false
+}

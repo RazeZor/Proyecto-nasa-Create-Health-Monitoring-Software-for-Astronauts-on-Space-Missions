@@ -1,6 +1,6 @@
 {
-  "version": "auditoria-sintetica-v1.1",
-  "enmienda": "Posterior a inspeccionar v1: separar comprobaciones ambientales deterministas de métricas fisiológicas y contar señales también en el negativo ambiental. Sin modificar generador, detector ni métrica primaria. Conservar v1 como antecedente exploratorio.",
+  "version": "auditoria-sintetica-v1.2",
+  "enmienda": "Exploracion posterior a v1.1: coincidencia de canal objetivo, alarmas incidentales, mascara comun en numerador y denominador, y escenarios adicionales de ausencia parcial/informativa, estacionalidad, adaptacion prolongada y deriva breve. Sin promocion de variantes ni afirmacion confirmatoria.",
   "semilla": 2026111601,
   "misiones_por_escenario": 60,
   "dias_prevuelo": 14,
@@ -10,10 +10,47 @@
   "naturaleza": "simulada",
   "tipo_evaluacion": "exploratoria_mismo_equipo",
   "criterio_clinico_confirmatorio": null,
-  "escenarios": ["control", "ruido_correlacionado", "colas_pesadas", "deriva_intensa", "deriva_sutil", "deriva_tardia", "sin_prevuelo", "datos_ausentes", "cambio_instrumento", "sensor_fijo", "extremo", "entorno_referencia", "entorno_escenario"],
-  "comparadores": ["umbrales", "personal_simple", "A", "AB", "AC", "ABC", "ABC_contexto"],
+  "escenarios": [
+    "control",
+    "ruido_correlacionado",
+    "colas_pesadas",
+    "deriva_intensa",
+    "deriva_sutil",
+    "deriva_tardia",
+    "sin_prevuelo",
+    "datos_ausentes",
+    "cambio_instrumento",
+    "sensor_fijo",
+    "extremo",
+    "entorno_referencia",
+    "entorno_escenario",
+    "ausencias_parciales",
+    "ausencias_informativas",
+    "estacionalidad",
+    "adaptacion_prolongada",
+    "deriva_breve"
+  ],
+  "comparadores": [
+    "umbrales",
+    "personal_simple",
+    "A",
+    "AB",
+    "AC",
+    "ABC",
+    "ABC_contexto"
+  ],
   "metrica_primaria_exploratoria": "deteccion_por_mision_en_deriva_sutil",
   "unidad_remuestreo": "mision",
-  "limites": ["sin_datos_humanos", "sin_revision_profesional", "sin_conjunto_reservado_independiente", "sin_ajuste_por_multiplicidad", "generador_no_calibrado_a_poblacion_astronauta"],
-  "fuentes_metodo": ["https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm", "https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc323.htm", "https://www.rcp.ac.uk/resources/national-early-warning-score-news-2/"]
+  "limites": [
+    "sin_datos_humanos",
+    "sin_revision_profesional",
+    "sin_conjunto_reservado_independiente",
+    "sin_ajuste_por_multiplicidad",
+    "generador_no_calibrado_a_poblacion_astronauta"
+  ],
+  "fuentes_metodo": [
+    "https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm",
+    "https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc323.htm",
+    "https://www.rcp.ac.uk/resources/national-early-warning-score-news-2/"
+  ]
 }

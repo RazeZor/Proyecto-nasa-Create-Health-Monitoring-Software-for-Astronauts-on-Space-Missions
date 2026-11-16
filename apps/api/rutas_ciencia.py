@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
+
 from gold import leer_verificado, manifiesto
 
 RAIZ = Path(__file__).resolve().parents[2]

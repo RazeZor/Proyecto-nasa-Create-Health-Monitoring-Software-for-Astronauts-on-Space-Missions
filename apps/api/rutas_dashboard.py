@@ -4,15 +4,16 @@ viven aquí (apps/api/demo/ y el caso del viaje a Marte del simulador) y se rotu
 """
 import json
 import math
+import os
 import random
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
 
-import gold
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from almacen import alertas, cola, lecturas, tripulacion
+import gold
+from almacen import alertas, cola, lecturas, observaciones, tripulacion
 from i18n import t
 from rutas_registro import ERRORES, actor, conexion, propio
 
@@ -43,6 +44,8 @@ def _propio_o_clinico(conn, quien, id):
         "SELECT 1 FROM tripulante a JOIN tripulante b ON b.mision_id = a.mision_id "
         "WHERE a.id = ? AND a.rol = 'oficial_medico' AND b.id = ?", (quien, id)).fetchone()
     if not clinico:
+        raise HTTPException(403, t("api.error.sin_permiso"))
+    if os.environ.get("VIGIA_IDENTIDAD_ENSAYO") != "1" and not tripulacion.tiene_consentimiento(conn, id, "historial_clinico"):
         raise HTTPException(403, t("api.error.sin_permiso"))
     return True
 
@@ -185,6 +188,8 @@ def _lecturas_reales(conn, id):
     """Lo que el tripulante registró de verdad (`naturaleza: Real`), una fila por día de misión con el último
     valor de cada indicador. Un indicador sin medida ese día queda en null; los días <= 0 son prevuelo."""
     dia1 = tripulacion._dia1(conn, id)
+    ledger = observaciones.listar(conn, id)
+    lecturas_trazadas = {o["lectura_id"] for o in ledger if o["lectura_id"] is not None}
 
     def dia_de(t_real):
         return (tripulacion._utc(t_real) - dia1).days + 1
@@ -193,16 +198,40 @@ def _lecturas_reales(conn, id):
 
     def fila(d):
         return dias.setdefault(d, {"dia_mision": d, **{campo: None for campo in CAMPO_DE_INDICADOR.values()},
-                                   "fc_instrumento": None, "t_real": None, "sintomas": [], "durante_tormenta": False})
+                                   "fc_instrumento": None, "t_real": None, "sintomas": [], "durante_tormenta": False,
+                                   "mediciones": {}, "observaciones": [], "ventana_clinica_valida": False})
 
     for r in lecturas.leer_lecturas(conn, id):
         if r["naturaleza"] != "Real" or r["indicador"] not in CAMPO_DE_INDICADOR:
             continue
         f = fila(dia_de(r["t_real"]))
         f[CAMPO_DE_INDICADOR[r["indicador"]]] = r["valor"]  # vienen por t_real: la última del día manda
+        f["mediciones"][CAMPO_DE_INDICADOR[r["indicador"]]] = {"id": f"lectura:{r['id']}", "t_real": r["t_real"],
+                                                             "valor": r["valor"], "metodo": r["metodo"], "comparable": False}
+        if r["id"] not in lecturas_trazadas:
+            f["observaciones"].append({"id": f"lectura:{r['id']}", "indicador": r["indicador"], "t_real": r["t_real"],
+                                      "valor": r["valor"], "metodo": r["metodo"], "comparable": False, "uso": "operativo"})
         f["t_real"] = r["t_real"]  # hora de la última medida del día: la del aviso si esa lectura escala
         if r["indicador"] == "frecuencia_cardiaca_reposo":
             f["fc_instrumento"] = r["metodo"] or "manual"
+    for o in ledger:
+        if not o["t_real"] or o["uso"] != "operativo" or o["indicador"] not in CAMPO_DE_INDICADOR:
+            continue
+        f = fila(dia_de(o["t_real"]))
+        campo = CAMPO_DE_INDICADOR[o["indicador"]]
+        f["observaciones"].append(o)
+        previa = f["mediciones"].get(campo)
+        if previa is None or o["t_real"] >= previa["t_real"]:
+            f[campo] = o["valor"]
+            f["mediciones"][campo] = {"id": o["id"], "t_real": o["t_real"], "valor": o["valor"],
+                                       "metodo": o["metodo"], "comparable": bool(o["comparable"])}
+            if campo == "fc_reposo_lpm":
+                f["fc_instrumento"] = o["instrumento"] or o["metodo"] or "manual"
+    clinicos = ("fc_reposo_lpm", "pas_mmHg", "spo2_pct", "temp_central_c")
+    for f in dias.values():
+        tiempos = [tripulacion._utc(f["mediciones"][c]["t_real"]) for c in clinicos if c in f["mediciones"]]
+        # Ventana técnica explícita (5 min), pendiente de revisión profesional por perfil.
+        f["ventana_clinica_valida"] = bool(tiempos) and (max(tiempos) - min(tiempos)).total_seconds() <= 300
     reales = {dia_de(r["t_real"]) for r in lecturas.leer_lecturas(conn, id) if r["naturaleza"] == "Real"}
     for s in lecturas.leer_sintomas(conn, id):
         d = dia_de(s["t_real"])
