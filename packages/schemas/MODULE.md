@@ -7,6 +7,9 @@ Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON 
 
 ## Puntos clave
 
+- `observacion.schema.json`, `episodio-evento.schema.json` y `evaluacion.schema.json` versionan tomas, transiciones y trazas reproducibles del cliente. `configuracion-cientifica.json` declara ventanas técnicas y decisiones aplazadas; su revisión profesional sigue pendiente y no es un protocolo clínico autorizado.
+- `acciones-seguimiento.json` versiona tareas de registro y solicitud de revisión sin prescribir tratamiento; su revisión profesional permanece pendiente. Cada evento nuevo conserva versión del protocolo y catálogo.
+
 - `mmash-gold.schema.json` exige referencia terrestre, fechas UTC de toma desconocidas y ausencia de evaluación/aval clínico. Preserva tiempos relativos y unidades de RR/sueño. El pipeline biométrico valida el producto con este contrato antes de publicarlo.
 
 - `evidencia-cientifica.json` registra fuentes, artefactos y límites traducidos de cada afirmación. Su contrato `afirmaciones-v1` mantiene validación clínica falsa, revisión pendiente y lista vacía; publicar dictámenes reales requerirá una revisión explícita del contrato y evidencia del revisor. `test_evidencia.py` comprueba rutas, traducciones y ausencia de avales inventados.

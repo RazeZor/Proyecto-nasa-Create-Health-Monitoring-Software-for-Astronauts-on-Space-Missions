@@ -13,6 +13,7 @@ import type { EntornoHistorial, Historial, OrigenDato } from "./catalogo.ts"
 import { MOTOR, S } from "./strings.ts"
 import vocabulario from "./vocabulario.json" with { type: "json" }
 import { esEntornoAplicable } from "../../../packages/engine/evidencia.ts"
+import { aplicarPoliticaTemporal } from "./evidencia-mediciones.ts"
 import type { Alert, BandPoint, CheckInEntry, DailyVitals, IndicatorId, Status, Symptom, ZoneId, ZoneResult } from "./types.ts"
 
 export const ADAPTATION_END_DAY = DIA_FIN_ADAPTACION
@@ -108,7 +109,7 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
   )
   const porDia = new Map<number, Lectura>(historial.lecturas.map((l) => [l.dia_mision, l as Lectura]))
   for (const e of checkIns) porDia.set(e.day, enLectura(e, porDia.get(e.day))) // el último registro del día manda
-  const lecturas = [...porDia.values()].sort((a, b) => a.dia_mision - b.dia_mision)
+  const lecturas = [...porDia.values()].sort((a, b) => a.dia_mision - b.dia_mision).map((l) => aplicarPoliticaTemporal(l, checkIns, historial))
   const cambiosInstrumento = cambiosDeInstrumento(checkIns, historial)
   const { alertas: alertasMotor, referencias } = analizarTripulante({ id: "yo", lecturas }, ENTORNO, { cambiosInstrumento })
   // hora de la medida que produce cada alerta: la del registro local o, si vino por otra vía (reloj, otro
@@ -141,14 +142,16 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
     // la capa C acumula una deriva (CUSUM): el valor grande es la medida del día, que es lo que entiende el tripulante;
     // la cifra del CUSUM va a la banda, que la interfaz pliega bajo «detalle técnico»
     const medidaDia = a.capa === "C" ? lecturaDelDia(porDia.get(a.dia_mision), indicador) : null
-    const valor = porEvento ? MOTOR.eventoSep(sep.sepID) : a.valor === null ? "" : a.capa === "C" ? (medidaDia === null ? "" : `${medidaDia} ${unidad}`) : `${a.valor} ${unidad}`
+    const unidadesToma: Record<string, string> = { frecuencia_cardiaca_reposo: "lpm", presion_arterial_sistolica: "mmHg", spo2: "%", temperatura_central: "°C" }
+    const valor = a.observacion ? `${a.observacion.valor} ${unidadesToma[a.observacion.indicador] ?? ""}`
+      : porEvento ? MOTOR.eventoSep(sep.sepID) : a.valor === null ? "" : a.capa === "C" ? (medidaDia === null ? "" : `${medidaDia} ${unidad}`) : `${a.valor} ${unidad}`
     const bandaC = a.valor === null ? MOTOR.banda.C : `${MOTOR.cusum(a.valor)} · ${MOTOR.banda.C}`
     const origen = a.indicador === "co2" ? textoOrigen(env?.co2_origen)
       : a.indicador === "protones" ? (sep ? `${MOTOR.real} · ${sep.fuente} · ${sep.t_real.slice(0, 10)}` : textoOrigen(env?.flujo_origen))
       : ""
-    const t = creado.get(a.dia_mision)
+    const t = a.observacion ? a.observacion.t_real : creado.get(a.dia_mision)
     return {
-      id: `al-${a.dia_mision}-${capa}-${a.indicador}`,
+      id: `al-${a.dia_mision}-${capa}-${a.indicador}${a.observacion ? `-${a.observacion.id}` : ""}`,
       key: a.indicador,
       day: a.dia_mision,
       time: t ? new Date(t).toISOString().slice(11, 16) : "",
@@ -163,9 +166,12 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
       action: MOTOR.accion[indicador],
       scope: a.ambito === "tripulacion" ? "crew" : "personal",
       informative: a.informativa,
+      requiereConfirmacion: Boolean(a.observacion && a.informativa),
       escalates: a.escalada_auto,
       source: origen || undefined,
-      clinical: a.capa === "A" && a.escalada_auto ? parametroClinico(porDia.get(a.dia_mision), a.valor ?? 0) : undefined,
+      clinical: a.capa === "A" && a.escalada_auto ? a.observacion
+        ? { indicador: a.observacion.indicador, valor: a.observacion.valor, tramo: MOTOR.tramoExtremo }
+        : parametroClinico(porDia.get(a.dia_mision), a.valor ?? 0) : undefined,
     }
   }
 
@@ -270,7 +276,11 @@ export function analizar(checkIns: CheckInEntry[], historial: Historial, presion
       source: entornoAplicable(e, historial.modo) ? textoOrigen(e.co2_origen) : `${S.env.referenceOnly} · ${textoOrigen(e.co2_origen)}`,
       simulated: e.co2_origen?.naturaleza !== "Real" } : null
   }
-  return { alerts, vitals, zones, indicatorStatus, overall, band, storm, stormInfo, co2, hasData, missionDays: MISSION_DAYS, cambiosInstrumento, real: historial.modo === "real" }
+  const traza = () => ({ version: "evaluacion-v1", motor_sha256: process.env.NEXT_PUBLIC_VIGIA_MOTOR_SHA256 ?? null,
+    configuracion_version: "evidencia-ingenieria-v1", perfil_presion_mmhg: presionCabinaMmHg,
+    entrada: { tripulante: { id: "yo", lecturas }, entorno: ENTORNO, opciones: { cambiosInstrumento } },
+    salida: { alertas: alertasMotor, referencias }, origen: "cliente_reproducible_no_revision_independiente" })
+  return { alerts, vitals, zones, indicatorStatus, overall, band, storm, stormInfo, co2, hasData, traza, missionDays: MISSION_DAYS, cambiosInstrumento, real: historial.modo === "real" }
 }
 
 /**

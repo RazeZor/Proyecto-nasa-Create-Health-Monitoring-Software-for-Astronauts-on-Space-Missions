@@ -1,0 +1,15 @@
+{
+  "version": "evidencia-ingenieria-v1",
+  "revision_profesional": "pendiente",
+  "uso": "prototipo_investigacion",
+  "ventana_simultaneidad_s": 300,
+  "antiguedad_max_s": 86400,
+  "desfase_futuro_max_s": 60,
+  "politica_unidades": "rechazar_conversion_implicita",
+  "extremos": "conservar_original_y_confirmar_calidad",
+  "cierre_episodio": "revision_autorizada_explicita",
+  "hrv": "aplazado_hasta_intervalos_nn_y_calidad_caracterizados",
+  "masa_capa_c": "aplazada_hasta_revision_y_comparacion",
+  "reaccion": "practica_experimental_sin_equivalencia_pvt",
+  "laboratorio": "aplazado_hasta_diccionario_unidades_y_pregunta_revisados"
+}

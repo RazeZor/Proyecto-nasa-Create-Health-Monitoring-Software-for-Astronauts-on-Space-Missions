@@ -4,6 +4,24 @@ Revisión local: 15-nov-2026; ejecución en UTC del 16-nov. Base: `cf5d53f184ea7
 
 ## Cierre posterior: plan completo y datasets reales
 
+### Ejecución del plan, 16-nov-2026
+
+Rama `feat/ejecutar-plan-integral`, con referencia `origin/main` en `b55d0f8` (PR #67 ya fusionado). La presentación final T38 no se implementó.
+
+- **406 pruebas locales: 286 Python y 120 Node**, sin fallos ni omitidas. Contexto, lint de contexto, Ruff, tipado y build de producción separado en verde. Python 3.14.1 y Node 22.18 en Windows. Reporte final: `tools/verificacion/data/20261116T115556Z/resultado.json`. CI Python 3.12/Linux de esta nueva entrega sigue pendiente.
+- Chrome con sesiones verificadas: `ensayo-20261116T120211Z/resultado.json`. Guardó 18 observaciones, abrió episodio, registró acción, exigió nueva toma posterior, enlazó remedición y solicitó revisión. También verificó IndexedDB al recargar, diario de sueño, reacción interrumpida no comparable, pestaña offline y separación del segundo usuario. Cero excepciones.
+- Chrome de recuperación/datasets: `ensayo-20261116T120254Z/resultado.json`. Reinicio de navegador, cola durable, reintento sin duplicación, carcasa sin red, evidencia actual/offline/móvil/inglés y MMASH/Orion. Cero excepciones. La reapertura verifica identidad antes de simular caída del registro; no demuestra un desbloqueo offline ilimitado tras cerrar el navegador.
+- Transporte real de ensayo entre dos procesos y dos bases: `transporte-20261116T114554Z/resultado.json`. Sesiones normales, acuse de destino, respuesta causal y reintento sin duplicado. Sin destino externo real ni supervisión clínica.
+- Inventario `inventario-20261116T120410378410Z`: 22 originales ambientales y 17 productos gold con hashes correctos; SQLite local v11 e integridad `ok`. Los datasets siguen separados de las mediciones personales.
+
+Los directorios anteriores están bajo `tools/verificacion/data/` y no se suben a Git. El banco y las limitaciones científicas se detallan en [EJECUCION-PLAN](EJECUCION-PLAN.md).
+
+**Incidente de aislamiento detectado:** aunque los ensayos apuntaron a SQLite temporales, la base local pasó de v6 a v11 mientras la carpeta SQL era compartida con servicios abiertos. El migrador consulta esa carpeta en cada petición; el build separado no impedía descubrir nuevas migraciones. No se revirtió ni se borró la base. Se creó `conservacion-20261116T120536Z/estado-actual.db` con manifiesto/hash y se contrastó con la copia v6 de `inventario-20261116T000657950532Z/respaldo.db`: ninguna fila previa ausente en misión, tripulante, indicador, lectura, síntoma, alerta, escalamiento, auditoría ni cuentas experimentales. Las 18 lecturas de aquella copia siguen entre las 63 actuales. Integridad y llaves correctas; cero cuentas nuevas de ensayo en la base personal. La copia es privada e ignorada por Git. SETUP ahora exige aislar también el worktree o detener el servicio antes de incorporar SQL.
+
+### Antecedente del PR #67
+
+**Antecedente:** la revisión de 373 pruebas de esta sección precede a la [ejecución del plan](EJECUCION-PLAN.md), que incorpora observaciones, sesiones, IndexedDB, episodios, receptor Tierra y módulos científicos. Sus comprobaciones se registran por separado.
+
 El [plan vigente](PLAN-IMPLEMENTACION-COMPLETO.md) contiene T01–T44, dependencias, responsables por ámbito, criterios, datos, calendario orientativo y puertas. `tools/verificacion/data/plan-completo-comprobado.json` comprueba los 44 IDs sin duplicados/faltantes y sus enlaces locales. T25/T26 registran la primera adquisición como parcial; el resto del plan no se presenta como implementado.
 
 La batería posterior aprobó **373 pruebas: 265 Python y 108 Node**, sin fallos ni omitidas; contexto, Ruff, tipos y build en verde. Artefacto: `tools/verificacion/data/20261116T020606Z/resultado.json`. Incluye cuatro tests del importador biométrico, tres de datasets en API, uno del contrato MMASH y dos del lector cliente, además de la regresión del saneamiento de URL RadLab dentro del test existente.

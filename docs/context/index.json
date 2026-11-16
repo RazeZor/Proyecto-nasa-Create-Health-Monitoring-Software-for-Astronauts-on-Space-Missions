@@ -5,6 +5,11 @@
       "modulo": "apps/api",
       "proposito": "API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y guarda el registro de la tripulación en una base SQLite local (`almacen/`).",
       "puntos_clave": [
+        "Identidad normal mediante `seguridad.py`: sesiones opacas de 8 h, scrypt, cookie HttpOnly/SameSite, CSRF, revocación y límite de intentos por IP. `cuentas.py` da de alta cuentas desde terminal privada. `VIGIA_IDENTIDAD_ENSAYO=1` es un adaptador explícito para ensayos aislados; nunca proporciona autenticación para piloto.",
+        "Migraciones 007–011: observaciones inmutables con hora/unidad/operación propias, originales legados sin recepción inventada, eventos de episodio, archivo experimental y acuses/respuestas de destino. Repetir IDs con otro contenido devuelve 409; `lectura` queda como proyección compatible. `historial.mediciones` conserva el tiempo por campo y `observaciones` preserva extremos previos.",
+        "Los clínicos de la misma misión requieren consentimiento `historial_clinico` para historial/observaciones/episodios. Solo el propietario concede/revoca; el servidor audita accesos y cambios. Un cierre de episodio requiere estado en revisión y actor médico; ni una medición normal ni el reloj lo cierran.",
+        "El transporte normal usa `transporte.py` y el receptor independiente configurado con `VIGIA_TIERRA_URL/CLAVE/OPERADOR_CLAVE`. Sin receptor, conserva la cola. Solo un acuse de ID/hash habilita `entregado`; las respuestas se recogen con vínculo causal. El temporizador antiguo queda limitado al modo de ensayo.",
+        "CORS está cerrado salvo `VIGIA_ORIGENES` exportado antes de iniciar; el proxy del mismo origen no necesita CORS. Respuestas privadas llevan `Cache-Control: no-store`. `VIGIA_COOKIE_SEGURA=1` fuerza Secure detrás de un terminador HTTPS.",
         "`/ciencia/datasets` enumera únicamente MMASH/Orion presentes con hashes comprobados; `/ciencia/datasets/{id}` devuelve el producto de referencia conocido. Las fechas de toma MMASH siguen desconocidas y Orion es radiación ambiental histórica; no se evalúa el motor ni se incorporan esos sujetos a cuentas actuales.",
         "`GET /ciencia/evidencia` separa catálogo de afirmaciones y reporte sintético gold. Verifica integridad y hashes del motor, generador, métricas, runner y protocolo; reporta `vigente`, `desactualizado` o `no_publicado`. Reportes corruptos/incompatibles fallan cerrados. No acredita revisión profesional.",
         "Migraciones hasta 006: el catálogo rechaza números duplicados antes de escribir. 005 reconcilia las variantes v4 con/sin `reloj_vinculo` y conserva las cuentas experimentales sin activarlas. `tools/verificacion/inventario.py --migrar` respalda antes de actualizar una base existente.",
@@ -19,11 +24,10 @@
         "Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.",
         "Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.",
         "Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez. Reenviar la misma alerta (tripulante, indicador, capa, `t_real` y valor) devuelve el id que ya tenía: la app reintenta sin duplicar avisos.",
-        "Reloj de la cola: al arrancar, `ciclo_de_vida` en `main.py` lanza una tarea que cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 la apaga) pasa a `entregado` los reportes cuyo retardo ya pasó, con la hora real del servidor. Ya no hace falta llamar a `POST /reportes/avanzar` (queda para pruebas y para forzar una hora). Con varios procesos, cada uno corre su reloj: es idempotente.",
-        "CORS abierto a `GET`, `POST` y `PUT` desde cualquier origen (atajo, sin autenticación real; acotar `allow_origins` al desplegar). Acepta también el preflight de red privada (`allow_private_network`): sin él Chrome bloquea la llamada desde otra máquina de la LAN.",
+        "Reloj de la cola: ciclo_de_vida ejecuta el transporte cada VIGIA_RELOJ_SEG segundos (5 por defecto, 0 lo apaga). En modo normal intenta entregar y recoger respuestas; no acredita recepcion por tiempo transcurrido. POST /reportes/avanzar solo funciona en ensayo.",
         "Vocabulario: los códigos de síntoma salen de `packages/schemas/vocabulario.json` (`almacen/vocabulario.py` lo lee); el retardo de reporte es 0 a 22 min (migración 002) y existe el indicador `presion_arterial_diastolica` (sin reglas ni ficha).",
         "La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).",
-        "El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.",
+        "El actor sale de la sesion verificada; solo el modo explicito de ensayo interpreta X-Tripulante. Las rutas de registro estan en rutas_registro.py; el motor hibrido sigue en TypeScript y el cliente envia los resultados.",
         "Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests.",
         "`GET /tripulantes/{id}/intradia?modo=real|demo` es el tiempo real (mismos permisos que `historial`): pulso, SpO2, temperatura y sistólica de un día por hora UTC. `real`: lecturas `Real` de ese día sin agrupar. `demo`: simuladas cada 15 min hasta `hasta` (por defecto ahora) alrededor del valor diario del caso de referencia, con semilla (tripulante, día, campo): siempre las mismas. La lectura de un clínico se audita como `lectura_ajena` de `intradia` una sola vez por hora y por (clínico, tripulante) (`propio_o_clinico_intradia`), porque la app la pide cada minuto; el `historial` se sigue auditando en cada consulta.",
         "`GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del viaje a Marte (`packages/engine/fixtures/caso-viaje.json`, 259 días de tránsito; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 135`, el 27-ene-2012, con las tres anomalías y la tormenta solar real ya visibles) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).",
@@ -48,10 +52,15 @@
         "SMART_IP_LAN",
         "SMART_TRIPULANTES",
         "SMART_URL",
+        "VIGIA_COOKIE_SEGURA",
         "VIGIA_DB",
+        "VIGIA_IDENTIDAD_ENSAYO",
+        "VIGIA_ORIGENES",
         "VIGIA_PRUEBA_A",
         "VIGIA_PRUEBA_FIJA",
-        "VIGIA_RELOJ_SEG"
+        "VIGIA_RELOJ_SEG",
+        "VIGIA_TIERRA_CLAVE",
+        "VIGIA_TIERRA_URL"
       ],
       "archivos": [
         {
@@ -134,7 +143,7 @@
         },
         {
           "ruta": "apps/api/almacen/cola.py",
-          "lineas": 42,
+          "lineas": 46,
           "descripcion": "Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2).",
           "test": false,
           "simbolos": [
@@ -191,6 +200,26 @@
           ]
         },
         {
+          "ruta": "apps/api/almacen/episodios.py",
+          "lineas": 85,
+          "descripcion": "Bitácora inmutable y proyección de episodios con concurrencia optimista.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "registrar",
+              "tipo": "función",
+              "firma": "registrar(conn, propietario, actor, datos)",
+              "doc": ""
+            },
+            {
+              "nombre": "listar",
+              "tipo": "función",
+              "firma": "listar(conn, propietario)",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/almacen/lecturas.py",
           "lineas": 52,
           "descripcion": "Lecturas de indicadores y síntomas de un tripulante.",
@@ -219,6 +248,26 @@
               "tipo": "función",
               "firma": "leer_sintomas(conn, tripulante_id, desde=None, hasta=None)",
               "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/almacen/observaciones.py",
+          "lineas": 73,
+          "descripcion": "Tomas inmutables, correcciones enlazadas y acuses idempotentes por sujeto.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "registrar",
+              "tipo": "función",
+              "firma": "registrar(conn, tripulante_id, datos)",
+              "doc": "No sustituye originales. Una corrección es otra observación del mismo indicador."
+            },
+            {
+              "nombre": "listar",
+              "tipo": "función",
+              "firma": "listar(conn, tripulante_id)",
+              "doc": "Incluye originales corregidos: el cliente decide su vista sin borrar historia."
             }
           ]
         },
@@ -306,6 +355,20 @@
           "simbolos": []
         },
         {
+          "ruta": "apps/api/cuentas.py",
+          "lineas": 33,
+          "descripcion": "Alta local de una cuenta; la contraseña solo se pide en una terminal privada.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "main",
+              "tipo": "función",
+              "firma": "main()",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/gold.py",
           "lineas": 42,
           "descripcion": "Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que",
@@ -339,7 +402,7 @@
         },
         {
           "ruta": "apps/api/main.py",
-          "lineas": 241,
+          "lineas": 262,
           "descripcion": "API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje).",
           "test": false,
           "simbolos": [
@@ -354,6 +417,12 @@
               "tipo": "función",
               "firma": "ciclo_de_vida(_app)",
               "doc": "Carga el `.env` de la raíz (sin pisar el entorno) y arranca el reloj de la cola de reportes: cada"
+            },
+            {
+              "nombre": "evitar_cache_privada",
+              "tipo": "función",
+              "firma": "evitar_cache_privada(request, call_next)",
+              "doc": ""
             },
             {
               "nombre": "dato_invalido",
@@ -607,7 +676,7 @@
         },
         {
           "ruta": "apps/api/rutas_ciencia.py",
-          "lineas": 88,
+          "lineas": 89,
           "descripcion": "Afirmaciones trazables y auditoría exploratoria; no acredita validación clínica.",
           "test": false,
           "simbolos": [
@@ -639,7 +708,7 @@
         },
         {
           "ruta": "apps/api/rutas_dashboard.py",
-          "lineas": 344,
+          "lineas": 373,
           "descripcion": "Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante,",
           "test": false,
           "simbolos": [
@@ -706,8 +775,34 @@
           ]
         },
         {
+          "ruta": "apps/api/rutas_estudios.py",
+          "lineas": 71,
+          "descripcion": "Archivo de sesiones experimentales: no equivale a evaluación clínica independiente.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ArtefactoIn",
+              "tipo": "clase",
+              "firma": "ArtefactoIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "guardar",
+              "tipo": "función",
+              "firma": "guardar(cuerpo: ArtefactoIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Conserva un diario o práctica experimental propios, con versión de protocolo y acuse idempotente."
+            },
+            {
+              "nombre": "listar",
+              "tipo": "función",
+              "firma": "listar(id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Lista exclusivamente los artefactos experimentales del propietario autenticado."
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/rutas_registro.py",
-          "lineas": 232,
+          "lineas": 328,
           "descripcion": "Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md).",
           "test": false,
           "simbolos": [
@@ -720,7 +815,7 @@
             {
               "nombre": "actor",
               "tipo": "función",
-              "firma": "actor(x_tripulante: str | None=Header(None), conn=Depends(conexion))",
+              "firma": "actor(request: Request, x_tripulante: str | None=Header(None), conn=Depends(conexion))",
               "doc": ""
             },
             {
@@ -740,6 +835,48 @@
               "tipo": "clase",
               "firma": "SintomaIn(BaseModel)",
               "doc": ""
+            },
+            {
+              "nombre": "ObservacionIn",
+              "tipo": "clase",
+              "firma": "ObservacionIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "crear_observacion",
+              "tipo": "función",
+              "firma": "crear_observacion(cuerpo: ObservacionIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Añade una toma con hora propia; un reintento devuelve el mismo acuse y otro contenido produce 409."
+            },
+            {
+              "nombre": "listar_observaciones",
+              "tipo": "función",
+              "firma": "listar_observaciones(id: int, quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Lista originales y correcciones enlazadas del propietario, sin borrar medidas anteriores."
+            },
+            {
+              "nombre": "ConsentimientoIn",
+              "tipo": "clase",
+              "firma": "ConsentimientoIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "consentimiento",
+              "tipo": "función",
+              "firma": "consentimiento(cuerpo: ConsentimientoIn, id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Concede o revoca un alcance explícito de lectura/escalamiento; cada cambio queda en auditoría."
+            },
+            {
+              "nombre": "consentimientos",
+              "tipo": "función",
+              "firma": "consentimientos(id: int=Depends(propio), conn=Depends(conexion))",
+              "doc": "Lista los alcances que el dueño mantiene concedidos; no muestra decisiones de otras personas."
+            },
+            {
+              "nombre": "reportes_recibidos",
+              "tipo": "función",
+              "firma": "reportes_recibidos(quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "El médico de la misión lee solo informes explícitamente enviados y con recepción del destino confirmada."
             },
             {
               "nombre": "LineaBaseIn",
@@ -846,7 +983,7 @@
             {
               "nombre": "responder",
               "tipo": "función",
-              "firma": "responder(reporte_id: int, cuerpo: RespuestaIn, quien: int=Depends(actor), conn=Depends(conexion))",
+              "firma": "responder(reporte_id: int, cuerpo: RespuestaIn, request: Request, quien: int=Depends(actor), conn=Depends(conexion))",
               "doc": "Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422."
             },
             {
@@ -866,6 +1003,82 @@
               "tipo": "función",
               "firma": "agregar_contexto(escalamiento_id: int, cuerpo: ContextoIn, quien: int=Depends(actor), conn=Depends(conexion))",
               "doc": "Solo el afectado puede añadir contexto, una sola vez (no puede cancelar el aviso); otro tripulante recibe 403"
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/rutas_seguimiento.py",
+          "lineas": 42,
+          "descripcion": "Contratos HTTP de acciones, nueva medición y revisión de episodios.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "EventoIn",
+              "tipo": "clase",
+              "firma": "EventoIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "registrar",
+              "tipo": "función",
+              "firma": "registrar(cuerpo: EventoIn, id: int=Depends(propio_o_clinico), quien: int=Depends(actor), conn=Depends(conexion))",
+              "doc": "Registra una transición con versión esperada; el cierre requiere revisión médica de la misma misión."
+            },
+            {
+              "nombre": "listar",
+              "tipo": "función",
+              "firma": "listar(id: int=Depends(propio_o_clinico), conn=Depends(conexion))",
+              "doc": "Devuelve estados e historial de acciones, con permisos y auditoría del historial clínico."
+            }
+          ]
+        },
+        {
+          "ruta": "apps/api/seguridad.py",
+          "lineas": 133,
+          "descripcion": "Sesiones opacas revocables, credenciales locales y CSRF. Nunca confiar en X-Tripulante.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "conexion_identidad",
+              "tipo": "función",
+              "firma": "conexion_identidad()",
+              "doc": ""
+            },
+            {
+              "nombre": "crear_cuenta",
+              "tipo": "función",
+              "firma": "crear_cuenta(conn, usuario, clave, tripulante_id, rol)",
+              "doc": ""
+            },
+            {
+              "nombre": "sesion_verificada",
+              "tipo": "función",
+              "firma": "sesion_verificada(request, conn)",
+              "doc": ""
+            },
+            {
+              "nombre": "AccesoIn",
+              "tipo": "clase",
+              "firma": "AccesoIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "iniciar",
+              "tipo": "función",
+              "firma": "iniciar(cuerpo: AccesoIn, request: Request, response: Response, conn=Depends(conexion_identidad))",
+              "doc": "Comprueba credenciales y crea una sesión de 8 horas con cookie HttpOnly y CSRF."
+            },
+            {
+              "nombre": "consultar",
+              "tipo": "función",
+              "firma": "consultar(request: Request, response: Response, conn=Depends(conexion_identidad))",
+              "doc": "Verifica una sesión vigente y devuelve su ámbito autorizado."
+            },
+            {
+              "nombre": "cerrar",
+              "tipo": "función",
+              "firma": "cerrar(request: Request, response: Response, conn=Depends(conexion_identidad))",
+              "doc": "Revoca la sesión en el servidor y retira su cookie; requiere CSRF."
             }
           ]
         },
@@ -975,7 +1188,7 @@
         },
         {
           "ruta": "apps/api/test_api_dashboard.py",
-          "lineas": 337,
+          "lineas": 344,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -995,7 +1208,7 @@
         },
         {
           "ruta": "apps/api/test_api_registro.py",
-          "lineas": 208,
+          "lineas": 211,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -1022,8 +1235,22 @@
           ]
         },
         {
+          "ruta": "apps/api/test_plan_integral.py",
+          "lineas": 225,
+          "descripcion": "Aceptación de identidad, medidas, seguimiento y transporte sin datos del usuario.",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "PlanIntegral",
+              "tipo": "clase",
+              "firma": "PlanIntegral(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/api/test_puente_reloj.py",
-          "lineas": 454,
+          "lineas": 461,
           "descripcion": "",
           "test": true,
           "simbolos": [
@@ -1067,7 +1294,7 @@
         },
         {
           "ruta": "apps/api/test_reintentos.py",
-          "lineas": 76,
+          "lineas": 79,
           "descripcion": "Reintentos tras perder un acuse: mismos ids, propietario separado y conflictos visibles.",
           "test": true,
           "simbolos": [
@@ -1078,6 +1305,139 @@
               "doc": ""
             }
           ]
+        },
+        {
+          "ruta": "apps/api/transporte.py",
+          "lineas": 108,
+          "descripcion": "Transporte a un proceso destino: el temporizador solo habilita el intento, nunca acredita entrega.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "SinRedireccion",
+              "tipo": "clase",
+              "firma": "SinRedireccion(urllib.request.HTTPRedirectHandler)",
+              "doc": ""
+            },
+            {
+              "nombre": "entregar_pendientes",
+              "tipo": "función",
+              "firma": "entregar_pendientes(conn, ahora, enviar=None)",
+              "doc": ""
+            },
+            {
+              "nombre": "ahora_utc",
+              "tipo": "función",
+              "firma": "ahora_utc()",
+              "doc": ""
+            },
+            {
+              "nombre": "responder_en_destino",
+              "tipo": "función",
+              "firma": "responder_en_destino(conn, reporte_id, texto, t_real)",
+              "doc": ""
+            },
+            {
+              "nombre": "recoger_respuestas",
+              "tipo": "función",
+              "firma": "recoger_respuestas(conn, consultar=None)",
+              "doc": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modulo": "apps/tierra",
+      "proposito": "Receptor independiente de ensayo del enlace a Tierra. Persiste mensajes y respuestas en otra base SQLite y confirma identificadores y hashes; no importa código de ninguna otra app.",
+      "puntos_clave": [
+        "`uvicorn receptor:app --port 8100` desde esta carpeta. `VIGIA_TIERRA_DB` elige la base (por defecto `data/tierra.db`, ignorada). Una recepción se confirma después del commit, con ID/hash/UTC persistentes tras reinicio.",
+        "`VIGIA_TIERRA_CLAVE` (32 caracteres o más) autoriza recepción/consulta. `VIGIA_TIERRA_OPERADOR_CLAVE` es otra credencial para responder: un mensaje debe existir y cada respuesta enlaza su ID. No hay contraseñas predeterminadas.",
+        "Los IDs repetidos con contenido distinto producen 409. El reloj de a bordo no interviene en el acuse. Es un ensayo de transporte; no acredita una instalación terrestre real, revisión médica ni autorización de vuelo.",
+        "Cada petición tiene su conexión SQLite; `check_same_thread=False` permite las dependencias de FastAPI. No se comparte una conexión entre peticiones. Las pruebas usan carpetas temporales y no hacen red."
+      ],
+      "tags": [
+        "tierra",
+        "transporte",
+        "acuses",
+        "sqlite",
+        "causalidad",
+        "autenticacion"
+      ],
+      "env": [
+        "VIGIA_TIERRA_CLAVE",
+        "VIGIA_TIERRA_DB",
+        "VIGIA_TIERRA_OPERADOR_CLAVE"
+      ],
+      "archivos": [
+        {
+          "ruta": "apps/tierra/receptor.py",
+          "lineas": 100,
+          "descripcion": "Proceso Tierra independiente. Arranque: uvicorn receptor:app --port 8100.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "autorizado",
+              "tipo": "función",
+              "firma": "autorizado(authorization: str | None=Header(None))",
+              "doc": ""
+            },
+            {
+              "nombre": "operador",
+              "tipo": "función",
+              "firma": "operador(authorization: str | None=Header(None))",
+              "doc": ""
+            },
+            {
+              "nombre": "conexion",
+              "tipo": "función",
+              "firma": "conexion()",
+              "doc": ""
+            },
+            {
+              "nombre": "MensajeIn",
+              "tipo": "clase",
+              "firma": "MensajeIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "recibir",
+              "tipo": "función",
+              "firma": "recibir(cuerpo: MensajeIn, request: Request, conn=Depends(conexion))",
+              "doc": ""
+            },
+            {
+              "nombre": "consultar",
+              "tipo": "función",
+              "firma": "consultar(id: str, conn=Depends(conexion))",
+              "doc": ""
+            },
+            {
+              "nombre": "RespuestaIn",
+              "tipo": "clase",
+              "firma": "RespuestaIn(BaseModel)",
+              "doc": ""
+            },
+            {
+              "nombre": "responder",
+              "tipo": "función",
+              "firma": "responder(id: str, cuerpo: RespuestaIn, conn=Depends(conexion))",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/tierra/test_receptor.py",
+          "lineas": 50,
+          "descripcion": "Un receptor reiniciado conserva acuses y detecta colisiones.",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Receptor",
+              "tipo": "clase",
+              "firma": "Receptor(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
         }
       ]
     },
@@ -1085,6 +1445,12 @@
       "modulo": "apps/web",
       "proposito": "Interfaz a bordo de VIGÍA: registro diario (<90 s), figura humana interactiva por sistema, tendencias con bandas de línea base, entorno de radiación/cabina, alertas con control de privacidad y escalamiento real, cola de informes con retardo, conexión con wearable y funcionamiento sin enlace, con datos reales o en modo demo.",
       "puntos_clave": [
+        "El acceso se verifica por sesión de servidor (`lib/sesion.ts`); el rol de la ruta no concede permisos. La continuidad offline se limita a la pestaña ya desbloqueada y al vencimiento de 8 h; un 401 recibido bloquea la vista. No hay autenticación facial ni credenciales incluidas en el código.",
+        "`HealthStore` usa IndexedDB transaccional, particionado por misión/tripulante/modo. Los registros de localStorage sin propietario se copian a cuarentena sin reasignarlos. Las escrituras fallidas no se dan por guardadas; el perfil local no sustituye la autorización del servidor ni cifra el disco.",
+        "El registro conserva horas por medida y usa `/observaciones` con IDs estables; la confirmación del formulario no inventa la hora de una toma antigua. La política técnica versionada controla agregación temporal y exclusión de referencia personal; los extremos originales quedan visibles para confirmar. Una ausencia de medidas no genera el mensaje verde de calma en Alertas.",
+        "Alertas incluye episodios con acciones/impedimentos/remedición/revisión, bandeja durable, acuses exactos y conflictos de versión. El revisor médico de la misión ve los casos consentidos y puede cerrarlos explícitamente. La resolución conserva el borrador local antes de cargar la versión remota.",
+        "Tendencias incluye diario de sueño/contexto y práctica experimental de reacción de cinco estímulos (interrupción/foco/latencia de fotograma/modalidad), sin comparabilidad clínica ni equivalencia PVT. Los artefactos y las trazas del motor se archivan localmente y se sincronizan; exportación/restauración privada incluye SHA-256 y rechaza colisiones con datos actuales.",
+        "`VIGIA_VERIFICACION=1` compila/inicia `.next-verificacion`, separado del build habitual. El service worker solo activa una carcasa completa y conserva la versión anterior si falla la instalación; no borra cachés ajenas a VIGÍA.",
         "Acerca de muestra los datasets efectivamente publicados mediante `/ciencia/datasets`, con cantidades, fuente, SHA-256 y alcance. Copia offline explícita y errores de servidor sin ocultarlos con caché. MMASH no es FC en reposo validada ni cohorte de deriva; Orion no es dosis personal.",
         "Acerca de consume `/ciencia/evidencia`, sin KPI escritos a mano: detecciones, omitidos, IC, retraso condicionado y exposición por escenario/método. Distingue auditoría vigente, histórica, ausente y copia offline sin verificar. Una respuesta corrupta no se oculta con caché antigua. La capa A se rotula adaptación parcial de NEWS2 y la revisión profesional queda pendiente.",
         "Informes sin API: `lib/bandeja-informes.ts` guarda una instantánea por operación en localStorage, aislada por misión/tripulante/modo. Sobrevive a cierre, reintenta en segundo plano y elimina solo con acuse válido de la API. Un 409 conserva el informe y detiene su reintento; la última cola leída también queda en caché por ámbito. Esto no migra el HealthStore principal a IndexedDB ni añade autenticación.",
@@ -1126,10 +1492,12 @@
       "env": [
         "NEXT_PUBLIC_VIGIA_API_URL",
         "NEXT_PUBLIC_VIGIA_MODO",
+        "NEXT_PUBLIC_VIGIA_MOTOR_SHA256",
         "NEXT_PUBLIC_VIGIA_PUBLICO",
         "NEXT_PUBLIC_VIGIA_TRIPULANTE",
         "NODE_ENV",
-        "VIGIA_API_INTERNA"
+        "VIGIA_API_INTERNA",
+        "VIGIA_VERIFICACION"
       ],
       "archivos": [
         {
@@ -1440,7 +1808,7 @@
         },
         {
           "ruta": "apps/web/components/alerts/alerts-view.tsx",
-          "lineas": 473,
+          "lineas": 479,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1539,8 +1907,36 @@
           ]
         },
         {
+          "ruta": "apps/web/components/alerts/revision-episodios.tsx",
+          "lineas": 46,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "RevisionEpisodios",
+              "tipo": "función",
+              "firma": "RevisionEpisodios",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/components/alerts/seguimiento.tsx",
+          "lineas": 71,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "SeguimientoEpisodios",
+              "tipo": "función",
+              "firma": "SeguimientoEpisodios",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/app-context.tsx",
-          "lineas": 275,
+          "lineas": 328,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1738,7 +2134,7 @@
         },
         {
           "ruta": "apps/web/components/body/body-view.tsx",
-          "lineas": 636,
+          "lineas": 638,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -1810,7 +2206,7 @@
         },
         {
           "ruta": "apps/web/components/checkin/checkin-form.tsx",
-          "lineas": 762,
+          "lineas": 782,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2309,6 +2705,20 @@
           ]
         },
         {
+          "ruta": "apps/web/components/shared/evidencia-mediciones.tsx",
+          "lineas": 21,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "EvidenciaMediciones",
+              "tipo": "función",
+              "firma": "EvidenciaMediciones",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/shared/giro-botones.tsx",
           "lineas": 70,
           "descripcion": "",
@@ -2535,6 +2945,20 @@
           ]
         },
         {
+          "ruta": "apps/web/components/shell/acceso.tsx",
+          "lineas": 26,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "Acceso",
+              "tipo": "función",
+              "firma": "Acceso",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/shell/alert-center.tsx",
           "lineas": 225,
           "descripcion": "",
@@ -2637,6 +3061,20 @@
           ]
         },
         {
+          "ruta": "apps/web/components/trends/modulos-cientificos.tsx",
+          "lineas": 118,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ModulosCientificos",
+              "tipo": "función",
+              "firma": "ModulosCientificos",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/components/trends/resumen.ts",
           "lineas": 44,
           "descripcion": "",
@@ -2664,7 +3102,7 @@
         },
         {
           "ruta": "apps/web/components/trends/trends-view.tsx",
-          "lineas": 274,
+          "lineas": 278,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -2743,6 +3181,95 @@
           ]
         },
         {
+          "ruta": "apps/web/lib/almacen-local.ts",
+          "lineas": 123,
+          "descripcion": "IndexedDB transaccional. Sin fallback silencioso cuando falla la persistencia.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "AmbitoLocal",
+              "tipo": "interfaz",
+              "firma": "AmbitoLocal",
+              "doc": ""
+            },
+            {
+              "nombre": "fijarAmbito",
+              "tipo": "función",
+              "firma": "fijarAmbito",
+              "doc": ""
+            },
+            {
+              "nombre": "claveAmbito",
+              "tipo": "función",
+              "firma": "claveAmbito",
+              "doc": ""
+            },
+            {
+              "nombre": "leerPrivado",
+              "tipo": "función",
+              "firma": "leerPrivado",
+              "doc": ""
+            },
+            {
+              "nombre": "actualizarPrivado",
+              "tipo": "función",
+              "firma": "actualizarPrivado",
+              "doc": ""
+            },
+            {
+              "nombre": "preservarLegado",
+              "tipo": "función",
+              "firma": "preservarLegado",
+              "doc": ""
+            },
+            {
+              "nombre": "exportarPrivado",
+              "tipo": "función",
+              "firma": "exportarPrivado",
+              "doc": ""
+            },
+            {
+              "nombre": "restaurarPrivado",
+              "tipo": "función",
+              "firma": "restaurarPrivado",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/almacen-validar.test.ts",
+          "lineas": 11,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/almacen-validar.ts",
+          "lineas": 30,
+          "descripcion": "Validación de frontera para no interpretar almacenamiento corrupto como salud normal.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "validarRegistros",
+              "tipo": "función",
+              "firma": "validarRegistros",
+              "doc": ""
+            },
+            {
+              "nombre": "validarIds",
+              "tipo": "función",
+              "firma": "validarIds",
+              "doc": ""
+            },
+            {
+              "nombre": "validarClavePrivada",
+              "tipo": "función",
+              "firma": "validarClavePrivada",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/api-registro.test.ts",
           "lineas": 69,
           "descripcion": "",
@@ -2751,8 +3278,8 @@
         },
         {
           "ruta": "apps/web/lib/api-registro.ts",
-          "lineas": 171,
-          "descripcion": "Cliente de registro hacia apps/api (lecturas, síntomas y reportes). Traduce las claves de la interfaz",
+          "lineas": 206,
+          "descripcion": "",
           "test": false,
           "simbolos": [
             {
@@ -2810,6 +3337,12 @@
               "doc": ""
             },
             {
+              "nombre": "observacionesDeCheckIn",
+              "tipo": "función",
+              "firma": "observacionesDeCheckIn",
+              "doc": ""
+            },
+            {
               "nombre": "sintomasDeCheckIn",
               "tipo": "constante",
               "firma": "sintomasDeCheckIn",
@@ -2843,6 +3376,12 @@
               "nombre": "listarReportes",
               "tipo": "función",
               "firma": "listarReportes",
+              "doc": ""
+            },
+            {
+              "nombre": "listarReportesRecibidos",
+              "tipo": "función",
+              "firma": "listarReportesRecibidos",
               "doc": ""
             },
             {
@@ -2949,8 +3488,8 @@
         },
         {
           "ruta": "apps/web/lib/catalogo.ts",
-          "lineas": 241,
-          "descripcion": "Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de",
+          "lineas": 248,
+          "descripcion": "",
           "test": false,
           "simbolos": [
             {
@@ -3117,7 +3656,7 @@
         },
         {
           "ruta": "apps/web/lib/cola.ts",
-          "lineas": 46,
+          "lineas": 48,
           "descripcion": "Estado confirmado por la API del simulador de enlace; sin acuse permanece en el dispositivo.",
           "test": false,
           "simbolos": [
@@ -3210,7 +3749,7 @@
         },
         {
           "ruta": "apps/web/lib/engine.ts",
-          "lineas": 303,
+          "lineas": 313,
           "descripcion": "Análisis de la app: el historial que da la API (GET /tripulantes/{id}/historial, en modo real o demo) más",
           "test": false,
           "simbolos": [
@@ -3272,6 +3811,44 @@
               "nombre": "evaluateCheckIn",
               "tipo": "función",
               "firma": "evaluateCheckIn",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/estudios.ts",
+          "lineas": 30,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ArtefactoCientifico",
+              "tipo": "interfaz",
+              "firma": "ArtefactoCientifico",
+              "doc": ""
+            },
+            {
+              "nombre": "leerEstudios",
+              "tipo": "constante",
+              "firma": "leerEstudios",
+              "doc": ""
+            },
+            {
+              "nombre": "guardarEstudio",
+              "tipo": "constante",
+              "firma": "guardarEstudio",
+              "doc": ""
+            },
+            {
+              "nombre": "sincronizarEstudios",
+              "tipo": "función",
+              "firma": "sincronizarEstudios",
+              "doc": ""
+            },
+            {
+              "nombre": "archivarEvaluacion",
+              "tipo": "función",
+              "firma": "archivarEvaluacion",
               "doc": ""
             }
           ]
@@ -3346,6 +3923,45 @@
               "nombre": "cargarKpiSimulacion",
               "tipo": "función",
               "firma": "cargarKpiSimulacion",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/evidencia-mediciones.test.ts",
+          "lineas": 30,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "apps/web/lib/evidencia-mediciones.ts",
+          "lineas": 57,
+          "descripcion": "Trazabilidad por toma y política técnica explícita, pendiente de revisión profesional.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "CONFIGURACION_EVIDENCIA",
+              "tipo": "constante",
+              "firma": "CONFIGURACION_EVIDENCIA",
+              "doc": ""
+            },
+            {
+              "nombre": "CAMPOS_MEDICION",
+              "tipo": "constante",
+              "firma": "CAMPOS_MEDICION",
+              "doc": ""
+            },
+            {
+              "nombre": "evidenciasDelDia",
+              "tipo": "función",
+              "firma": "evidenciasDelDia",
+              "doc": ""
+            },
+            {
+              "nombre": "aplicarPoliticaTemporal",
+              "tipo": "función",
+              "firma": "aplicarPoliticaTemporal",
               "doc": ""
             }
           ]
@@ -3448,8 +4064,8 @@
         },
         {
           "ruta": "apps/web/lib/reloj.ts",
-          "lineas": 259,
-          "descripcion": "Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con",
+          "lineas": 260,
+          "descripcion": "",
           "test": false,
           "simbolos": [
             {
@@ -3635,6 +4251,26 @@
           ]
         },
         {
+          "ruta": "apps/web/lib/respaldo.ts",
+          "lineas": 12,
+          "descripcion": "",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "crearRespaldo",
+              "tipo": "función",
+              "firma": "crearRespaldo",
+              "doc": ""
+            },
+            {
+              "nombre": "restaurarRespaldo",
+              "tipo": "función",
+              "firma": "restaurarRespaldo",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/roles.test.ts",
           "lineas": 52,
           "descripcion": "",
@@ -3686,15 +4322,103 @@
           ]
         },
         {
+          "ruta": "apps/web/lib/seguimiento.ts",
+          "lineas": 76,
+          "descripcion": "Bitácora offline y bandeja transaccional: cada acuse confirma una operación concreta.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "OperacionSeguimiento",
+              "tipo": "interfaz",
+              "firma": "OperacionSeguimiento",
+              "doc": ""
+            },
+            {
+              "nombre": "leerSeguimiento",
+              "tipo": "constante",
+              "firma": "leerSeguimiento",
+              "doc": ""
+            },
+            {
+              "nombre": "registrarEvento",
+              "tipo": "función",
+              "firma": "registrarEvento",
+              "doc": ""
+            },
+            {
+              "nombre": "sincronizarSeguimiento",
+              "tipo": "función",
+              "firma": "sincronizarSeguimiento",
+              "doc": ""
+            },
+            {
+              "nombre": "resolverConflicto",
+              "tipo": "función",
+              "firma": "resolverConflicto",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "apps/web/lib/sesion.ts",
+          "lineas": 67,
+          "descripcion": "La identidad la verifica el servidor. El perfil local solo permite continuidad offline limitada.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "SesionVerificada",
+              "tipo": "interfaz",
+              "firma": "SesionVerificada",
+              "doc": ""
+            },
+            {
+              "nombre": "sesionActual",
+              "tipo": "constante",
+              "firma": "sesionActual",
+              "doc": ""
+            },
+            {
+              "nombre": "verificarSesion",
+              "tipo": "función",
+              "firma": "verificarSesion",
+              "doc": ""
+            },
+            {
+              "nombre": "acceder",
+              "tipo": "función",
+              "firma": "acceder",
+              "doc": ""
+            },
+            {
+              "nombre": "peticion",
+              "tipo": "función",
+              "firma": "peticion",
+              "doc": ""
+            },
+            {
+              "nombre": "salir",
+              "tipo": "función",
+              "firma": "salir",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "apps/web/lib/sincronizacion.ts",
-          "lineas": 57,
+          "lineas": 63,
           "descripcion": "",
           "test": false,
           "simbolos": [
             {
               "nombre": "TRIPULANTE",
-              "tipo": "constante",
+              "tipo": "variable",
               "firma": "TRIPULANTE",
+              "doc": ""
+            },
+            {
+              "nombre": "fijarTripulante",
+              "tipo": "función",
+              "firma": "fijarTripulante",
               "doc": ""
             },
             {
@@ -3740,7 +4464,7 @@
         },
         {
           "ruta": "apps/web/lib/storage.ts",
-          "lineas": 91,
+          "lineas": 88,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -3769,15 +4493,15 @@
               "doc": ""
             },
             {
-              "nombre": "localStore",
-              "tipo": "constante",
-              "firma": "localStore",
-              "doc": ""
-            },
-            {
               "nombre": "store",
               "tipo": "constante",
               "firma": "store",
+              "doc": ""
+            },
+            {
+              "nombre": "localStore",
+              "tipo": "constante",
+              "firma": "localStore",
               "doc": ""
             },
             {
@@ -3796,7 +4520,7 @@
         },
         {
           "ruta": "apps/web/lib/strings.ts",
-          "lineas": 1007,
+          "lineas": 1008,
           "descripcion": "Textos de la interfaz. Ninguno es literal: todos salen de packages/i18n (`locales/es.json`, subárbol `web`;",
           "test": false,
           "simbolos": [
@@ -3804,6 +4528,12 @@
               "nombre": "textoCiencia",
               "tipo": "constante",
               "firma": "textoCiencia",
+              "doc": ""
+            },
+            {
+              "nombre": "textoSistema",
+              "tipo": "constante",
+              "firma": "textoSistema",
               "doc": ""
             },
             {
@@ -3885,7 +4615,7 @@
         },
         {
           "ruta": "apps/web/lib/types.ts",
-          "lineas": 174,
+          "lineas": 177,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -4033,7 +4763,7 @@
         },
         {
           "ruta": "apps/web/next.config.mjs",
-          "lineas": 22,
+          "lineas": 27,
           "descripcion": "@type {import('next').NextConfig}",
           "test": false,
           "simbolos": []
@@ -4047,7 +4777,7 @@
         },
         {
           "ruta": "apps/web/public/sw.js",
-          "lineas": 76,
+          "lineas": 83,
           "descripcion": "Service worker de VIGÍA: deja la aplicación disponible sin enlace (informe §4.2, \"todo funciona sin enlace\").",
           "test": false,
           "simbolos": []
@@ -4058,6 +4788,9 @@
       "modulo": "packages/engine",
       "proposito": "Motor híbrido de VIGÍA en TypeScript puro: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con mediana y MAD), capa C (CUSUM) y reglas de contexto. No implementa NEWS2 completo ni hereda su validación. Lo usa `apps/web` para recalcular cuerpo, tendencias y alertas con cada registro.",
       "puntos_clave": [
+        "Extensiones explícitas de TypeScript para datos reales: `ventana_clinica_valida` impide agregar tomas separadas, `excluir_personal` evita alimentar B/C con evidencia no comparable y `tomas_clinicas` conserva cada extremo con su valor/hora. Los contratos diarios sin esos campos conservan la paridad histórica del simulador; la separación está documentada en la ejecución del plan.",
+        "La separación de producto TypeScript y simulador Python está fijada en `docs/decisiones/ADR-001-motor-y-simulador.md`; la paridad sobre fixtures completas no se extiende a campos que Python no implementa.",
+        "`episodios.ts` define transiciones puras con control de versión: remedición no cierra, cierre requiere revisión y un caso cerrado solo admite reapertura explícita. `ciencia.ts` resume reacción/sueño sin afirmar diagnóstico ni homogeneidad entre métodos distintos.",
         "`OpcionesMotor.capas` permite ablaciones experimentales en `tools/validacion`; la app omite la opción y conserva las cuatro capas. La acumulación y exclusión propias de C se desactivan sin C; la referencia robusta común se mantiene. No se cambiaron umbrales a partir del banco exploratorio.",
         "`evidencia.ts` es puro: clasifica ausencia, antigüedad, futuro y comparabilidad sin borrar extremos ni inventar confianza porcentual. `esEntornoAplicable` se comparte con el adaptador de la app. La captura completa de tiempos/calidad por observación sigue pendiente; esta política de ingeniería no es una validación clínica.",
         "Es el port 1:1 de `evaluar_tripulante` en `pipelines/reanclaje/simulacion.py`. Si cambias una regla o una constante, cámbiala en los dos lados.",
@@ -4084,8 +4817,41 @@
       "env": [],
       "archivos": [
         {
+          "ruta": "packages/engine/ciencia.test.ts",
+          "lineas": 19,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "packages/engine/ciencia.ts",
+          "lineas": 19,
+          "descripcion": "Resúmenes exploratorios puros; no estiman diagnósticos ni equivalencia instrumental.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "EnsayoReaccion",
+              "tipo": "interfaz",
+              "firma": "EnsayoReaccion",
+              "doc": ""
+            },
+            {
+              "nombre": "resumirReaccion",
+              "tipo": "función",
+              "firma": "resumirReaccion",
+              "doc": ""
+            },
+            {
+              "nombre": "resumirSueno",
+              "tipo": "función",
+              "firma": "resumirSueno",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "packages/engine/engine.ts",
-          "lineas": 294,
+          "lineas": 319,
           "descripcion": "Motor híbrido de VIGÍA: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con MAD),",
           "test": false,
           "simbolos": [
@@ -4273,6 +5039,63 @@
               "nombre": "evaluarTripulante",
               "tipo": "función",
               "firma": "evaluarTripulante",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "packages/engine/episodios.test.ts",
+          "lineas": 21,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "packages/engine/episodios.ts",
+          "lineas": 37,
+          "descripcion": "Seguimiento puro: una nueva medida nunca cierra un episodio por sí sola.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "EstadoEpisodio",
+              "tipo": "tipo",
+              "firma": "EstadoEpisodio",
+              "doc": ""
+            },
+            {
+              "nombre": "TipoEvento",
+              "tipo": "tipo",
+              "firma": "TipoEvento",
+              "doc": ""
+            },
+            {
+              "nombre": "EventoEpisodio",
+              "tipo": "interfaz",
+              "firma": "EventoEpisodio",
+              "doc": ""
+            },
+            {
+              "nombre": "Episodio",
+              "tipo": "interfaz",
+              "firma": "Episodio",
+              "doc": ""
+            },
+            {
+              "nombre": "VERSION_SEGUIMIENTO",
+              "tipo": "constante",
+              "firma": "VERSION_SEGUIMIENTO",
+              "doc": ""
+            },
+            {
+              "nombre": "siguienteEstado",
+              "tipo": "función",
+              "firma": "siguienteEstado",
+              "doc": ""
+            },
+            {
+              "nombre": "aplicarEvento",
+              "tipo": "función",
+              "firma": "aplicarEvento",
               "doc": ""
             }
           ]
@@ -4528,6 +5351,8 @@
       "modulo": "packages/schemas",
       "proposito": "Contratos de datos puros entre `pipelines/` y `apps/`. Define los esquemas JSON Schema (Draft 2020-12) para fichas de indicador, perfiles de misión, lecturas fisiológicas/conductuales, entorno espacial Gold y casos de referencia de la simulación, junto con un validador con biblioteca estándar y el catálogo estático de perfiles (`perfiles.json`).",
       "puntos_clave": [
+        "`observacion.schema.json`, `episodio-evento.schema.json` y `evaluacion.schema.json` versionan tomas, transiciones y trazas reproducibles del cliente. `configuracion-cientifica.json` declara ventanas técnicas y decisiones aplazadas; su revisión profesional sigue pendiente y no es un protocolo clínico autorizado.",
+        "`acciones-seguimiento.json` versiona tareas de registro y solicitud de revisión sin prescribir tratamiento; su revisión profesional permanece pendiente. Cada evento nuevo conserva versión del protocolo y catálogo.",
         "`mmash-gold.schema.json` exige referencia terrestre, fechas UTC de toma desconocidas y ausencia de evaluación/aval clínico. Preserva tiempos relativos y unidades de RR/sueño. El pipeline biométrico valida el producto con este contrato antes de publicarlo.",
         "`evidencia-cientifica.json` registra fuentes, artefactos y límites traducidos de cada afirmación. Su contrato `afirmaciones-v1` mantiene validación clínica falsa, revisión pendiente y lista vacía; publicar dictámenes reales requerirá una revisión explícita del contrato y evidencia del revisor. `test_evidencia.py` comprueba rutas, traducciones y ausencia de avales inventados.",
         "`validador.py` implementa validación JSON Schema con biblioteca estándar (soporte de `$ref` locales entre esquemas de `packages/schemas/`) para que ningún paquete ni pipeline añada dependencias externas.",
@@ -5768,6 +6593,8 @@
       "modulo": "tools/validacion",
       "proposito": "Evaluar el motor TypeScript de producto en un banco sintético de auditoría, con comparadores, ablaciones, intervalos y artefactos congelados antes de calcular resultados.",
       "puntos_clave": [
+        "Enmienda exploratoria v1.2: distingue coincidencia del canal objetivo y alarmas incidentales; usa una máscara común en numerador y exposición, e informa eventos sin ventana observable. Amplía desarrollo con ausencias parciales/informativas, estacionalidad, adaptación prolongada y deriva breve. La carga de alertas no está equiparada y se declara.",
+        "`investigar.ts` congela factores/código y compara referencia adaptativa, estable y doble en 45 celdas de magnitud/duración/variante. Es desarrollo del mismo equipo; no promueve ninguna variante. `reproducir.ts` exige huella exacta del motor y vuelve a calcular una traza de producto; reproducir no equivale a revisión independiente.",
         "Node 22.18+, sin dependencias. `node tools/validacion/ejecutar.ts [--publicar]` genera datos, congelación, reporte JSON y resumen Markdown en `data/`, ignorada. `--publicar` copia el reporte a gold con SHA-256; único escritor.",
         "`protocolo.json` fija semilla, tamaño, escenarios y métricas antes de ejecutar. El generador no importa el simulador Python ni sus supuestos. Se evalúa el motor TS real; no se reajustan umbrales para mejorar resultados.",
         "Banco exploratorio creado por el mismo equipo/asistente: no es conjunto reservado independiente ni validación humana. Los intervalos Wilson y bootstrap pareado por misión son descriptivos, sin corrección de multiplicidad. La ausencia de un criterio clínico acordado impide declarar innovación clínicamente validada.",
@@ -5790,14 +6617,14 @@
       "archivos": [
         {
           "ruta": "tools/validacion/banco.test.ts",
-          "lineas": 43,
+          "lineas": 60,
           "descripcion": "",
           "test": true,
           "simbolos": []
         },
         {
           "ruta": "tools/validacion/banco.ts",
-          "lineas": 96,
+          "lineas": 126,
           "descripcion": "",
           "test": false,
           "simbolos": [
@@ -5808,8 +6635,14 @@
               "doc": ""
             },
             {
-              "nombre": "detectar",
+              "nombre": "detectarSenales",
               "tipo": "función",
+              "firma": "detectarSenales",
+              "doc": ""
+            },
+            {
+              "nombre": "detectar",
+              "tipo": "constante",
               "firma": "detectar",
               "doc": ""
             },
@@ -5836,7 +6669,7 @@
         },
         {
           "ruta": "tools/validacion/generador.ts",
-          "lineas": 69,
+          "lineas": 72,
           "descripcion": "Generador de auditoría separado del simulador de desarrollo. Sus distribuciones son supuestos de prueba.",
           "test": false,
           "simbolos": [
@@ -5862,6 +6695,33 @@
               "nombre": "generarCaso",
               "tipo": "función",
               "firma": "generarCaso",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/validacion/investigar.test.ts",
+          "lineas": 14,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/validacion/investigar.ts",
+          "lineas": 83,
+          "descripcion": "Curvas de desarrollo y dos hipótesis de referencia. Nunca promueve un candidato al producto.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "detectarEstable",
+              "tipo": "función",
+              "firma": "detectarEstable",
+              "doc": ""
+            },
+            {
+              "nombre": "investigar",
+              "tipo": "función",
+              "firma": "investigar",
               "doc": ""
             }
           ]
@@ -5901,6 +6761,27 @@
               "nombre": "diferenciaPareada",
               "tipo": "función",
               "firma": "diferenciaPareada",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/validacion/reproducir.test.ts",
+          "lineas": 14,
+          "descripcion": "",
+          "test": true,
+          "simbolos": []
+        },
+        {
+          "ruta": "tools/validacion/reproducir.ts",
+          "lineas": 19,
+          "descripcion": "Reproduce una traza de producto únicamente cuando coincide el código del motor.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "reproducirTraza",
+              "tipo": "función",
+              "firma": "reproducirTraza",
               "doc": ""
             }
           ]
@@ -6018,6 +6899,9 @@
       "modulo": "tools/verificacion",
       "proposito": "Ejecutar las comprobaciones de ingeniería de una entrega con un único intérprete Python y un Node explícito, conservando resultados y logs locales reproducibles.",
       "puntos_clave": [
+        "`--aislado` selecciona `.next-verificacion` en el verificador y en el ensayo de Chrome. La reapertura del navegador verifica identidad de nuevo antes de simular caída del registro; una pestaña desbloqueada sí continúa durante el corte de API dentro de su vigencia.",
+        "`recuperar.py` usa SQLite backup (incluye WAL), verifica integridad/llaves/filas/hashes y restaura únicamente a un destino nuevo; conserva intactas las operaciones posteriores de la base original. Las copias son privadas y no se suben a Git.",
+        "`ensayo.py --integral` usa cuentas con claves temporales para registro, episodio con una toma realmente posterior, módulos, offline e aislamiento de usuario. `ensayo_transporte.py` verifica ida y vuelta entre dos procesos/bases, con sesiones normales y credenciales generadas en memoria; no toca despliegues personales.",
         "`ensayo.py --datasets` exige MMASH/Orion publicados, comprueba las dos tarjetas y su copia offline, y conserva captura. Sin esa opción los campos de ese ensayo quedan null: no se presentan como aprobados; el resto de comprobaciones sigue siendo obligatorio. Los datasets se adquieren aparte, nunca durante tests unitarios.",
         "La batería incluye `tools/investigacion` y los tests TS de `tools/validacion`: verificar software y contratos no equivale a validar beneficio clínico. El ensayo en navegador usa servicios y base temporales, conserva el reporte científico gold y comprueba su vista sin modificar la API personal.",
         "Solo biblioteca estándar. `verificar.py` descubre las suites Python en los cuatro contenedores y ejecuta las mismas pruebas TS que CI; también lint, contexto y tipado. `--web` añade build de producción.",
@@ -6038,14 +6922,16 @@
         "DATALAKE_DIR",
         "VIGIA_DB",
         "VIGIA_E2E_API",
+        "VIGIA_E2E_CLAVE",
         "VIGIA_E2E_DATASETS",
+        "VIGIA_E2E_INTEGRAL",
         "VIGIA_E2E_PROXY",
         "VIGIA_E2E_WEB"
       ],
       "archivos": [
         {
           "ruta": "tools/verificacion/ensayo.py",
-          "lineas": 81,
+          "lineas": 93,
           "descripcion": "Ensayo de navegador con base temporal: python tools/verificacion/ensayo.py --node RUTA [--chrome RUTA].",
           "test": false,
           "simbolos": [
@@ -6059,6 +6945,34 @@
               "nombre": "main",
               "tipo": "función",
               "firma": "main()",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/verificacion/ensayo_transporte.py",
+          "lineas": 99,
+          "descripcion": "Ensayo de ida/vuelta entre dos procesos y bases temporales, sin credenciales persistentes.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ejecutar",
+              "tipo": "función",
+              "firma": "ejecutar()",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/verificacion/flujo-integral.mjs",
+          "lineas": 95,
+          "descripcion": "Aceptación en Chrome con cuentas y datos de ensayo en una base temporal.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "ensayarIntegral",
+              "tipo": "función",
+              "firma": "ensayarIntegral",
               "doc": ""
             }
           ]
@@ -6091,21 +7005,61 @@
         },
         {
           "ruta": "tools/verificacion/navegador.mjs",
-          "lineas": 213,
+          "lineas": 227,
           "descripcion": "Ensayo de recuperación de informes con Chrome DevTools Protocol, sin dependencias npm.",
           "test": false,
           "simbolos": []
         },
         {
+          "ruta": "tools/verificacion/recuperar.py",
+          "lineas": 53,
+          "descripcion": "Copias SQLite coherentes, con WAL y verificación, sin reemplazar ninguna base existente.",
+          "test": false,
+          "simbolos": [
+            {
+              "nombre": "verificar",
+              "tipo": "función",
+              "firma": "verificar(ruta)",
+              "doc": ""
+            },
+            {
+              "nombre": "respaldar",
+              "tipo": "función",
+              "firma": "respaldar(origen, destino)",
+              "doc": ""
+            },
+            {
+              "nombre": "restaurar_en_copia",
+              "tipo": "función",
+              "firma": "restaurar_en_copia(origen, manifiesto, destino)",
+              "doc": ""
+            }
+          ]
+        },
+        {
+          "ruta": "tools/verificacion/test_recuperar.py",
+          "lineas": 40,
+          "descripcion": "",
+          "test": true,
+          "simbolos": [
+            {
+              "nombre": "Recuperacion",
+              "tipo": "clase",
+              "firma": "Recuperacion(unittest.TestCase)",
+              "doc": ""
+            }
+          ]
+        },
+        {
           "ruta": "tools/verificacion/verificar.py",
-          "lineas": 73,
+          "lineas": 76,
           "descripcion": "Comprobaciones reproducibles: python tools/verificacion/verificar.py [--node RUTA] [--web].",
           "test": false,
           "simbolos": [
             {
               "nombre": "ejecutar",
               "tipo": "función",
-              "firma": "ejecutar(nombre, comando, carpeta, destino)",
+              "firma": "ejecutar(nombre, comando, carpeta, destino, entorno=None)",
               "doc": ""
             },
             {

@@ -18,6 +18,13 @@
       "descripcion": "Importar fisiología pública como referencia; no ejecuta validación clínica.",
       "desde": "Carpeta con originales MMASH.zip, LICENSE.txt y SHA256SUMS.txt.",
       "error": "No se pudo importar la referencia fisiológica: {detalle}"
+    },
+    "cuentas": {
+      "descripcion": "Crear una cuenta local de VIGÍA.",
+      "clave": "Contraseña (12 caracteres como mínimo): ",
+      "repetir": "Repite la contraseña: ",
+      "diferentes": "Las contraseñas no coinciden.",
+      "creada": "Cuenta creada."
     }
   },
   "api": {
@@ -31,7 +38,9 @@
       "reloj_sin_conexion": "el servidor del reloj no está conectado (revisa SMART_URL y que smart-monitor esté encendido)",
       "reloj_sin_tripulante": "el servidor del reloj no conoce a este tripulante (revisa SMART_TRIPULANTES o el nombre en el reloj)",
       "reloj_nombre_por_defecto": "«{nombre}» es el nombre de fábrica del reloj: cambia el campo Tripulante en el reloj antes de vincularlo.",
-      "reloj_nombre_ocupado": "El nombre «{nombre}» ya está vinculado a otro tripulante."
+      "reloj_nombre_ocupado": "El nombre «{nombre}» ya está vinculado a otro tripulante.",
+      "sesion_requerida": "Inicia sesión con una cuenta autorizada.",
+      "acceso_limitado": "Se alcanzó el límite de intentos. Espera 15 minutos."
     },
     "autor": {
       "cirujano": "Cirujano de Vuelo"
@@ -1128,7 +1137,12 @@
         "sensor_fijo": "Sensor fijo",
         "extremo": "Extremo puntual",
         "entorno_referencia": "Entorno de referencia",
-        "entorno_escenario": "Entorno del escenario"
+        "entorno_escenario": "Entorno del escenario",
+        "ausencias_parciales": "Ausencias parciales",
+        "ausencias_informativas": "Ausencias informativas",
+        "estacionalidad": "Estacionalidad semanal",
+        "adaptacion_prolongada": "Adaptacion prolongada",
+        "deriva_breve": "Deriva breve"
       },
       "metodos": {
         "umbrales": "Umbrales simples",
@@ -1160,6 +1174,88 @@
       "datasets_hash": "SHA-256",
       "datasets_limite_mmash": "24 horas por participante. Fechas de toma UTC desconocidas: se conservan días y horas relativos. La frecuencia derivada de intervalos no se etiqueta FC en reposo. Este conjunto no demuestra detección de derivas de semanas. Originales y licencia ODbL-1.0 conservados.",
       "datasets_limite_orion": "Una ventana histórica de Artemis I. Dosis absorbida ambiental por instrumento; no es dosis personal ni se convierte a mSv. Ubicación/material específicos requieren la documentación del detector."
+    },
+    "sistema": {
+      "acceso": {
+        "titulo": "Acceso a VIGÍA",
+        "detalle": "Usa la cuenta asignada a tu misión. El acceso local continúa en esta pestaña hasta que vence la sesión.",
+        "usuario": "Usuario",
+        "clave": "Contraseña",
+        "entrar": "Entrar",
+        "error": "No se pudo iniciar sesión. Comprueba las credenciales y la conexión.",
+        "rol": "Esta cuenta no tiene acceso a ese rol.",
+        "local": "Acceso local temporal; revocación pendiente de verificar con la API.",
+        "verificada": "Sesión verificada",
+        "salir": "Cerrar sesión",
+        "salida_error": "No se confirmó el cierre de sesión. Recupera la conexión para revocarla.",
+        "consentimientos": "Permisos de lectura clínica",
+        "alcance_clinico": "El personal médico de tu misión podrá leer el historial, las observaciones y los episodios. Revocar bloquea accesos nuevos cuando hay conexión; las copias autorizadas sin red requieren reconexión.",
+        "conceder": "Conceder lectura clínica",
+        "revocar": "Revocar lectura clínica",
+        "almacen_error": "No se puede leer el almacenamiento local. Los registros se conservan; exporta una copia y revisa la recuperacion antes de continuar."
+      },
+      "evidencia": {
+        "titulo": "Calidad de las mediciones",
+        "detalle": "Ventana técnica de 5 minutos, pendiente de revisión profesional. Los valores sin hora propia no se tratan como una toma simultánea.",
+        "sin_datos": "No hay evidencia suficiente para evaluar el estado.",
+        "antiguo": "Confirma la hora y repite la medida si corresponde al protocolo.",
+        "incompleta": "Faltan medidas o condiciones comparables; la ausencia de alertas no acredita normalidad.",
+        "utilizable": "Hora disponible; comparabilidad por confirmar.",
+        "extremo": "Se conserva un extremo previo para revisión aunque una medida posterior sea normal.",
+        "hora_toma": "Hora de esta medición",
+        "hora_detalle": "Al confirmar declaras que acabas de medir. Si fue antes, indica cuándo; si no conoces la hora, consérvala como desconocida.",
+        "hora_desconocida": "No conozco la hora",
+        "diastolica": "Presión arterial diastólica"
+      },
+      "seguimiento": {
+        "titulo": "Seguimiento de episodios",
+        "detalle": "Registra lo realizado y la nueva medición. Un valor normal no cierra un caso automáticamente.",
+        "abrir": "Abrir seguimiento",
+        "motivo": "Motivo o nota",
+        "accion": "Registrar acción",
+        "impedimento": "Registrar impedimento",
+        "remedir": "Enlazar nueva medición",
+        "revision": "Solicitar revisión",
+        "cerrar": "Cerrar tras revisión",
+        "reabrir": "Reabrir",
+        "vacio": "No hay episodios registrados.",
+        "pendiente": "Pendiente de sincronizar",
+        "sincronizado": "Guardado en el servidor",
+        "conflicto": "Conflicto: conserva la operación y revisa la versión del servidor.",
+        "error": "No se pudo guardar. El dato no se ha dado por recibido.",
+        "abierto": "Abierto",
+        "en_seguimiento": "En seguimiento",
+        "en_revision": "En revisión",
+        "cerrado": "Cerrado",
+        "observacion": "ID de la nueva observación",
+        "historia": "Historial de acciones",
+        "registrado": "Registrado",
+        "comparacion": "Medidas enlazadas para revisión",
+        "resolver": "Cargar versión del servidor y conservar borrador local",
+        "personal": "Seguimiento personal",
+        "tomar": "Registrar nueva medición"
+      },
+      "ciencia": {
+        "titulo": "Módulos de investigación",
+        "detalle": "Resultados exploratorios. No diagnostican fatiga ni heredan validación clínica.",
+        "sueno": "Sueño y recuperación",
+        "metodo": "Método",
+        "diario": "Diario informado",
+        "estimado": "Estimación de dispositivo",
+        "turno": "Rutina o turno",
+        "carga": "Carga de trabajo (0–10)",
+        "guardar": "Guardar contexto",
+        "reaccion": "Tarea experimental de reacción",
+        "iniciar": "Iniciar práctica",
+        "esperar": "Espera la señal",
+        "responder": "Toca ahora",
+        "interrumpida": "Sesión no comparable: hubo una interrupción o una respuesta anticipada.",
+        "resultado": "Ensayos válidos",
+        "practica": "Práctica de 5 estímulos; mide latencia de interacción del dispositivo. No es una prueba PVT validada.",
+        "exportar": "Exportar respaldo privado",
+        "respaldo": "El archivo contiene datos personales. Consérvalo en almacenamiento privado.",
+        "restaurar": "Restaurar respaldo del mismo usuario y misión"
+      }
     }
   }
 }

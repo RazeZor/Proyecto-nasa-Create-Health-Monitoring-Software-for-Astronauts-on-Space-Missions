@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Observación trazable v1",
+  "type": "object",
+  "required": ["id", "operacion_id", "indicador", "valor", "unidad", "t_real", "precision_tiempo", "origen", "uso", "comparable", "configuracion_version"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "operacion_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "indicador": {"type": "string", "minLength": 1},
+    "valor": {"type": "number"},
+    "unidad": {"type": "string", "minLength": 1},
+    "t_real": {"type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "precision_tiempo": {"enum": ["segundo", "declarada", "desconocida"]},
+    "origen": {"enum": ["manual", "sensor", "importado"]},
+    "uso": {"enum": ["operativo", "referencia", "escenario"]},
+    "comparable": {"type": "boolean"},
+    "configuracion_version": {"type": "string", "minLength": 1},
+    "metodo": {"type": ["string", "null"]}, "sitio": {"type": ["string", "null"]},
+    "instrumento": {"type": ["string", "null"]}, "corrige_id": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

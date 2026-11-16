@@ -1,4 +1,6 @@
 "use client"
+import { EvidenciaMediciones } from "@/components/shared/evidencia-mediciones"
+import { ModulosCientificos } from "@/components/trends/modulos-cientificos"
 
 import { useMemo, useState } from "react"
 import { useApp } from "@/components/app-context"
@@ -93,6 +95,7 @@ export function TrendsView() {
           <p>{S.trends.bandHelp}</p>
         </Ayuda>
       </header>
+      <EvidenciaMediciones />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(250px,300px)_minmax(0,1fr)] lg:items-start">
         {/* Selector: una tarjeta por indicador, con su icono, su valor vigente y su estado */}
@@ -269,6 +272,7 @@ export function TrendsView() {
       </div>
 
       <IndicatorCard info={info} />
+      <ModulosCientificos />
     </div>
   )
 }

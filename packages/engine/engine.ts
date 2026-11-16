@@ -50,6 +50,12 @@ const SENTIDO_C: Partial<Record<IndicadorB, number>> = { fc: 1, sueno: -1, animo
 
 /** Lectura de un día. Un valor `null` es una medida que ese día no se tomó: no puntúa ni alerta. */
 export interface Lectura {
+  /** false impide sumar tomas de horas distintas; los extremos individuales se conservan. */
+  ventana_clinica_valida?: boolean
+  /** Evidencia no comparable: no actualiza ni evalúa la referencia personal. */
+  excluir_personal?: string[]
+  fuentes_por_campo?: Record<string, string>
+  tomas_clinicas?: { id: string; t_real: string | null; indicador: string; valor: number; confirmacion: boolean }[]
   dia_mision: number
   fc_reposo_lpm: number | null
   pas_mmHg: number | null
@@ -79,6 +85,7 @@ export interface OpcionesMotor {
   capas?: readonly Capa[]
 }
 export interface Alerta {
+  observacion?: { id: string; t_real: string | null; indicador: string; valor: number }
   dia_mision: number
   tripulante_id: string
   capa: Capa
@@ -197,7 +204,7 @@ export function analizarTripulante(
   const consecB = {} as Record<IndicadorB, number>
   const referencias = {} as Record<IndicadorB, Referencia[]>
   for (const [ind, campo] of INDICADORES_B) {
-    const valores = prevuelo.map((r) => r[campo]).filter((v): v is number => v != null)
+    const valores = prevuelo.filter((r) => !r.excluir_personal?.includes(ind)).map((r) => r[campo]).filter((v): v is number => v != null)
     tierra[ind] = valores.length > 0 ? medianaMad(valores) : null
     historia[ind] = []
     excluidos[ind] = new Set()
@@ -215,7 +222,7 @@ export function analizarTripulante(
   const activas = new Set<Capa>(opciones.capas ?? ["A", "B", "C", "contexto"])
   const nueva = (
     d: number, capa: Capa, nivel: Alerta["nivel"], indicador: string, valor: number | null,
-    extra: Partial<Pick<Alerta, "escalada_auto" | "ambito" | "informativa">> = {},
+    extra: Partial<Pick<Alerta, "escalada_auto" | "ambito" | "informativa" | "observacion">> = {},
   ) => activas.has(capa) && alertas.push({
     dia_mision: d, tripulante_id: tripulante.id, capa, nivel, indicador, valor,
     escalada_auto: false, ambito: "personal", informativa: false, ...extra,
@@ -228,9 +235,26 @@ export function analizarTripulante(
     const tormenta = Boolean(env.modo_tormenta) || (flujo !== null && flujo >= PROTONES_TORMENTA_PFU)
 
     // Capa A: adaptación parcial con agregación propia, pendiente de revisión profesional.
-    const { pts, maxIndividual } = puntosNews2(r.fc_reposo_lpm, r.pas_mmHg, r.spo2_pct, r.temp_central_c)
-    if (pts >= 5 || maxIndividual === 3) nueva(d, "A", "rojo", "news2", pts, { escalada_auto: true })
-    else if (pts >= 3) nueva(d, "A", "ambar", "news2", pts)
+    const parcial = puntosNews2(r.fc_reposo_lpm, r.pas_mmHg, r.spo2_pct, r.temp_central_c)
+    const { maxIndividual } = parcial
+    const pts = r.ventana_clinica_valida === false ? maxIndividual : parcial.pts
+    if (r.tomas_clinicas === undefined) {
+      if (pts >= 5 || maxIndividual === 3) nueva(d, "A", "rojo", "news2", pts, { escalada_auto: true })
+      else if (pts >= 3) nueva(d, "A", "ambar", "news2", pts)
+    } else if (r.ventana_clinica_valida && maxIndividual < 3 && pts >= 3) {
+      const confirmar = r.tomas_clinicas.some((t) => t.confirmacion)
+      nueva(d, "A", pts >= 5 ? "rojo" : "ambar", "news2", pts, { informativa: confirmar, escalada_auto: pts >= 5 && !confirmar })
+    }
+    // Cada extremo conserva su valor/hora aunque después haya una toma normal.
+    const indices: Record<string, number> = { frecuencia_cardiaca_reposo: 0, presion_arterial_sistolica: 1, spo2: 2, temperatura_central: 3 }
+    for (const toma of r.tomas_clinicas ?? []) {
+      if (!(toma.indicador in indices)) continue
+      const valores: [number | null, number | null, number | null, number | null] = [null, null, null, null]
+      valores[indices[toma.indicador]] = toma.valor
+      if (puntosNews2(...valores).maxIndividual === 3) nueva(d, "A", "rojo", "news2", 3, {
+        observacion: toma, informativa: toma.confirmacion, escalada_auto: !toma.confirmacion,
+      })
+    }
 
     for (const ind of cambios.get(d) ?? []) {
       tierra[ind] = null
@@ -242,6 +266,7 @@ export function analizarTripulante(
     // Capas B y C: desviación y deriva contra la referencia vigente
     const adaptacion = d <= DIA_FIN_ADAPTACION
     for (const [ind, campo, umbral] of INDICADORES_B) {
+      if (r.excluir_personal?.includes(ind)) { consecB[ind] = 0; if (ind in cusum) cusum[ind] = 0; continue }
       const valor = r[campo] ?? null
       if (valor === null) {
         if (!SEMANALES.has(ind)) consecB[ind] = 0 // un día sin medida rompe los "dos días seguidos"

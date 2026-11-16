@@ -1,6 +1,12 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import { Acceso } from "@/components/shell/acceso"
+import { fijarAmbito, preservarLegado } from "@/lib/almacen-local"
+import { sesionActual, verificarSesion, salir, type SesionVerificada } from "@/lib/sesion"
+import { sincronizarSeguimiento } from "@/lib/seguimiento"
+import { archivarEvaluacion, sincronizarEstudios } from "@/lib/estudios"
+import { nuevoId } from "@/lib/utils"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { cargarCatalogo, type Catalogo, type Historial } from "@/lib/catalogo"
 import { type Analisis, analizar } from "@/lib/engine"
@@ -9,8 +15,8 @@ import { bandejaInformes, sincronizarBandeja } from "@/lib/bandeja-informes"
 import { enviarOrdenReloj, INTERVALO_SONDEO_MS, leerReloj, type OrdenReloj, type RespuestaReloj, siguienteEstado } from "@/lib/reloj"
 import { rolDeRuta } from "@/lib/roles"
 import { leerModo, store, usarModo } from "@/lib/storage"
-import { sincronizarAlertasRojas, sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
-import { S } from "@/lib/strings"
+import { fijarTripulante, sincronizarAlertasRojas, sincronizarRegistros, TRIPULANTE } from "@/lib/sincronizacion"
+import { S, textoSistema } from "@/lib/strings"
 import type { CheckInEntry, DeviceState, MissionProfile, Mode, Role } from "@/lib/types"
 
 interface AppState {
@@ -54,18 +60,49 @@ export type Sex = "female" | "male"
 const Ctx = createContext<AppState | null>(null)
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const ruta = usePathname()
+  const [identidad, setIdentidad] = useState<SesionVerificada | null | undefined>(undefined)
+  const [falloSalida, setFalloSalida] = useState(false)
+  const aceptarIdentidad = useCallback((s: SesionVerificada | null) => {
+    fijarTripulante(s?.tripulante_id ?? null)
+    fijarAmbito(null)
+    setIdentidad(s)
+  }, [])
   const [catalogo, setCatalogo] = useState<Catalogo | null | "error">(null)
+  const [falloInicialAlmacen, setFalloInicialAlmacen] = useState(false)
   const [mode, setModeRaw] = useState<Mode | null>(null) // null hasta leer la preferencia en el navegador
   const cargar = useCallback((m: Mode, silencioso = false) => {
-    if (!silencioso) setCatalogo(null)
+    if (!silencioso) { setCatalogo(null); setFalloInicialAlmacen(false) }
     usarModo(m)
-    cargarCatalogo(TRIPULANTE ?? 1, m).then((c) => setCatalogo((previo) => c ?? (silencioso && previo ? previo : "error")))
+    cargarCatalogo(TRIPULANTE ?? 1, m).then(async (c) => {
+      const s = sesionActual()
+      if (c && s) {
+        fijarAmbito({ tripulante: s.tripulante_id, mision: c.historial.mision_id ?? s.mision_id, modo: m })
+        try { await preservarLegado() }
+        catch { setFalloInicialAlmacen(true); setCatalogo("error"); return }
+      }
+      setCatalogo((previo) => c ?? (silencioso && previo ? previo : "error"))
+    }).catch(() => setCatalogo("error"))
   }, [])
   useEffect(() => {
+    void verificarSesion().then(aceptarIdentidad)
+    const revocada = () => aceptarIdentidad(null)
+    window.addEventListener("vigia:sesion-revocada", revocada)
+    return () => window.removeEventListener("vigia:sesion-revocada", revocada)
+  }, [aceptarIdentidad])
+  useEffect(() => {
+    if (!identidad) return
+    const reloj = window.setInterval(() => {
+      if (Date.parse(identidad.vence_t_real) <= Date.now()) aceptarIdentidad(null)
+    }, 30000)
+    return () => clearInterval(reloj)
+  }, [identidad, aceptarIdentidad])
+  useEffect(() => {
+    if (!identidad) return
     const m = leerModo()
     setModeRaw(m)
     cargar(m)
-  }, [cargar])
+  }, [cargar, identidad])
   const setMode = useCallback((m: Mode) => {
     usarModo(m, true)
     setModeRaw(m)
@@ -73,14 +110,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [cargar])
   // al volver el enlace se recarga el catálogo sin tapar la pantalla
   useEffect(() => {
-    if (!mode) return
+    if (!mode || !identidad) return
     const alVolver = () => cargar(mode, true)
     window.addEventListener("online", alVolver)
     return () => window.removeEventListener("online", alVolver)
-  }, [mode, cargar])
+  }, [mode, cargar, identidad])
+  if (identidad === undefined) return <Estado mensaje="" />
+  if (identidad === null) return <Acceso alAcceder={aceptarIdentidad} />
+  const rolPedido = rolDeRuta(ruta)
+  if (!identidad.ensayo && rolPedido && rolPedido !== identidad.rol) return <Estado mensaje={textoSistema("acceso.rol")} reintentar={() => window.location.assign(`/${identidad.rol === "astronaut" ? "astronauta" : identidad.rol === "cmo" ? "oficial" : "medico"}`)} />
   if (catalogo === null || mode === null) return <Estado mensaje="" />
-  if (catalogo === "error") return <Estado mensaje={S.common.apiOffline} detalle={S.common.apiOfflineDetail} reintentar={() => cargar(mode)} />
-  return <Sesion key={mode} catalogo={catalogo} mode={mode} setMode={setMode} recargar={() => cargar(mode, true)}>{children}</Sesion>
+  if (catalogo === "error") return <Estado mensaje={falloInicialAlmacen ? textoSistema("acceso.almacen_error") : S.common.apiOffline} detalle={falloInicialAlmacen ? undefined : S.common.apiOfflineDetail} reintentar={() => cargar(mode)} />
+  return <><div className="flex items-center justify-end gap-3 border-b px-4 py-1 text-sm">
+    <span>{identidad.sinEnlace ? textoSistema("acceso.local") : textoSistema("acceso.verificada")}</span>
+    {!identidad.ensayo && <button className="min-h-11 underline" onClick={() => { void salir().then((ok) => setFalloSalida(!ok)).catch(() => setFalloSalida(true)) }}>{textoSistema("acceso.salir")}</button>}
+    {falloSalida && <span role="alert">{textoSistema("acceso.salida_error")}</span>}
+  </div><Sesion key={`${identidad.tripulante_id}:${mode}`} catalogo={catalogo} mode={mode} setMode={setMode} recargar={() => cargar(mode, true)}>{children}</Sesion></>
 }
 
 function Estado({ mensaje, detalle, reintentar }: { mensaje: string; detalle?: string; reintentar?: () => void }) {
@@ -136,10 +181,14 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   const [sex, setSex] = useState<Sex>("female")
   const [voice, setVoice] = useState(false)
   const [checkIns, setCheckIns] = useState<CheckInEntry[]>([])
+  const [falloAlmacen, setFalloAlmacen] = useState(false)
   const [pending, setPending] = useState(0)
   const [escalations, setEscalations] = useState<Record<string, number | null>>({})
   const [navegadorEnLinea, setNavegadorEnLinea] = useState(true)
-  const recargarRegistros = useCallback(async () => setCheckIns(await store.listCheckIns()), [])
+  const recargarRegistros = useCallback(async () => {
+    try { setCheckIns(await store.listCheckIns()); setFalloAlmacen(false) }
+    catch { setFalloAlmacen(true) }
+  }, [])
   // un solo viaje: el tránsito a Marte (ya no se elige el perfil de misión)
   const profile = catalogo.perfiles.find((p) => p.id === "transit") ?? catalogo.perfiles[1]
   const analisis = useMemo(() => analizar(checkIns, catalogo.historial, profile.cabinPressureMmHg), [checkIns, catalogo, profile.cabinPressureMmHg])
@@ -165,19 +214,23 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   // Cola local -> API: registros del día y rojos de capa A (§5.4). Sin enlace quedan pendientes y se reintenta.
   const sincronizarTodo = useCallback(async () => {
     await sincronizarRegistros()
+    if (mode === "real" && TRIPULANTE) {
+      if (checkIns.length > 0) await archivarEvaluacion(analisis.traza(), nuevoId)
+      await Promise.allSettled([sincronizarSeguimiento(TRIPULANTE), sincronizarEstudios(TRIPULANTE)])
+    }
     await sincronizarAlertasRojas(analisis.alerts(analisis.missionDays))
     const [todos, subidos] = await Promise.all([store.listCheckIns(), store.listSyncedCheckInIds()])
     setPending(mode === "real" ? todos.filter((c) => !subidos.includes(c.id)).length : 0)
     setEscalations(await store.listEscalations())
-  }, [analisis, mode])
+  }, [analisis, mode, checkIns.length])
   useEffect(() => {
-    void sincronizarTodo()
+    void sincronizarTodo().catch(() => undefined)
   }, [sincronizarTodo])
   useEffect(() => {
     setNavegadorEnLinea(navigator.onLine)
     const conectar = () => {
       setNavegadorEnLinea(true)
-      void sincronizarTodo()
+      void sincronizarTodo().catch(() => undefined)
     }
     const cortar = () => setNavegadorEnLinea(false)
     window.addEventListener("online", conectar)
@@ -185,7 +238,7 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
     // sin evento del navegador (la API cayó pero hay red): reintenta cada 30 s mientras haya algo pendiente o no haya enlace
     const id = window.setInterval(() => {
       if (catalogo.sinEnlace) recargar()
-      else if (pending > 0) void sincronizarTodo()
+      else if (pending > 0) void sincronizarTodo().catch(() => undefined)
     }, 30000)
     return () => {
       window.removeEventListener("online", conectar)
@@ -199,7 +252,7 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
   const toggleTheme = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), [])
 
   useEffect(() => {
-    void recargarRegistros()
+    void recargarRegistros().catch(() => undefined)
   }, [recargarRegistros])
 
   useEffect(() => {
@@ -251,7 +304,7 @@ function Sesion({ catalogo, mode, setMode, recargar, children }: { catalogo: Cat
     () => ({ day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, setSimulator, liveHr: hrEnVivo, reloj, ordenReloj, sex, setSex, voice, setVoice, checkIns, analisis, recargarRegistros, catalogo, mode, setMode, online, pending, escalations }),
     [mode, setMode, online, pending, escalations, day, setDay, profile, role, theme, toggleTheme, device, setDevice, simulator, hrEnVivo, reloj, ordenReloj, sex, voice, checkIns, analisis, recargarRegistros, catalogo],
   )
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={value}>{falloAlmacen && <p role="alert" className="m-4 rounded-xl border border-status-act p-4">{textoSistema("acceso.almacen_error")}</p>}{children}</Ctx.Provider>
 }
 
 /**

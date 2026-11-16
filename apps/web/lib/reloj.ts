@@ -1,3 +1,4 @@
+import { peticion } from "./sesion.ts"
 /**
  * Reloj en vivo (Galaxy Watch4) a través de apps/api: la app no habla con el servidor del reloj, solo con
  * la API (`GET /tripulantes/{id}/reloj` y `POST .../reloj/ordenes`, ver apps/api/puente_reloj.py).
@@ -183,7 +184,7 @@ const cabeceras = (tripulante: number) => ({ "X-Tripulante": String(tripulante) 
 /** null si la API no responde (sin red): quien llama lo trata como "sin datos", no como error fatal. */
 export async function leerReloj(tripulante: number): Promise<RespuestaReloj | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reloj`, { headers: cabeceras(tripulante), cache: "no-store" })
+    const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/reloj`, { headers: cabeceras(tripulante), cache: "no-store" })
     return res.ok ? ((await res.json()) as RespuestaReloj) : null
   } catch {
     return null
@@ -192,7 +193,7 @@ export async function leerReloj(tripulante: number): Promise<RespuestaReloj | nu
 
 export async function enviarOrdenReloj(tripulante: number, tipo: OrdenReloj): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reloj/ordenes`, {
+    const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/reloj/ordenes`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...cabeceras(tripulante) },
       body: JSON.stringify({ tipo }),
@@ -205,7 +206,7 @@ export async function enviarOrdenReloj(tripulante: number, tipo: OrdenReloj): Pr
 
 async function pedirJson<T>(ruta: string, init?: RequestInit): Promise<T | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}${ruta}`, { cache: "no-store", ...init })
+    const res = await peticion(`${API_BASE_URL}${ruta}`, { cache: "no-store", ...init })
     return res.ok ? ((await res.json()) as T) : null
   } catch {
     return null
@@ -220,7 +221,7 @@ export const leerConfigReloj = () => pedirJson<ConfigReloj>("/reloj/config")
 /** «Este es mi reloj»: asocia el nombre configurado en el reloj con el tripulante. Devuelve el motivo si la API lo rechaza. */
 export async function vincularReloj(tripulante: number, nombre: string): Promise<{ ok: true } | { ok: false; motivo: string }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reloj/vinculo`, {
+    const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/reloj/vinculo`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...cabeceras(tripulante) },
       body: JSON.stringify({ nombre }),
@@ -246,7 +247,7 @@ export async function cambiarTolerancia(actor: number, tolerancia: Tolerancia): 
 export async function descargarCsvReloj(tripulante: number, desde?: string): Promise<boolean> {
   try {
     const q = desde ? `?desde=${encodeURIComponent(desde)}` : ""
-    const res = await fetch(`${API_BASE_URL}/tripulantes/${tripulante}/reloj/export.csv${q}`, { headers: cabeceras(tripulante) })
+    const res = await peticion(`${API_BASE_URL}/tripulantes/${tripulante}/reloj/export.csv${q}`, { headers: cabeceras(tripulante) })
     if (!res.ok) return false
     const url = URL.createObjectURL(await res.blob())
     const a = Object.assign(document.createElement("a"), { href: url, download: `reloj-${tripulante}.csv` })

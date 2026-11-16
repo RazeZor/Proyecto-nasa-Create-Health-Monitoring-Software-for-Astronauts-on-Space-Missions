@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
+import { createHash } from "node:crypto"
+import { readFileSync } from "node:fs"
+
 const nextConfig = {
+  env: { NEXT_PUBLIC_VIGIA_MOTOR_SHA256: createHash("sha256").update(readFileSync(new URL("../../packages/engine/engine.ts", import.meta.url))).digest("hex") },
+  distDir: process.env.VIGIA_VERIFICACION === "1" ? ".next-verificacion" : ".next",
   experimental: {
     externalDir: true, // importa packages/engine sin copiarlo
   },

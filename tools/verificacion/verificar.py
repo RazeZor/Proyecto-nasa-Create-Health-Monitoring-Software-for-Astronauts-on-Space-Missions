@@ -1,6 +1,7 @@
 """Comprobaciones reproducibles: python tools/verificacion/verificar.py [--node RUTA] [--web]."""
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -12,10 +13,10 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[2]
 
 
-def ejecutar(nombre, comando, carpeta, destino):
+def ejecutar(nombre, comando, carpeta, destino, entorno=None):
     inicio = time.monotonic()
     try:
-        proceso = subprocess.run(comando, cwd=carpeta, capture_output=True, encoding="utf-8", errors="replace")
+        proceso = subprocess.run(comando, cwd=carpeta, capture_output=True, encoding="utf-8", errors="replace", env=entorno)
         salida, codigo = proceso.stdout + proceso.stderr, proceso.returncode
     except OSError as error:
         salida, codigo = str(error), 127
@@ -33,6 +34,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--node", default=shutil.which("node"))
     parser.add_argument("--web", action="store_true", help="incluir build de producción")
+    parser.add_argument("--aislado", action="store_true", help="compilar en .next-verificacion sin reemplazar el build en uso")
     args = parser.parse_args(argv)
     if not args.node:
         parser.error("se requiere Node 22.18 o posterior")
@@ -58,7 +60,8 @@ def main(argv=None):
     pasos.append(("typescript-tipos", [node, "node_modules/typescript/bin/tsc", "--noEmit", "--incremental", "false"], web))
     if args.web:
         pasos.append(("web-build", [node, "node_modules/next/dist/bin/next", "build", "--webpack"], web))
-    resultados = [ejecutar(nombre, comando, carpeta, destino) for nombre, comando, carpeta in pasos]
+    entorno = {**os.environ, **({"VIGIA_VERIFICACION": "1"} if args.aislado else {})}
+    resultados = [ejecutar(nombre, comando, carpeta, destino, entorno) for nombre, comando, carpeta in pasos]
     informe = {"t_real": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=RAIZ, text=True).strip(),
                "arbol_con_cambios": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=RAIZ)),

@@ -1,0 +1,11 @@
+{
+  "version": "acciones-seguimiento-v1",
+  "revision_profesional": "pendiente",
+  "uso": "registro_investigacion",
+  "acciones": [
+    {"id": "accion", "titulo_clave": "web.sistema.seguimiento.accion", "alcance": "autoinforme_de_lo_realizado"},
+    {"id": "impedimento", "titulo_clave": "web.sistema.seguimiento.impedimento", "alcance": "autoinforme_de_impedimento"},
+    {"id": "remedicion", "titulo_clave": "web.sistema.seguimiento.remedir", "alcance": "enlazar_toma_posterior_sin_prescribir"},
+    {"id": "solicitar_revision", "titulo_clave": "web.sistema.seguimiento.revision", "alcance": "solicitar_revision_humana"}
+  ]
+}

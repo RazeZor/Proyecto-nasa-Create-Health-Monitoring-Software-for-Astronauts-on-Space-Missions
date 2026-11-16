@@ -6,6 +6,9 @@ import {
   type Icono, IconoCalma, IconoCandado, IconoCompartida, IconoEscalada, IconoInfo, IconoMatraz, IconoReloj, IconoTripulacion, IconoVisto,
 } from "@/components/alerts/iconos"
 import { useApp } from "@/components/app-context"
+import { SeguimientoEpisodios } from "@/components/alerts/seguimiento"
+import { EvidenciaMediciones } from "@/components/shared/evidencia-mediciones"
+import { RevisionEpisodios } from "@/components/alerts/revision-episodios"
 import { EmptyState, PageHeader } from "@/components/shared/states"
 import { LayerChip, STATUS_ICON, StatusBadge, statusSurface, statusText } from "@/components/shared/status"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -414,6 +417,9 @@ export function AlertsView() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader title={S.alerts.title} ayuda={<p>{astronauta ? S.alerts.subtitle : S.alerts.cmoNote}</p>} />
+      {astronauta && <SeguimientoEpisodios />}
+      {astronauta && <EvidenciaMediciones />}
+      {!astronauta && mode === "real" && <RevisionEpisodios />}
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
         <div className="flex min-w-0 flex-col gap-8">
           {!astronauta && mode === "real" && (
@@ -433,7 +439,7 @@ export function AlertsView() {
                 {hoy.map((a) => <TarjetaHoy key={a.id} {...props(a)} />)}
               </ul>
             </section>
-          ) : astronauta ? (
+          ) : astronauta && (mode === "demo" || analisis.vitals(day).some((v) => v.day === day && [v.restingHr, v.systolic, v.spo2, v.tempC, v.sleepH, v.mood].some((x) => x !== null))) ? (
             <section role="status" className={cn("flex flex-wrap items-center gap-5 rounded-3xl border p-6 md:p-8", statusSurface.ok)}>
               <span className="flex size-20 shrink-0 items-center justify-center rounded-full bg-card text-status-ok shadow-sm">
                 <IconoCalma className="size-12" />

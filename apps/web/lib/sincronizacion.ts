@@ -4,10 +4,12 @@ import { sincronizar } from "./sincronizar"
 import { modoActual, store } from "./storage"
 import { MOTOR } from "./strings"
 import type { Alert } from "./types"
+import { claveAmbito } from "./almacen-local"
 
 /** Identidad provisional (atajo): id de tripulante de la API en `NEXT_PUBLIC_VIGIA_TRIPULANTE`.
  *  Sin ella se usa el 1 (astronauta de la misión demo). Reemplazar por autenticación real. */
-export const TRIPULANTE: number | null = Number(process.env.NEXT_PUBLIC_VIGIA_TRIPULANTE) || 1 // 1 = astronauta de la misión demo
+export let TRIPULANTE: number | null = null
+export function fijarTripulante(id: number | null) { TRIPULANTE = id }
 
 let enCurso: Promise<number> | null = null
 
@@ -16,13 +18,17 @@ let enCurso: Promise<number> | null = null
 export function sincronizarRegistros(): Promise<number> {
   if (!TRIPULANTE || modoActual() !== "real") return Promise.resolve(0)
   const tripulante = TRIPULANTE
+  const ambitoInicial = claveAmbito()
   enCurso ??= (async () => {
     try {
       return await sincronizar({
         registros: await store.listCheckIns(),
         sincronizados: await store.listSyncedCheckInIds(),
-        enviar: (e) => enviarCheckIn(e, tripulante),
-        marcar: (id) => store.markCheckInSynced(id),
+        enviar: (e) => claveAmbito() === ambitoInicial ? enviarCheckIn(e, tripulante) : Promise.resolve(false),
+        marcar: (id) => {
+          if (claveAmbito() !== ambitoInicial) throw new Error("cambio de ámbito durante sincronización")
+          return store.markCheckInSynced(id)
+        },
       })
     } catch {
       return 0

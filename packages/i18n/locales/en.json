@@ -18,6 +18,13 @@
       "descripcion": "Import public physiology as reference; does not perform clinical validation.",
       "desde": "Folder with original MMASH.zip, LICENSE.txt and SHA256SUMS.txt files.",
       "error": "Could not import physiological reference: {detalle}"
+    },
+    "cuentas": {
+      "descripcion": "Create a local VIGÍA account.",
+      "clave": "Password (at least 12 characters): ",
+      "repetir": "Repeat password: ",
+      "diferentes": "Passwords do not match.",
+      "creada": "Account created."
     }
   },
   "api": {
@@ -31,7 +38,9 @@
       "reloj_sin_conexion": "the watch server is not connected (check SMART_URL and that smart-monitor is running)",
       "reloj_sin_tripulante": "the watch server does not know this crew member (check SMART_TRIPULANTES or the name on the watch)",
       "reloj_nombre_por_defecto": "“{nombre}” is the watch's factory name: change the Crew member field on the watch before linking it.",
-      "reloj_nombre_ocupado": "The name “{nombre}” is already linked to another crew member."
+      "reloj_nombre_ocupado": "The name “{nombre}” is already linked to another crew member.",
+      "sesion_requerida": "Sign in with an authorized account.",
+      "acceso_limitado": "Too many attempts. Wait 15 minutes."
     },
     "autor": {
       "cirujano": "Flight Surgeon"
@@ -1128,7 +1137,12 @@
         "sensor_fijo": "Stuck sensor",
         "extremo": "Single extreme",
         "entorno_referencia": "Reference environment",
-        "entorno_escenario": "Scenario environment"
+        "entorno_escenario": "Scenario environment",
+        "ausencias_parciales": "Partial missingness",
+        "ausencias_informativas": "Informative missingness",
+        "estacionalidad": "Weekly seasonality",
+        "adaptacion_prolongada": "Prolonged adaptation",
+        "deriva_breve": "Brief drift"
       },
       "metodos": {
         "umbrales": "Simple thresholds",
@@ -1160,6 +1174,88 @@
       "datasets_hash": "SHA-256",
       "datasets_limite_mmash": "24 hours per participant. UTC observation dates are unknown: relative days and times are retained. Interval-derived heart rate is not labeled resting HR. This dataset does not establish detection of drifts over weeks. Originals and ODbL-1.0 license retained.",
       "datasets_limite_orion": "A historical Artemis I window. Environmental absorbed dose per instrument; not personal dose and not converted to mSv. Specific detector location/material requires its documentation."
+    },
+    "sistema": {
+      "acceso": {
+        "titulo": "Sign in to VIGÍA",
+        "detalle": "Use the account assigned to your mission. Local access continues in this tab until the session expires.",
+        "usuario": "Username",
+        "clave": "Password",
+        "entrar": "Sign in",
+        "error": "Sign-in failed. Check your credentials and connection.",
+        "rol": "This account cannot access that role.",
+        "local": "Temporary local access; revocation awaits verification with the API.",
+        "verificada": "Verified session",
+        "salir": "Sign out",
+        "salida_error": "Sign-out was not confirmed. Reconnect to revoke the session.",
+        "consentimientos": "Clinical read permissions",
+        "alcance_clinico": "Medical staff in your mission may read history, observations and episodes. Revocation blocks new connected access; previously authorized offline copies require reconnection.",
+        "conceder": "Grant clinical read access",
+        "revocar": "Revoke clinical read access",
+        "almacen_error": "Local storage could not be read. Records are preserved; export a copy and review recovery before continuing."
+      },
+      "evidencia": {
+        "titulo": "Measurement quality",
+        "detalle": "Technical 5-minute window, pending professional review. Values without their own time are not treated as simultaneous measurements.",
+        "sin_datos": "There is insufficient evidence to assess status.",
+        "antiguo": "Confirm the time and repeat the measurement when the protocol calls for it.",
+        "incompleta": "Measurements or comparable conditions are missing; absence of alerts does not establish normality.",
+        "utilizable": "Time is available; comparability awaits confirmation.",
+        "extremo": "An earlier extreme is retained for review even when a later measurement is normal.",
+        "hora_toma": "Time of this measurement",
+        "hora_detalle": "Confirming declares that you just measured. If it was earlier, enter the time; if unknown, keep it unknown.",
+        "hora_desconocida": "Time is unknown",
+        "diastolica": "Diastolic blood pressure"
+      },
+      "seguimiento": {
+        "titulo": "Episode follow-up",
+        "detalle": "Record the action and the new measurement. A normal value never closes a case automatically.",
+        "abrir": "Open follow-up",
+        "motivo": "Reason or note",
+        "accion": "Record action",
+        "impedimento": "Record obstacle",
+        "remedir": "Link new measurement",
+        "revision": "Request review",
+        "cerrar": "Close after review",
+        "reabrir": "Reopen",
+        "vacio": "No episodes recorded.",
+        "pendiente": "Awaiting synchronization",
+        "sincronizado": "Saved on server",
+        "conflicto": "Conflict: the operation is retained. Review the server version.",
+        "error": "Save failed. Receipt has not been acknowledged.",
+        "abierto": "Open",
+        "en_seguimiento": "In follow-up",
+        "en_revision": "Under review",
+        "cerrado": "Closed",
+        "observacion": "New observation ID",
+        "historia": "Action history",
+        "registrado": "Recorded",
+        "comparacion": "Measurements linked for review",
+        "resolver": "Load server version and retain local draft",
+        "personal": "Personal follow-up",
+        "tomar": "Record a new measurement"
+      },
+      "ciencia": {
+        "titulo": "Research modules",
+        "detalle": "Exploratory results. They do not diagnose fatigue or inherit clinical validation.",
+        "sueno": "Sleep and recovery",
+        "metodo": "Method",
+        "diario": "Reported diary",
+        "estimado": "Device estimate",
+        "turno": "Routine or shift",
+        "carga": "Workload (0–10)",
+        "guardar": "Save context",
+        "reaccion": "Experimental reaction task",
+        "iniciar": "Start practice",
+        "esperar": "Wait for the signal",
+        "responder": "Tap now",
+        "interrumpida": "Session is not comparable: interruption or premature response.",
+        "resultado": "Valid trials",
+        "practica": "Practice with 5 stimuli; measures device interaction latency. This is not a validated PVT test.",
+        "exportar": "Export private backup",
+        "respaldo": "This file contains personal data. Keep it in private storage.",
+        "restaurar": "Restore backup for the same user and mission"
+      }
     }
   }
 }

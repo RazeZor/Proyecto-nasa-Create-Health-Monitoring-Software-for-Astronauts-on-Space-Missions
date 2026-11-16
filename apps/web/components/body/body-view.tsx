@@ -1,4 +1,5 @@
 "use client"
+import { EvidenciaMediciones } from "@/components/shared/evidencia-mediciones"
 
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -302,6 +303,7 @@ export function BodyView({ ajeno = false, tripulante = TRIPULANTE, actor = tripu
 
   return (
     <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
+      <EvidenciaMediciones />
       {/* Estado general: lo primero que se lee */}
       <section aria-labelledby="overall" className={cn("flex flex-wrap items-center gap-x-5 gap-y-3 rounded-3xl border px-4 py-3 md:px-6 xl:flex-nowrap", statusSurface[overall])}>
         <div className="flex min-w-0 flex-1 basis-72 items-center gap-4">

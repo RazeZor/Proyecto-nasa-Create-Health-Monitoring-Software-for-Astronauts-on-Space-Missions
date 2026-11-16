@@ -6,6 +6,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -33,6 +34,9 @@ class RelojFalso:
 
 class Base(unittest.TestCase):
     def setUp(self):
+        identidad_ensayo = patch.dict(os.environ, {"VIGIA_IDENTIDAD_ENSAYO": "1"})
+        identidad_ensayo.start()
+        self.addCleanup(identidad_ensayo.stop)
         self.tmp = tempfile.TemporaryDirectory()
         os.environ["VIGIA_DB"] = str(Path(self.tmp.name) / "vigia.db")
         os.environ["VIGIA_RELOJ_SEG"] = "0"
@@ -293,6 +297,9 @@ class Persistencia(Base):
 
 class Rutas(Base):
     def setUp(self):
+        identidad_ensayo = patch.dict(os.environ, {"VIGIA_IDENTIDAD_ENSAYO": "1"})
+        identidad_ensayo.start()
+        self.addCleanup(identidad_ensayo.stop)
         super().setUp()
         self.c = TestClient(main.app)
         self.h = {"X-Tripulante": str(self.ana)}

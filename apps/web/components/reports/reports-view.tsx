@@ -7,7 +7,7 @@ import { IconoEspera, IconoNave, IconoRespuesta, IconoSobre, IconoTierra, IconoV
 import { Trayecto } from "@/components/reports/trayecto"
 import { formatDelay, useReportState } from "@/components/shared/delay-countdown"
 import { EmptyState, PageHeader } from "@/components/shared/states"
-import { enviarReporte, listarReportes, reporteDeServidor, responderReporte, retardoEnvio } from "@/lib/api-registro"
+import { enviarReporte, listarReportes, listarReportesRecibidos, reporteDeServidor, responderReporte, retardoEnvio } from "@/lib/api-registro"
 import { bandejaInformes, sincronizarBandeja, type InformePendiente } from "@/lib/bandeja-informes"
 import { estadoReporte, type AccionHecha, type ReporteServidor } from "@/lib/cola"
 import { balanceLectura, lecturaHumana } from "@/lib/lectura-humana"
@@ -163,7 +163,7 @@ export function ReportsView() {
     } catch {
       setFallo(true)
     }
-    const c = await listarReportes(tripulante)
+    const c = role === "surgeon" && mode === "real" ? await listarReportesRecibidos() : await listarReportes(tripulante)
     setSinEnlace(c === null)
     const clave = `reportes:${mision}:${tripulante}:${mode}`
     if (c !== null) {
@@ -172,7 +172,7 @@ export function ReportsView() {
     } else {
       setCola((anterior) => anterior ?? leerCache<ReporteServidor[]>(clave))
     }
-  }, [tripulante, mode, mision])
+  }, [tripulante, mode, mision, role])
   useEffect(() => {
     leer()
     const id = window.setInterval(leer, 3000)

@@ -2,6 +2,8 @@
 
 Versión 2 · 16-nov-2026 UTC · **Plan vigente para el trabajo siguiente.**
 
+Ejecución: [cambios implementados y aceptación T01–T44](EJECUCION-PLAN.md). T38 está excluida por solicitud del usuario. Esta lista no se interpreta como trabajo ya terminado.
+
 Este documento reúne lo que falta construir, integrar, medir y revisar. Sustituye la secuencia futura del [plan anterior](PLAN-MAESTRO.md), que se conserva como antecedente. Una tarea escrita aquí sigue pendiente hasta que exista su evidencia de aceptación. La aprobación de este plan no es una aprobación clínica del producto.
 
 ## 1. Qué debemos agregar, explicado como producto

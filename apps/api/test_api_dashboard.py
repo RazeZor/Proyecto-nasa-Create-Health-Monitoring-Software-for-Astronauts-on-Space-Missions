@@ -4,6 +4,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -16,6 +17,9 @@ T = "2026-11-14T08:00:00Z"
 
 class Dashboard(unittest.TestCase):
     def setUp(self):
+        identidad_ensayo = patch.dict(os.environ, {"VIGIA_IDENTIDAD_ENSAYO": "1"})
+        identidad_ensayo.start()
+        self.addCleanup(identidad_ensayo.stop)
         self.tmp = tempfile.TemporaryDirectory()
         os.environ["VIGIA_DB"] = str(Path(self.tmp.name) / "vigia.db")
         os.environ["DATALAKE_DIR"] = self.tmp.name  # sin gold publicado: los tests no leen el datalake local
@@ -273,6 +277,9 @@ class Entorno(unittest.TestCase):
              "eventos": [{"t_mision": "D018T13:59:00", "t_real": "2024-05-09T13:59:00Z", "sepID": "SEP-1", "link": "http://x"}]}
 
     def setUp(self):
+        identidad_ensayo = patch.dict(os.environ, {"VIGIA_IDENTIDAD_ENSAYO": "1"})
+        identidad_ensayo.start()
+        self.addCleanup(identidad_ensayo.stop)
         self.tmp = tempfile.TemporaryDirectory()
         os.environ["VIGIA_DB"] = str(Path(self.tmp.name) / "vigia.db")
         os.environ["DATALAKE_DIR"] = self.tmp.name

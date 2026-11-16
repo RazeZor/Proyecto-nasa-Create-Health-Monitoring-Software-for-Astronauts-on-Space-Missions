@@ -1,3 +1,5 @@
+import { sesionActual } from "./sesion.ts"
+import { peticion } from "./sesion.ts"
 /**
  * Todo lo que la app muestra y no escribe el usuario sale de la API: perfiles, fichas, referencia de
  * entorno, historial simulado, recordatorios y mensajes. Aquí solo se piden y se traducen al modelo de
@@ -27,6 +29,8 @@ export type FichaJson = {
 type PerfilApi = { id: string; nombre: string; presion_cabina_mmHg: number; retardo_demo_min: number; gravedad_etiqueta: string }
 
 export interface LecturaHistorial extends Lectura {
+  mediciones?: Record<string, { id: string; t_real: string; valor: number; metodo: string | null; comparable: boolean }>
+  observaciones?: { id: string; indicador: string; valor: number; t_real: string | null; comparable: number | boolean; uso: "operativo" | "referencia" | "escenario" }[]
   pad_mmHg?: number | null
   glucosa_mg_dl?: number | null
   masa_kg?: number | null
@@ -179,10 +183,12 @@ export const mensajesUi = (api: MensajeApi[]): ThreadMessage[] =>
 export const fuentesUi = (api: FuenteApi[]): Catalogo["fuentes"] =>
   api.map((f) => ({ id: f.id, label: f.nombre, provenance: { kind: "real", source: f.origen, date: f.detalle }, feeds: f.alimenta }))
 
+class AccesoDenegado extends Error {}
 async function pedir<T>(ruta: string, tripulante?: number): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${ruta}`, {
+  const res = await peticion(`${API_BASE_URL}${ruta}`, {
     cache: "no-store", headers: tripulante ? { "X-Tripulante": String(tripulante) } : undefined,
   })
+  if (res.status === 401 || res.status === 403) throw new AccesoDenegado(`${ruta}: ${res.status}`)
   if (!res.ok) throw new Error(`${ruta}: ${res.status}`)
   return (await res.json()) as T
 }
@@ -202,7 +208,7 @@ const armar = (c: CatalogoCrudo, sinEnlace: boolean): Catalogo => ({
  * (`sinEnlace: true`): a bordo la red solo sincroniza. Null solo si nunca hubo enlace o falta algo.
  */
 export async function cargarCatalogo(tripulante: number, modo: Mode = "real"): Promise<Catalogo | null> {
-  const clave = `catalogo:${modo}:${tripulante}:${IDIOMA}`
+  const clave = `catalogo:v2:${sesionActual()?.mision_id}:${modo}:${tripulante}:${IDIOMA}`
   try {
     const [perfiles, fichas, entorno, historial, recordatorios, mensajes] = await Promise.all([
       pedir<Record<string, PerfilApi>>("/perfiles"),
@@ -216,7 +222,8 @@ export async function cargarCatalogo(tripulante: number, modo: Mode = "real"): P
     const catalogo = armar(crudo, false)
     guardarCache(clave, crudo)
     return catalogo
-  } catch {
+  } catch (error) {
+    if (error instanceof AccesoDenegado) return null
     try {
       const copia = leerCache<CatalogoCrudo>(clave)
       return copia ? armar(copia, true) : null

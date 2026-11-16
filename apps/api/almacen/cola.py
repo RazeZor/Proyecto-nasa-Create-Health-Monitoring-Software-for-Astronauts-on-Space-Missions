@@ -1,5 +1,6 @@
 """Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2)."""
 import json
+import os
 from datetime import timedelta
 
 from .reintentos import insertar
@@ -39,4 +40,7 @@ def leer_reportes(conn, tripulante_id):
                                            (tripulante_id,))]
     for f in filas:
         f["contenido"] = None if f["contenido"] is None else json.loads(f["contenido"])
+        acuse = conn.execute("SELECT mensaje_id, sha256, t_real FROM transporte_acuse WHERE reporte_id = ?", (f["id"],)).fetchone()
+        if os.environ.get("VIGIA_IDENTIDAD_ENSAYO") != "1":
+            f["acuse_destino"] = dict(acuse) if acuse else None
     return filas

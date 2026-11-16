@@ -18,7 +18,7 @@ import { evaluateCheckIn } from "@/lib/engine"
 import { comoMedirEnPerfil } from "@/lib/catalogo"
 import { fcReposoSugerida, spo2Sugerida, suenoSugerido, ultimoCambioInstrumento } from "@/lib/reloj"
 import { rutaDe } from "@/lib/roles"
-import { S } from "@/lib/strings"
+import { S, textoSistema } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import type { CheckInEntry, IndicatorId, Status, Symptom } from "@/lib/types"
 import { cn, nuevoId } from "@/lib/utils"
@@ -130,6 +130,8 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
 
   const [paso, setPaso] = useState(0)
   const [estado, setEstado] = useState<Record<MedidaId, Estado>>(TODO_PENDIENTE)
+  const [horas, setHoras] = useState<Partial<Record<MedidaId, string | null>>>({})
+  const [tiemposManuales, setTiemposManuales] = useState<Partial<Record<MedidaId, string>>>({})
   /** Lo que el tripulante ajustó o confirmó a mano; null = sigue en el valor de partida o en el del reloj. */
   const [edit, setEdit] = useState<Record<Campo, number | null>>(SIN_EDITAR)
   /** FC del reloj congelada al confirmarla (el simulador cambia cada segundo y medio), con su instrumento. */
@@ -228,7 +230,11 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
   const unidadDe = (m: MedidaId) => (m === "symptoms" || m === "mood" ? "" : unidad(m))
 
   // ── acciones ──────────────────────────────────────────────────────────────────────────────────────────────
-  const marcar = (m: MedidaId, e: Estado) => setEstado((cur) => ({ ...cur, [m]: e }))
+  const marcar = (m: MedidaId, e: Estado) => {
+    setEstado((cur) => ({ ...cur, [m]: e }))
+    if (e === "medido") setHoras((cur) => ({ ...cur, [m]: tiemposManuales[m] === "desconocida" ? null
+      : tiemposManuales[m] ? new Date(tiemposManuales[m]!).toISOString() : new Date().toISOString() }))
+  }
   /** Tocar un dial ya es registrar: el valor deja de ser «de partida». */
   const ajustar = (c: Campo, v: number) => {
     setEdit((cur) => ({ ...cur, [c]: v }))
@@ -264,6 +270,11 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
     const sec = Math.floor((Date.now() - start) / 1000)
     const base = {
       day, durationSec: sec,
+      tiemposMedicion: {
+        ...horas, diastolic: horas.systolic ?? null,
+        restingHr: hrDelReloj ? reloj?.reloj?.resumen?.fc_reposo_dia?.t ?? null : horas.restingHr ?? null,
+        spo2: spo2FromWatch ? reloj?.reloj?.resumen?.spo2?.t ?? null : horas.spo2 ?? null,
+      },
       restingHr: guardar.hr, hrFromWatch: hrDelReloj,
       hrInstrument: instrumentoHr,
       systolic: guardar.sys, diastolic: guardar.dia,
@@ -660,6 +671,15 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
             </button>
           )}
         </header>
+        {m !== "symptoms" && !(m === "restingHr" && hrDelReloj) && !(m === "spo2" && spo2FromWatch) && <details className="border-b px-5 py-2">
+          <summary className="cursor-pointer py-2">{textoSistema("evidencia.hora_toma")}</summary>
+          <p className="py-2">{textoSistema("evidencia.hora_detalle")}</p>
+          <label className="grid max-w-md gap-2">{textoSistema("evidencia.hora_toma")}<input type="datetime-local" value={tiemposManuales[m] === "desconocida" ? "" : tiemposManuales[m] ?? ""} className="min-h-12 rounded-xl border p-3" onChange={(e) => {
+            const valor = e.target.value; setTiemposManuales((cur) => ({ ...cur, [m]: valor }))
+            if (valor && Number.isFinite(Date.parse(valor))) setHoras((cur) => ({ ...cur, [m]: new Date(valor).toISOString() }))
+          }} /></label>
+          <button type="button" aria-pressed={tiemposManuales[m] === "desconocida"} className="my-2 min-h-12 rounded-xl border px-4" onClick={() => { setTiemposManuales((cur) => ({ ...cur, [m]: "desconocida" })); setHoras((cur) => ({ ...cur, [m]: null })) }}>{textoSistema("evidencia.hora_desconocida")}</button>
+        </details>}
 
         <div className={cn("grid flex-1", info && "2xl:grid-cols-[minmax(0,1fr)_24rem]")}>
           {info && (

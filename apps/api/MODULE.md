@@ -7,6 +7,12 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 
 ## Puntos clave
 
+- Identidad normal mediante `seguridad.py`: sesiones opacas de 8 h, scrypt, cookie HttpOnly/SameSite, CSRF, revocación y límite de intentos por IP. `cuentas.py` da de alta cuentas desde terminal privada. `VIGIA_IDENTIDAD_ENSAYO=1` es un adaptador explícito para ensayos aislados; nunca proporciona autenticación para piloto.
+- Migraciones 007–011: observaciones inmutables con hora/unidad/operación propias, originales legados sin recepción inventada, eventos de episodio, archivo experimental y acuses/respuestas de destino. Repetir IDs con otro contenido devuelve 409; `lectura` queda como proyección compatible. `historial.mediciones` conserva el tiempo por campo y `observaciones` preserva extremos previos.
+- Los clínicos de la misma misión requieren consentimiento `historial_clinico` para historial/observaciones/episodios. Solo el propietario concede/revoca; el servidor audita accesos y cambios. Un cierre de episodio requiere estado en revisión y actor médico; ni una medición normal ni el reloj lo cierran.
+- El transporte normal usa `transporte.py` y el receptor independiente configurado con `VIGIA_TIERRA_URL/CLAVE/OPERADOR_CLAVE`. Sin receptor, conserva la cola. Solo un acuse de ID/hash habilita `entregado`; las respuestas se recogen con vínculo causal. El temporizador antiguo queda limitado al modo de ensayo.
+- CORS está cerrado salvo `VIGIA_ORIGENES` exportado antes de iniciar; el proxy del mismo origen no necesita CORS. Respuestas privadas llevan `Cache-Control: no-store`. `VIGIA_COOKIE_SEGURA=1` fuerza Secure detrás de un terminador HTTPS.
+
 - `/ciencia/datasets` enumera únicamente MMASH/Orion presentes con hashes comprobados; `/ciencia/datasets/{id}` devuelve el producto de referencia conocido. Las fechas de toma MMASH siguen desconocidas y Orion es radiación ambiental histórica; no se evalúa el motor ni se incorporan esos sujetos a cuentas actuales.
 
 - `GET /ciencia/evidencia` separa catálogo de afirmaciones y reporte sintético gold. Verifica integridad y hashes del motor, generador, métricas, runner y protocolo; reporta `vigente`, `desactualizado` o `no_publicado`. Reportes corruptos/incompatibles fallan cerrados. No acredita revisión profesional.
@@ -24,11 +30,10 @@ API FastAPI: sirve la zona gold del ETL (`pipelines/reanclaje`, solo lectura) y 
 - Arranque: `uvicorn main:app --port 8000` desde `apps/api`. `DATALAKE_DIR` apunta a otro datalake; por defecto usa `pipelines/datalake/data`.
 - Almacén SQLite (`almacen/`, solo biblioteca estándar): lecturas, síntomas, línea base, alertas, escalamientos, cola con retardo y auditoría. Archivo en `VIGIA_DB` (por defecto `apps/api/data/vigia.db`, fuera de git). Esquema en `almacen/migraciones/NNN_*.sql`; `python3 -m almacen migrar|sembrar`. Diseño: `docs/superpowers/specs/2026-11-14-base-datos-local-design.md`.
 - Privacidad en el servidor: verde y ámbar solo los ve su dueño; una roja de la capa A escala al oficial médico (o al comandante) con el dato mínimo y solo con consentimiento. `alerta`, `escalamiento` y `auditoria` son de solo adición (triggers). Quien recibe un escalamiento ve solo el dato mínimo (nunca la explicación); cada acceso a alertas ajenas queda en `auditoria`. El afectado ve qué se envió y puede añadir contexto una vez. Reenviar la misma alerta (tripulante, indicador, capa, `t_real` y valor) devuelve el id que ya tenía: la app reintenta sin duplicar avisos.
-- Reloj de la cola: al arrancar, `ciclo_de_vida` en `main.py` lanza una tarea que cada `VIGIA_RELOJ_SEG` s (por defecto 5; 0 la apaga) pasa a `entregado` los reportes cuyo retardo ya pasó, con la hora real del servidor. Ya no hace falta llamar a `POST /reportes/avanzar` (queda para pruebas y para forzar una hora). Con varios procesos, cada uno corre su reloj: es idempotente.
-- CORS abierto a `GET`, `POST` y `PUT` desde cualquier origen (atajo, sin autenticación real; acotar `allow_origins` al desplegar). Acepta también el preflight de red privada (`allow_private_network`): sin él Chrome bloquea la llamada desde otra máquina de la LAN.
+- Reloj de la cola: ciclo_de_vida ejecuta el transporte cada VIGIA_RELOJ_SEG segundos (5 por defecto, 0 lo apaga). En modo normal intenta entregar y recoger respuestas; no acredita recepcion por tiempo transcurrido. POST /reportes/avanzar solo funciona en ensayo.
 - Vocabulario: los códigos de síntoma salen de `packages/schemas/vocabulario.json` (`almacen/vocabulario.py` lo lee); el retardo de reporte es 0 a 22 min (migración 002) y existe el indicador `presion_arterial_diastolica` (sin reglas ni ficha).
 - La conexión SQLite es por petición y con `check_same_thread=False` (FastAPI la usa desde varios hilos); `migrar` es atómica y con bloqueo; `recursive_triggers` está activo para que `INSERT OR REPLACE` no eluda la solo adición. `t_real` debe ser canónico (`10:00:00Z`).
-- El tripulante se declara en la cabecera `X-Tripulante` (atajo, sin autenticación real). `lectura.t_mision` es null antes del día 1 de la misión. Las rutas de registro están en `rutas_registro.py`; el motor híbrido no vive aquí: quien lo ejecute envía las alertas por `POST /tripulantes/{id}/alertas`.
+- El actor sale de la sesion verificada; solo el modo explicito de ensayo interpreta X-Tripulante. Las rutas de registro estan en rutas_registro.py; el motor hibrido sigue en TypeScript y el cliente envia los resultados.
 - Única dependencia de servidor del repo: `requirements.txt` (fastapi, uvicorn, httpx para los tests). El CI instala el `requirements.txt` de cada módulo antes de sus tests.
 - `GET /tripulantes/{id}/intradia?modo=real|demo` es el tiempo real (mismos permisos que `historial`): pulso, SpO2, temperatura y sistólica de un día por hora UTC. `real`: lecturas `Real` de ese día sin agrupar. `demo`: simuladas cada 15 min hasta `hasta` (por defecto ahora) alrededor del valor diario del caso de referencia, con semilla (tripulante, día, campo): siempre las mismas. La lectura de un clínico se audita como `lectura_ajena` de `intradia` una sola vez por hora y por (clínico, tripulante) (`propio_o_clinico_intradia`), porque la app la pide cada minuto; el `historial` se sigue auditando en cada consulta.
 - `GET /tripulantes/{id}/historial?modo=real|demo` es lo que evalúa el motor de la app. `real` (por defecto): las lecturas que el tripulante ingresó (`naturaleza: Real`), una fila por día de misión con `null` en lo no medido, y el entorno del panel gold `mision-real`. `demo`: el tripulante simulado del viaje a Marte (`packages/engine/fixtures/caso-viaje.json`, 259 días de tránsito; tripulante N recibe el simulado N; `DIA_ACTUAL_DEMO = 135`, el 27-ene-2012, con las tres anomalías y la tormenta solar real ya visibles) con las anomalías inyectadas rotuladas `Simulado`, más las mediciones del panel `mision-vigia` donde el escenario las trae. En `entorno_diario` el CO2 real va en ppm (la app lo convierte por perfil) y cada dato lleva `*_origen` (naturaleza, fuente y fecha real); los eventos SEP de DONKI ponen `modo_tormenta`. Sin panel publicado el entorno real queda vacío: no se inventa. `gold.py` lee el gold verificando su SHA-256 (un panel alterado no se usa).
@@ -58,18 +63,24 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [almacen/__main__.py](almacen/__main__.py) | 18 | CLI: python3 -m almacen migrar\|sembrar (desde apps/api). |
 | [almacen/alertas.py](almacen/alertas.py) | 104 | Alertas del motor, escalamiento al oficial médico, auditoría y visibilidad (privacidad §5.4). |
 | [almacen/base.py](almacen/base.py) | 18 | Línea base (mediana y MAD) por tripulante, indicador y origen (tierra o vuelo). |
-| [almacen/cola.py](almacen/cola.py) | 42 | Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2). |
+| [almacen/cola.py](almacen/cola.py) | 46 | Cola de reportes hacia tierra con el retardo del día de misión (0 a 22 min; informe §4.2). |
 | [almacen/db.py](almacen/db.py) | 55 | Conexión y migraciones del almacén SQLite (solo biblioteca estándar). |
+| [almacen/episodios.py](almacen/episodios.py) | 85 | Bitácora inmutable y proyección de episodios con concurrencia optimista. |
 | [almacen/lecturas.py](almacen/lecturas.py) | 52 | Lecturas de indicadores y síntomas de un tripulante. |
+| [almacen/observaciones.py](almacen/observaciones.py) | 73 | Tomas inmutables, correcciones enlazadas y acuses idempotentes por sujeto. |
 | [almacen/reintentos.py](almacen/reintentos.py) | 32 | Inserción idempotente por propietario y operación, con detección de contenido distinto. |
 | [almacen/tripulacion.py](almacen/tripulacion.py) | 110 | Misión, tripulantes y consentimiento; conversión de t_real a hora de misión. |
 | [almacen/vocabulario.py](almacen/vocabulario.py) | 7 | Vocabulario compartido con la interfaz: lee el contrato packages/schemas/vocabulario.json. |
+| [cuentas.py](cuentas.py) | 33 | Alta local de una cuenta; la contraseña solo se pide en una terminal privada. |
 | [gold.py](gold.py) | 42 | Lectura verificada de la zona gold del ETL (pipelines/reanclaje). No importa el pipeline: lee los JSON que |
-| [main.py](main.py) | 241 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
+| [main.py](main.py) | 262 | API de solo lectura sobre la zona gold del ETL (pipelines/reanclaje). |
 | [puente_reloj.py](puente_reloj.py) | 594 | Puente con el servidor del reloj (repositorio smart-monitor, Galaxy Watch4; informe, anexo A). |
-| [rutas_ciencia.py](rutas_ciencia.py) | 88 | Afirmaciones trazables y auditoría exploratoria; no acredita validación clínica. |
-| [rutas_dashboard.py](rutas_dashboard.py) | 344 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
-| [rutas_registro.py](rutas_registro.py) | 232 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
+| [rutas_ciencia.py](rutas_ciencia.py) | 89 | Afirmaciones trazables y auditoría exploratoria; no acredita validación clínica. |
+| [rutas_dashboard.py](rutas_dashboard.py) | 373 | Lo que el tablero necesita además del gold y del registro: fichas, referencia de entorno y, por tripulante, |
+| [rutas_estudios.py](rutas_estudios.py) | 71 | Archivo de sesiones experimentales: no equivale a evaluación clínica independiente. |
+| [rutas_registro.py](rutas_registro.py) | 328 | Endpoints de registro de la tripulación sobre el almacén SQLite (ver almacen/ y AGENTES.md). |
+| [rutas_seguimiento.py](rutas_seguimiento.py) | 42 | Contratos HTTP de acciones, nueva medición y revisión de episodios. |
+| [seguridad.py](seguridad.py) | 133 | Sesiones opacas revocables, credenciales locales y CSRF. Nunca confiar en X-Tripulante. |
 | [test_almacen_alertas.py](test_almacen_alertas.py) | 135 | — |
 | [test_almacen_base.py](test_almacen_base.py) | 41 | — |
 | [test_almacen_cola.py](test_almacen_cola.py) | 54 | — |
@@ -77,11 +88,13 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 | [test_almacen_lecturas.py](test_almacen_lecturas.py) | 74 | — |
 | [test_almacen_tripulacion.py](test_almacen_tripulacion.py) | 69 | — |
 | [test_api.py](test_api.py) | 144 | — |
-| [test_api_dashboard.py](test_api_dashboard.py) | 337 | — |
-| [test_api_registro.py](test_api_registro.py) | 208 | — |
+| [test_api_dashboard.py](test_api_dashboard.py) | 344 | — |
+| [test_api_registro.py](test_api_registro.py) | 211 | — |
 | [test_ciencia.py](test_ciencia.py) | 93 | La ausencia, alteración y caducidad del reporte nunca producen una validación aparente. |
-| [test_puente_reloj.py](test_puente_reloj.py) | 454 | — |
-| [test_reintentos.py](test_reintentos.py) | 76 | Reintentos tras perder un acuse: mismos ids, propietario separado y conflictos visibles. |
+| [test_plan_integral.py](test_plan_integral.py) | 225 | Aceptación de identidad, medidas, seguimiento y transporte sin datos del usuario. |
+| [test_puente_reloj.py](test_puente_reloj.py) | 461 | — |
+| [test_reintentos.py](test_reintentos.py) | 79 | Reintentos tras perder un acuse: mismos ids, propietario separado y conflictos visibles. |
+| [transporte.py](transporte.py) | 108 | Transporte a un proceso destino: el temporizador solo habilita el intento, nunca acredita entrega. |
 
 ### API pública
 
@@ -112,12 +125,22 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `conectar(ruta=None)`
 - función `migrar(conn)`: Aplica en orden las migraciones NNN_*.sql pendientes y devuelve la versión resultante.
 
+**almacen/episodios.py**
+
+- función `registrar(conn, propietario, actor, datos)`
+- función `listar(conn, propietario)`
+
 **almacen/lecturas.py**
 
 - función `registrar_lectura(conn, tripulante_id, indicador, valor, t_real, origen='manual', metodo=None, naturaleza='Simulado')`: Guarda una lectura. Reenviar la misma (tripulante, indicador, t_real, origen) devuelve el mismo id.
 - función `leer_lecturas(conn, tripulante_id, indicador=None, desde=None, hasta=None)`
 - función `registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real, operacion_id=None)`
 - función `leer_sintomas(conn, tripulante_id, desde=None, hasta=None)`
+
+**almacen/observaciones.py**
+
+- función `registrar(conn, tripulante_id, datos)`: No sustituye originales. Una corrección es otra observación del mismo indicador.
+- función `listar(conn, tripulante_id)`: Incluye originales corregidos: el cliente decide su vista sin borrar historia.
 
 **almacen/reintentos.py**
 
@@ -135,6 +158,10 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `sembrar_informes_demo(conn, ids)`: Informes de ejemplo ya respondidos por tierra (apps/api/demo/informes.json). Idempotente por título.
 - función `sembrar_demo(conn)`: Misión `demo` con astronauta, oficial médico, comandante y los astronautas de prueba Sebastián y Fernando, todos
 
+**cuentas.py**
+
+- función `main()`
+
 **gold.py**
 
 - función `carpeta()`
@@ -146,6 +173,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 
 - función `cargar_env(ruta=None)`: Carga el `.env` de la raíz del repo (plantilla: `.env.example`) en `os.environ` con la biblioteca estándar:
 - función `ciclo_de_vida(_app)`: Carga el `.env` de la raíz (sin pisar el entorno) y arranca el reloj de la cola de reportes: cada
+- función `evitar_cache_privada(request, call_next)`
 - función `dato_invalido(_, e)`
 - función `conflicto_operacion(_, e)`
 - función `salud()`: Devuelve {"estado": "ok"} si el servicio responde. No toca el gold.
@@ -210,13 +238,26 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `recordatorios(id: int=Depends(propio), lang: Literal['es', 'en']='es')`: Lista de textos (`lang=en` en inglés). Simulado: aún no hay plan de actividades a bordo.
 - función `mensajes(id: int=Depends(propio), modo: Literal['real', 'demo']='real', lang: Literal['es', 'en']='es', conn=Depends(conexion))`: `{id, de: astronaut|surgeon, autor, dia, hora, texto}`: las respuestas de tierra a los reportes del tripulante.
 
+**rutas_estudios.py**
+
+- clase `ArtefactoIn(BaseModel)`
+- función `guardar(cuerpo: ArtefactoIn, id: int=Depends(propio), conn=Depends(conexion))`: Conserva un diario o práctica experimental propios, con versión de protocolo y acuse idempotente.
+- función `listar(id: int=Depends(propio), conn=Depends(conexion))`: Lista exclusivamente los artefactos experimentales del propietario autenticado.
+
 **rutas_registro.py**
 
 - función `conexion()`
-- función `actor(x_tripulante: str | None=Header(None), conn=Depends(conexion))`
+- función `actor(request: Request, x_tripulante: str | None=Header(None), conn=Depends(conexion))`
 - función `propio(id: int, quien: int=Depends(actor))`
 - clase `LecturaIn(BaseModel)`
 - clase `SintomaIn(BaseModel)`
+- clase `ObservacionIn(BaseModel)`
+- función `crear_observacion(cuerpo: ObservacionIn, id: int=Depends(propio), conn=Depends(conexion))`: Añade una toma con hora propia; un reintento devuelve el mismo acuse y otro contenido produce 409.
+- función `listar_observaciones(id: int, quien: int=Depends(actor), conn=Depends(conexion))`: Lista originales y correcciones enlazadas del propietario, sin borrar medidas anteriores.
+- clase `ConsentimientoIn(BaseModel)`
+- función `consentimiento(cuerpo: ConsentimientoIn, id: int=Depends(propio), conn=Depends(conexion))`: Concede o revoca un alcance explícito de lectura/escalamiento; cada cambio queda en auditoría.
+- función `consentimientos(id: int=Depends(propio), conn=Depends(conexion))`: Lista los alcances que el dueño mantiene concedidos; no muestra decisiones de otras personas.
+- función `reportes_recibidos(quien: int=Depends(actor), conn=Depends(conexion))`: El médico de la misión lee solo informes explícitamente enviados y con recepción del destino confirmada.
 - clase `LineaBaseIn(BaseModel)`
 - clase `AlertaIn(BaseModel)`
 - clase `ReporteIn(BaseModel)`
@@ -234,25 +275,50 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - función `crear_reporte(cuerpo: ReporteIn, id: int=Depends(propio), conn=Depends(conexion))`: Encola un reporte con `retardo_min` de 0 a 22; `llega_t_real` = `creado_t_real` + retardo.
 - función `listar_reportes(id: int=Depends(propio), lang: Literal['es', 'en']='es', conn=Depends(conexion))`: Reportes del tripulante con `estado` en_cola, entregado o respondido, y su `contenido` (o null). Con `lang=en`
 - función `avanzar(cuerpo: AvanceIn, quien: int=Depends(actor), conn=Depends(conexion))`: Pasa a `entregado` los reportes con `llega_t_real` <= `ahora`; devuelve `{"entregados": n}`.
-- función `responder(reporte_id: int, cuerpo: RespuestaIn, quien: int=Depends(actor), conn=Depends(conexion))`: Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422.
+- función `responder(reporte_id: int, cuerpo: RespuestaIn, request: Request, quien: int=Depends(actor), conn=Depends(conexion))`: Responde un reporte ya entregado y no antes de su llegada a tierra; si no, 422.
 - función `escalamientos_recibidos(quien: int=Depends(actor), conn=Depends(conexion))`: Avisos rojos escalados a ti: `{id, alerta_id, tripulante_id, contenido: {indicador, valor, t_real, tramo},
 - función `escalamientos_propios(id: int=Depends(propio), conn=Depends(conexion))`: Transparencia (§5.4): qué avisos salieron sobre ti, a quién y con qué contenido.
 - función `agregar_contexto(escalamiento_id: int, cuerpo: ContextoIn, quien: int=Depends(actor), conn=Depends(conexion))`: Solo el afectado puede añadir contexto, una sola vez (no puede cancelar el aviso); otro tripulante recibe 403
 
+**rutas_seguimiento.py**
+
+- clase `EventoIn(BaseModel)`
+- función `registrar(cuerpo: EventoIn, id: int=Depends(propio_o_clinico), quien: int=Depends(actor), conn=Depends(conexion))`: Registra una transición con versión esperada; el cierre requiere revisión médica de la misma misión.
+- función `listar(id: int=Depends(propio_o_clinico), conn=Depends(conexion))`: Devuelve estados e historial de acciones, con permisos y auditoría del historial clínico.
+
+**seguridad.py**
+
+- función `conexion_identidad()`
+- función `crear_cuenta(conn, usuario, clave, tripulante_id, rol)`
+- función `sesion_verificada(request, conn)`
+- clase `AccesoIn(BaseModel)`
+- función `iniciar(cuerpo: AccesoIn, request: Request, response: Response, conn=Depends(conexion_identidad))`: Comprueba credenciales y crea una sesión de 8 horas con cookie HttpOnly y CSRF.
+- función `consultar(request: Request, response: Response, conn=Depends(conexion_identidad))`: Verifica una sesión vigente y devuelve su ámbito autorizado.
+- función `cerrar(request: Request, response: Response, conn=Depends(conexion_identidad))`: Revoca la sesión en el servidor y retira su cookie; requiere CSRF.
+
+**transporte.py**
+
+- clase `SinRedireccion(urllib.request.HTTPRedirectHandler)`
+- función `entregar_pendientes(conn, ahora, enviar=None)`
+- función `ahora_utc()`
+- función `responder_en_destino(conn, reporte_id, texto, t_real)`
+- función `recoger_respuestas(conn, consultar=None)`
+
 ### Puntos de entrada
 
 - `apps/api/almacen/__main__.py`
+- `apps/api/cuentas.py`
 
 ### Configuración y fuentes externas
 
-- Variables de entorno: `DATALAKE_DIR`, `SMART_AUTOREGISTRO`, `SMART_DESACTIVADO`, `SMART_IP_LAN`, `SMART_TRIPULANTES`, `SMART_URL`, `VIGIA_DB`, `VIGIA_PRUEBA_A`, `VIGIA_PRUEBA_FIJA`, `VIGIA_RELOJ_SEG`
+- Variables de entorno: `DATALAKE_DIR`, `SMART_AUTOREGISTRO`, `SMART_DESACTIVADO`, `SMART_IP_LAN`, `SMART_TRIPULANTES`, `SMART_URL`, `VIGIA_COOKIE_SEGURA`, `VIGIA_DB`, `VIGIA_IDENTIDAD_ENSAYO`, `VIGIA_ORIGENES`, `VIGIA_PRUEBA_A`, `VIGIA_PRUEBA_FIJA`, `VIGIA_RELOJ_SEG`, `VIGIA_TIERRA_CLAVE`, `VIGIA_TIERRA_URL`
 
 ### Dependencias
 
-- Internas: `gold`, `main`, `puente_reloj`, `rutas_ciencia`, `rutas_dashboard`, `rutas_registro`
+- Internas: `gold`, `main`, `puente_reloj`, `rutas_ciencia`, `rutas_dashboard`, `rutas_estudios`, `rutas_registro`, `rutas_seguimiento`, `seguridad`, `transporte`
 - Paquetes del monorepo: `packages/i18n`
 - Externas: `almacen`, `fastapi`, `pydantic`, `websockets`
-- Biblioteca estándar: `asyncio`, `collections`, `concurrent`, `contextlib`, `datetime`, `hashlib`, `importlib`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `socket`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`, `urllib`
+- Biblioteca estándar: `argparse`, `asyncio`, `collections`, `concurrent`, `contextlib`, `datetime`, `getpass`, `hashlib`, `hmac`, `importlib`, `json`, `math`, `os`, `pathlib`, `random`, `re`, `secrets`, `socket`, `sqlite3`, `sys`, `tempfile`, `threading`, `time`, `typing`, `unittest`, `urllib`, `uuid`
 
 ### Tests
 
@@ -266,6 +332,7 @@ tags: api, fastapi, gold, etl, panel, solo-lectura
 - `apps/api/test_api_dashboard.py`: 26 pruebas en Dashboard (23), Entorno (3)
 - `apps/api/test_api_registro.py`: 19 pruebas en Registro (19)
 - `apps/api/test_ciencia.py`: 6 pruebas en Ciencia (6)
+- `apps/api/test_plan_integral.py`: 16 pruebas en PlanIntegral (16)
 - `apps/api/test_puente_reloj.py`: 28 pruebas en Estado (12), Persistencia (7), Rutas (7), ExtremoAExtremo (2)
 - `apps/api/test_reintentos.py`: 4 pruebas en Reintentos (4)
 <!-- CONTEXT:AUTO:END -->
