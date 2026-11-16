@@ -7,13 +7,15 @@ import { IconoEspera, IconoNave, IconoRespuesta, IconoSobre, IconoTierra, IconoV
 import { Trayecto } from "@/components/reports/trayecto"
 import { formatDelay, useReportState } from "@/components/shared/delay-countdown"
 import { EmptyState, PageHeader } from "@/components/shared/states"
-import { encolarReporte, listarReportes, reporteDeServidor, responderReporte, retardoEnvio } from "@/lib/api-registro"
+import { enviarReporte, listarReportes, reporteDeServidor, responderReporte, retardoEnvio } from "@/lib/api-registro"
+import { bandejaInformes, sincronizarBandeja, type InformePendiente } from "@/lib/bandeja-informes"
 import { estadoReporte, type AccionHecha, type ReporteServidor } from "@/lib/cola"
 import { balanceLectura, lecturaHumana } from "@/lib/lectura-humana"
 import { S } from "@/lib/strings"
 import { TRIPULANTE } from "@/lib/sincronizacion"
+import { guardarCache, leerCache } from "@/lib/storage"
 import type { Report } from "@/lib/types"
-import { cn } from "@/lib/utils"
+import { cn, nuevoId } from "@/lib/utils"
 import { Ayuda } from "@/components/shared/ayuda"
 
 const seccionH = "mb-4 text-2xl font-semibold"
@@ -149,8 +151,28 @@ export function ReportsView() {
   const [fallo, setFallo] = useState(false)
   const [sinEnlace, setSinEnlace] = useState(false)
   const [encolando, setEncolando] = useState(false)
+  const [pendientes, setPendientes] = useState<InformePendiente[]>([])
+  const mision = String(catalogo.historial.mision_id ?? "sin-identificar")
   // sin red la API no responde: se avisa y se conserva lo último leído, nunca se muestra una cola vacía falsa
-  const leer = useCallback(() => listarReportes(tripulante).then((c) => { setSinEnlace(c === null); if (c !== null) setCola(c) }), [tripulante])
+  const leer = useCallback(async () => {
+    try {
+      const bandeja = bandejaInformes(tripulante, mode, mision)
+      setPendientes(bandeja.listar())
+      await sincronizarBandeja(bandeja, (p) => enviarReporte(p.perfil, p.creado, tripulante, p.retardo, p.contenido, p.id))
+      setPendientes(bandeja.listar())
+    } catch {
+      setFallo(true)
+    }
+    const c = await listarReportes(tripulante)
+    setSinEnlace(c === null)
+    const clave = `reportes:${mision}:${tripulante}:${mode}`
+    if (c !== null) {
+      guardarCache(clave, c)
+      setCola(c)
+    } else {
+      setCola((anterior) => anterior ?? leerCache<ReporteServidor[]>(clave))
+    }
+  }, [tripulante, mode, mision])
   useEffect(() => {
     leer()
     const id = window.setInterval(leer, 3000)
@@ -187,55 +209,62 @@ export function ReportsView() {
 
   async function queue() {
     setEncolando(true)
-    // el informe lleva lo que pide §6.1: lectura, línea base, entorno y acción, todo del día y con su procedencia
-    const v = analisis.vitals(day).find((x) => x.day === day)
-    const medida = (valor: number | null | undefined, unidad: string) => (valor == null ? null : `${valor} ${unidad}`)
-    const lectura = v
-      ? [medida(v.restingHr, catalogo.indicadores.restingHr.unit), medida(v.systolic, "mmHg"), medida(v.spo2, "% SpO2"), medida(v.tempC, "°C"),
-          v.sleepH == null ? null : `${S.reports.sleep} ${v.sleepH} h`, v.mood == null ? null : `${S.reports.mood} ${v.mood}/10`].filter(Boolean).join(" · ")
-      : S.reports.noReading
-    const banda = analisis.band("restingHr").findLast((b) => b.day <= day)
-    const lineaBase = banda
-      ? S.reports.bandText(banda.low.toFixed(0), banda.high.toFixed(0), banda.flightWeight === 0 ? S.reports.phaseGround : banda.flightWeight === 1 ? S.reports.phaseFlight : S.reports.phaseMix)
-      : S.reports.noBaseline
-    const co2 = analisis.co2(day)
-    const tormenta = analisis.stormInfo(day)
-    const entorno = [
-      co2 ? `CO2 ${co2.mmHg.toFixed(2)} mmHg @ ${profile.cabinPressureMmHg} mmHg (${co2.source})` : null,
-      tormenta ? `${S.reports.stormOn} (${tormenta.source})` : null,
-    ].filter(Boolean).join(" · ") || S.reports.noEnvironment
-    // la misma lectura, en lenguaje llano y con el balance que resume el informe
-    const lecturaLlana = lecturaHumana(v, banda) || S.reports.noReading
-    const balance = balanceLectura(v, banda)
-    // «Sugerido: … Hecho: …» solo si el tripulante confirmó; si no (demo sin elegir), la acción sugerida tal cual
-    const notaLimpia = nota.trim().slice(0, NOTA_MAX)
-    const etiquetaHecho = alertaHoy && hecho ? OPCIONES_HECHO.find((o) => o.codigo === hecho)?.etiqueta() : undefined
-    const accion = !alertaHoy
-      ? S.reports.noAction
-      : etiquetaHecho
-        ? `${S.reports.suggested(alertaHoy.action.replace(/\.$/, ""))}. ${S.reports.done(etiquetaHecho)}${notaLimpia ? `. ${notaLimpia}` : ""}`
-        : alertaHoy.action
-    // modo real: el retardo del perfil; demo: se acorta a 1 min para ver la cola avanzar
-    const id = await encolarReporte(profile.id, new Date().toISOString(), tripulante, retardoEnvio(mode, profile.id), {
-      titulo: S.reports.dailyTitle(day),
-      resumen: S.reports.summary(S.status[analisis.overall(day)], balance.revisados, balance.fuera),
-      lectura,
-      lectura_humana: lecturaLlana,
-      linea_base: lineaBase,
-      entorno,
-      accion,
-      ...(alertaHoy ? { accion_sugerida: alertaHoy.action } : {}),
-      ...(alertaHoy && hecho ? { accion_hecha: hecho } : {}),
-      ...(alertaHoy && hecho && notaLimpia ? { accion_nota: notaLimpia } : {}),
-      ...(mode === "demo" ? { demo: true } : {}),
-    })
-    setFallo(id === null)
-    if (id !== null) {
+    setFallo(false)
+    try {
+      // el informe lleva lo que pide §6.1: lectura, línea base, entorno y acción, todo del día y con su procedencia
+      const v = analisis.vitals(day).find((x) => x.day === day)
+      const medida = (valor: number | null | undefined, unidad: string) => (valor == null ? null : `${valor} ${unidad}`)
+      const lectura = v
+        ? [medida(v.restingHr, catalogo.indicadores.restingHr.unit), medida(v.systolic, "mmHg"), medida(v.spo2, "% SpO2"), medida(v.tempC, "°C"),
+            v.sleepH == null ? null : `${S.reports.sleep} ${v.sleepH} h`, v.mood == null ? null : `${S.reports.mood} ${v.mood}/10`].filter(Boolean).join(" · ")
+        : S.reports.noReading
+      const banda = analisis.band("restingHr").findLast((b) => b.day <= day)
+      const lineaBase = banda
+        ? S.reports.bandText(banda.low.toFixed(0), banda.high.toFixed(0), banda.flightWeight === 0 ? S.reports.phaseGround : banda.flightWeight === 1 ? S.reports.phaseFlight : S.reports.phaseMix)
+        : S.reports.noBaseline
+      const co2 = analisis.co2(day)
+      const tormenta = analisis.stormInfo(day)
+      const entorno = [
+        co2 ? `CO2 ${co2.mmHg.toFixed(2)} mmHg @ ${profile.cabinPressureMmHg} mmHg (${co2.source})` : null,
+        tormenta ? `${S.reports.stormOn} (${tormenta.source})` : null,
+      ].filter(Boolean).join(" · ") || S.reports.noEnvironment
+      // la misma lectura, en lenguaje llano y con el balance que resume el informe
+      const lecturaLlana = lecturaHumana(v, banda) || S.reports.noReading
+      const balance = balanceLectura(v, banda)
+      // «Sugerido: … Hecho: …» solo si el tripulante confirmó; si no (demo sin elegir), la acción sugerida tal cual
+      const notaLimpia = nota.trim().slice(0, NOTA_MAX)
+      const etiquetaHecho = alertaHoy && hecho ? OPCIONES_HECHO.find((o) => o.codigo === hecho)?.etiqueta() : undefined
+      const accion = !alertaHoy
+        ? S.reports.noAction
+        : etiquetaHecho
+          ? `${S.reports.suggested(alertaHoy.action.replace(/\.$/, ""))}. ${S.reports.done(etiquetaHecho)}${notaLimpia ? `. ${notaLimpia}` : ""}`
+          : alertaHoy.action
+      // modo real: el retardo del perfil; demo: se acorta a 1 min para ver la cola avanzar
+      const contenido = {
+        titulo: S.reports.dailyTitle(day),
+        resumen: S.reports.summary(S.status[analisis.overall(day)], balance.revisados, balance.fuera),
+        lectura,
+        lectura_humana: lecturaLlana,
+        linea_base: lineaBase,
+        entorno,
+        accion,
+        ...(alertaHoy ? { accion_sugerida: alertaHoy.action } : {}),
+        ...(alertaHoy && hecho ? { accion_hecha: hecho } : {}),
+        ...(alertaHoy && hecho && notaLimpia ? { accion_nota: notaLimpia } : {}),
+        ...(mode === "demo" ? { demo: true } : {}),
+      }
+      const bandeja = bandejaInformes(tripulante, mode, mision)
+      bandeja.guardar({ id: nuevoId(), creado: new Date().toISOString(), perfil: profile.id,
+        retardo: retardoEnvio(mode, profile.id), contenido })
+      setPendientes(bandeja.listar())
       setHecho(null)
       setNota("")
+      await leer()
+    } catch {
+      setFallo(true)
+    } finally {
+      setEncolando(false)
     }
-    await leer()
-    setEncolando(false)
   }
 
   const mensajes = catalogo.mensajes.filter((m) => m.day <= day).sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
@@ -279,6 +308,20 @@ export function ReportsView() {
       )}
       {fallo && <p role="alert" className="mb-5 rounded-2xl border border-status-act/40 bg-status-act/12 p-4 text-base font-medium">{S.reports.sendFailed}</p>}
       {sinEnlace && <p role="status" className="mb-5 rounded-2xl border border-border bg-muted p-4 text-base font-medium">{S.reports.offline}</p>}
+      {!surgeon && pendientes.length > 0 && (
+        <section className="mb-5 rounded-3xl border border-border bg-card p-5" aria-label={S.reports.localPending}>
+          <h2 className="text-xl font-semibold">{S.reports.localPending}</h2>
+          <p className="mt-2 text-muted-foreground">{S.reports.localPendingHint}</p>
+          <ul className="mt-3 flex flex-col gap-3">
+            {pendientes.map((p) => <li key={p.id} className="rounded-2xl border border-border p-4">
+              <p className="font-semibold">{p.contenido.titulo}</p>
+              <p>{p.contenido.resumen}</p>
+              <p>{p.contenido.accion}</p>
+              {p.error === "conflicto" && <p role="alert" className="text-status-act">{S.reports.operationConflict}</p>}
+            </li>)}
+          </ul>
+        </section>
+      )}
       {sinRegistroHoy && !surgeon && <p role="status" className="mb-5 rounded-2xl border border-border bg-muted p-4 text-base">{S.reports.needCheckIn}</p>}
 
       {/* El enlace de un vistazo: cuánto tarda un mensaje, qué viaja y qué espera respuesta */}

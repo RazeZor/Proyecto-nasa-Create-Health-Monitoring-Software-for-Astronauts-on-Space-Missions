@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from pydantic import BaseModel, StrictFloat, StrictInt
+from pydantic import BaseModel, Field, StrictFloat, StrictInt
 
 from almacen import alertas, base, cola, conectar, lecturas, migrar
 from i18n import t
@@ -24,8 +24,8 @@ ERRORES = {401: {"description": "Falta la cabecera X-Tripulante o no es un tripu
 
 def conexion():
     conn = conectar()
-    migrar(conn)
     try:
+        migrar(conn)
         yield conn
     finally:
         conn.close()
@@ -58,6 +58,7 @@ class SintomaIn(BaseModel):
     codigo: str
     gravedad: StrictInt
     t_real: str
+    operacion_id: str | None = Field(default=None, min_length=1, max_length=200)
 
 
 class LineaBaseIn(BaseModel):
@@ -83,6 +84,7 @@ class ReporteIn(BaseModel):
     creado_t_real: str
     retardo_min: StrictInt
     contenido: dict | None = None  # título, resumen, lectura... lo que muestra la app
+    operacion_id: str | None = Field(default=None, min_length=1, max_length=200)
 
 
 class ContextoIn(BaseModel):

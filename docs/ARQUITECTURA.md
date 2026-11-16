@@ -5,20 +5,22 @@ VIGÍA es un **monorepo organizado por unidad desplegable**. Cada tipo de trabaj
 ```
 apps/                 Lo que usa una persona: interfaces y servicios
   web/                PWA a bordo (registro diario, figura humana, alertas, vista de tierra)
-  api/                (solo si hace falta) servicio de tierra; el MVP no tiene servidor
+  api/                API FastAPI a bordo, SQLite local, gold verificado y puente del reloj
 pipelines/            Ingesta y procesamiento de datos, de un script a big data
   datalake/           Ingesta GOES, DONKI, RadLab y EDA → zonas raw y curated
+  reanclaje/          Rejilla, paneles gold, simulación reproducible y trayectoria de la demo
 packages/             Librerías compartidas, sin efectos secundarios
-  engine/             (próximo) motor híbrido A/B/C en TypeScript puro
-  schemas/            (próximo) contratos de datos: JSON Schema de filas y fichas
+  engine/             Motor híbrido A/B/C y descomposición de series en TypeScript puro
+  schemas/            Contratos JSON Schema, perfiles, vocabulario y fichas
   i18n/               traducciones: español principal, inglés secundario (Python y TS)
 tools/                Herramientas del equipo, no van al producto
   contextgen/         Genera el contexto para IA (MODULE.md, docs/context)
+  verificacion/       Suites, tipado/build, inventario y ensayo de recuperación en Chrome
 docs/                 Arquitectura, setup y contexto generado
 documentacion/        Informe técnico del reto (entregable)
 ```
 
-Las carpetas marcadas "(próximo)" todavía no existen. Se crean cuando haya código, siguiendo esta guía.
+El índice completo y actualizado de módulos está en [context/INDEX.md](context/INDEX.md). Esta estructura describe la implementación actual; los trabajos futuros están en [PLAN-MAESTRO.md](PLAN-MAESTRO.md).
 
 ## Regla de dependencias
 
@@ -71,30 +73,30 @@ Reglas para pipelines:
 
 ## `apps/`: front y back
 
-**`apps/web`** (React + Vite, PWA sin conexión; informe §4.3) se organiza **por funcionalidad**, no por tipo de archivo:
+**`apps/web`** usa Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4 y three.js. Se organiza así:
 
 ```
 apps/web/
   package.json
-  src/
-    app/                 arranque, rutas, providers
-    features/
-      registro-diario/   components/ hooks/ store.ts index.ts
-      figura-humana/
-      alertas/
-      sincronizacion/    cola de reportes con retardo
-      vista-tierra/
-    shared/              UI genérica, sin lógica de negocio
-  public/                datos JSON exportados por los pipelines, manifest de la PWA
+  app/[rol]/             rutas de astronauta, oficial y médico
+  components/            pantallas por funcionalidad, contexto y controles compartidos
+  lib/                   cliente API, adaptadores del motor, almacenamiento y sincronización
+  public/                service worker, manifiesto PWA, modelo anatómico
 ```
 
-Una feature solo expone lo que exporta su `index.ts`. Las features se comunican por el store o por props, no importando archivos internos de otra feature.
+Las pantallas comparten el contexto de sesión y las interfaces de `lib/`. Los estados del motor se calculan localmente; los textos salen de `packages/i18n`. El cuerpo usa un modelo anatómico 3D o una anatomía procedural; sin WebGL conserva las tarjetas y avisa de la indisponibilidad del lienzo.
 
-**`apps/api`** (solo si hace falta un servidor; el MVP no lo tiene) se organiza **por capas hexagonales**: `dominio/` (reglas puras), `aplicacion/` (casos de uso) y `adaptadores/` (HTTP, base de datos y colas). El dominio no importa adaptadores.
+**`apps/api`** es un servicio local FastAPI. `main.py` monta rutas, ciclo de vida y proxy del reloj; `gold.py` verifica hashes antes de servir artefactos; `rutas_dashboard.py` adapta historia/entorno a la web; `rutas_registro.py` publica el registro; `almacen/` contiene SQLite, migraciones y reglas de persistencia; `puente_reloj.py` recibe smart-monitor. El reloj físico y su servidor viven en otro repositorio y no son importados por la app.
+
+La web consulta `/vigia-api`; Next reenvía al servicio local configurado en `VIGIA_API_INTERNA` al compilar. Perder Internet/Tierra, perder la API local y perder smart-monitor son fallos diferentes. El service worker conserva la carcasa y la app conserva catálogos/colas; el primer arranque sí requiere disponer de la aplicación y sus datos.
+
+Los registros y alertas mantienen el HealthStore local por modo. Los informes tienen una bandeja persistente por misión/tripulante/modo e IDs estables; síntomas e informes son idempotentes en SQLite. La entrega sigue simulándose en la API: no hay receptor independiente en Tierra. La selección de rol en una ruta y `X-Tripulante` siguen siendo atajos de identidad; no constituyen autenticación.
+
+La demo usa el caso sintético del viaje a Marte de 259 días, con cronología DONKI histórica y dosis de tránsito simulada. El caso de 30 días permanece para paridad/evaluación sintética. El entorno remoto o reanclado servido en modo real es referencia; no activa recomendaciones de cabina. La dosis ambiental conserva detector y magnitud, sin convertir absorbida a equivalente ni inferir dosis personal.
 
 ## `packages/`: lógica compartida
 
-- `packages/engine`: motor híbrido (capa A clínica, capa B de desviación personal, capa C de deriva; informe §5.1). Usa funciones puras con tests unitarios: los mismos datos dan siempre el mismo nivel. Lo usan `apps/web` y, si existe, `apps/api`.
+- `packages/engine`: motor híbrido (capa A clínica, capa B de desviación personal, capa C de deriva; informe §5.1). Funciones puras con paridad Python/TypeScript; la web ejecuta este motor y la simulación Python se usa para referencias. La API almacena y sirve observaciones/alertas; no ejecuta TypeScript.
 - `packages/schemas`: JSON Schema de las filas curadas (`t_real`, fuente…) y de las fichas de indicador (los seis campos del reto más la URL de la fuente). Es el contrato entre `pipelines/` y `apps/`. Si cambia, se versiona.
 - `packages/i18n`: catálogos de traducción. Español principal y obligatorio; inglés secundario, que cae al español si falta. Todo texto que ve un usuario sale de aquí.
 
@@ -103,11 +105,12 @@ Una feature solo expone lo que exporta su `index.ts`. Las features se comunican 
 | Capa (informe §4.2) | Dónde vive |
 | --- | --- |
 | Ingesta | `pipelines/datalake` |
-| Reanclaje a la línea de tiempo de misión | `pipelines/<reanclaje>`, que genera la zona gold |
-| Captura, almacén, permisos, decisión, sincronización | `apps/web/src/features/*` |
+| Reanclaje a la línea de tiempo de misión | `pipelines/reanclaje`, que genera la zona gold |
+| Captura, presentación y decisión local | `apps/web/components`, `apps/web/lib`, `packages/engine` |
+| Almacén y reglas de persistencia del servidor local | `apps/api/almacen`, rutas de la API |
 | Motor híbrido | `packages/engine` |
-| Fichas de indicador | `packages/schemas` (forma) + `apps/web/public` (datos) |
-| Vista de tierra | `apps/web/src/features/vista-tierra` |
+| Fichas de indicador | `packages/schemas/fichas` y `fichas_en`, servidas por la API |
+| Vista de tierra | `apps/web/app/[rol]` con rol médico; transporte local simulado |
 
 ## Convenciones
 

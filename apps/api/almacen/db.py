@@ -30,12 +30,23 @@ def migrar(conn):
     """Aplica en orden las migraciones NNN_*.sql pendientes y devuelve la versión resultante.
     Cada migración corre en una transacción con su `user_version`: si falla, no queda esquema parcial."""
     with _BLOQUEO:
-        actual = conn.execute("PRAGMA user_version").fetchone()[0]
+        # Validar todo el catálogo antes de tocar el esquema, incluso si la versión ya se aplicó.
+        archivos = []
+        versiones = set()
         for archivo in sorted(MIGRACIONES.glob("*.sql")):
-            version = int(re.match(r"(\d+)_", archivo.name).group(1))
+            nombre = re.fullmatch(r"(\d+)_.+\.sql", archivo.name)
+            if nombre is None:
+                raise ValueError(f"nombre de migración inválido: {archivo.name}")
+            version = int(nombre.group(1))
+            if version in versiones:
+                raise ValueError(f"versión de migración duplicada: {version}")
+            versiones.add(version)
+            archivos.append((version, archivo))
+        actual = conn.execute("PRAGMA user_version").fetchone()[0]
+        for version, archivo in sorted(archivos):
             if version > actual:
                 try:  # executescript confirma lo pendiente y admite los ';' internos de los triggers
-                    conn.executescript(f"BEGIN IMMEDIATE;\n{archivo.read_text()}\nPRAGMA user_version = {version};\nCOMMIT;")
+                    conn.executescript(f"BEGIN IMMEDIATE;\n{archivo.read_text(encoding='utf-8')}\nPRAGMA user_version = {version};\nCOMMIT;")
                 except Exception:
                     if conn.in_transaction:
                         conn.rollback()

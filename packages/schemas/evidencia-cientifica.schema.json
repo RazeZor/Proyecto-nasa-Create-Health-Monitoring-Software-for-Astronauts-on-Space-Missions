@@ -1,0 +1,23 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object","additionalProperties":false,
+  "required":["version","validacion_clinica","revision_profesional","revisiones","afirmaciones"],
+  "properties":{
+    "version":{"const":"afirmaciones-v1"},
+    "validacion_clinica":{"const":false},
+    "revision_profesional":{"const":"pendiente"},
+    "revisiones":{"type":"array","maxItems":0},
+    "afirmaciones":{"type":"array","minItems":1,"items":{
+      "type":"object","additionalProperties":false,
+      "required":["id","estado","clave","fuentes","artefactos","limite"],
+      "properties":{
+        "id":{"type":"string","pattern":"^[a-z_]+$"},
+        "estado":{"enum":["fundamento_publicado","verificado_software","evaluado_sintetico","hipotesis"]},
+        "clave":{"type":"string","pattern":"^web\\.ciencia\\.afirmaciones\\."},
+        "limite":{"type":"string","pattern":"^web\\.ciencia\\.limites\\."},
+        "fuentes":{"type":"array","uniqueItems":true,"items":{"type":"string","pattern":"^https://"}},
+        "artefactos":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","minLength":1}}
+      }
+    }}
+  }
+}

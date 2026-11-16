@@ -21,7 +21,7 @@ import { rutaDe } from "@/lib/roles"
 import { S } from "@/lib/strings"
 import { store } from "@/lib/storage"
 import type { CheckInEntry, IndicatorId, Status, Symptom } from "@/lib/types"
-import { cn } from "@/lib/utils"
+import { cn, nuevoId } from "@/lib/utils"
 
 /** Sitio de la SpO2 del reloj; se compara con la línea base del mismo sitio (§2.4). */
 const WRIST = "Muñeca"
@@ -274,7 +274,7 @@ function CheckInForm({ onReset }: { onReset: () => void }) {
       massKg: guardar.mass, massMethod,
     }
     const status = evaluateCheckIn(base, checkIns, catalogo.historial, profile.cabinPressureMmHg)
-    const entry: CheckInEntry = { ...base, status, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+    const entry: CheckInEntry = { ...base, status, id: nuevoId(), createdAt: new Date().toISOString() }
     setSaving(true)
     setError(false)
     try {

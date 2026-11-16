@@ -13,6 +13,11 @@
     "datalake": {
       "uso": "Usage:\n  python index.py ingest goes|donki|radlab|eda [key=value ...]\n  python index.py read <source> [from] [to]\n  python index.py manifest\nLanguage: VIGIA_LANG=es|en (default es)",
       "error": "error: {detalle}"
+    },
+    "biometria": {
+      "descripcion": "Import public physiology as reference; does not perform clinical validation.",
+      "desde": "Folder with original MMASH.zip, LICENSE.txt and SHA256SUMS.txt files.",
+      "error": "Could not import physiological reference: {detalle}"
     }
   },
   "api": {
@@ -390,6 +395,10 @@
         "indicative": "indicative",
         "noDose": "No dosimetry in this scenario",
         "noCabin": "No cabin telemetry for this day",
+        "referenceOnly": "Environmental reference",
+        "detector": "Instrument and quantity",
+        "referenceOnlyHint": "These remote or historical observations help explore the sources. They do not describe the current cabin or trigger actions for the real crew.",
+        "environmentalDose": "Instrument environmental dose; it does not estimate personal dose or a percentage of the career limit",
         "noEda": "No EDA reading for this day",
         "sourceUnused": "Not used in this scenario",
         "doseEquivalent": "real dose equivalent",
@@ -516,7 +525,7 @@
         "pillInfo": "Informational",
         "acknowledged": "Acknowledged",
         "layerPlain": {
-          "A": "A measurement crossed a safety limit of the NEWS2 clinical scale (early warning score).",
+          "A": "A measurement activated a prototype safety rule, partially based on NEWS2 bands.",
           "B": "The reading is outside your usual range: your personal baseline.",
           "C": "A small but sustained change over several days.",
           "context": "An environmental or contextual event explains it."
@@ -527,7 +536,10 @@
         "subtitle": "Outbound queue to the Flight Surgeon. Delivery takes the one-way delay.",
         "queue": "Outbound queue",
         "reply": "Reply from ground",
-        "sendFailed": "Could not queue the report: the API did not respond. Try again.",
+        "sendFailed": "Could not save or read the device outbox. Check storage before closing the app.",
+        "localPending": "Saved on this device",
+        "localPendingHint": "Reports will be sent when the API returns. You can close and reopen the app; the content and confirmed action are saved.",
+        "operationConflict": "The API received this identifier with different content. The report is kept here for review and will not retry automatically.",
         "thread": "Conversation with the Flight Surgeon",
         "send": "Queue today's report",
         "queued": "Queued",
@@ -564,7 +576,7 @@
         "countTransit": "On the way",
         "countNoReply": "No reply yet",
         "countReplied": "Replied",
-        "queuedHint": "Leaves the ship in a few seconds",
+        "queuedHint": "Saved on this device; waiting for API acceptance",
         "sentHint": "Travelling to Earth",
         "arrivedHint": "Already on Earth",
         "noReplyYet": "Delivered. No reply from the Flight Surgeon yet.",
@@ -576,7 +588,7 @@
         "sending": "Queueing…",
         "threadEmpty": "No messages yet.",
         "surgeonEmpty": "No report has arrived yet.",
-        "offline": "No link with the API: showing the last queue read. New reports need a link.",
+        "offline": "No link with the API: showing the last known queue. New reports are saved on this device and retried when the link returns.",
         "oneWayHintReal": "How long a message takes to reach Earth from {perfil}. The report is delivered once that time has passed.",
         "needCheckIn": "No check-in today: complete your daily check-in before queuing a report to Earth.",
         "plainReading": "What the data says",
@@ -798,7 +810,7 @@
           "context": "Does the environment explain it?"
         },
         "layerHow": {
-          "A": "NEWS2 per-parameter bands (Royal College of Physicians), a terrestrial standard, with our own aggregation cut-offs, more conservative than the RCP triggers: red on an extreme band or a total of 5 or more; amber on 3 or 4. Prototype rules pending review by a flight surgeon.",
+          "A": "Partial adaptation of NEWS2 bands for four parameters; omits respiratory rate, consciousness/confusion and supplemental oxygen. Own aggregation: red on an extreme band or total of 5 or more; amber on 3 or 4. It is not full NEWS2 and does not inherit its validation; professional review pending.",
           "B": "Compares each reading with your own baseline using a modified z-score (median and MAD, a robust measure of how much you usually vary). It alerts when it happens two days in a row.",
           "C": "Adds up each day's small changes (one-sided CUSUM) to reveal a trend no single day shows. Active from day 21.",
           "context": "A headache with cabin CO₂ above 3 mmHg is an environment alert for the crew, not a medical alert. A solar particle event switches on storm mode."
@@ -828,34 +840,9 @@
         "privacyEnvBody": "Labeled “shared with the crew”.",
         "offline": "Works offline",
         "offlineBody": "The app shell, the engine, the check-in and the alerts run with the network off; check-ins and escalations queue locally and sync when the link returns. Reports to the ground travel through a delay queue.",
-        "results": "Simulation results",
-        "resultsLead": "500 simulated missions with anomalies and 500 control missions (seed 2026). Not clinical performance.",
-        "kpis": {
-          "drift": {
-            "v": "99.8 %",
-            "l": "Slow drift detected (sleep −0.2 h/day, HR +1 bpm/day, mood −0.15/day), median 8 days after onset"
-          },
-          "half": {
-            "v": "17.8 %",
-            "l": "The same drift at half intensity"
-          },
-          "fixed": {
-            "v": "Never",
-            "l": "A fixed terrestrial threshold (HR ≥ 91 bpm) fired"
-          },
-          "rules": {
-            "v": "100 %",
-            "l": "CO₂ + headache and solar storm rules (deterministic)"
-          },
-          "false": {
-            "v": "< 0.001",
-            "l": "False alarms per crew member per week"
-          }
-        },
-        "resultsCaveat": "These numbers are optimistic: the simulated noise is Gaussian and the generator was written by the same team. They show that the engine sees a drift that a fixed threshold misses, not how it would perform on real crews.",
         "limits": "Declared limits",
         "limitsList": {
-          "phys": "Crew physiology in demo mode is simulated; no real astronaut data is used. Clinical bands come from NEWS2, a terrestrial standard, and the aggregation cut-offs are ours; both need review by a flight surgeon.",
+          "phys": "Demo physiology is simulated. Layer A partially adapts four NEWS2 parameters with its own aggregation. It does not implement the full standard or inherit its validation. Professional review is required.",
           "rad": "Radiation is ambient dose from an area detector, not personal dose. GOES measures at geostationary orbit: it indicates severity and timing, not crew dose.",
           "todo": "Not yet implemented: body mass in layer C, the in-flight metrology correction of layer A, the PVT-B vigilance test, camera input, storage encryption and crew authentication."
         },
@@ -878,13 +865,13 @@
             "d": "Cabin CO₂, temperature and humidity"
           },
           "news2": {
-            "t": "NEWS2",
-            "d": "Clinical bands of layer A"
+            "t": "NEWS2 · partial reference",
+            "d": "Foundation for bands; does not validate this prototype"
           }
         },
         "sourcesNote": "Full references are in the technical report of the repository.",
         "ai": "Use of AI",
-        "aiBody": "We used AI assistants (Claude, by Anthropic, through Claude Code; OpenAI Codex as an independent reviewer) to research public NASA, CSA and NOAA sources, to draft and review documentation and to help write, review and test code. Decisions, indicators, rules and sources are the team's. No AI-generated images, video or audio.",
+        "aiBody": "We used AI assistants for public-source research, writing, coding, testing and synthetic benchmark generation. They do not constitute independent clinical review. The team must review and take responsibility for final decisions, sources and claims.",
         "provMeasured": "Entered by the astronaut or streamed from a paired device.",
         "provSimulated": "Synthetic physiology and injected anomalies from demo mode.",
         "provScenario": "Mission calendar: the day on which each real window falls is a scenario decision.",
@@ -1011,7 +998,7 @@
         "pas": "Systolic blood pressure",
         "sueno": "Sleep",
         "animo": "Mood",
-        "news2": "NEWS2 clinical score",
+        "news2": "Partial safety score",
         "co2": "Headache with high cabin CO2",
         "protones": "Solar storm",
         "glucosa": "Blood glucose"
@@ -1027,12 +1014,12 @@
         "glucosa": "mg/dL"
       },
       "banda": {
-        "A": "NEWS2 band total of 5 or more, or one parameter in its extreme range (VIGÍA cut-off)",
+        "A": "Partial band sum of 5 or more, or an extreme band (VIGÍA prototype rule)",
         "B": "Outside your personal band two days in a row",
         "C": "Cumulative drift over several days (CUSUM of 5 or more)",
         "context": "Environment rule"
       },
-      "bandaAAmbar": "NEWS2 band total of 3 or 4 (VIGÍA cut-off)",
+      "bandaAAmbar": "Partial band sum of 3 or 4 (VIGÍA prototype rule)",
       "bandaContexto": {
         "co2": "CO2 above 3 mmHg (1 h average) with headache",
         "protones": "Flux of 10 pfu or more at ≥10 MeV, or SEP event"
@@ -1058,7 +1045,7 @@
         "glucosa": "Wash your hands and repeat the measurement with a new strip (the used one goes in the biological waste container). If it reads below 70, have something sugary and measure again in 15 minutes; if it reads above 126 while fasting, drink water and measure again tomorrow before breakfast. If it is out of that range again, tell the Crew Medical Officer today."
       },
       "tramoExtremo": "Extreme range (3 points)",
-      "tramoSuma": "{puntos} points; NEWS2 total {suma}",
+      "tramoSuma": "{puntos} points; partial sum {suma}",
       "cusum": "CUSUM {valor}",
       "eventoSep": "SEP event {id}",
       "real": "Real",
@@ -1081,6 +1068,98 @@
         "head": "Rest, drink water and stay off screens for 1 hour. Log the symptom again in 2 hours: if it is still the same tomorrow, or sooner if your vision blurs, you get dizzy when moving or the pain is the worst you remember, find the Crew Medical Officer.",
         "blood": "Take your temperature now, wash your hands well and do not share cutlery or towels. Take it again tomorrow morning and at night: if it reaches 38 °C, or the symptom is still there the day after tomorrow, tell the Crew Medical Officer."
       }
+    },
+    "ciencia": {
+      "titulo": "Scientific evidence",
+      "alcance": "Research prototype. Professional review and clinical validation pending.",
+      "introduccion": "Exploratory audit of the product engine with comparators and ablations. The same team created the benchmark; it is not an independent test.",
+      "cargando": "Loading verifiable evidence…",
+      "no_publicado": "No audit has been published. No metrics are displayed.",
+      "vigente": "Code and protocol match the audit",
+      "desactualizado": "Historical audit: code or protocol has changed",
+      "fallo": "Evidence could not be verified. Check the API log.",
+      "cache": "Latest local copy: currency cannot be checked while offline.",
+      "descargar": "Download evidence JSON",
+      "escenario": "Scenario",
+      "metodo": "Method",
+      "deteccion": "Detected / events",
+      "omitidos": "Missed",
+      "intervalo": "95% detection CI",
+      "retraso": "Median delay (detected only), days",
+      "falsas": "False episodes / person-week",
+      "exposicion": "Episodes / observed days",
+      "sin_dato": "No denominator",
+      "fecha": "Evaluation UTC",
+      "codigo": "Engine SHA-256",
+      "limites_banco": "Synthetic distributions not calibrated to astronauts. No independent held-out set, clinical acceptance criterion or correction for multiple comparisons. Unfavorable results are retained. Environmental scenarios are deterministic rule checks.",
+      "afirmaciones_titulo": "Evidence behind each claim",
+      "fuentes": "Primary sources",
+      "artefactos": "Code and protocol",
+      "estados": {
+        "fundamento_publicado": "Published foundation",
+        "verificado_software": "Software verified",
+        "evaluado_sintetico": "Simulation evaluated",
+        "hipotesis": "Pending hypothesis"
+      },
+      "afirmaciones": {
+        "capa_a": "Layer A: partial adaptation of NEWS2 bands.",
+        "capa_c": "CUSUM accumulates statistical deviations.",
+        "auditoria": "The engine is compared with simple thresholds, a personal baseline and ablations.",
+        "operacion": "The report queue retains operations and avoids duplicates on retry.",
+        "beneficio": "Personalization could help prioritize review of health changes."
+      },
+      "limites": {
+        "capa_a": "Uses four parameters; omits respiratory rate, consciousness/confusion and supplemental oxygen. It is not full NEWS2 and does not inherit its validation.",
+        "capa_c": "The statistical foundation does not validate these thresholds, physiological model or clinical utility.",
+        "auditoria": "Sensitivity to these synthetic injections; does not represent diagnostic sensitivity or establish general superiority.",
+        "operacion": "Recovery and retry verification; transport to Earth remains a local simulation.",
+        "beneficio": "Clinical benefit and comparative innovation remain unproven pending professional review and independent evaluation."
+      },
+      "escenarios": {
+        "control": "Control without injection",
+        "ruido_correlacionado": "Correlated noise",
+        "colas_pesadas": "Heavy-tailed noise",
+        "deriva_intensa": "Intense drift",
+        "deriva_sutil": "Subtle drift",
+        "deriva_tardia": "Late drift",
+        "sin_prevuelo": "No preflight",
+        "datos_ausentes": "Missing data",
+        "cambio_instrumento": "Instrument change",
+        "sensor_fijo": "Stuck sensor",
+        "extremo": "Single extreme",
+        "entorno_referencia": "Reference environment",
+        "entorno_escenario": "Scenario environment"
+      },
+      "metodos": {
+        "umbrales": "Simple thresholds",
+        "personal_simple": "Simple personal baseline",
+        "A": "A",
+        "AB": "A + B",
+        "AC": "A + C",
+        "ABC": "A + B + C",
+        "ABC_contexto": "A + B + C + context"
+      },
+      "deslizar": "Scroll the table horizontally to view intervals, delay and false alerts.",
+      "tabla": "Audit method comparison",
+      "datasets_titulo": "Acquired datasets",
+      "datasets_alcance": "Public references incorporated and verified. Their subjects and measurements remain separate from the current crew; acquisition does not evaluate or clinically validate the engine.",
+      "datasets_cargando": "Checking published datasets…",
+      "datasets_disponibles": "Products available with verified integrity",
+      "datasets_vacio": "No additional datasets have been published yet.",
+      "datasets_error": "Dataset availability could not be verified.",
+      "datasets_tipo_fisiologia_terrestre": "Terrestrial human physiology reference",
+      "datasets_tipo_radiacion_ambiental": "Historical environmental radiation reference",
+      "datasets_registros": "Original records",
+      "datasets_sujetos": "Dataset subjects",
+      "datasets_utilizados": "Intervals interpretable for aggregation",
+      "datasets_sueno": "Sleep periods",
+      "datasets_detectores": "Separate instruments",
+      "datasets_puntos": "Aggregated 5-minute points",
+      "datasets_ventana": "UTC observation window",
+      "datasets_detalle": "View product and provenance JSON",
+      "datasets_hash": "SHA-256",
+      "datasets_limite_mmash": "24 hours per participant. UTC observation dates are unknown: relative days and times are retained. Interval-derived heart rate is not labeled resting HR. This dataset does not establish detection of drifts over weeks. Originals and ODbL-1.0 license retained.",
+      "datasets_limite_orion": "A historical Artemis I window. Environmental absorbed dose per instrument; not personal dose and not converted to mSv. Specific detector location/material requires its documentation."
     }
   }
 }

@@ -132,7 +132,7 @@ def _entorno_real(panel):
     dias = {}
 
     def dia(d):
-        return dias.setdefault(d, {"dia_mision": d, "co2_ppm_max_horario": None, "co2_mmhg_max_horario": None,
+        return dias.setdefault(d, {"dia_mision": d, "uso": "referencia", "co2_ppm_max_horario": None, "co2_mmhg_max_horario": None,
                                    "co2_origen": None, "flujo_protones_10mev_pfu": None, "flujo_origen": None,
                                    "eventos_sep": [], "modo_tormenta": False})
 
@@ -167,7 +167,7 @@ def _entorno_demo(caso, reales):
     for sim in caso["entorno_diario"]:
         d = sim["dia_mision"]
         real = reales.get(d, {})
-        e = {"dia_mision": d, "fecha": (inicio + timedelta(days=d - 1)).isoformat(), "posicion": posiciones.get(d), "dosis_msv_dia": sim.get("dosis_msv_dia"),
+        e = {"dia_mision": d, "uso": "escenario", "fecha": (inicio + timedelta(days=d - 1)).isoformat(), "posicion": posiciones.get(d), "dosis_msv_dia": sim.get("dosis_msv_dia"),
              "dosis_acumulada_msv": sim.get("dosis_acumulada_msv"), "co2_ppm_max_horario": None, "co2_mmhg_max_horario": sim["co2_mmhg_max_horario"],
              "co2_origen": {"naturaleza": "Simulado", "fuente": "Escenario de demostración", "fecha_real": None},
              "flujo_protones_10mev_pfu": sim["flujo_protones_10mev_pfu"],
@@ -227,7 +227,8 @@ def historial(id: int = Depends(propio_o_clinico), modo: Literal["real", "demo"]
     real. `eventos_sep` son eventos DONKI reales reanclados; con alguno, `modo_tormenta` es true."""
     panel = gold.panel(ESCENARIO_ENTORNO[modo])
     reales = _entorno_real(panel) if panel else {}
-    comun = {"modo": modo, "escenario_entorno": panel["escenario"] if panel else None,
+    comun = {"modo": modo, "mision_id": conn.execute("SELECT mision_id FROM tripulante WHERE id = ?", (id,)).fetchone()[0],
+             "escenario_entorno": panel["escenario"] if panel else None,
              # el aviso del panel gold está en español; a la interfaz va traducido (`lang`)
              "aviso_entorno": t("api.aviso.entorno_reanclado", lang) if panel else None}
     if modo == "demo":
@@ -241,7 +242,8 @@ def historial(id: int = Depends(propio_o_clinico), modo: Literal["real", "demo"]
     dia_actual = tripulacion.dia_de_vuelo(conn, id, ahora) or 1
     filas = _lecturas_reales(conn, id)
     for f in filas:
-        f["durante_tormenta"] = bool(reales.get(f["dia_mision"], {}).get("modo_tormenta"))
+        # El panel reúne observaciones remotas reancladas; no mide la exposición del usuario.
+        f["durante_tormenta"] = False
     return {**comun, "naturaleza": "Real", "dias_prevuelo": sum(f["dia_mision"] <= 0 for f in filas),
             "dias_vuelo": max(DIAS_VUELO_MINIMO, dia_actual), "dia_actual": dia_actual,
             "entorno_diario": [reales[d] for d in sorted(reales)], "lecturas": filas}

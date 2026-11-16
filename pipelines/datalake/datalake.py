@@ -25,7 +25,7 @@ GOES_URL = "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-
 GOES_ENERGIAS = {">=10 MeV", ">=50 MeV", ">=100 MeV"}
 # Nueva dirección, anterior y espejo (informe 3.3), en ese orden.
 DONKI_URLS = [
-    "https://ccmc.gsfc.nasa.gov/DONKI/WS/get/SEP",
+    "https://ccmc.gsfc.nasa.gov/DONKI-API/get/SEP",
     "https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/SEP",
     "https://api.nasa.gov/DONKI/SEP",
 ]
@@ -163,7 +163,8 @@ def _fuentes(fuente, params):
             try:
                 return [(url, _get(url), "json")]
             except OSError as e:
-                errores.append(f"{base}: {e}")
+                # HTTPError y URLError pueden incluir la URL completa y su clave.
+                errores.append(f"{base}: {type(e).__name__}")
         raise ConnectionError("DONKI no responde en ninguna dirección: " + "; ".join(errores))
     if fuente == "eda":
         q = dict(params or {})
@@ -184,6 +185,14 @@ def manifest():
     return json.loads(p.read_text()) if p.exists() else []
 
 
+def _url_publica(url):
+    partes = urllib.parse.urlsplit(url)
+    # RadLab admite operadores y campos sin '='. Reserializar con parse_qsl/urlencode cambia esa sintaxis.
+    consulta = [segmento for segmento in partes.query.split("&")
+                if urllib.parse.unquote_plus(segmento.split("=", 1)[0]).lower() not in {"api_key", "token", "access_token"}]
+    return urllib.parse.urlunsplit(partes._replace(query="&".join(consulta)))
+
+
 def ingest(fuente, params=None):
     """Descarga, limpia y guarda. Si la estructura no es la esperada no escribe nada."""
     nuevas = []
@@ -198,13 +207,23 @@ def ingest(fuente, params=None):
                                        ("curated", "json", json.dumps(filas, ensure_ascii=False).encode())):
             destino = ROOT / zona / f"{rel}.{ext_z}"
             destino.parent.mkdir(parents=True, exist_ok=True)
-            destino.write_bytes(contenido)
-        nuevas.append({"fuente": fuente, "url": url, "consultado": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            if zona == "raw":
+                try:
+                    with destino.open("xb") as archivo:
+                        archivo.write(contenido)
+                except FileExistsError:
+                    if destino.read_bytes() != contenido:
+                        raise FileExistsError("colisión de ruta raw; se conserva el original") from None
+            else:
+                destino.write_bytes(contenido)
+        nuevas.append({"fuente": fuente, "url": _url_publica(url), "consultado": ahora.strftime("%Y-%m-%dT%H:%M:%SZ"),
                        "raw": f"raw/{rel}.{ext}", "curated": f"curated/{rel}.json",
                        "sha256": sha, "filas": len(filas)})
     # shortcut: un solo proceso escribe el manifiesto; con ingestas concurrentes usar un bloqueo
     ROOT.mkdir(parents=True, exist_ok=True)
-    _manifest_path().write_text(json.dumps(manifest() + nuevas, indent=2, ensure_ascii=False))
+    temporal = _manifest_path().with_suffix(".tmp")
+    temporal.write_text(json.dumps(manifest() + nuevas, indent=2, ensure_ascii=False), encoding="utf-8")
+    temporal.replace(_manifest_path())
     return nuevas
 
 

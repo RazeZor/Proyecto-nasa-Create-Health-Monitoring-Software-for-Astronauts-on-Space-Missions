@@ -13,6 +13,11 @@
     "datalake": {
       "uso": "Uso:\n  python index.py ingest goes|donki|radlab|eda [clave=valor ...]\n  python index.py read <fuente> [desde] [hasta]\n  python index.py manifest\nIdioma: VIGIA_LANG=es|en (por defecto es)",
       "error": "error: {detalle}"
+    },
+    "biometria": {
+      "descripcion": "Importar fisiología pública como referencia; no ejecuta validación clínica.",
+      "desde": "Carpeta con originales MMASH.zip, LICENSE.txt y SHA256SUMS.txt.",
+      "error": "No se pudo importar la referencia fisiológica: {detalle}"
     }
   },
   "api": {
@@ -390,6 +395,10 @@
         "indicative": "orientativa",
         "noDose": "Sin dosimetría en este escenario",
         "noCabin": "Sin telemetría de cabina este día",
+        "referenceOnly": "Referencia ambiental",
+        "detector": "Instrumento y magnitud",
+        "referenceOnlyHint": "Estas observaciones remotas o históricas permiten explorar las fuentes. No describen la cabina actual ni activan acciones sobre la tripulación real.",
+        "environmentalDose": "Dosis ambiental del instrumento; no estima la dosis personal ni el porcentaje del límite de carrera",
         "noEda": "Sin lectura EDA este día",
         "sourceUnused": "No se usa en este escenario",
         "doseEquivalent": "dosis equivalente real",
@@ -516,7 +525,7 @@
         "pillInfo": "Informativa",
         "acknowledged": "Entendido, visto",
         "layerPlain": {
-          "A": "Una medida cruzó un límite de seguridad de la escala clínica NEWS2 (puntaje de alerta temprana).",
+          "A": "Una medida activó una regla de seguridad del prototipo, basada parcialmente en bandas de NEWS2.",
           "B": "La lectura se sale de tu rango habitual: tu línea base personal.",
           "C": "Un cambio pequeño pero sostenido durante varios días.",
           "context": "Lo explica un evento del entorno o del contexto."
@@ -527,7 +536,10 @@
         "subtitle": "Cola de salida al Cirujano de Vuelo. La entrega tarda el retardo de ida.",
         "queue": "Cola de salida",
         "reply": "Respuesta de Tierra",
-        "sendFailed": "No se pudo encolar el informe: la API no respondió. Inténtalo de nuevo.",
+        "sendFailed": "No se pudo guardar o leer la bandeja del dispositivo. Revisa el almacenamiento antes de cerrar la app.",
+        "localPending": "Guardados en este dispositivo",
+        "localPendingHint": "Se enviarán al volver la API. Puedes cerrar y volver a abrir la app; el contenido y la acción confirmada quedan guardados.",
+        "operationConflict": "La API recibió este identificador con otro contenido. El informe se conserva aquí para revisión; no se reenviará automáticamente.",
         "thread": "Conversación con el Cirujano de Vuelo",
         "send": "Encolar informe de hoy",
         "queued": "En cola",
@@ -564,7 +576,7 @@
         "countTransit": "En camino",
         "countNoReply": "Sin respuesta aún",
         "countReplied": "Con respuesta",
-        "queuedHint": "Sale de la nave en unos segundos",
+        "queuedHint": "Guardado en el dispositivo; pendiente de aceptación por la API",
         "sentHint": "Viajando hacia Tierra",
         "arrivedHint": "Ya está en Tierra",
         "noReplyYet": "Entregado. Aún sin respuesta del Cirujano de Vuelo.",
@@ -576,7 +588,7 @@
         "sending": "Encolando…",
         "threadEmpty": "Aún no hay mensajes.",
         "surgeonEmpty": "Aún no ha llegado ningún informe.",
-        "offline": "Sin enlace con la API: se muestra la última cola leída. Los informes nuevos necesitan enlace.",
+        "offline": "Sin enlace con la API: se muestra la última cola leída. Los informes nuevos se guardan en este dispositivo y se reintentan al volver el enlace.",
         "oneWayHintReal": "Lo que tarda un mensaje en llegar a Tierra desde {perfil}. El informe se entrega cuando pasa ese tiempo.",
         "needCheckIn": "Hoy no hay registro: haz tu registro diario antes de encolar un informe a Tierra.",
         "plainReading": "Lo que dicen los datos",
@@ -798,7 +810,7 @@
           "context": "¿Lo explica el entorno?"
         },
         "layerHow": {
-          "A": "Tramos por parámetro de NEWS2 (Royal College of Physicians), un estándar terrestre, con cortes de agregación propios y más conservadores que los del RCP: rojo con una banda extrema o un total de 5 o más; ámbar con 3 o 4. Reglas de prototipo pendientes de revisión por un cirujano de vuelo.",
+          "A": "Adaptación parcial de bandas de NEWS2 para cuatro parámetros; omite frecuencia respiratoria, consciencia/confusión y oxígeno suplementario. Agregación propia: rojo con una banda extrema o total de 5 o más; ámbar con 3 o 4. No es NEWS2 completo ni hereda su validación; revisión profesional pendiente.",
           "B": "Compara cada lectura con tu propia línea base mediante una puntuación z modificada (mediana y MAD, una medida robusta de cuánto sueles variar). Avisa si ocurre dos días seguidos.",
           "C": "Acumula los cambios pequeños de cada día (CUSUM unilateral) para ver una tendencia que ningún día suelto delata. Activa desde el día 21.",
           "context": "Un dolor de cabeza con CO₂ de cabina por encima de 3 mmHg es una alerta de entorno para la tripulación, no una alerta médica. Un evento de partículas solares activa el modo tormenta."
@@ -828,34 +840,9 @@
         "privacyEnvBody": "Se rotulan «compartida con la tripulación».",
         "offline": "Funciona sin conexión",
         "offlineBody": "La carcasa de la app, el motor, el registro y las alertas funcionan sin red; los registros y los escalamientos se guardan en una cola local y se sincronizan cuando vuelve el enlace. Los informes a tierra viajan por una cola con retardo.",
-        "results": "Resultados de la simulación",
-        "resultsLead": "500 misiones simuladas con anomalías y 500 de control (semilla 2026). No es rendimiento clínico.",
-        "kpis": {
-          "drift": {
-            "v": "99,8 %",
-            "l": "Deriva lenta detectada (sueño −0,2 h/día, FC +1 bpm/día, ánimo −0,15/día), mediana de 8 días tras el inicio"
-          },
-          "half": {
-            "v": "17,8 %",
-            "l": "La misma deriva a la mitad de intensidad"
-          },
-          "fixed": {
-            "v": "Nunca",
-            "l": "Se disparó un umbral fijo terrestre (FC ≥ 91 bpm)"
-          },
-          "rules": {
-            "v": "100 %",
-            "l": "Reglas de CO₂ con dolor de cabeza y de tormenta solar (deterministas)"
-          },
-          "false": {
-            "v": "< 0,001",
-            "l": "Falsas alarmas por tripulante y semana"
-          }
-        },
-        "resultsCaveat": "Estas cifras son optimistas: el ruido simulado es gaussiano y el generador lo escribió el mismo equipo. Muestran que el motor ve una deriva que un umbral fijo no ve, no cómo rendiría con tripulaciones reales.",
         "limits": "Límites declarados",
         "limitsList": {
-          "phys": "La fisiología de la tripulación en modo demo es simulada; no se usan datos de astronautas reales. Los tramos clínicos vienen de NEWS2, un estándar terrestre, y los cortes de agregación son nuestros; ambos necesitan la revisión de un cirujano de vuelo.",
+          "phys": "La fisiología de la demo es simulada. La capa A adapta parcialmente cuatro parámetros de NEWS2 y usa agregación propia. No implementa el estándar completo ni hereda su validación. Requiere revisión profesional.",
           "rad": "La radiación es dosis ambiental de un detector de área, no dosis personal. GOES mide en órbita geoestacionaria: indica severidad y momento, no la dosis de la tripulación.",
           "todo": "Aún sin implementar: masa corporal en la capa C, la corrección metrológica en vuelo de la capa A, la prueba de vigilancia PVT-B, la entrada por cámara, el cifrado del almacenamiento y la autenticación de la tripulación."
         },
@@ -878,13 +865,13 @@
             "d": "CO₂, temperatura y humedad de cabina"
           },
           "news2": {
-            "t": "NEWS2",
-            "d": "Bandas clínicas de la capa A"
+            "t": "NEWS2 · referencia parcial",
+            "d": "Fundamento de bandas; no valida el prototipo"
           }
         },
         "sourcesNote": "Las referencias completas están en el informe técnico del repositorio.",
         "ai": "Uso de IA",
-        "aiBody": "Usamos asistentes de IA (Claude, de Anthropic, mediante Claude Code; OpenAI Codex como revisor independiente) para investigar fuentes públicas de NASA, CSA y NOAA, redactar y revisar documentación y ayudar a escribir, revisar y probar código. Las decisiones, los indicadores, las reglas y las fuentes son del equipo. No hay imágenes, vídeo ni audio generados por IA.",
+        "aiBody": "Usamos asistentes de IA para investigación pública, redacción, código, pruebas y generación del banco sintético. No constituyen revisión clínica independiente. Las decisiones, las fuentes y las afirmaciones finales deben ser revisadas y asumidas por el equipo.",
         "provMeasured": "Introducido por el astronauta o transmitido desde un dispositivo vinculado.",
         "provSimulated": "Fisiología sintética y anomalías inyectadas del modo demo.",
         "provScenario": "Calendario de misión: el día en que cae cada ventana real es una decisión del escenario.",
@@ -1011,7 +998,7 @@
         "pas": "Presión arterial sistólica",
         "sueno": "Sueño",
         "animo": "Estado de ánimo",
-        "news2": "Puntaje clínico NEWS2",
+        "news2": "Puntaje parcial de seguridad",
         "co2": "Cefalea con CO2 alto en cabina",
         "protones": "Tormenta solar",
         "glucosa": "Glucosa en sangre"
@@ -1027,12 +1014,12 @@
         "glucosa": "mg/dL"
       },
       "banda": {
-        "A": "Suma de tramos NEWS2 de 5 o más, o un parámetro en su tramo extremo (cortes propios de VIGÍA)",
+        "A": "Suma parcial de bandas de 5 o más, o una banda extrema (regla propia de VIGÍA)",
         "B": "Fuera de tu banda personal dos días seguidos",
         "C": "Deriva acumulada de varios días (CUSUM de 5 o más)",
         "context": "Regla de entorno"
       },
-      "bandaAAmbar": "Suma de tramos NEWS2 de 3 o 4 (corte propio de VIGÍA)",
+      "bandaAAmbar": "Suma parcial de bandas de 3 o 4 (regla propia de VIGÍA)",
       "bandaContexto": {
         "co2": "CO2 sobre 3 mmHg (promedio de 1 h) con cefalea",
         "protones": "Flujo de 10 pfu o más en ≥10 MeV, o evento SEP"
@@ -1058,7 +1045,7 @@
         "glucosa": "Lávate las manos y repite la medida con una tira nueva (la usada va al contenedor de residuos biológicos). Si sale por debajo de 70, toma algo con azúcar y mide otra vez en 15 minutos; si sale por encima de 126 en ayunas, bebe agua y mídela mañana antes de desayunar. Si se repite fuera de ese rango, avisa hoy al Oficial Médico."
       },
       "tramoExtremo": "Tramo extremo (3 puntos)",
-      "tramoSuma": "{puntos} puntos; suma NEWS2 {suma}",
+      "tramoSuma": "{puntos} puntos; suma parcial {suma}",
       "cusum": "CUSUM {valor}",
       "eventoSep": "Evento SEP {id}",
       "real": "Real",
@@ -1081,6 +1068,98 @@
         "head": "Descansa, bebe agua y deja las pantallas durante 1 hora. Vuelve a registrar el síntoma en 2 horas: si sigue igual mañana, o antes si ves borroso, te mareas al moverte o el dolor es el peor que recuerdas, busca al Oficial Médico.",
         "blood": "Mide tu temperatura ahora, lávate bien las manos y no compartas cubiertos ni toallas. Vuelve a medirla mañana y por la noche: si llega a 38 °C, o el síntoma sigue pasado mañana, avisa al Oficial Médico."
       }
+    },
+    "ciencia": {
+      "titulo": "Evidencia científica",
+      "alcance": "Prototipo de investigación. Revisión profesional y validación clínica pendientes.",
+      "introduccion": "Auditoría exploratoria del motor de producto con comparadores y ablaciones. El banco lo creó el mismo equipo; no es una prueba independiente.",
+      "cargando": "Cargando evidencia verificable…",
+      "no_publicado": "No hay una auditoría publicada. No se muestran métricas.",
+      "vigente": "Código y protocolo coinciden con la auditoría",
+      "desactualizado": "Auditoría histórica: el código o protocolo cambió",
+      "fallo": "No se pudo verificar la evidencia. Consulta el registro de la API.",
+      "cache": "Última copia local: vigencia sin comprobar mientras no hay conexión.",
+      "descargar": "Descargar evidencia JSON",
+      "escenario": "Escenario",
+      "metodo": "Método",
+      "deteccion": "Detectados / eventos",
+      "omitidos": "No detectados",
+      "intervalo": "IC 95 % de detección",
+      "retraso": "Retraso mediano (solo detectados), días",
+      "falsas": "Falsos episodios / persona-semana",
+      "exposicion": "Episodios / días observados",
+      "sin_dato": "Sin denominador",
+      "fecha": "Evaluación UTC",
+      "codigo": "SHA-256 del motor",
+      "limites_banco": "Distribuciones sintéticas sin calibrar con astronautas. Sin conjunto reservado independiente, sin criterio clínico de aceptación ni corrección por comparaciones múltiples. Los resultados desfavorables también se conservan. Los escenarios ambientales son pruebas deterministas de reglas.",
+      "afirmaciones_titulo": "Qué respalda cada afirmación",
+      "fuentes": "Fuentes primarias",
+      "artefactos": "Código y protocolo",
+      "estados": {
+        "fundamento_publicado": "Fundamento publicado",
+        "verificado_software": "Verificado como software",
+        "evaluado_sintetico": "Evaluado con simulación",
+        "hipotesis": "Hipótesis pendiente"
+      },
+      "afirmaciones": {
+        "capa_a": "Capa A: adaptación parcial de bandas de NEWS2.",
+        "capa_c": "CUSUM permite acumular desviaciones estadísticas.",
+        "auditoria": "El motor se compara con umbrales, referencia personal simple y ablaciones.",
+        "operacion": "La cola de informes conserva operaciones y evita duplicados al reintentar.",
+        "beneficio": "La personalización podría ayudar a priorizar la revisión de cambios de salud."
+      },
+      "limites": {
+        "capa_a": "Usa cuatro parámetros; omite frecuencia respiratoria, consciencia/confusión y oxígeno suplementario. No es NEWS2 completo ni hereda su validación.",
+        "capa_c": "El fundamento estadístico no valida estos umbrales, el modelo fisiológico ni su utilidad clínica.",
+        "auditoria": "Sensibilidad a estas inyecciones sintéticas; no representa sensibilidad diagnóstica ni prueba superioridad general.",
+        "operacion": "Verificación de recuperación y reintentos; el transporte a Tierra sigue siendo una simulación local.",
+        "beneficio": "Beneficio clínico e innovación comparativa aún sin demostrar mediante revisión profesional y evaluación independiente."
+      },
+      "escenarios": {
+        "control": "Control sin inyección",
+        "ruido_correlacionado": "Ruido correlacionado",
+        "colas_pesadas": "Ruido con colas pesadas",
+        "deriva_intensa": "Deriva intensa",
+        "deriva_sutil": "Deriva sutil",
+        "deriva_tardia": "Deriva tardía",
+        "sin_prevuelo": "Sin prevuelo",
+        "datos_ausentes": "Datos ausentes",
+        "cambio_instrumento": "Cambio de instrumento",
+        "sensor_fijo": "Sensor fijo",
+        "extremo": "Extremo puntual",
+        "entorno_referencia": "Entorno de referencia",
+        "entorno_escenario": "Entorno del escenario"
+      },
+      "metodos": {
+        "umbrales": "Umbrales simples",
+        "personal_simple": "Referencia personal simple",
+        "A": "A",
+        "AB": "A + B",
+        "AC": "A + C",
+        "ABC": "A + B + C",
+        "ABC_contexto": "A + B + C + contexto"
+      },
+      "deslizar": "Desliza la tabla horizontalmente para ver intervalos, retraso y falsas alertas.",
+      "tabla": "Comparación de métodos de la auditoría",
+      "datasets_titulo": "Datasets adquiridos",
+      "datasets_alcance": "Referencias públicas incorporadas y verificadas. Sus sujetos y mediciones se mantienen separados de la tripulación actual; adquirirlos no equivale a evaluar ni validar clínicamente el motor.",
+      "datasets_cargando": "Consultando datasets publicados…",
+      "datasets_disponibles": "Productos disponibles con integridad comprobada",
+      "datasets_vacio": "Todavía no hay datasets adicionales publicados.",
+      "datasets_error": "No se pudo comprobar la disponibilidad de los datasets.",
+      "datasets_tipo_fisiologia_terrestre": "Referencia fisiológica humana terrestre",
+      "datasets_tipo_radiacion_ambiental": "Referencia histórica de radiación ambiental",
+      "datasets_registros": "Registros originales",
+      "datasets_sujetos": "Sujetos del conjunto",
+      "datasets_utilizados": "Intervalos interpretables para agregación",
+      "datasets_sueno": "Periodos de sueño",
+      "datasets_detectores": "Instrumentos separados",
+      "datasets_puntos": "Puntos agregados de 5 minutos",
+      "datasets_ventana": "Ventana de observación UTC",
+      "datasets_detalle": "Ver producto y procedencia JSON",
+      "datasets_hash": "SHA-256",
+      "datasets_limite_mmash": "24 horas por participante. Fechas de toma UTC desconocidas: se conservan días y horas relativos. La frecuencia derivada de intervalos no se etiqueta FC en reposo. Este conjunto no demuestra detección de derivas de semanas. Originales y licencia ODbL-1.0 conservados.",
+      "datasets_limite_orion": "Una ventana histórica de Artemis I. Dosis absorbida ambiental por instrumento; no es dosis personal ni se convierte a mSv. Ubicación/material específicos requieren la documentación del detector."
     }
   }
 }

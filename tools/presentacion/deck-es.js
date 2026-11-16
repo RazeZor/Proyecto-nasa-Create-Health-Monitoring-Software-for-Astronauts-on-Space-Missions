@@ -4,7 +4,8 @@
 const path = require("path")
 const fs = require("fs")
 const pptxgen = require("pptxgenjs")
-const { applyTheme } = require(process.env.PPTX_SKILL + "/scripts/apply_theme.js")
+const { applyTheme } = process.env.PPTX_SKILL ? require(process.env.PPTX_SKILL + "/scripts/apply_theme.js") : { applyTheme: async () => {} }
+const evidencia = require("./evidencia.js").leerAuditoria()
 
 const [CAPTURAS, MARCA, SALIDA, EQUIPO = "[NOMBRE DEL EQUIPO]", INTEGRANTES = "[Integrantes]", EVENTO = "[Evento local]"] = process.argv.slice(2)
 const img = (nombre, alternativas = []) => {
@@ -192,11 +193,11 @@ function datos(pres, C, seccion) {
 function resultados(pres, C, seccion) {
   const s = pres.addSlide({ masterName: "CLARA", sectionTitle: seccion })
   titulo(s, "Qué medimos y qué significa")
-  tarjetaStat(s, 0.5, 1.3, 2.1, "99,8 %", "deriva lenta detectada,\nmediana 8 días tras el inicio", HEX.accent1)
-  tarjetaStat(s, 2.75, 1.3, 2.1, "nunca", "se disparó un umbral terrestre fijo\n(FC ≥ 91 lpm)", HEX.accent2)
-  tarjetaStat(s, 5.0, 1.3, 2.1, "< 0,001", "falsas alarmas por tripulante\npor semana", HEX.accent3)
-  tarjetaStat(s, 7.25, 1.3, 2.25, "100 %", "reglas CO2 + dolor de cabeza\ny tormenta (deterministas)", HEX.dk1)
-  s.addText("500 misiones simuladas con anomalías + 500 controles, semilla 2026; replicado con semilla 2027. Simulación, no rendimiento clínico: ruido gaussiano, generador escrito por el mismo equipo. Salidas versionadas como fixtures; el motor en TypeScript reproduce la referencia en Python alerta por alerta.", { x: 0.5, y: 3.0, w: 9, h: 0.65, fontSize: 10.5, italic: true, color: HEX.dk2, isTextBox: true, margin: 0 })
+  tarjetaStat(s, 0.5, 1.3, 2.1, `${evidencia.sutil.detectados}/${evidencia.sutil.eventos}`, "derivas sutiles detectadas;\nse conservan los omitidos", HEX.accent3)
+  tarjetaStat(s, 2.75, 1.3, 2.1, `${evidencia.intensa.detectados}/${evidencia.intensa.eventos}`, "derivas intensas detectadas;\ninyección sintética", HEX.accent1)
+  tarjetaStat(s, 5.0, 1.3, 2.1, `${evidencia.ruido.falsos_episodios}`, `episodios falsos en ${evidencia.ruido.dias_observados_fuera_evento}\ndías de control con colas pesadas`, HEX.accent2)
+  tarjetaStat(s, 7.25, 1.3, 2.25, `${evidencia.informe.sintesis.misiones_sinteticas}`, "misiones sintéticas;\nsin cohorte humana", HEX.dk1)
+  s.addText("Motor TypeScript de producto; comparadores, ablaciones, intervalos y denominadores en el panel de evidencia. Banco exploratorio del mismo equipo, sin conjunto reservado independiente. Revisión profesional y validación clínica pendientes. Hashes de código y protocolo comprobados al generar.", { x: 0.5, y: 3.0, w: 9, h: 0.65, fontSize: 10.5, italic: true, color: HEX.dk2, isTextBox: true, margin: 0 })
   const cols = [
     ["Privado por defecto", "Verde y ámbar nunca salen del dispositivo. Solo un rojo de la capa A se escala, con el dato mínimo; la astronauta ve exactamente qué se envió y cada acceso queda auditado."],
     ["Funciona sin conexión", "Service worker, copia local del catálogo, cola local de registros y escalamientos que sincroniza cuando vuelve el enlace."],
@@ -208,7 +209,7 @@ function resultados(pres, C, seccion) {
     s.addText(t, { x: x + 0.15, y: 3.82, w: 2.6, h: 0.3, fontSize: 12.5, bold: true, color: HEX.dk1, isTextBox: true, margin: 0 })
     s.addText(d, { x: x + 0.15, y: 4.12, w: 2.6, h: 0.9, fontSize: 9.5, color: HEX.dk2, isTextBox: true, margin: 0, valign: "top" })
   })
-  s.addNotes("En 500 misiones simuladas el motor detectó la deriva en el 99,8 % de los casos, 8 días tras el inicio; el umbral terrestre fijo nunca se disparó; menos de 0,001 falsas alarmas por tripulante por semana. Es simulación, no rendimiento clínico, y lo decimos.")
+  s.addNotes("El resultado de deriva sutil es desfavorable. No generalizar el KPI del generador anterior. Mostrar comparadores, omitidos e incertidumbre del JSON actual; no afirmar superioridad clínica.")
   return s
 }
 function cierre(pres, C, seccion) {

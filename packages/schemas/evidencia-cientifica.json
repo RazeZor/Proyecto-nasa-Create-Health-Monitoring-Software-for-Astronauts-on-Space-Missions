@@ -1,0 +1,13 @@
+{
+  "version": "afirmaciones-v1",
+  "validacion_clinica": false,
+  "revision_profesional": "pendiente",
+  "revisiones": [],
+  "afirmaciones": [
+    {"id":"capa_a","estado":"fundamento_publicado","clave":"web.ciencia.afirmaciones.capa_a","fuentes":["https://www.rcp.ac.uk/resources/national-early-warning-score-news-2/"],"artefactos":["packages/engine/engine.ts","packages/engine/paridad-referencia.test.ts"],"limite":"web.ciencia.limites.capa_a"},
+    {"id":"capa_c","estado":"fundamento_publicado","clave":"web.ciencia.afirmaciones.capa_c","fuentes":["https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc323.htm"],"artefactos":["packages/engine/engine.ts"],"limite":"web.ciencia.limites.capa_c"},
+    {"id":"auditoria","estado":"evaluado_sintetico","clave":"web.ciencia.afirmaciones.auditoria","fuentes":["https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm"],"artefactos":["tools/validacion/protocolo.json","tools/validacion/banco.ts","tools/validacion/ejecutar.ts"],"limite":"web.ciencia.limites.auditoria"},
+    {"id":"operacion","estado":"verificado_software","clave":"web.ciencia.afirmaciones.operacion","fuentes":[],"artefactos":["tools/verificacion/ensayo.py","apps/api/test_reintentos.py"],"limite":"web.ciencia.limites.operacion"},
+    {"id":"beneficio","estado":"hipotesis","clave":"web.ciencia.afirmaciones.beneficio","fuentes":[],"artefactos":["docs/PROTOCOLO-REVISION-CIENTIFICA.md"],"limite":"web.ciencia.limites.beneficio"}
+  ]
+}

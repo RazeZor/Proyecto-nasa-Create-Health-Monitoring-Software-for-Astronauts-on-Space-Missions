@@ -3,7 +3,8 @@
 const path = require("path")
 const fs = require("fs")
 const pptxgen = require("pptxgenjs")
-const { applyTheme } = require(process.env.PPTX_SKILL + "/scripts/apply_theme.js")
+const { applyTheme } = process.env.PPTX_SKILL ? require(process.env.PPTX_SKILL + "/scripts/apply_theme.js") : { applyTheme: async () => {} }
+const evidencia = require("./evidencia.js").leerAuditoria()
 
 const [CAPTURAS, MARCA, SALIDA, EQUIPO = "[TEAM NAME]", INTEGRANTES = "[Team members]", EVENTO = "[Local Event]"] = process.argv.slice(2)
 const img = (nombre, alternativas = []) => {
@@ -190,11 +191,11 @@ function datos(pres, C, seccion) {
 function resultados(pres, C, seccion) {
   const s = pres.addSlide({ masterName: "CLARA", sectionTitle: seccion })
   titulo(s, "What we measured, and what it means")
-  tarjetaStat(s, 0.5, 1.3, 2.1, "99.8 %", "slow drift detected,\nmedian 8 days after onset", HEX.accent1)
-  tarjetaStat(s, 2.75, 1.3, 2.1, "never", "a fixed terrestrial threshold\n(HR ≥ 91 bpm) fired", HEX.accent2)
-  tarjetaStat(s, 5.0, 1.3, 2.1, "< 0.001", "false alarms per crew\nmember per week", HEX.accent3)
-  tarjetaStat(s, 7.25, 1.3, 2.25, "100 %", "CO2 + headache and\nstorm rules (deterministic)", HEX.dk1)
-  s.addText("500 simulated missions with anomalies + 500 controls, seed 2026; replicated with seed 2027. Simulation, not clinical performance: Gaussian noise, generator written by the same team. Outputs committed as fixtures; the TypeScript engine reproduces the Python reference alert by alert.", { x: 0.5, y: 3.0, w: 9, h: 0.65, fontSize: 10.5, italic: true, color: HEX.dk2, isTextBox: true, margin: 0 })
+  tarjetaStat(s, 0.5, 1.3, 2.1, `${evidencia.sutil.detectados}/${evidencia.sutil.eventos}`, "subtle drifts detected;\nmissed cases retained", HEX.accent3)
+  tarjetaStat(s, 2.75, 1.3, 2.1, `${evidencia.intensa.detectados}/${evidencia.intensa.eventos}`, "intense drifts detected;\nsynthetic injections only", HEX.accent1)
+  tarjetaStat(s, 5.0, 1.3, 2.1, `${evidencia.ruido.falsos_episodios}`, `false episodes in ${evidencia.ruido.dias_observados_fuera_evento}\nheavy-tailed control days`, HEX.accent2)
+  tarjetaStat(s, 7.25, 1.3, 2.25, `${evidencia.informe.sintesis.misiones_sinteticas}`, "synthetic missions;\nno human cohort", HEX.dk1)
+  s.addText("Product TypeScript engine; comparators and ablations; intervals and denominators in the evidence panel. Same-team exploratory benchmark, no independent held-out set. Professional review and clinical validation pending. Code and protocol hashes checked before generating slides.", { x: 0.5, y: 3.0, w: 9, h: 0.65, fontSize: 10.5, italic: true, color: HEX.dk2, isTextBox: true, margin: 0 })
   const cols = [
     ["Private by default", "Green and amber never leave the device. Only a layer-A red is escalated, with the minimum data; the astronaut sees exactly what was sent and every access is audited."],
     ["Works offline", "Service worker, local copy of the catalogue, local queue for check-ins and escalations that syncs when the link returns."],
@@ -206,7 +207,7 @@ function resultados(pres, C, seccion) {
     s.addText(t, { x: x + 0.15, y: 3.82, w: 2.6, h: 0.3, fontSize: 12.5, bold: true, color: HEX.dk1, isTextBox: true, margin: 0 })
     s.addText(d, { x: x + 0.15, y: 4.12, w: 2.6, h: 0.9, fontSize: 9.5, color: HEX.dk2, isTextBox: true, margin: 0, valign: "top" })
   })
-  s.addNotes("In 500 simulated missions the engine detected the drift in 99.8 % of cases, 8 days after onset; the fixed terrestrial threshold never fired; fewer than 0.001 false alarms per crew member per week. It is simulation, not clinical performance, and we say so.")
+  s.addNotes("The subtle-drift result is unfavorable. Do not generalize the older development-generator KPI. Show comparators, missed events and uncertainty from the current JSON; do not claim clinical superiority.")
   return s
 }
 function cierre(pres, C, seccion) {

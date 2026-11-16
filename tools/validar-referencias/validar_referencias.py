@@ -21,6 +21,7 @@ import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from urllib.error import HTTPError
 
 CATALOGO = Path(__file__).with_name("referencias.json")
 CROSSREF_URL = "https://api.crossref.org/works/"
@@ -32,19 +33,28 @@ OK = "OK"
 DOI_NO_EXISTE = "DOI_NO_EXISTE"
 REVISAR_TITULO = "REVISAR_TITULO"
 REVISAR_TEXTO = "REVISAR_TEXTO"
+FUENTE_NO_DISPONIBLE = "FUENTE_NO_DISPONIBLE"
 FALLOS = {DOI_NO_EXISTE, REVISAR_TITULO}
 
 
+class FuenteNoDisponible(OSError):
+    """Una consulta fallida no demuestra que un DOI no exista."""
+
+
 def _get(url, como_json=True):
-    """Descarga una URL. Devuelve None si falla tras tres intentos."""
+    """Devuelve None solo ante 404; red, servidor o respuesta ilegible no equivalen a DOI inexistente."""
     for intento in range(3):
         try:
             peticion = urllib.request.Request(url, headers=CABECERAS)
-            with urllib.request.urlopen(peticion, timeout=60) as r:
+            with urllib.request.urlopen(peticion, timeout=20) as r:
                 return json.load(r) if como_json else r.read().decode("utf-8", "replace")
-        except Exception:
+        except HTTPError as error:
+            if error.code == 404:
+                return None
             time.sleep(1 + intento)
-    return None
+        except (OSError, ValueError):
+            time.sleep(1 + intento)
+    raise FuenteNoDisponible("consulta no verificable tras tres intentos")
 
 
 def crossref(doi):
@@ -98,9 +108,13 @@ def evaluar(ref, meta, resumen, texto=""):
 
 def validar(ref):
     """Descarga y evalúa una referencia."""
-    meta = crossref(ref["doi"])
-    resumen, pmcid = europepmc(ref["doi"]) if meta else ("", None)
-    texto = texto_completo(pmcid) if meta and ref.get("texto_contiene") else ""
+    meta = None
+    try:
+        meta = crossref(ref["doi"])
+        resumen, pmcid = europepmc(ref["doi"]) if meta else ("", None)
+        texto = texto_completo(pmcid) if meta and ref.get("texto_contiene") else ""
+    except FuenteNoDisponible:
+        return {"id": ref["id"], "doi": ref["doi"], "pmcid": None, "crossref": meta, "estado": FUENTE_NO_DISPONIBLE}
     return {"id": ref["id"], "doi": ref["doi"], "pmcid": pmcid, "crossref": meta,
             **evaluar(ref, meta, resumen, texto)}
 
@@ -120,7 +134,7 @@ def main(argv=None):
         r = validar(ref)
         resultados.append(r)
         titulo = (r["crossref"] or {}).get("titulo", "")[:70]
-        print(f"{r['estado']:15} {r['id']:16} {titulo}")
+        print(f"{r['estado']:15} {r['id']:16} {titulo}", flush=True)
         if r.get("faltan"):
             print(f"{'':15} faltan: {r['faltan']}")
         time.sleep(PAUSA_S)
@@ -129,7 +143,9 @@ def main(argv=None):
                                      encoding="utf-8")
     fallos = [r["id"] for r in resultados if r["estado"] in FALLOS]
     print(f"{len(resultados)} referencias, {len(fallos)} con DOI erróneo: {', '.join(fallos) or '-'}")
-    return 1 if fallos else 0
+    no_verificadas = sum(r["estado"] == FUENTE_NO_DISPONIBLE for r in resultados)
+    print(f"{no_verificadas} referencias no verificables por fallo de consulta; OK solo comprueba título y fragmentos, no aval profesional.")
+    return 1 if fallos else 2 if no_verificadas else 0
 
 
 if __name__ == "__main__":

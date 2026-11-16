@@ -6,12 +6,14 @@
   python3 index.py viaje                    regenera packages/engine/fixtures/caso-viaje.json (viaje a Marte)
   python3 index.py barrer [n_misiones]      barrido de k y h del CUSUM en gold/barrido.json
   python3 index.py manifest                 SHA-256 y tamaños de cada escenario generado
+  python3 index.py preparar                 reproduce KPI y publica ambos paneles con el curated disponible
 """
 import json
 import sys
 from pathlib import Path
 
 import panel
+import preparar
 import simulacion
 
 import reanclaje
@@ -31,6 +33,8 @@ if __name__ == "__main__":
             salida = simulacion.publicar_simulacion(n_misiones=n)
         elif cmd == "viaje":
             salida = simulacion.publicar_caso_viaje(Path(__file__).resolve().parents[2] / "packages" / "engine" / "fixtures" / "caso-viaje.json")
+        elif cmd == "preparar":
+            salida = preparar.preparar_local()
         elif cmd == "barrer":
             salida = simulacion.publicar_barrido(n_misiones=int(args[0]) if args else 200)
         elif cmd == "manifest":

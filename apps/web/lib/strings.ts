@@ -7,6 +7,9 @@
 import { detectarIdioma, type Idioma, t } from "../../../packages/i18n/i18n.ts"
 import type { Layer, Role, Status, Symptom, ZoneId } from "./types.ts"
 
+/** Catálogo de evidencia: claves de afirmaciones, métodos y escenarios del contrato compartido. */
+export const textoCiencia = (clave: string): string => t(`web.ciencia.${clave}`, IDIOMA)
+
 const CLAVE_IDIOMA = "vigia:idioma"
 const enNavegador = typeof window !== "undefined"
 
@@ -421,6 +424,10 @@ export const S = {
     indicative: tx("web.S.env.indicative"),
     noDose: tx("web.S.env.noDose"),
     noCabin: tx("web.S.env.noCabin"),
+    referenceOnly: tx("web.S.env.referenceOnly"),
+    referenceOnlyHint: tx("web.S.env.referenceOnlyHint"),
+    environmentalDose: tx("web.S.env.environmentalDose"),
+    detector: tx("web.S.env.detector"),
     noEda: tx("web.S.env.noEda"),
     doseEquivalent: tx("web.S.env.doseEquivalent"),
     emptyDose: tx("web.S.env.emptyDose"),
@@ -580,6 +587,9 @@ export const S = {
     queue: tx("web.S.reports.queue"),
     reply: tx("web.S.reports.reply"),
     sendFailed: tx("web.S.reports.sendFailed"),
+    localPending: tx("web.S.reports.localPending"),
+    localPendingHint: tx("web.S.reports.localPendingHint"),
+    operationConflict: tx("web.S.reports.operationConflict"),
     thread: tx("web.S.reports.thread"),
     send: tx("web.S.reports.send"),
     queued: tx("web.S.reports.queued"),
@@ -897,10 +907,6 @@ export const S = {
     privacyEnvBody: tx("web.S.about.privacyEnvBody"),
     offline: tx("web.S.about.offline"),
     offlineBody: tx("web.S.about.offlineBody"),
-    results: tx("web.S.about.results"),
-    resultsLead: tx("web.S.about.resultsLead"),
-    kpis: (["drift", "half", "fixed", "rules", "false"] as const).map((k) => ({ k, v: tx(`web.S.about.kpis.${k}.v`), l: tx(`web.S.about.kpis.${k}.l`) })),
-    resultsCaveat: tx("web.S.about.resultsCaveat"),
     limits: tx("web.S.about.limits"),
     limitsList: (["phys", "rad", "todo"] as const).map((k) => ({ k, t: tx(`web.S.about.limitsList.${k}`) })),
     sources: tx("web.S.about.sources"),

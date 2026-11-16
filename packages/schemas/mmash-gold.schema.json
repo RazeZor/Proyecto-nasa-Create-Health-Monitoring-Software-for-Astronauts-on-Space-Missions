@@ -1,0 +1,21 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object",
+  "required":["version","id","version_fuente","uso","dominio","t_real_observacion","fecha_observacion_conocida","evaluacion_motor","validacion_clinica","resumen","sujetos","archivos"],
+  "properties":{
+    "version":{"const":"dataset-fisiologico-v1"},"id":{"const":"mmash"},"version_fuente":{"const":"1.0.0"},
+    "uso":{"const":"referencia"},"dominio":{"const":"humano_terrestre"},"t_real_observacion":{"const":null},
+    "fecha_observacion_conocida":{"const":false},"evaluacion_motor":{"const":false},"validacion_clinica":{"const":false},
+    "resumen":{"type":"object","required":["sujetos","intervalos_originales","intervalos_utilizados","puntos_5min","periodos_sueno"],
+      "properties":{"sujetos":{"type":"integer","minimum":1},"intervalos_originales":{"type":"integer","minimum":0},
+        "intervalos_utilizados":{"type":"integer","minimum":0},"puntos_5min":{"type":"integer","minimum":0},"periodos_sueno":{"type":"integer","minimum":0}}},
+    "archivos":{"type":"array","minItems":3,"items":{"type":"object","required":["url","raw","sha256","bytes"],
+      "properties":{"url":{"type":"string","pattern":"^https://physionet.org/"},"sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"bytes":{"type":"integer","minimum":1}}}},
+    "sujetos":{"type":"array","minItems":1,"items":{"type":"object","required":["id","intervalos_originales","intervalos_utilizados","serie_5min","periodos_sueno"],
+      "properties":{"id":{"type":"string","pattern":"^user_[0-9]+$"},
+        "serie_5min":{"type":"array","items":{"type":"object","required":["segundos_relativos","intervalos","t_real","ibi_mediana_s","fc_derivada_mediana_lpm"],
+          "properties":{"segundos_relativos":{"type":"number","minimum":0},"intervalos":{"type":"integer","minimum":1},"t_real":{"const":null},"ibi_mediana_s":{"type":"number","minimum":0},"fc_derivada_mediana_lpm":{"type":"number","minimum":0}}}},
+        "periodos_sueno":{"type":"array","items":{"type":"object","required":["t_real","tst_min_original","sueno_h"],"properties":{"t_real":{"const":null},"sueno_h":{"type":["number","null"],"minimum":0}}}}
+      }}}
+  }
+}

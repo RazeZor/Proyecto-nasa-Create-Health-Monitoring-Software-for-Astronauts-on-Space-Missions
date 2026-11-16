@@ -1,6 +1,7 @@
 """Lecturas de indicadores y síntomas de un tripulante."""
 import math
 
+from .reintentos import insertar
 from .tripulacion import _insertar, _utc, t_mision
 from .vocabulario import SINTOMAS
 
@@ -38,12 +39,13 @@ def leer_lecturas(conn, tripulante_id, indicador=None, desde=None, hasta=None):
     return _rango("lectura", conn, tripulante_id, desde, hasta, indicador)
 
 
-def registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real):
+def registrar_sintoma(conn, tripulante_id, codigo, gravedad, t_real, operacion_id=None):
     if codigo not in SINTOMAS:
         raise ValueError(f"síntoma desconocido {codigo!r}; admitidos: {sorted(SINTOMAS)}")
     marca = t_mision(conn, tripulante_id, t_real)
-    return _insertar(conn, "INSERT INTO sintoma (tripulante_id, t_real, t_mision, codigo, gravedad) VALUES (?, ?, ?, ?, ?)",
-                     (tripulante_id, t_real, marca, codigo, gravedad))
+    return insertar(conn, "sintoma", tripulante_id, operacion_id, {
+        "t_real": t_real, "t_mision": marca, "codigo": codigo, "gravedad": gravedad,
+    })
 
 
 def leer_sintomas(conn, tripulante_id, desde=None, hasta=None):

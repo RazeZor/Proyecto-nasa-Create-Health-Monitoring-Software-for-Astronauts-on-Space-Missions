@@ -1,5 +1,5 @@
 /**
- * Motor híbrido de VIGÍA (informe §5.1 y §5.2): capa A (NEWS2), capa B (desviación personal con MAD),
+ * Motor híbrido de VIGÍA: capa A (adaptación parcial de bandas NEWS2), capa B (desviación personal con MAD),
  * capa C (CUSUM) y reglas de contexto (CO2 con cefalea, modo tormenta). Puro: sin IO y sin dependencias.
  * Es el port 1:1 de `evaluar_tripulante` en pipelines/reanclaje/simulacion.py; el test de paridad lo compara
  * con `fixtures/caso-referencia.json`. Si cambias una regla, cámbiala en ambos.
@@ -73,7 +73,11 @@ export interface EntornoDia {
 export type Capa = "A" | "B" | "C" | "contexto"
 /** Desde `dia_mision` el indicador se mide con otro instrumento (manual ↔ reloj, u otro reloj). */
 export interface CambioInstrumento { dia_mision: number; indicador: "fc" }
-export interface OpcionesMotor { cambiosInstrumento?: CambioInstrumento[] }
+export interface OpcionesMotor {
+  cambiosInstrumento?: CambioInstrumento[]
+  /** Ablación experimental: la app omite esta opción y conserva siempre todas las capas. */
+  capas?: readonly Capa[]
+}
 export interface Alerta {
   dia_mision: number
   tripulante_id: string
@@ -115,7 +119,7 @@ export function pesoVuelo(dia: number, nVentana: number): number {
   return Math.min(1, (dia - DIA_FIN_ADAPTACION) / DIAS_TRANSICION)
 }
 
-/** Puntos NEWS2 de los parámetros medidos; los `null` no puntúan. */
+/** Bandas parciales para cuatro parámetros; no es NEWS2 completo ni hereda su validación. Los null no puntúan. */
 export function puntosNews2(fc: number | null, pas: number | null, spo2: number | null, temp: number | null) {
   let pts = 0
   let maxIndividual = 0
@@ -208,10 +212,11 @@ export function analizarTripulante(
   for (const c of opciones.cambiosInstrumento ?? []) cambios.set(c.dia_mision, [...(cambios.get(c.dia_mision) ?? []), c.indicador])
 
   const alertas: Alerta[] = []
+  const activas = new Set<Capa>(opciones.capas ?? ["A", "B", "C", "contexto"])
   const nueva = (
     d: number, capa: Capa, nivel: Alerta["nivel"], indicador: string, valor: number | null,
     extra: Partial<Pick<Alerta, "escalada_auto" | "ambito" | "informativa">> = {},
-  ) => alertas.push({
+  ) => activas.has(capa) && alertas.push({
     dia_mision: d, tripulante_id: tripulante.id, capa, nivel, indicador, valor,
     escalada_auto: false, ambito: "personal", informativa: false, ...extra,
   })
@@ -222,7 +227,7 @@ export function analizarTripulante(
     const flujo = env.flujo_protones_10mev_pfu ?? null
     const tormenta = Boolean(env.modo_tormenta) || (flujo !== null && flujo >= PROTONES_TORMENTA_PFU)
 
-    // Capa A: clínica NEWS2
+    // Capa A: adaptación parcial con agregación propia, pendiente de revisión profesional.
     const { pts, maxIndividual } = puntosNews2(r.fc_reposo_lpm, r.pas_mmHg, r.spo2_pct, r.temp_central_c)
     if (pts >= 5 || maxIndividual === 3) nueva(d, "A", "rojo", "news2", pts, { escalada_auto: true })
     else if (pts >= 3) nueva(d, "A", "ambar", "news2", pts)
@@ -255,7 +260,7 @@ export function analizarTripulante(
       if (consecB[ind] >= DIAS_CONSECUTIVOS_B) nueva(d, "B", "ambar", ind, redondear(valor, 2), { informativa: adaptacion })
 
       const sentido = SENTIDO_C[ind]
-      if (sentido !== undefined && d >= CUSUM_DIA_INICIO) {
+      if (activas.has("C") && sentido !== undefined && d >= CUSUM_DIA_INICIO) {
         const s = Math.max(0, (cusum[ind] ?? 0) + sentido * z - CUSUM_K)
         cusum[ind] = s
         if (s >= CUSUM_H) {

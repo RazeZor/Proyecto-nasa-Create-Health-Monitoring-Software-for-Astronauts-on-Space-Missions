@@ -1,0 +1,70 @@
+# Módulo `tools/verificacion`
+
+<!-- CONTEXT:MANUAL:START -->
+## Propósito
+
+Ejecutar las comprobaciones de ingeniería de una entrega con un único intérprete Python y un Node explícito, conservando resultados y logs locales reproducibles.
+
+## Puntos clave
+
+- `ensayo.py --datasets` exige MMASH/Orion publicados, comprueba las dos tarjetas y su copia offline, y conserva captura. Sin esa opción los campos de ese ensayo quedan null: no se presentan como aprobados; el resto de comprobaciones sigue siendo obligatorio. Los datasets se adquieren aparte, nunca durante tests unitarios.
+
+- La batería incluye `tools/investigacion` y los tests TS de `tools/validacion`: verificar software y contratos no equivale a validar beneficio clínico. El ensayo en navegador usa servicios y base temporales, conserva el reporte científico gold y comprueba su vista sin modificar la API personal.
+
+- Solo biblioteca estándar. `verificar.py` descubre las suites Python en los cuatro contenedores y ejecuta las mismas pruebas TS que CI; también lint, contexto y tipado. `--web` añade build de producción.
+- No instala dependencias ni descarga datos ni publica cambios. Node debe ser 22.18 o posterior; `--node` permite usar un ejecutable portátil sin cambiar Windows.
+- `inventario.py` comprueba hashes raw/gold y resume cobertura y esquema SQLite sin mostrar registros. Solo con `--migrar` crea un respaldo SQLite y aplica las migraciones; por defecto abre la base en solo lectura. No carga `.env`: admite rutas explícitas o variables ya exportadas.
+- `ensayo.py` inicia API/web y un proxy en puertos locales libres con base temporal, ejecuta `navegador.mjs` por Chrome DevTools Protocol y detiene sus procesos. El proxy desvía `/vigia-api` a la base temporal sin cambiar el rewrite del build ni tocar la API del usuario. Requiere build previo, Node 22.18+ y Chrome/Chromium; sin dependencias npm. Prueba cierre/reapertura, pérdida de API, carcasa sin red y reenvío idempotente.
+- `data/` está ignorada por Git: cada ejecución crea una carpeta UTC con logs por comprobación y `resultado.json` (HEAD, versiones, comandos, duración, códigos y resúmenes). Un fallo u omisión se conserva y devuelve código distinto de cero; una prueba omitida no se considera verificación completa.
+- El resultado prueba ingeniería del software en esa copia, no eficacia clínica, reloj físico, autorización NASA ni revisión profesional.
+
+tags: verificacion, tests, release, calidad, reproducibilidad
+<!-- CONTEXT:MANUAL:END -->
+
+<!-- CONTEXT:AUTO:START -->
+## Mapa del módulo (generado)
+
+> No editar este bloque: lo regenera `tools/contextgen/contextgen.py`.
+
+### Archivos
+
+| Archivo | Líneas | Descripción |
+| --- | --- | --- |
+| [ensayo.py](ensayo.py) | 81 | Ensayo de navegador con base temporal: python tools/verificacion/ensayo.py --node RUTA [--chrome RUTA]. |
+| [inventario.py](inventario.py) | 89 | Auditar datalake y SQLite sin mostrar datos personales; --migrar crea respaldo antes de actualizar SQLite. |
+| [navegador.mjs](navegador.mjs) | 213 | Ensayo de recuperación de informes con Chrome DevTools Protocol, sin dependencias npm. |
+| [verificar.py](verificar.py) | 73 | Comprobaciones reproducibles: python tools/verificacion/verificar.py [--node RUTA] [--web]. |
+
+### API pública
+
+**ensayo.py**
+
+- función `esperar(url, proceso)`
+- función `main()`
+
+**inventario.py**
+
+- función `hash_archivo(raiz, relativa)`
+- función `inventariar(datos, db)`
+- función `main()`
+
+**verificar.py**
+
+- función `ejecutar(nombre, comando, carpeta, destino)`
+- función `main(argv=None)`
+
+### Puntos de entrada
+
+- `tools/verificacion/ensayo.py`
+- `tools/verificacion/inventario.py`
+- `tools/verificacion/verificar.py`
+
+### Configuración y fuentes externas
+
+- Variables de entorno: `DATALAKE_DIR`, `VIGIA_DB`, `VIGIA_E2E_API`, `VIGIA_E2E_DATASETS`, `VIGIA_E2E_PROXY`, `VIGIA_E2E_WEB`
+
+### Dependencias
+
+- Externas: ninguna
+- Biblioteca estándar: `argparse`, `datetime`, `hashlib`, `json`, `node:assert/strict`, `node:child_process`, `node:events`, `node:fs/promises`, `node:http`, `node:os`, `node:path`, `node:timers/promises`, `os`, `pathlib`, `re`, `shutil`, `socket`, `sqlite3`, `subprocess`, `sys`, `time`, `urllib`
+<!-- CONTEXT:AUTO:END -->

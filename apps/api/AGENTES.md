@@ -11,6 +11,9 @@ API de solo lectura sobre el gold del ETL (`pipelines/reanclaje`). El contrato e
 | Endpoint | Devuelve |
 | --- | --- |
 | `GET /salud` | `{"estado": "ok"}` |
+| `GET /ciencia/evidencia` | catálogo de afirmaciones y auditoría sintética; `vigente`, `desactualizado` o `no_publicado`; SHA-256 y hashes del código/protocolo. No acredita revisión profesional. |
+| `GET /ciencia/datasets` | MMASH/Orion realmente publicados, procedencia, cantidades y hashes verificados; nunca implica evaluación del motor. |
+| `GET /ciencia/datasets/{id}` | producto de referencia completo; `mmash` mantiene tiempos relativos y `orion` radiación ambiental histórica. |
 | `GET /escenarios` | lista de nombres |
 | `GET /escenarios/{nombre}` | `escenario`, `ventanas`, `serie5min`, `diario`, `eventos` (filtros: `fuente`, `variable`, `dia_mision`) |
 | `GET /escenarios/{nombre}/serie` | puntos de 5 min (mismos filtros) |
@@ -25,9 +28,9 @@ Errores: 404 = el ETL no publicó ese nombre como ese tipo (un escenario no se p
 
 - **Tiempo:** `t_mision` es `D022T00:05:00` = día de misión 22, 00:05. `t_real` es la hora UTC real del dato. El origen de la línea de misión es sintético.
 - **Ventanas mezcladas:** que series de fechas reales distintas (por ejemplo RadLab de 2011 y GOES de 2026) caigan en el mismo día de misión es decisión del escenario, no un hecho observado. Mira `ventanas` y `aviso` antes de correlacionar fuentes.
-- **Dosis:** `dosis.tipo` es `equivalente` (µSv) o `absorbida` (µGy). Con `absorbida`, `orientativa` es `true`: se supone 1 µGy = 1 µSv, una cota inferior, así que la comparación con el límite de 600 mSv es solo indicativa. Solo ALTEA-Survey (ISS, 2010 a 2012) da dosis equivalente.
+- **Dosis:** `dosis.tipo` es `equivalente` (µSv) o `absorbida` (µGy). `por_detector` conserva cada instrumento/magnitud con su propia cobertura. Los campos anteriores proyectan el primer detector (prioriza equivalente); nunca una media de ubicaciones. No se convierte Gy a Sv ni se estima dosis personal.
 - **Cobertura:** `dosis.por_dia[].cobertura` es la fracción del día con datos (0 a 1). Con 0.042 (una hora de datos) la dosis del día es parcial y **no** es el total del día.
-- **`porcentaje_limite_carrera`** ya es un porcentaje (0.1521 = 0.1521 %), sobre 600 mSv.
+- **`porcentaje_limite_carrera`** es `null` en los paneles regenerados: una medición ambiental no acredita exposición personal.
 - **Protones:** `max_pfu` es el máximo del día por serie y satélite (`G18 >=10 MeV`). `modo_tormenta` es `true` si la serie de ≥10 MeV llega a 10 pfu.
 - **CO2:** `co2_mmhg_por_perfil` convierte ppm a presión parcial con la presión total de cada perfil (estación 760, tránsito 760, superficie 424 mmHg). El límite es 3 mmHg de promedio en 1 h (`co2_sobre_limite_por_perfil`). No compares ppm con un umbral fijo fuera de la ISS.
 - **`diario`:** `bins` es cuántos pasos de 5 min tuvieron datos, de 288 posibles. `max_prom_horario` es el máximo del promedio horario (solo CO2).
@@ -48,9 +51,9 @@ Salidas reales de esta API sobre el gold local (escenarios `dosis-equivalente`, 
 ```json
 {"tipo": "equivalente", "unidad": "µSv", "orientativa": false, "series": ["ALTEA-Survey"],
  "por_dia": [{"dia_mision": 22, "dosis": 912.7941, "acumulada": 912.7941, "cobertura": 1.0}],
- "porcentaje_limite_carrera": 0.1521}
+ "porcentaje_limite_carrera": null}
 ```
-Ese 0.1521 es el porcentaje sobre 600 mSv. El día supera lo típico del informe (0.2 a 0.5 mSv/día); es un día y los datos son preliminares.
+El ejemplo recorta `por_detector`. Es una observación ambiental de ese instrumento y esa ventana; no es un porcentaje de exposición de la persona.
 
 `GET /paneles/panel-demo/protones` (primer elemento)
 ```json

@@ -1,6 +1,6 @@
 """Panel de entorno (tarjeta del kanban): el gold de un escenario resumido para la app.
 
-Dosis acumulada frente al límite de carrera, flujo de protones con modo tormenta y cabina (CO2 en
+Dosis ambiental por detector y magnitud, flujo de protones con modo tormenta y cabina (CO2 en
 mmHg por perfil, temperatura y humedad). No hace cálculos nuevos sobre los datos: toma los
 resúmenes diarios de reanclaje.diario() y los convierte a lo que la pantalla necesita.
 """
@@ -19,26 +19,27 @@ AVISO = ("Cada serie es una medición real reanclada a la línea de tiempo de mi
 
 
 def _dosis(diario):
-    """Dosis por día de misión y acumulada. Prefiere la dosis equivalente; con dosis absorbida la
-    comparación con el límite solo es orientativa (informe §3.3) y se rotula así."""
+    """Mantiene dosis y cobertura por detector/magnitud. No estima dosis personal ni convierte Gy a Sv."""
+    detectores = []
     for variable in ("dose_equivalent_rate", "absorbed_dose_rate"):
         filas = [d for d in diario if d["fuente"] == "radlab" and d["variable"] == variable]
-        if filas:
-            break
-    else:
+        for serie in sorted({d["serie"] for d in filas}):
+            acumulada, por_dia = 0.0, []
+            for d in sorted((d for d in filas if d["serie"] == serie), key=lambda d: d["dia_mision"]):
+                acumulada += d["dosis"]
+                por_dia.append({"dia_mision": d["dia_mision"], "dosis": round(d["dosis"], 4),
+                                "acumulada": round(acumulada, 4), "cobertura": round(d["bins"] / PASOS_POR_DIA, 3)})
+            equivalente = variable == "dose_equivalent_rate"
+            detectores.append({"id": f"{serie}:{variable}", "serie": serie,
+                               "tipo": "equivalente" if equivalente else "absorbida",
+                               "unidad": "µSv" if equivalente else "µGy", "por_dia": por_dia})
+    if not detectores:
         return None
-    acumulada, por_dia = 0.0, []
-    for dia in sorted({d["dia_mision"] for d in filas}):
-        del_dia = [d for d in filas if d["dia_mision"] == dia]
-        dosis = sum(d["dosis"] for d in del_dia) / len(del_dia)  # detectores redundantes: promedio
-        acumulada += dosis
-        por_dia.append({"dia_mision": dia, "dosis": round(dosis, 4), "acumulada": round(acumulada, 4),
-                        "cobertura": round(max(d["bins"] for d in del_dia) / PASOS_POR_DIA, 3)})
-    equivalente = variable == "dose_equivalent_rate"
-    return {"tipo": "equivalente" if equivalente else "absorbida", "unidad": "µSv" if equivalente else "µGy",
-            "orientativa": not equivalente, "series": sorted({d["serie"] for d in filas}), "por_dia": por_dia,
-            # shortcut: 1 µGy se toma como 1 µSv (factor de calidad 1, cota inferior); usar dosis equivalente
-            "porcentaje_limite_carrera": round(acumulada / 1000 / LIMITES["carrera_msv"] * 100, 4)}
+    primero = detectores[0]
+    # Proyección para lectores anteriores: un detector explícito, nunca una media entre ubicaciones.
+    return {"tipo": primero["tipo"], "unidad": primero["unidad"], "orientativa": primero["tipo"] == "absorbida",
+            "series": [primero["serie"]], "por_dia": primero["por_dia"], "por_detector": detectores,
+            "porcentaje_limite_carrera": None}
 
 
 def _protones(diario):
